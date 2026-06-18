@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, UserCheck, Gift, Package, FileText, Upload, LogOut, Gift as GiftIcon, Menu, X } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Gift, Package, FileText, Upload, LogOut, Gift as GiftIcon, Menu, Shield, X } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Catálogo', icon: Package, to: '/catalog' },
   { label: 'Historial', icon: FileText, to: '/history' },
   { label: 'Importar', icon: Upload, to: '/import' },
+  { label: 'Usuarios', icon: Shield, to: '/admin' },
 ];
 
 export default function Shell({ children }: { children: React.ReactNode }) {

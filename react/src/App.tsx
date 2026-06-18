@@ -10,6 +10,7 @@ import DispatchPage from './pages/DispatchPage';
 import CatalogPage from './pages/CatalogPage';
 import ImportPage from './pages/ImportPage';
 import HistoryPage from './pages/HistoryPage';
+import AdminPage from './pages/AdminPage';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -35,6 +36,7 @@ function AppRoutes() {
       <Route path="/catalog" element={<ProtectedRoute><Shell><CatalogPage /></Shell></ProtectedRoute>} />
       <Route path="/import" element={<ProtectedRoute><Shell><ImportPage /></Shell></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><Shell><HistoryPage /></Shell></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><Shell><AdminPage /></Shell></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
