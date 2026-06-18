@@ -1,0 +1,1784 @@
+﻿@model IEnumerable<slnRhonline.Models.Caso>
+
+@{
+    ViewBag.Title = "Mis Casos";
+
+    var totalCasos = Model.Count();
+    var casosPendiente = Model.Count(c => c.Estado == "Pendiente");
+    var casosEnProceso = Model.Count(c => c.Estado == "En Proceso");
+    var casosCerrados = Model.Count(c => c.Estado == "Cerrado");
+    var casosCancelados = Model.Count(c => c.Estado == "Cancelado");
+}
+
+<link href="~/onlinecss/jquery.fancybox.min.css" rel="stylesheet" />
+
+<style>
+    body {
+        background: #fff;
+        color: #111
+    }
+    /* Forzar cambio de color del botón Acciones */
+    .btn-info {
+        background-color: #4b5563 !important; /* Gris Oscuro Elegante */
+        border-color: #4b5563 !important;
+        color: #fff !important; /* Texto Blanco */
+    }
+
+        .btn-info:hover,
+        .btn-info:focus,
+        .btn-info:active,
+        .btn-info.show {
+            background-color: #1f2937 !important; /* Más oscuro al dar click */
+            border-color: #1f2937 !important;
+            color: #fff !important;
+        }
+
+    /* === Tabs → estilo KPI (sin cambiar el HTML ni la lógica) === */
+    .hd-tabs {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+        .hd-tabs .nav-tabs {
+            display: grid;
+            gap: 12px;
+            border: 0 !important;
+            grid-template-columns: repeat(4,minmax(180px,1fr));
+        }
+
+    @@media (max-width:992px) {
+        .hd-tabs .nav-tabs {
+            grid-template-columns: repeat(2,1fr);
+        }
+    }
+
+    @@media (max-width:576px) {
+        .hd-tabs .nav-tabs {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Tarjetas KPI usando los mismos <a.nav-link> con su <span class="badge"> */
+    .hd-tabs .nav-tabs .nav-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff !important;
+        color: #111 !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+        margin: 0 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,.05);
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        letter-spacing: .2px;
+        transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+
+        .hd-tabs .nav-tabs .nav-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,.08);
+        }
+
+        /* Bordes izquierdos por estado (usa el data-estado del <a>) */
+        .hd-tabs .nav-tabs .nav-link[data-estado="Pendiente"] {
+            border-left: 6px solid #e11d48 !important;
+        }
+
+        .hd-tabs .nav-tabs .nav-link[data-estado="En Proceso"] {
+            border-left: 6px solid #f59e0b !important;
+        }
+
+        .hd-tabs .nav-tabs .nav-link[data-estado="Cerrado"] {
+            border-left: 6px solid #10b981 !important;
+        }
+
+        .hd-tabs .nav-tabs .nav-link[data-estado="Cancelado"] {
+            border-left: 6px solid #64748b !important;
+        }
+
+        /* Estado activo (cuando tu JS marca .active) */
+        .hd-tabs .nav-tabs .nav-link.active {
+            outline: 0;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(0,0,0,.10);
+            border-color: #e5e7eb !important;
+        }
+
+        /* Contador como chip (reusa tu <span class="badge">) */
+        .hd-tabs .nav-tabs .nav-link .badge {
+            margin-left: 10px !important;
+            min-width: 34px;
+            text-align: center;
+            border-radius: 999px !important;
+            padding: .25rem .55rem !important;
+            line-height: 1 !important;
+            background: #111 !important;
+            color: #fff !important;
+            font-weight: 800 !important;
+        }
+
+        /* Colores del chip por estado */
+        .hd-tabs .nav-tabs .nav-link[data-estado="Pendiente"] .badge {
+            background: #e11d48 !important;
+        }
+
+        .hd-tabs .nav-tabs .nav-link[data-estado="En Proceso"] .badge {
+            background: #f59e0b !important;
+            color: #111 !important;
+        }
+
+        .hd-tabs .nav-tabs .nav-link[data-estado="Cerrado"] .badge {
+            background: #10b981 !important;
+        }
+
+        .hd-tabs .nav-tabs .nav-link[data-estado="Cancelado"] .badge {
+            background: #6b7280 !important;
+        }
+
+    /* KPI cards */
+    .card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px
+    }
+
+    .card-header {
+        background: #f8f9fa;
+        color: #111;
+        border-bottom: 1px solid #dee2e6
+    }
+
+    .kpi-card {
+        border-left: .30rem solid #e11d48
+    }
+
+        .kpi-card.orange {
+            border-left-color: #f59e0b
+        }
+
+        .kpi-card.green {
+            border-left-color: #10b981
+        }
+
+        .kpi-card.gray {
+            border-left-color: #64748b
+        }
+
+        .kpi-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .kpi-card .title {
+            text-transform: uppercase;
+            font-size: .8rem;
+            opacity: .9;
+            margin-bottom: .20rem
+        }
+
+        .kpi-card .value {
+            font-size: 1.35rem;
+            font-weight: 700
+        }
+
+        .kpi-card .icon {
+            font-size: 2rem;
+            opacity: .8
+        }
+
+    /* Tabla */
+    .table-striped tbody tr:nth-of-type(odd) {
+        background: #f7f7f7
+    }
+
+    .table thead th {
+        background: #e9ecef;
+        color: #111;
+        vertical-align: middle
+    }
+
+    #tablaCasos thead tr.filters th {
+        background: #f3f4f6 !important;
+        vertical-align: middle
+    }
+
+        #tablaCasos thead tr.filters th .form-control {
+            height: calc(1.8125rem + 2px)
+        }
+
+    /* Pills estado */
+    .pill {
+        display: inline-block;
+        padding: .18rem .55rem;
+        border-radius: 999px;
+        color: #fff;
+        font-weight: 600;
+        font-size: .82rem;
+        line-height: 1rem
+    }
+
+    .pill-open {
+        background: #e11d48
+    }
+
+    .pill-proc {
+        background: #f59e0b
+    }
+
+    .pill-close {
+        background: #10b981
+    }
+
+    .pill-canc {
+        background: #6b7280
+    }
+
+    /* Botones */
+    .btn-primary {
+        border-radius: 10px;
+        background: #e11d48;
+        border-color: #e11d48
+    }
+
+        .btn-primary:hover {
+            background: #be123c;
+            border-color: #be123c
+        }
+
+    .btn-dropdown {
+        border-radius: 10px
+    }
+
+    /* Export */
+    #exportWrap .dt-button {
+        border-radius: 10px;
+        border: 1px solid #198754;
+        background: #198754;
+        color: #fff;
+        font-size: .8rem;
+        line-height: 1rem;
+        font-weight: 600;
+        padding: .5rem .75rem;
+        cursor: pointer
+    }
+
+        #exportWrap .dt-button:hover {
+            background: #145c32;
+            border-color: #145c32;
+            color: #fff
+        }
+
+    /* Modal Crear Caso */
+    #modalCrearCaso .modal-dialog {
+        max-width: 960px
+    }
+
+    .crearCaso-card {
+        border-radius: 14px;
+        overflow: hidden
+    }
+
+    .crearCaso-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 16px 20px
+    }
+
+    .crearCaso-body {
+        background: #fff;
+        padding: 20px
+    }
+
+    .crearCaso-footer {
+        background: #fafafa;
+        border-top: 1px solid #e5e7eb;
+        padding: 12px 20px
+    }
+
+    .crearCaso-label {
+        font-weight: 600;
+        color: #374151
+    }
+
+    .crearCaso-hint {
+        font-size: .8rem;
+        color: #6b7280 !important;
+        display: block;
+        margin-top: .2rem
+    }
+
+    .hdx-form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px
+    }
+
+    @@media (min-width:768px) {
+        .hdx-form-grid {
+            grid-template-columns: 1fr 1fr
+        }
+    }
+
+    /* Dropzone */
+    .crearCaso-dropzone {
+        border: 2px dashed #94a3b8;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 16px;
+        position: relative
+    }
+
+        .crearCaso-dropzone.dragover {
+            border-color: #10b981;
+            background: #ecfdf5
+        }
+
+    .crearCaso-drop-inner {
+        text-align: center;
+        font-size: .8rem;
+        color: #475569;
+        line-height: 1.2rem
+    }
+
+        .crearCaso-drop-inner .limite {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: .8rem
+        }
+
+        .crearCaso-drop-inner .multi {
+            font-size: .7rem;
+            color: #6b7280
+        }
+
+    .crearCaso-fileInput {
+        width: 100%;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: .5rem .75rem;
+        font-size: .8rem;
+        line-height: 1.2rem;
+        color: #111;
+        margin-top: .75rem
+    }
+
+    /* Previews (cliente) */
+    #previewsWrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px
+    }
+
+    .pv-chip {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        width: 90px;
+        height: 90px;
+        border-radius: 10px;
+        background: #f3f4f6;
+        border: 2px solid #e5e7eb;
+        position: relative;
+        overflow: hidden
+    }
+
+        .pv-chip img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover
+        }
+
+    .pv-del {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        border: 0;
+        background: #e11d48;
+        color: #fff;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        line-height: 22px;
+        text-align: center;
+        font-size: 12px;
+        cursor: pointer
+    }
+
+    .pv-name {
+        position: absolute;
+        left: 4px;
+        right: 4px;
+        bottom: 2px;
+        font-size: .62rem;
+        line-height: .85rem;
+        color: #374151;
+        padding: 2px 2px;
+        background: rgba(255,255,255,.7);
+        border-radius: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+    }
+
+    /* HS */
+    .hs-block {
+        grid-column: 1/-1;
+        padding: 12px;
+        border: 1px dashed #f59e0b;
+        border-radius: 10px;
+        background: #fff7ed;
+        display: none
+    }
+
+        .hs-block .title {
+            font-weight: 800;
+            color: #b45309;
+            margin-bottom: 6px
+        }
+
+    /* Modal Persona */
+    .bg-soft {
+        background: #f8f9fa
+    }
+
+    #modalPersona .avatar {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e5e7eb;
+        background: #f3f4f6
+    }
+
+    #modalPersona .kv {
+        margin-bottom: .35rem
+    }
+
+        #modalPersona .kv .k {
+            width: 120px;
+            font-weight: 700;
+            color: #374151;
+            display: inline-block
+        }
+
+        #modalPersona .kv .v {
+            color: #111
+        }
+
+    /* Swal */
+    .swal2-container {
+        z-index: 5000 !important
+    }
+
+    /* === Seguimiento y notas (Mis Casos) === */
+    .hd-chatbox {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: #f9fafb;
+        max-height: 260px;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .hd-msg {
+        display: flex;
+        margin-bottom: 6px;
+    }
+
+        .hd-msg.me {
+            justify-content: flex-end; /* nota del usuario (yo) a la derecha */
+        }
+
+        .hd-msg.soporte {
+            justify-content: flex-start; /* soporte a la izquierda */
+        }
+
+    .hd-msg-inner {
+        max-width: 85%;
+        border-radius: 12px;
+        padding: 6px 10px;
+        font-size: .8rem;
+        line-height: 1.2rem;
+    }
+
+    .hd-msg.me .hd-msg-inner {
+        background: #bbf7d0; /* verde pastel */
+        color: #064e3b;
+        border: 1px solid #86efac;
+    }
+
+    .hd-msg.soporte .hd-msg-inner {
+        background: #e5e7eb; /* gris suave */
+        color: #111827;
+        border: 1px solid #d1d5db;
+    }
+
+    .hd-msg-meta {
+        font-size: .7rem;
+        opacity: .8;
+        margin-bottom: 2px;
+    }
+
+    .hd-msg-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    /* Modal Detalle Mis Casos: más ancho */
+    /* Modal Detalle Mis Casos: casi full screen */
+    .modal-detalle-caso .modal-dialog {
+        max-width: 1200px; /* más ancho que antes */
+        width: 95%; /* ocupa casi todo el ancho */
+        margin: 1.5rem auto;
+    }
+
+    .modal-detalle-caso .modal-content {
+        height: 90vh; /* 90% de alto de la pantalla */
+    }
+
+    /* cuerpo del modal un poco más legible */
+    .modal-detalle-caso .modal-body {
+        background: #f9fafb;
+        font-size: 0.95rem; /* letra un poquito más grande */
+    }
+
+    /* caja de chat más alta y con fuente más grande */
+    .hd-chatbox {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: #f9fafb;
+        max-height: 60vh; /* chat más alto */
+        min-height: 260px;
+        overflow-y: auto;
+        padding: 10px 10px;
+        font-size: 0.9rem;
+    }
+
+    /* texto de burbujas un poco más grande */
+    .hd-msg-inner {
+        max-width: 85%;
+        border-radius: 12px;
+        padding: 8px 12px; /* más relleno */
+        font-size: 0.9rem;
+        line-height: 1.35rem;
+    }
+
+    .hd-msg-meta {
+        font-size: 0.8rem;
+    }
+
+    /* columna derecha (chat) con fondo suave */
+    .modal-detalle-caso .col-lg-5 .card-body {
+        background: #f3f4f6;
+    }
+
+
+</style>
+
+<div class="container-fluid">
+    <!-- Tabs -->
+    <div class="hd-tabs">
+        <ul class="nav nav-tabs" id="estadoTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-estado="Pendiente" href="#">
+                    Pendientes <span id="bPend" class="badge badge-pill ml-1">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-estado="En Proceso" href="#">
+                    Trabajando <span id="bProc" class="badge badge-pill ml-1">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-estado="Cerrado" href="#">
+                    Cerrados <span id="bCerr" class="badge badge-pill ml-1">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-estado="Cancelado" href="#">
+                    Cancelados <span id="bCanc" class="badge badge-pill ml-1">0</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col text-right">
+            <button id="btnCrearCaso" class="btn btn-primary">
+                <i class="fas fa-plus mr-1"></i> Reporta Nuevo Caso
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h6 class="m-0 font-weight-bold">Mis Casos</h6>
+                        <div id="exportWrap" class="mt-2 mt-sm-0"></div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tablaCasos" class="table table-striped table-bordered" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Carnet</th>
+                                    <th>Título</th>
+                                    <th>Tipo de caso</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Fecha de Creación</th>
+                                    <th>Fecha Finalización</th>
+                                    <th>Tiempo Atención</th>
+                                    <th>Acciones</th>
+                                </tr>
+                                <tr class="filters">
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar carnet" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar título" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar tipo/subtipo" /></th>
+                                    <th>
+                                        <select id="fEstado" class="form-control form-control-sm">
+                                            <option value="">(Todos)</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <select id="fPrioridad" class="form-control form-control-sm">
+                                            <option value="">(Todas)</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <div class="d-flex align-items-center">
+                                            <input type="text" id="minDate" class="form-control form-control-sm"
+                                                   placeholder="Desde dd/mm/aaaa" style="min-width:140px" />
+                                        </div>
+                                    </th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var caso in Model.OrderByDescending(x => x.FechaCreacion))
+                                {
+                                    var orderKeyStart = caso.FechaCreacion.ToString("yyyyMMdd");
+                                    var orderKeyFinish = caso.FechaFinalizacion.HasValue ? caso.FechaFinalizacion.Value.ToString("yyyyMMdd") : "";
+
+                                    <tr>
+                                        <td>@caso.UsuarioID</td>
+                                        <td>@caso.Titulo</td>
+                                        <td>
+                                            @(string.IsNullOrWhiteSpace(caso.TipoCaso)
+                                                    ? (caso.TipoCasoID + " - " + caso.SubtipoCasoID)
+                                                    : caso.TipoCaso)
+                                        </td>
+                                        <td>@caso.Estado</td>
+                                        <td>@caso.Prioridad</td>
+                                        <td data-order="@orderKeyStart">@caso.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                        <td data-order="@orderKeyFinish">
+                                            @(
+                                                caso.FechaFinalizacion.HasValue
+                                                    ? caso.FechaFinalizacion.Value.ToString("dd/MM/yyyy")
+                                                    : ""
+                                            )
+                                        </td>
+                                        <td>@caso.TiempoAtencion</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-info btn-sm btn-dropdown dropdown-toggle"
+                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    Acciones
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right">
+                                                    <a class="dropdown-item act-ver" href="#" data-id="@caso.ID">
+                                                        <i class="fas fa-eye mr-2"></i> Ver detalle
+                                                    </a>
+                                                    @if (caso.Estado == "Pendiente")
+                                                    {
+                                                        <div class="dropdown-divider"></div>
+                                                        <a class="dropdown-item text-danger act-cancelar" href="#" data-id="@caso.ID">
+                                                            <i class="fas fa-ban mr-2"></i> Cancelar
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted d-block mt-2">Tip: usa los filtros de arriba o el buscador general de DataTables.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle -->
+    <div class="modal fade modal-detalle-caso" id="modalVerDetalleCaso" tabindex="-1" role="dialog" aria-labelledby="verDetalleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-detalle-wrap" role="document">
+
+            <div class="modal-content">
+                <div class="modal-header bg-soft">
+                    <h5 class="modal-title">Detalle del Reporte</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body" id="detalleCasoContent"></div>
+                <div class="modal-footer bg-soft">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear -->
+    <div class="modal fade" id="modalCrearCaso" tabindex="-1" role="dialog" aria-labelledby="crearCasoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content crearCaso-card">
+                <div class="modal-header crearCaso-header bg-soft">
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap">
+                            <div class="mr-2"><h5 class="modal-title mb-1" id="crearCasoModalLabel">Crear Nuevo Caso</h5></div>
+                            <button type="button" class="close crearCaso-close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-body crearCaso-body">
+                    @Html.AntiForgeryToken()
+                    <form id="formCrearCaso" enctype="multipart/form-data">
+                        <div class="hdx-form-grid">
+                            <!-- Usuario -->
+                            <div class="form-group">
+                                <label class="crearCaso-label" for="ParaQuien">Usuario afectado</label>
+                                <input list="empleados" class="form-control" id="ParaQuien" name="ParaQuien" required
+                                       placeholder="Ej. Juan Perez / correo@claro.com.ni">
+                                <datalist id="empleados"><option value="">Seleccione un empleado</option></datalist>
+                                <small class="text-muted crearCaso-hint">Busque por nombre, carnet o correo</small>
+                            </div>
+
+                            <!-- Prioridad -->
+                            <div class="form-group">
+                                <label class="crearCaso-label" for="Prioridad">Prioridad</label>
+                                <select class="form-control" id="Prioridad" name="Prioridad" required>
+                                    <option value="Alta">Alta</option>
+                                    <option value="Media" selected>Media</option>
+                                    <option value="Baja">Baja</option>
+                                </select>
+                                <small class="text-muted crearCaso-hint">Marque Alta solo si es urgente / bloqueo total</small>
+                            </div>
+
+                            <!-- Título -->
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label class="crearCaso-label" for="Titulo">Titulo del caso</label>
+                                <input type="text" class="form-control" id="Titulo" name="Titulo" required
+                                       placeholder="Ej. Sin acceso al sistema X, fuga en baño piso 3, etc.">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label class="crearCaso-label" for="Descripcion">Descripción</label>
+                                <textarea class="form-control" id="Descripcion" name="Descripcion" rows="4" required
+                                          placeholder="Describa qué pasa, dónde, desde cuándo, a quién afecta, etc."></textarea>
+                            </div>
+                            <!-- Tipo -->
+                            <div class="form-group">
+                                <label class="crearCaso-label" for="TipoCasoID">Tipo de Caso</label>
+                                <select class="form-control" id="TipoCasoID" name="TipoCasoID" required></select>
+                                <small class="text-muted crearCaso-hint">Ej. Tecnología, Servicios Generales, Higiene y Seguridad…</small>
+                            </div>
+
+                            <!-- Subtipo -->
+                            <div class="form-group">
+                                <label class="crearCaso-label" for="SubtipoCasoID">Subtipo</label>
+                                <select class="form-control" id="SubtipoCasoID" name="SubtipoCasoID" required></select>
+                                <small class="text-muted crearCaso-hint">Sea específico si hay más de una opción</small>
+                            </div>
+
+                            <!-- Adjuntos -->
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label class="crearCaso-label">Adjuntos (imágenes o documentos)</label>
+                                <div id="fileDropZone" class="crearCaso-dropzone">
+                                    <div class="crearCaso-drop-inner">
+                                        <div class="limite">Imágenes: .jpg .jpeg .png .webp</div>
+                                        <div class="multi">Docs: .pdf .doc .docx .xls .xlsx</div>
+                                        <div class="multi">Máx. 10 archivos · 10 MB c/u</div>
+                                    </div>
+                                    <input type="file" class="crearCaso-fileInput" id="archivos" name="archivos"
+                                           multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx" />
+                                </div>
+                                <!-- Vista previa de archivos seleccionados (cliente) -->
+                                <div id="previewsWrap"></div>
+                                <div class="mt-2">
+                                    <button type="button" id="btnLimpiarArchivos" class="btn btn-sm btn-outline-secondary">Limpiar archivos</button>
+                                </div>
+                            </div>
+
+                            <!-- HS -->
+                            <div id="hsBlock" class="hs-block crearCaso-hs" style="grid-column:1/-1;">
+                                <div class="title"><i class="fas fa-exclamation-triangle mr-1"></i> Higiene y Seguridad – Inconveniente en Edificio</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="crearCaso-label" for="Departamento">Departamento</label>
+                                        <select class="form-control" id="Departamento" name="Departamento">
+                                            <option value="">(Seleccione)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="crearCaso-label" for="Edificio">Edificio</label>
+                                        <select class="form-control" id="Edificio" name="Edificio">
+                                            <option value="">(Seleccione)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="crearCaso-label" for="CantidadAfectados">Personal afectado</label>
+                                        <input type="number" min="0" class="form-control" id="CantidadAfectados" name="CantidadAfectados" placeholder="Opcional">
+                                        <small class="text-muted crearCaso-hint">¿Cuántas personas impactadas?</small>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="crearCaso-label" for="DiasCondicion">Días con la condición</label>
+                                        <input type="number" min="0" class="form-control" id="DiasCondicion" name="DiasCondicion" placeholder="Opcional">
+                                        <small class="text-muted crearCaso-hint">¿Desde hace cuántos días pasa esto?</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Compatibilidad backend -->
+                        <input type="hidden" id="TipoCaso" name="TipoCaso" />
+                    </form>
+                </div>
+
+                <div class="modal-footer crearCaso-footer bg-soft">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnGuardarCaso" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i> Guardar Caso
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Persona -->
+    <div class="modal fade" id="modalPersona" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-soft">
+                    <h5 class="modal-title">Ficha de Persona</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <img id="personaFoto" class="avatar mr-3" src="#" alt="Foto" style="display:none" />
+                        <div>
+                            <div id="personaNombre" class="h5 mb-0">—</div>
+                            <div id="personaCargo" class="text-muted">—</div>
+                        </div>
+                    </div>
+                    <div class="kv"><span class="k">Carnet:</span>   <span id="personaCarnet" class="v">—</span></div>
+                    <div class="kv"><span class="k">Correo:</span>   <span id="personaCorreo" class="v">—</span></div>
+                    <div class="kv"><span class="k">Área:</span>     <span id="personaArea" class="v">—</span></div>
+                    <div class="kv"><span class="k">Gerencia:</span> <span id="personaGerencia" class="v">—</span></div>
+                    <div class="kv"><span class="k">Teléfono:</span> <span id="personaTelefono" class="v">—</span></div>
+                    <div id="personaFotoError" class="text-warning small mt-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer bg-soft"><button class="btn btn-secondary" data-dismiss="modal">Cerrar</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <!-- Stack -->
+    <script src="~/Content/js2024/jquery.jeditable.min.js"></script>
+
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+    <script>
+            /* ===== Helpers ===== */
+            function estadoAPill(t){
+                if(t==='Pendiente')   return '<span class="pill pill-open">Pendiente</span>';
+                if(t==='En Proceso')  return '<span class="pill pill-proc">En Proceso</span>';
+                if(t==='Cerrado')     return '<span class="pill pill-close">Cerrado</span>';
+                if(t==='Cancelado')   return '<span class="pill pill-canc">Cancelado</span>';
+                return t||'-';
+            }
+
+            function normTxt(s){
+                return (s||'').toString()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g,'')
+                    .toLowerCase()
+                    .trim();
+            }
+
+            function setTextoTipoSub(){
+                var tipoTxt=$('#TipoCasoID option:selected').text()||'';
+                var subTxt =$('#SubtipoCasoID option:selected').text()||'';
+                $('#TipoCaso').val( (tipoTxt && subTxt) ? (tipoTxt+' - '+subTxt) : '' );
+            }
+
+            function actualizarBadges(dt){
+                var cPend=0,cProc=0,cCerr=0,cCanc=0;
+                dt.column(3).data().each(function(v){
+                    v=(v||'').toString().trim();
+                    if(v==='Pendiente') cPend++;
+                    else if(v==='En Proceso') cProc++;
+                    else if(v==='Cerrado') cCerr++;
+                    else if(v==='Cancelado') cCanc++;
+                });
+                $('#bPend').text(cPend); $('#bProc').text(cProc);
+                $('#bCerr').text(cCerr); $('#bCanc').text(cCanc);
+            }
+
+            function aplicarFiltroEstado(dt, estado){ $('#fEstado').val(estado || '').trigger('change'); }
+
+            /* ====== HS Bloque ====== */
+            var hsPromptShown = false;
+
+            function cargarDepartamentosSiHaceFalta(){
+                if($('#Departamento option').length>1) return;
+                $.getJSON('@Url.Action("ListarDepartamentos","Helpdesk2025")', function(r){
+                    var $d = $('#Departamento').empty().append(new Option('(Seleccione)',''));
+                    if(r && r.success && Array.isArray(r.data)){ r.data.forEach(function(x){ $d.append(new Option(x, x)); }); }
+                    $('#Edificio').empty().append(new Option('(Seleccione)',''));
+                });
+            }
+
+            function toggleHsBlock(){
+                var TipoCasoID = ($('#TipoCasoID').val()||'').toString();
+                var t = normTxt($('#TipoCasoID option:selected').text());
+                var s = normTxt($('#SubtipoCasoID option:selected').text());
+                var showById   = (TipoCasoID === '5'); // ← regla fija
+                var showByText = (t.indexOf('higiene')>-1 && t.indexOf('seguridad')>-1) && (s.indexOf('inconveniente')>-1 && s.indexOf('edificio')>-1);
+                var show = showById || showByText;
+
+                if(show){
+                    $('#hsBlock').slideDown(120);
+                    cargarDepartamentosSiHaceFalta();
+                    if (!hsPromptShown){ $('#Departamento').focus(); hsPromptShown = true; }
+                } else {
+                    $('#hsBlock').slideUp(100);
+                    $('#Departamento').val('');
+                    $('#Edificio').empty().append(new Option('(Seleccione)',''));
+                    $('#CantidadAfectados').val(''); $('#DiasCondicion').val('');
+                }
+            }
+
+            /* ====== Adjuntos (SERVIDOR → en Detalle) ====== */
+        function renderDetalleCaso(r) {
+            var html = '';
+
+            // ===== Header título/fecha =====
+            html += '<div class="mb-3">';
+            html += '  <h5 class="mb-1" style="font-weight:700;color:#111">' + (r.Titulo || 'Detalle') + '</h5>';
+            html += '  <div class="small text-muted">Creado: ' + (r.FechaCreacionTxt || '') + '</div>';
+            html += '</div>';
+
+            // ===== Pill de estado =====
+            var estadoPill = (function (t) {
+                if (t === 'Pendiente') return '<span class="pill pill-open">Pendiente</span>';
+                if (t === 'En Proceso') return '<span class="pill pill-proc">En Proceso</span>';
+                if (t === 'Cerrado') return '<span class="pill pill-close">Cerrado</span>';
+                if (t === 'Cancelado') return '<span class="pill pill-canc">Cancelado</span>';
+                return t || '-';
+            })(r.Estado || '');
+
+            // Tipo/Subtipo
+            var tipoSubTxt = (r.TipoCaso && r.TipoCaso.length)
+                ? r.TipoCaso
+                : ((r.TipoNombre && r.SubtipoNombre)
+                    ? (r.TipoNombre + ' - ' + r.SubtipoNombre)
+                    : ((r.TipoCasoID || '-') + ' - ' + (r.SubtipoCasoID || '-')));
+
+            // Soporte
+            var soporteTxt = r.Nombresoport || r.NombreSoporte || '-';
+
+            // Flags HS
+            var tipoTxt = normTxt(r.TipoNombre || r.TipoCaso || '');
+            var subtipoTxt = normTxt(r.SubtipoNombre || '');
+            var esHS = (Number(r.TipoCasoID) === 5)
+                || (tipoTxt.indexOf('higiene') > -1 && tipoTxt.indexOf('seguridad') > -1
+                    && subtipoTxt.indexOf('inconveniente') > -1 && subtipoTxt.indexOf('edificio') > -1);
+            var hayDatosHS = (r.Departamento || r.Edificio || r.CantidadAfectados != null || r.DiasCondicion != null);
+
+            var dep = (r.Departamento != null && r.Departamento !== '') ? r.Departamento : '-';
+            var edi = (r.Edificio != null && r.Edificio !== '') ? r.Edificio : '-';
+            var pers = (r.CantidadAfectados != null) ? r.CantidadAfectados : '-';
+            var dias = (r.DiasCondicion != null) ? r.DiasCondicion : '-';
+
+            var estado = r.Estado || '';
+            var permiteNotas = (estado === 'Pendiente' || estado === 'En Proceso');
+
+            // ===== Layout 2 columnas: izquierda info, derecha chat =====
+            html += '<div class="row">';
+
+            // ---------- Columna IZQUIERDA (detalle, HS, descripción, adjuntos) ----------
+            html += '  <div class="col-lg-7 col-md-7 mb-3">';
+            html += '    <div class="card border-0 shadow-sm mb-3">';
+            html += '      <div class="card-body py-3">';
+
+            // Estado / tipo / prioridad / soporte / solicitante
+            html += '        <div class="row">';
+            html += '          <div class="col-md-6">';
+            html += '            <p class="mb-1"><strong>Estado:</strong> ' + estadoPill + '</p>';
+            html += '            <p class="mb-1"><strong>Tipo/Subtipo:</strong> ' + (tipoSubTxt || '-') + '</p>';
+            html += '            <p class="mb-1"><strong>Prioridad:</strong> ' + (r.Prioridad || '-') + '</p>';
+            html += '          </div>';
+
+            html += '          <div class="col-md-6">';
+            if (r.SoporteID) {
+                html += '            <p class="mb-1"><strong>Soporte:</strong> ';
+                html += '              <a href="#" onclick="verPersona(\'soporte\', \'' + (r.SoporteID || '') + '\', \'\')">';
+                html += soporteTxt;
+                html += '              </a>';
+                html += '            </p>';
+            } else {
+                html += '            <p class="mb-1"><strong>Soporte:</strong> ' + soporteTxt + '</p>';
+            }
+            html += '            <p class="mb-1"><strong>Solicitante:</strong> ' + (r.NombreAutor || r.UsuarioID || '-') + '</p>';
+            html += '          </div>';
+            html += '        </div>';
+
+            // HS
+            if (esHS || hayDatosHS) {
+                html += '        <hr/>';
+                html += '        <div class="hs-block" style="display:block">';
+                html += '          <div class="title"><i class="fas fa-exclamation-triangle mr-1"></i> Higiene y Seguridad – Inconveniente en Edificio</div>';
+                html += '          <div class="row">';
+                html += '            <div class="col-md-6"><p class="mb-1"><strong>Departamento:</strong> ' + dep + '</p></div>';
+                html += '            <div class="col-md-6"><p class="mb-1"><strong>Edificio:</strong> ' + edi + '</p></div>';
+                html += '            <div class="col-md-6"><p class="mb-1"><strong>Personal afectado:</strong> ' + pers + '</p></div>';
+                html += '            <div class="col-md-6"><p class="mb-1"><strong>Días con la condición:</strong> ' + dias + '</p></div>';
+                html += '          </div>';
+                html += '        </div>';
+            }
+
+            // Resolución (cuando está cerrado)
+            if (estado === 'Cerrado') {
+                html += '        <hr/>';
+                html += '        <h6 style="font-weight:700;color:#111">Resolución</h6>';
+                if (r.FechaFinalizacion) html += '<p class="mb-1"><strong>Finalizado:</strong> ' + r.FechaFinalizacion + '</p>';
+                if (r.TiempoAtencion) html += '<p class="mb-1"><strong>Tiempo de atención:</strong> ' + r.TiempoAtencion + '</p>';
+                if (r.NotaCierre) html += '<p class="mb-1"><strong>Nota del soporte:</strong> ' + r.NotaCierre + '</p>';
+            }
+
+            // Descripción
+            html += '        <hr/>';
+            html += '        <h6 style="font-weight:700;color:#111">Descripción</h6>';
+            html += '        <div>' + (r.Descripcion || 'Sin descripción') + '</div>';
+
+            // Adjuntos
+            html += '        <hr/>';
+            html += '        <h6 style="font-weight:700;color:#111">Archivos Adjuntos</h6>';
+            if (r.Adjuntos && r.Adjuntos.length > 0) {
+                var galId = 'misCasos_' + r.ID;
+                html += '        <div class="mb-2 d-flex flex-wrap">';
+                for (var i = 0; i < r.Adjuntos.length; i++) {
+                    html += renderAdjuntoThumbModal(r.Adjuntos[i], galId);
+                }
+                html += '        </div>';
+                html += '        <small class="text-muted d-block">Imágenes: click para ampliar • Documentos: abrir/descargar</small>';
+            } else {
+                html += '        <p class="text-muted mb-0">No hay archivos adjuntos.</p>';
+            }
+
+            // Botón cancelar si está pendiente
+            if (estado === 'Pendiente') {
+                html += '        <div class="mt-3 text-right">';
+                html += '          <button class="btn btn-outline-danger btn-sm" id="btnCancelarCaso" data-id="' + r.ID + '">';
+                html += '            <i class="fas fa-ban mr-1"></i> Cancelar';
+                html += '          </button>';
+                html += '        </div>';
+            }
+
+            html += '      </div>'; // card-body
+            html += '    </div>';   // card
+            html += '  </div>';     // col izquierda
+
+            // ---------- Columna DERECHA (chat) ----------
+            html += '  <div class="col-lg-5 col-md-5">';
+            html += '    <div class="card border-0 shadow-sm h-100">';
+            html += '      <div class="card-body py-3 d-flex flex-column">';
+            html += '        <h6 style="font-weight:700;color:#111" class="mb-2">Seguimiento y notas</h6>';
+
+            // Chat
+            html += '        <div id="chatNotas_' + r.ID + '" class="hd-chatbox flex-grow-1 mb-2">';
+            html += '          <div class="text-muted small">Cargando notas...</div>';
+            html += '        </div>';
+
+            // Textarea + botón
+            html += '        <div class="mt-2">';
+            html += '          <label for="txtNotaUsr_' + r.ID + '" class="mb-1" style="font-weight:600;">Agregar nota de seguimiento</label>';
+            html += '          <textarea id="txtNotaUsr_' + r.ID + '" class="form-control" rows="2" '
+                + (permiteNotas ? '' : 'disabled ')
+                + 'placeholder="Escribe un comentario o actualización sobre tu caso..."></textarea>';
+
+            html += '          <div class="d-flex justify-content-between align-items-center mt-1">';
+            html += '            <small class="text-muted">';
+            html += '              Estas notas son solo de seguimiento y <strong>no cambian el estado</strong> del caso. ';
+            html += '              El estado oficial lo actualiza únicamente el soporte.';
+            html += '            </small>';
+            html += '            <button type="button" class="btn btn-primary btn-sm" '
+                + (permiteNotas ? '' : 'disabled ')
+                + 'onclick="enviarNotaUsuario(' + r.ID + ');">';
+            html += '              <i class="fas fa-comment-medical mr-1"></i> Agregar nota';
+            html += '            </button>';
+            html += '          </div>';
+
+            if (!permiteNotas) {
+                html += '          <small class="text-muted d-block mt-1">Este caso está ' + estado.toLowerCase() + '; ya no se pueden agregar nuevas notas.</small>';
+            }
+
+            html += '        </div>'; // mt-2
+            html += '      </div>';   // card-body
+            html += '    </div>';     // card
+            html += '  </div>';       // col derecha
+
+            html += '</div>'; // row
+
+            $('#detalleCasoContent').html(html);
+
+            // Fancybox
+            if (r.Adjuntos && r.Adjuntos.length > 0) {
+                $('[data-fancybox="misCasos_' + r.ID + '"]').fancybox({
+                    buttons: ["zoom", "close"],
+                    loop: false,
+                    protect: true
+                });
+            }
+        }
+
+
+
+            function renderAdjuntoThumbModal(a, galId) {
+                var mime   = (a.TipoArchivo || '').toLowerCase();
+                var nombre = a.NombreArchivo || 'archivo';
+                var isImg  = mime.indexOf('image/') === 0;
+                var isPdf  = mime === 'application/pdf';
+                var isDoc  = mime.indexOf('word')>-1 || mime.indexOf('msword')>-1;
+                var isXls  = mime.indexOf('excel')>-1 || mime.indexOf('spreadsheetml')>-1;
+
+                if (isImg && a.data) {
+                    var src = 'data:' + mime + ';base64,' + a.data; // ← imagen base64 inline
+                    return ''+
+                        '<a href="'+src+'" data-fancybox="'+galId+'" style="display:inline-block;margin:0 8px 8px 0;">'+
+                        '<img src="'+src+'" alt="'+nombre+'" style="max-width:80px;max-height:80px;border-radius:10px;object-fit:cover;border:2px solid #e5e7eb;background:#f3f4f6" />'+
+                        '</a>';
+                }
+
+                var url = a.UrlDescarga || '#';
+                var iconHtml = '<i class="far fa-file-alt"   style="font-size:26px;color:#4B5563;"></i>';
+                if (isPdf) iconHtml = '<i class="far fa-file-pdf"   style="font-size:26px;color:#DC2626;"></i>';
+                else if (isDoc) iconHtml = '<i class="far fa-file-word"  style="font-size:26px;color:#9CA3AF;"></i>'; // evitar azul
+                else if (isXls) iconHtml = '<i class="far fa-file-excel" style="font-size:26px;color:#10b981;"></i>';
+
+                return ''+
+                    '<a href="'+url+'" target="_blank" rel="noopener" '+
+                    'style="display:inline-flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;width:80px;height:80px;margin:0 8px 8px 0;border-radius:10px;background:#f3f4f6;border:2px solid #e5e7eb;text-decoration:none;">'+
+                    iconHtml+
+                    '<span style="font-size:.62rem;line-height:.85rem;color:#374151;padding:2px 4px;max-width:74px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nombre+'</span>'+
+                    '</a>';
+            }
+
+            // ===== Notas de usuario (Mis Casos) =====
+            // Carga historial de notas (usuario + soporte) pero SIN tocar estado
+  // Carga historial de notas (usuario + soporte) pero SIN tocar estado
+function cargarNotasCasoUsuario(casoId) {
+    var $chat = $('#chatNotas_' + casoId);
+    if ($chat.length === 0) return;
+
+    $chat.html('<div class="text-muted small">Cargando notas...</div>');
+
+    $.ajax({
+        url: '@Url.Action("ObtenerNotas","Helpdesk2025")',
+        type: 'POST',                 // 👈 tu Action es [HttpPost]
+        data: { id: casoId },         // 👈 nombre del parámetro en el Action: int id
+        success: function (r) {
+            if (!(r && r.success && $.isArray(r.data))) {
+                $chat.html('<div class="text-muted small">No hay notas registradas.</div>');
+                return;
+            }
+
+            if (r.data.length === 0) {
+                $chat.html('<div class="text-muted small">Aún no hay notas en este caso.</div>');
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < r.data.length; i++) {
+                var n = r.data[i];
+                var esSoporte = !!n.EsSoporte;               // ← campo del SP/JSON
+                var clase = esSoporte ? 'soporte' : 'me';    // soporte izq, usuario der
+                var autor = esSoporte ? (n.AutorNombre || 'Soporte') : 'Tú';
+                var fecha = n.FechaStr || n.Fecha || '';
+                var texto = n.Mensaje || n.Mensaje || '';
+
+                html += '<div class="hd-msg ' + clase + '">';
+                html += '  <div class="hd-msg-inner">';
+                html += '    <div class="hd-msg-meta"><strong>' + autor + '</strong>';
+                if (fecha) { html += ' · ' + fecha; }
+                html += '    </div>';
+                html += '    <div class="hd-msg-text">' + $('<div/>').text(texto).html() + '</div>';
+                html += '  </div>';
+                html += '</div>';
+            }
+
+            $chat.html(html);
+            var el = $chat.get(0);
+            if (el) el.scrollTop = el.scrollHeight;
+        },
+        error: function () {
+            $chat.html('<div class="text-danger small">No se pudieron cargar las notas.</div>');
+        }
+    });
+}
+
+            // Envía UNA nota escrita por el usuario
+// Envía UNA nota escrita por el usuario y dispara correo de seguimiento
+function enviarNotaUsuario(casoId) {
+    var $txt = $('#txtNotaUsr_' + casoId);
+    if ($txt.length === 0) return;
+
+    var texto = ($txt.val() || '').trim();
+    if (!texto) {
+        Swal.fire('Nota vacía', 'Escriba el contenido de la nota antes de enviar.', 'info');
+        $txt.focus();
+        return;
+    }
+
+    $.LoadingOverlay("show", { image: "", text: "Guardando nota..." });
+
+    // 1) Guardar nota en BD
+    $.ajax({
+        url: '@Url.Action("AgregarNotaUsuario","Helpdesk2025")',
+        type: 'POST',
+        data: {
+            casoId: casoId,   // int casoId
+            mensaje: texto    // string mensaje
+        }
+    }).done(function (r) {
+        if (!(r && r.success)) {
+            $.LoadingOverlay("hide");
+            Swal.fire('Error', (r && r.message) || 'No se pudo guardar la nota.', 'error');
+            return;
+        }
+
+        // 2) Intentar enviar correo de seguimiento con ESTA nota
+        $.post('@Url.Action("NotificarNotaCasousuario", "Helpdesk2025")', {
+            casoId: casoId,
+            mensaje: texto
+        }).always(function () {
+            // Aunque el correo falle, la nota ya quedó guardada
+            $.LoadingOverlay("hide");
+            $txt.val('');
+            cargarNotasCasoUsuario(casoId);
+
+        }).fail(function () {
+            Swal.fire(
+                'Nota guardada',
+                'La nota se guardó, pero hubo un problema al enviar el correo.',
+                'warning'
+            );
+        });
+
+    }).fail(function () {
+        $.LoadingOverlay("hide");
+        Swal.fire('Error', 'Fallo de red/servidor al guardar la nota.', 'error');
+    });
+}
+
+
+
+            /* ====== Persona ====== */
+            function verPersona(tipo, carnet, correo){
+                $.getJSON('@Url.Action("PersonaInfo","Helpdesk2025")', { carnet: carnet||'', correo: correo||'' }, function(r){
+                    if(!(r && r.success && r.data)){ Swal.fire('Info','No se encontró la persona.','info'); return; }
+
+                    var p=r.data, imgUrl=r.imageDataURL, photoErr=r.photoError;
+                    $('#personaNombre').text(p.Nombre||'—');
+                    $('#personaCargo').text(p.Cargo||'—');
+                    $('#personaCarnet').text(p.Carnet||'—');
+                    $('#personaCorreo').text(p.Correo||'—');
+                    $('#personaArea').text(p.Area||'—');
+                    $('#personaGerencia').text(p.Gerencia||'—');
+                    $('#personaTelefono').text(p.Telefono||'—');
+
+                    if(imgUrl){ $('#personaFoto').attr('src',imgUrl).show(); } else { $('#personaFoto').hide(); }
+                    if(photoErr){ $('#personaFotoError').text(photoErr).show(); } else { $('#personaFotoError').hide(); }
+
+                    $('#modalPersona').modal('show');
+                }).fail(function(){ Swal.fire('Error','No se pudo obtener la persona.','error'); });
+            }
+
+            /* ====== Adjuntos (CLIENTE → en Crear) ====== */
+            var archivosSeleccionados = [];       // ← arreglo propio para manejar add/remove
+            var objectUrls = [];                  // ← liberar memoria de previews
+            var LIMITE_ARCHIVOS = 10;
+            var LIMITE_MB = 10;
+
+            function esImagenByName(name){ return /\.(jpe?g|png|webp)$/i.test(name||''); }
+            function esPdfByName(name){ return /\.pdf$/i.test(name||''); }
+            function esDocByName(name){ return /\.(docx?|rtf)$/i.test(name||''); }
+            function esXlsByName(name){ return /\.(xlsx?|csv)$/i.test(name||''); }
+
+            // Renderiza previews del arreglo archivosSeleccionados
+            function renderPreviews(){
+                // revocar urls previas
+                for(var i=0;i<objectUrls.length;i++){ URL.revokeObjectURL(objectUrls[i]); }
+                objectUrls = [];
+
+                var $wrap = $('#previewsWrap').empty();
+                for(var i=0;i<archivosSeleccionados.length;i++){
+                    var f = archivosSeleccionados[i];
+                    var isImg = esImagenByName(f.name);
+                    var url = URL.createObjectURL(f);
+                    objectUrls.push(url);
+
+                    if(isImg){
+                        // imagen → miniatura + fancybox
+                        var item = ''+
+                          '<a href="'+url+'" data-fancybox="pvGaleria" data-caption="'+(f.name||'')+'">'+
+                            '<div class="pv-chip">'+
+                                '<img src="'+url+'" alt="'+(f.name||'')+'"/>'+
+                                '<button type="button" class="pv-del" data-idx="'+i+'">&times;</button>'+
+                                '<span class="pv-name">'+(f.name||'')+'</span>'+
+                            '</div>'+
+                          '</a>';
+                        $wrap.append(item);
+                    } else {
+                        // doc → chip con icono
+                        var icon = '<i class="far fa-file-alt" style="font-size:24px;color:#4B5563"></i>';
+                        if(esPdfByName(f.name)) icon = '<i class="far fa-file-pdf" style="font-size:24px;color:#DC2626"></i>';
+                        else if(esDocByName(f.name)) icon = '<i class="far fa-file-word" style="font-size:24px;color:#9CA3AF"></i>';
+                        else if(esXlsByName(f.name)) icon = '<i class="far fa-file-excel" style="font-size:24px;color:#10b981"></i>';
+
+                        var item2 = ''+
+                            '<div class="pv-chip">'+
+                                icon+
+                                '<button type="button" class="pv-del" data-idx="'+i+'">&times;</button>'+
+                                '<span class="pv-name">'+(f.name||'')+'</span>'+
+                            '</div>';
+                        $wrap.append(item2);
+                    }
+                }
+            }
+
+            // Agrega archivos al arreglo controlando duplicados/límites
+            function agregarArchivosArchArray(fileList){
+                var agregados = 0;
+                for(var i=0;i<fileList.length;i++){
+                    var f = fileList[i];
+                    var mb = (f.size || 0) / (1024*1024);
+                    if(mb > LIMITE_MB){
+                        Swal.fire('Límite','"'+(f.name||'archivo')+'" excede '+LIMITE_MB+' MB.','warning');
+                        continue;
+                    }
+                    if(archivosSeleccionados.length >= LIMITE_ARCHIVOS){
+                        Swal.fire('Límite','Máximo '+LIMITE_ARCHIVOS+' archivos.','info');
+                        break;
+                    }
+                    // evitar duplicados por nombre+size+lastModified
+                    var dup = false;
+                    for(var j=0;j<archivosSeleccionados.length;j++){
+                        var x=archivosSeleccionados[j];
+                        if(x.name===f.name && x.size===f.size && x.lastModified===f.lastModified){ dup=true; break; }
+                    }
+                    if(dup) continue;
+
+                    archivosSeleccionados.push(f);
+                    agregados++;
+                }
+                if(agregados>0) renderPreviews();
+            }
+
+            // Quitar archivo por índice del arreglo
+            $(document).on('click', '.pv-del', function(){
+                var idx = parseInt($(this).data('idx'), 10);
+                if(isNaN(idx)) return;
+                archivosSeleccionados.splice(idx, 1);
+                renderPreviews();
+            });
+
+            $('#btnLimpiarArchivos').on('click', function(){
+                archivosSeleccionados = [];
+                $('#archivos').val('');
+                renderPreviews();
+            });
+
+            // Input file → agregar
+            $('#archivos').on('change', function(e){
+                var files = e.target.files || [];
+                if(files.length>0) agregarArchivosArchArray(files);
+                // limpiar input para permitir volver a seleccionar mismos nombres si se quitó
+                $('#archivos').val('');
+            });
+
+            // Drag & Drop en dropzone
+            var $dz = $('#fileDropZone');
+            $dz.on('dragover', function(e){ e.preventDefault(); e.stopPropagation(); $dz.addClass('dragover'); });
+            $dz.on('dragleave dragend drop', function(e){ $dz.removeClass('dragover'); });
+            $dz.on('drop', function(e){
+                e.preventDefault(); e.stopPropagation();
+                var dt = e.originalEvent.dataTransfer;
+                if(dt && dt.files && dt.files.length>0){ agregarArchivosArchArray(dt.files); }
+            });
+
+            /* ====== Init ====== */
+            $(function(){
+
+                // Fancybox (global)
+                $('[data-fancybox="gallery"]').fancybox({ buttons:["zoom","close"], loop:false, protect:true });
+
+                // Datepicker (dd/mm/yy)
+                try {
+                    $('#minDate').datepicker({ dateFormat:'dd/mm/yy' });
+                } catch(e){ /* opcional */ }
+
+                // Filtro por fecha mínima
+                function parseDMY(s){
+                    if(!s) return null;
+                    var p=s.split('/');
+                    if(p.length!==3) return null;
+                    var d=new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10));
+                    return isNaN(d.getTime()) ? null : d;
+                }
+
+                $.fn.dataTable.ext.search.push(function(settings, data){
+                    if(settings.nTable !== $('#tablaCasos')[0]) return true;
+                    var min = parseDMY($('#minDate').val());
+                    var d   = parseDMY(data[5]); // col 5 = Fecha de Creación
+                    if(!min) return true;
+                    if(min && !d) return false;
+                    if(min && d < min) return false;
+                    return true;
+                });
+
+                // DataTable
+                var dt = $('#tablaCasos').DataTable({
+                    responsive:true,
+                    order:[[5,'desc']],
+                    pageLength:10,
+                    lengthMenu:[10,20,50,100],
+                    orderCellsTop:true,
+                    language:{
+                        decimal:",", thousands:".",
+                        processing:"Procesando...", search:"Buscar:", lengthMenu:"Mostrar _MENU_ registros",
+                        info:"Mostrando _START_ a _END_ de _TOTAL_ registros",
+                        infoEmpty:"Mostrando 0 a 0 de 0 registros", infoFiltered:"(filtrado de _MAX_ registros)",
+                        loadingRecords:"Cargando...", zeroRecords:"No se encontraron resultados",
+                        emptyTable:"Ningún dato disponible", paginate:{ first:"Primero", previous:"Anterior", next:"Siguiente", last:"Último" }
+                    },
+                    // Pre-filtrar Estado a Pendiente
+                    searchCols:[
+                        null, null, null,
+                        { search: '^Pendiente$', regex: true },
+                        null,null,null,null,null
+                    ],
+                    drawCallback:function(){
+                        // Render pill estado
+                        $('#tablaCasos tbody tr').each(function(){
+                            var $td=$(this).children('td').eq(3);
+                            var txt=($td.text()||'').trim();
+                            if(!$td.find('.pill').length){ $td.html( estadoAPill(txt) ); }
+                        });
+                    },
+                    initComplete:function(){
+                        var api=this.api();
+
+                        // Exportar Excel
+                        new $.fn.dataTable.Buttons(api, { buttons: [{ extend:'excelHtml5', text:'<i class="fas fa-file-excel mr-1"></i> Exportar Excel', title:'MisCasos' }] });
+                        api.buttons().container().appendTo('#exportWrap');
+
+                        // Inputs filtros
+                        $('#tablaCasos thead tr.filters th').each(function(i){
+                            var $inp=$(this).find('input[type="text"]').first();
+                            if($inp.length){
+                                $inp.on('keyup change', function(){ api.column(i).search(this.value).draw(); });
+                            }
+                        });
+
+                        // Poblar selects Estado/Prioridad
+                        api.column(3).data().unique().sort().each(function(v){
+                            var val=(v||'').toString().trim().replace(/<[^>]*>/g,'');
+                            if(!val) return;
+                            if($('#fEstado option[value="'+val+'"]').length===0){ $('#fEstado').append(new Option(val, val)); }
+                        });
+                        api.column(4).data().unique().sort().each(function(v){
+                            var val=(v||'').toString().trim(); if(!val) return;
+                            if($('#fPrioridad option[value="'+val+'"]').length===0){ $('#fPrioridad').append(new Option(val, val)); }
+                        });
+
+                        // Selects → búsqueda exacta
+                        $('#fEstado').on('change', function(){
+                            var val=this.value;
+                            api.column(3).search(val ? '^'+$.fn.dataTable.util.escapeRegex(val)+'$' : '', true, false).draw();
+                            actualizarBadges(api);
+                            $('#estadoTabs .nav-link').removeClass('active');
+                            if(val){ $('#estadoTabs .nav-link[data-estado="'+val+'"]').addClass('active'); }
+                        });
+                        $('#fPrioridad').on('change', function(){
+                            var val=this.value;
+                            api.column(4).search(val ? '^'+$.fn.dataTable.util.escapeRegex(val)+'$' : '', true, false).draw();
+                        });
+
+                        // Rango fechas (mínima)
+                        $('#minDate').on('change keyup', function(){ api.draw(); });
+                        // Marcar tab Pendiente (sync con searchCols)
+                        $('#estadoTabs .nav-link').removeClass('active');
+                        $('#estadoTabs .nav-link[data-estado="Pendiente"]').addClass('active');
+
+
+                        actualizarBadges(api);
+                    }
+                });
+
+                dt.on('draw', function(){ actualizarBadges(dt); });
+
+                // Tabs → filtro Estado
+                $('#estadoTabs').on('click','.nav-link',function(e){
+                    e.preventDefault();
+                    $('#estadoTabs .nav-link').removeClass('active');
+                    $(this).addClass('active');
+                    var estado=$(this).data('estado');
+                    aplicarFiltroEstado(dt, estado);
+                });
+
+                /* ===== Crear Caso ===== */
+                $('#btnCrearCaso').on('click', function(){
+                    // reset
+                    $('#formCrearCaso')[0].reset();
+                    $('#empleados').find('option:not(:first)').remove();
+                    $('#TipoCasoID').empty(); $('#SubtipoCasoID').empty(); $('#TipoCaso').val('');
+                    $('#hsBlock').hide(); hsPromptShown=false;
+                    archivosSeleccionados = []; renderPreviews();
+
+                    // Empleados
+                    $.getJSON('@Url.Action("ObtenerEmpleados","Helpdesk2025")', function(d){
+                        if(Array.isArray(d)){ for(var i=0;i<d.length;i++){ var x=d[i]; $('#empleados').append(new Option(x.nombre_completo, x.correo)); } }
+                    });
+
+                    // Tipos
+                    $.getJSON('@Url.Action("GetTiposCaso","Helpdesk2025")', function(r){
+                        if(r && r.success){
+                            $('#TipoCasoID').append(new Option('Seleccione...',''));
+                            for(var i=0;i<r.data.length;i++){ var t=r.data[i]; $('#TipoCasoID').append(new Option(t.Nombre, t.TipoCasoID)); }
+                        }
+                    });
+
+                    cargarDepartamentosSiHaceFalta();
+                    $('#modalCrearCaso').modal('show');
+                });
+
+                // Tipo → Subtipo
+                $('#TipoCasoID').on('change', function(){
+                    var id=$(this).val();
+                    $('#SubtipoCasoID').empty(); $('#TipoCaso').val(''); $('#hsBlock').hide(); hsPromptShown=false;
+                    if(!id) return;
+                    $.getJSON('@Url.Action("GetSubtiposCaso","Helpdesk2025")', { tipoCasoId:id }, function(r){
+                        if(r && r.success){
+                            $('#SubtipoCasoID').append(new Option('Seleccione...',''));
+                            for(var i=0;i<r.data.length;i++){ var s=r.data[i]; $('#SubtipoCasoID').append(new Option(s.Nombre, s.SubtipoCasoID)); }
+                            toggleHsBlock();
+                        }
+                    });
+                });
+
+                // Subtipo → setTexto + HS
+                $('#SubtipoCasoID').on('change', function(){ setTextoTipoSub(); toggleHsBlock(); });
+
+                // Departamento → Edificios
+                $('#Departamento').on('change', function(){
+                    var dep = $(this).val() || '';
+                    var $e  = $('#Edificio').empty().append(new Option('(Seleccione)',''));
+                    if(!dep) return;
+                    $.getJSON('@Url.Action("ListarEdificios","Helpdesk2025")', { departamento: dep }, function(r){
+                        if(r && r.success && Array.isArray(r.data)){ r.data.forEach(function(x){ $e.append(new Option(x, x)); }); }
+                    });
+                });
+
+                // Guardar (FormData + nuestros archivosSeleccionados)
+       $('#btnGuardarCaso').on('click', function (e) {
+    e.preventDefault();
+
+    var form = document.getElementById('formCrearCaso');
+
+    // Validación HTML5 básica
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    var paraQuien    = $('#ParaQuien').val().trim();
+    var prioridad    = $('#Prioridad').val();
+    var titulo       = $('#Titulo').val().trim();
+    var descripcion  = $('#Descripcion').val().trim();
+    var tipoId       = $('#TipoCasoID').val();
+    var subtipoId    = $('#SubtipoCasoID').val();
+
+    var faltantes = [];
+
+    if (!paraQuien)   faltantes.push('Usuario afectado');
+    if (!prioridad)   faltantes.push('Prioridad');
+    if (!titulo)      faltantes.push('Título del caso');
+    if (!descripcion) faltantes.push('Descripción');
+    if (!tipoId)      faltantes.push('Tipo de caso');
+    if (!subtipoId)   faltantes.push('Subtipo de caso');
+
+    if (faltantes.length > 0) {
+        Swal.fire(
+            'Campos requeridos',
+            'Debes completar:\n- ' + faltantes.join('\n- '),
+            'warning'
+        );
+        return;
+    }
+
+    // ✅ Validar que ParaQuien coincida con alguna opción del datalist
+    var esValidoParaQuien = false;
+    $('#empleados option').each(function () {
+        var val = ($(this).val() || '').trim().toLowerCase();
+        if (val && val === paraQuien.toLowerCase()) {
+            esValidoParaQuien = true;
+            return false; // break
+        }
+    });
+
+    if (!esValidoParaQuien) {
+        Swal.fire(
+            'Usuario afectado inválido',
+            'Debe seleccionar un usuario afectado válido de la lista desplegable.',
+            'warning'
+        );
+        $('#ParaQuien').focus();
+        return;
+    }
+           var tipoTextoSeleccionado = $('#TipoCasoID option:selected').text().toLowerCase();
+           var esObrasCiviles = tipoTextoSeleccionado.indexOf('obras civiles') > -1;
+
+           if (esObrasCiviles && archivosSeleccionados.length === 0) {
+               Swal.fire(
+                   'Evidencia Obligatoria',
+                   'Para los casos de <b>Obras Civiles</b> es necesario adjuntar al menos una imagen o documento de evidencia.',
+                   'warning'
+               );
+               // Hacemos scroll visual hacia la zona de adjuntos si quieres
+               document.getElementById('fileDropZone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+               return; // Detiene el guardado
+           }
+    // Si pasa todo: enviar
+    var fd = new FormData(form);
+
+    if (typeof archivosSeleccionados !== 'undefined' && archivosSeleccionados.length > 0) {
+        for (var i = 0; i < archivosSeleccionados.length; i++) {
+            fd.append('archivos', archivosSeleccionados[i]);
+        }
+    }
+
+    $.LoadingOverlay("show", { image: "", text: "Enviando, por favor espere..." });
+
+    $.ajax({
+        url: '@Url.Content("~/Helpdesk2025/CrearCasox")',
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        timeout: 0
+    }).done(function (r) {
+        $.LoadingOverlay("hide");
+        if (r && r.success) {
+            Swal.fire('Éxito', r.message || 'Caso creado correctamente.', 'success')
+                .then(function () { location.reload(); });
+        } else {
+            Swal.fire('Error', (r && r.message) || 'No se pudo crear el caso.', 'error');
+        }
+    }).fail(function () {
+        $.LoadingOverlay("hide");
+        Swal.fire('Error', 'Fallo de red/servidor.', 'error');
+    });
+});
+
+                /* ===== Detalle & Cancelar ===== */
+                $('#tablaCasos').on('click','.act-ver', function(e){
+                    e.preventDefault();
+                    var id = $(this).data('id');
+
+                    $.get('@Url.Action("Details","Helpdesk2025")/' + id, function (r) {
+                        renderDetalleCaso(r);
+                        $('#modalVerDetalleCaso').modal('show');
+
+                        // Cargar notas de usuario/soporte para este caso (solo seguimiento)
+                        if (r && r.ID) {
+                            setTimeout(function () {
+                                cargarNotasCasoUsuario(r.ID);
+                            }, 120);
+                        } else if (id) {
+                            // fallback por si el JSON no trae ID
+                            setTimeout(function () {
+                                cargarNotasCasoUsuario(id);
+                            }, 120);
+                        }
+                    }).fail(function () {
+                        Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
+                    });
+                });
+
+                $('#tablaCasos').on('click','.act-cancelar', function(e){
+                    e.preventDefault();
+                    var id = $(this).data('id');
+                    Swal.fire({
+                        title:'¿Cancelar caso?', text:'Esta acción no se puede deshacer.', icon:'warning',
+                        showCancelButton:true, confirmButtonText:'Sí, cancelar', cancelButtonText:'No', confirmButtonColor:'#e11d48'
+                    }).then(function(x){
+                        if(!x.isConfirmed) return;
+                        $.post('@Url.Action("CancelarCaso","Helpdesk2025")',{ id:id }, function(r){
+                            if(r && r.success){ Swal.fire('Listo','Caso cancelado.','success').then(function(){ location.reload(); }); }
+                            else { Swal.fire('Error', (r&&r.message)||'No se pudo cancelar.', 'error'); }
+                        }).fail(function(){ Swal.fire('Error','Fallo de red/servidor.','error'); });
+                    });
+                });
+
+                $('#modalVerDetalleCaso').on('click','#btnCancelarCaso', function(){
+                    var id = $(this).data('id');
+                    Swal.fire({
+                        title:'¿Cancelar caso?', text:'Esta acción no se puede deshacer.', icon:'warning',
+                        showCancelButton:true, confirmButtonText:'Sí, cancelar', cancelButtonText:'No', confirmButtonColor:'#e11d48'
+                    }).then(function(x){
+                        if(!x.isConfirmed) return;
+                        $.post('@Url.Action("CancelarCaso","Helpdesk2025")',{ id:id }, function(r){
+                            if(r && r.success){ Swal.fire('Listo','Caso cancelado.','success').then(function(){ location.reload(); }); }
+                            else { Swal.fire('Error', (r&&r.message)||'No se pudo cancelar.', 'error'); }
+                        }).fail(function(){ Swal.fire('Error','Fallo de red/servidor.','error'); });
+                    });
+                });
+            });
+    </script>
+}

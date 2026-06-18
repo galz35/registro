@@ -1,0 +1,120 @@
+﻿@model Entities.Agradecimiento
+
+@{
+    Layout = "~/Views/Shared/_popupLayout.cshtml";
+}
+
+<style type="text/css">
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+<script>
+    function SaveGratefulness(s, e) {
+        $.ajax({
+            url: '@Url.Action("SaveGratefulnessxx")',
+            type: "POST",
+            data: $('#frmGratefulness').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                        title: "Exito!",
+                        text: data.message,
+                        icon: "success",
+                        button: "Aceptar",
+                    }).then((willSaved) => {
+                        if (willSaved) {
+                            top.popEditGratefulness.Hide();
+                        }
+                    });
+                } else {
+                    swal({
+                        title: "Advertencia!",
+                        text: data.message,
+                        icon: "warning",
+                        button: "Aceptar",
+                    });
+                }
+            },
+            error: function () {
+                swal("Error!", "Ocurrió un error en la transaccion, por favor verifique los datos o consulte con el administrador de la plataforma.", "error");
+            }
+        });
+    }
+</script>
+
+<form id="frmGratefulness" method="post" action="@Url.Action("SaveGratefulnessxx", "Gratefulness")">
+    <div class="form-group row">
+        <label for="GratefulnessId" class="col-sm-2 col-form-label">Id</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="GratefulnessId" name="GratefulnessId" value="@Model.GratefulnessId" hidden>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="GratefulnessDate" class="col-sm-2 col-form-label">Fecha</label>
+        <div class="col-sm-10">
+            <input type="date" class="form-control" id="GratefulnessDate" name="GratefulnessDate" value="@Model.GratefulnessDate.ToString("yyyy-MM-dd")">
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="SendPersonId" class="col-sm-2 col-form-label">De</label>
+        <div class="col-sm-10">
+            <select class="form-control" id="SendPersonId" name="SendPersonId">
+                @foreach (var employee in slnRhonline.Data.Employee.GetAllEmployees())
+                {
+                    <option value="@employee.Id_HRMS" @(employee.Id_HRMS == Model.SendPersonId ? "selected" : "")>@employee.FullName</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="ReceivePersonId" class="col-sm-2 col-form-label">Para</label>
+        <div class="col-sm-10">
+            <select class="form-control" id="ReceivePersonId" name="ReceivePersonId">
+                @foreach (var employee in slnRhonline.Data.Employee.GetAllEmployees())
+                {
+                    <option value="@employee.Id_HRMS" @(employee.Id_HRMS == Model.ReceivePersonId ? "selected" : "")>@employee.FullName</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="GratefulnessTypeId" class="col-sm-2 col-form-label">Tipo</label>
+        <div class="col-sm-10">
+            <select class="form-control" id="GratefulnessTypeId" name="GratefulnessTypeId">
+                @foreach (var type in slnRhonline.Data.Gratefulness.GetAllGratefulnessType())
+                {
+                    <option value="@type.GratefulnessTypeId" @(type.GratefulnessTypeId == Model.GratefulnessTypeId ? "selected" : "")>@type.GratefulnessTypeName</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="DestinataryName" class="col-sm-2 col-form-label">Destinatario</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control memo" id="DestinataryName" name="DestinataryName" value="@Model.DestinataryName">
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="Message" class="col-sm-2 col-form-label">Mensaje</label>
+        <div class="col-sm-10">
+            <textarea class="form-control memo" id="Message" name="Message" rows="6">@Model.Message</textarea>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-sm-10 offset-sm-2">
+            <button type="button" class="btn btn-danger" onclick="SaveGratefulness()">Actualizar</button>
+        </div>
+    </div>
+</form>

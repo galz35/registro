@@ -1,0 +1,569 @@
+﻿@model Entities.Expenses
+@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+    ViewBag.Title = "Rendición de Viáticos";
+    string url2 = Url.Action("Index", "Home");
+    string url3 = Url.Action("RegisterDetailx", "Expenses"); // Generar URL para RegisterDetailx
+    string url4 = Url.Action("EmployeesList", "Expenses");  
+
+}
+@Html.DevExpress().GetStyleSheets(
+         new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+          new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+          new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+            new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+     )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+ 
+<style type="text/css">
+ .breadcrumb-container {
+        margin: 20px 0;
+    }
+
+    .breadcrumb {
+        background-color: transparent; /* No background for breadcrumb */
+        margin-bottom: 0; /* Remove bottom margin */
+        display: flex;
+        align-items: center;
+    }
+
+    .breadcrumb-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+       
+        .breadcrumb-item a {
+            color: blue;
+            text-decoration: none;
+        }
+
+    .breadcrumb-box {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+        .breadcrumb-box:hover {
+            background-color: #e2e6ea;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    .breadcrumb-item.active .breadcrumb-box {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .breadcrumb-item.active .breadcrumb-box:hover {
+            background-color: #5a6268;
+        }
+
+    .breadcrumb-box i {
+        margin-right: 5px; /* Space between icon and text */
+    }
+    .buttonAlign {
+        text-align: right !important;
+    }
+
+    @@media(max-width:500px) {
+        .buttonAlign {
+            text-align: center !important;
+        }
+    }
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+<script type="text/javascript">
+     // Función para manejar cambios en YieldAmount (opcional)
+    function onYieldAmountChanged(s, e) {
+        console.log("YieldAmount cambiado a: " + s.GetValue());
+    }
+
+    // Función para validar los datos antes de la actualización
+    function onBeginCallback(s, e) {
+        s.GetRowValues(s.GetFocusedRowIndex(), "YieldAmount", function (value) {
+            if (value === null || value === "" || parseFloat(value) === 0) {
+                alert("El monto a rendir no puede ser 0 o vacío.");
+                e.cancel = true; // Cancelar la actualización
+            }
+        });
+    }
+
+    // Función para manejar el final de la callback (opcional)
+    function onEndCallback(s, e) {
+        console.log("Callback finalizado.");
+    }
+
+    // Función para manejar errores en la callback (opcional)
+    function onCallbackError(s, e) {
+        alert("Ocurrió un error durante la actualización: " + e.message);
+    }
+
+    // Función para recopilar datos y enviarlos al controlador
+    function updateYieldAmounts() {
+        var grid = gvYieldEditing;
+        var visibleRowCount = grid.GetVisibleRowsOnPage();
+        var expenseDetails = [];
+
+        for (var i = 0; i < visibleRowCount; i++) {
+            var expenseDetailId = grid.GetRowKey(i);
+            var yieldAmount = grid.GetRowValues(i, "YieldAmount", function(value) {
+                return value;
+            });
+
+            // Validar que YieldAmount no sea 0 o vacío
+            if (yieldAmount === null || yieldAmount === "" || parseFloat(yieldAmount) === 0) {
+                alert("El monto a rendir no puede ser 0 o vacío en la fila " + (i + 1));
+                return;
+            }
+
+            expenseDetails.push({
+                ExpenseDetailId: expenseDetailId,
+                YieldAmount: yieldAmount
+            });
+        }
+
+        // Enviar los datos al controlador mediante AJAX
+        $.ajax({
+            url: '@Url.Action("UpdateYieldAmount", "Expenses")',
+            type: 'POST',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(expenseDetails),
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Recargar el GridView después de la actualización
+                    grid.PerformCallback();
+                    alert("Datos actualizados correctamente.");
+                } else {
+                    alert("Error: " + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert("Ocurrió un error al actualizar los datos: " + error);
+            }
+        });
+    }
+ 
+     
+
+    function OnInit(s, e) {
+        var message = '@ViewData["EditError"]';
+        if(message) {
+            s.SetContentHtml(message);
+            s.Show();
+        }
+    }
+
+    function OnDepositFileUploadComplete(s, e) {
+        if (e.callbackData !== "") {
+            //alert(e.callbackData);
+            clientDepositName.SetText(e.callbackData);
+
+        }
+        else {
+            alert("El archivo seleccionado no fue subido");
+        }
+    }
+
+
+    function OnYieldFileUploadComplete(s, e) {
+        if (e.callbackData !== "") {
+            //alert(e.callbackData);
+            clientFileName.SetText(e.callbackData);
+        }
+        else {
+            alert("El archivo seleccionado no fue subido");
+        }
+    }
+     function onYieldButtonClick() {
+        // Serializa los datos del formulario
+        var formData = $('#formYield').serialize();
+
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("ChangeStateYieldjson", "Expenses")',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Mostrar mensaje de éxito en el PopupControl
+                    pc.SetContentHtml(response.message);
+                    pc.Show();
+                    // Opcional: Redireccionar o actualizar partes de la página
+                     window.location.href = "https://recursoshumanosni/rhonline/Expenses/RegisterDetailx";
+                    window.location.assign("https://recursoshumanosni/rhonline/Expenses/RegisterDetailx");
+                    window.location.replace("https://recursoshumanosni/rhonline/Expenses/RegisterDetailx");
+                } else {
+                    // Mostrar mensaje de error en el PopupControl
+                    pc.SetContentHtml(response.message);
+                    pc.Show();
+                }
+            },
+            error: function() {
+                // Manejar errores de la solicitud AJAX
+                pc.SetContentHtml("Ocurrió un error al procesar la solicitud.");
+                pc.Show();
+            }
+        });
+    }
+    $(document).ready(function () {
+        $("#btnUpdateYield").click(function () {
+            updateYieldAmounts();
+        });
+        // Esto asegura que el grid se refresque una vez después de la carga completa de la página
+        setTimeout(function () {
+            gvYieldEditing.PerformCallback();
+        }, 1000);
+    });
+
+</script>
+    <script src="~/Content/js2024/jquery.jeditable.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+@{
+    string url = Url.Action("BackToRegister", "Expenses");
+}
+<div class="breadcrumb-container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@url2">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-home"></i> Home
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="@url4">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-users"></i> Lista empleado
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="@url3">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-list"></i> Lista viatico
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                <span class="breadcrumb-box">
+                    <i class="fas fa-file-alt"></i>  Viatico Rendir
+                </span>
+            </li>
+        </ol>
+    </nav>
+</div>
+<h3 class="form-h2">
+    @Session["fullName"].ToString()
+</h3>
+
+@using (Html.BeginForm("ChangeStateYield", "Expenses", FormMethod.Post, new { id = "formYield" }))
+{
+
+    @Html.DevExpress().FormLayout(settings =>
+{
+    settings.Name = "formLayout";
+    settings.UseDefaultPaddings = false;
+    settings.AlignItemCaptionsInAllGroups = true;
+    settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+    settings.Items.AddGroupItem(g =>
+    {
+        g.Caption = "Encabezado";
+        g.ColCount = 3;
+
+        g.Items.Add(m => m.ExpenseDate, i =>
+        {
+            i.Caption = "Fecha de solicitud";
+            i.NestedExtension().DateEdit(de =>
+            {
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 25;
+                de.ShowModelErrors = true;
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+            });
+        });
+
+
+        g.Items.Add(m => m.ClassId, i =>
+        {
+            i.Caption = "Clase";
+            i.NestedExtension().ComboBox(de =>
+            {
+
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 25;
+                de.ShowModelErrors = true;
+                de.Properties.NullText = "SELECCIONE CLASE";
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                de.Properties.DropDownStyle = DropDownStyle.DropDown;
+                de.SelectedIndex = 0;
+                de.Properties.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                de.Properties.TextField = "ConceptName";
+                de.Properties.ValueField = "ConceptId";
+                de.Properties.ValueType = typeof(int);
+                de.Properties.DataSource = slnRhonline.Models.Concepts.GetAllConcepts().Where(c => c.ConceptTypeId == 4);
+                de.Properties.ClearButton.DisplayMode = ClearButtonDisplayMode.OnHover;
+
+            });
+        });
+
+        g.Items.Add(m => m.ReasonId, i =>
+        {
+            i.Caption = "Motivo";
+            i.NestedExtension().ComboBox(de =>
+            {
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 25;
+                de.ShowModelErrors = true;
+                de.Properties.NullText = "SELECCIONE MOTIVO";
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                de.Properties.DropDownStyle = DropDownStyle.DropDown;
+                de.SelectedIndex = 0;
+                de.Properties.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                de.Properties.TextField = "ReasonName";
+                de.Properties.ValueField = "ReasonId";
+                de.Properties.ValueType = typeof(int);
+                de.Properties.DataSource = slnRhonline.Models.Reasons.GetReasons();
+                de.Properties.ClearButton.DisplayMode = ClearButtonDisplayMode.OnHover;
+
+
+            });
+        });
+
+        g.Items.Add(m => m.Justify, i =>
+        {
+            i.Caption = "Justificación";
+            i.NestedExtension().Memo(de =>
+            {
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 60;
+                de.ShowModelErrors = true;
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                de.ControlStyle.CssClass = "memo";
+
+            });
+        });
+
+        g.Items.Add(m => m.Route, i =>
+        {
+            i.Caption = "Ruta";
+            i.NestedExtension().Memo(de =>
+            {
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 60;
+                de.ShowModelErrors = true;
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                de.ControlStyle.CssClass = "memo";
+
+            });
+        });
+
+        g.Items.Add(m => m.ServiceNumber, i =>
+        {
+            i.Caption = "Orden de servicio";
+            i.NestedExtension().Memo(de =>
+            {
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 60;
+                de.ShowModelErrors = true;
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+            });
+        });
+        g.Items.Add(m => m.VehicleNumber, i =>
+        {
+            i.Caption = "Unidad de Vehiculo";
+            i.NestedExtension().Memo(de =>
+            {
+                de.ReadOnly = true;
+                de.Width = 200;
+                de.Height = 60;
+                de.ShowModelErrors = true;
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+            });
+        });
+
+        g.Items.Add(m => m.YieldNotes, i =>
+        {
+            i.Caption = "Observaciones";
+            i.NestedExtension().Memo(de =>
+            {
+
+                de.Width = 200;
+                de.Height = 60;
+                de.ShowModelErrors = true;
+                de.Properties.ValidationSettings.Display = Display.Dynamic;
+                de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+            });
+        });
+        g.Items.AddEmptyItem();
+
+        g.Items.Add(i =>
+        {
+            i.Caption = "Subir rendición";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().Label(lbSettings =>
+                {
+                    lbSettings.Name = "lblYieldFile";
+                    lbSettings.Properties.ClientInstanceName = "clientFileName";
+                }).Render();
+                Html.RenderPartial("UploadControlPartial");
+            });
+        });
+
+        g.Items.Add(i =>
+        {
+            i.Caption = "Subir minuta";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().Label(lbSettings =>
+                {
+                    lbSettings.Name = "lblDepositFile";
+                    lbSettings.Properties.ClientInstanceName = "clientDepositName";
+                }).Render();
+                Html.RenderPartial("UploadDepositPartial");
+            });
+        });
+
+    });
+
+    settings.Items.AddGroupItem(g =>
+    {
+         g.ColCount = 1;
+
+        g.Items.Add(i =>
+        {
+            i.CaptionSettings.Location = LayoutItemCaptionLocation.Top;
+            i.Caption = "Detalle";
+
+            i.SetNestedContent(() =>
+            {
+                Html.RenderAction("YieldDetailPartial");
+
+                //Html.RenderAction("YieldDetailPartial", new { sectionAlias = Model.ExpenseId});
+                i.Width = Unit.Percentage(100);
+            });
+        });
+    });
+
+
+
+
+    settings.Items.Add(i =>
+    {
+        i.ShowCaption = DefaultBoolean.False;
+        i.CssClass = "buttonAlign";
+
+        i.Width = Unit.Percentage(100);
+        i.NestedExtension().Button(s =>
+        {
+            s.UseSubmitBehavior = false; // Evita el envío automático del formulario
+            s.ClientSideEvents.Click = "function(s, e) { onYieldButtonClick(); }";
+
+            s.Name = "btnYield";
+            s.Text = "Rendir";
+            s.Width = Unit.Pixel(80);
+            s.ControlStyle.Font.Bold = true;
+
+        });
+    });
+
+
+}).GetHtml()
+}
+
+
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().PopupControl(settingsPopup =>
+           {
+               settingsPopup.Name = "pc";
+               settingsPopup.ShowOnPageLoad = false;
+               settingsPopup.HeaderText = "Información";
+               settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+               settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+               settingsPopup.CloseOnEscape = true;
+               settingsPopup.Width = 300;
+               //settingsPopup.Modal = true;
+               settingsPopup.ClientSideEvents.Init = "OnInit";
+
+
+
+               settingsPopup.SetContent(() =>
+               {
+                   ViewContext.Writer.Write(ViewData["EditError"]);
+               });
+           }).GetHtml()
+
+
+}
+
+
+
+

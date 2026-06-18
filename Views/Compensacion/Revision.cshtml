@@ -1,0 +1,1315 @@
+﻿@{
+    ViewBag.Title = "Certificacion de Plantillas RRHH";
+}
+<meta charset="utf-8" />
+
+<style>
+    body { background-color: #fff; color: #000; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .bg-claro { background-color: #B71C1C !important; color: #fff !important; }
+    .btn-claro { background-color: #B71C1C; color: #fff; border: none; }
+    .btn-claro:hover { background-color: #9A0007; color: #fff; }
+    .card { border-radius: 0; border: 1px solid #e3e6f0; box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,0.15); }
+    .card-header { background-color: #B71C1C !important; color: #fff !important; border-radius: 0 !important; font-weight: bold; }
+    .table thead th { background-color: #B71C1C !important; color: #fff !important; text-align: center; border: 1px solid #fff !important; }
+    .table tbody tr { background-color: #f8f9fa; }
+    .table-hover tbody tr:hover { background-color: #ffe6e6 !important; }
+    .btn-rounded { border-radius: 20px; }
+    
+    /* Botones de seleccon de tipo (Personalizado para que parezcan botones de 511.html) */
+    .btn-tipo { 
+        border: 2px solid #B71C1C; 
+        color: #B71C1C; 
+        background-color: #fff; 
+        font-weight: bold; 
+        transition: all 0.3s;
+        margin-right: 5px;
+    }
+    .btn-tipo.active { 
+        background-color: #B71C1C; 
+        color: #fff; 
+    }
+    .btn-tipo:hover {
+        background-color: #ffe6e6;
+        color: #B71C1C;
+    }
+
+    .estado-Enviado { color: #0056b3; font-weight: bold; }
+    .estado-Aprobado { color: #28a745; font-weight: bold; }
+    .estado-Devuelto { color: #dc3545; font-weight: bold; }
+    .estado-Borrador { color: #6c757d; font-style: italic; }
+
+    .dif-badge { font-size: 10px; margin-right: 5px; vertical-align: top; }
+    
+    .card-config { border-left: 5px solid #B71C1C; background: #fff; }
+    
+    .changed {
+      background-color: #ffe6e6 !important;
+      font-weight: bold;
+      color: #000;
+    }
+    .gerencia-header {
+      background-color: #343a40 !important;
+      color: #fff !important;
+      font-weight: bold;
+    }
+    .select-filtro {
+      width: 100%;
+      font-size: 11px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 2px;
+    }
+    .btn-xs { padding: 1px 5px; font-size: 10px; }
+    
+    /* Grid y densidad compacta */
+    .table-sm td, .table-sm th { padding: 0.3rem !important; font-size: 11.5px; }
+    .continer-fluid { max-width: 100%; }
+
+    /* Ajustes para DataTables */
+    #tbMaestroRevision_wrapper .dataTables_paginate .paginate_button { padding: 0.2rem 0.5rem; }
+    #tbMaestroRevision_filter { display: none; } /* Usamos nuestros filtros manuales */
+    
+    .gerencia-header { background-color: #343a40 !important; color: #fff !important; }
+    .dtrg-group th {
+        background-color: #343a40 !important;
+        color: #fff !important;
+        font-weight: bold;
+        padding: 5px 15px !important;
+        border-left: 5px solid #B71C1C !important;
+    }
+</style>
+
+<!-- DataTables CSS -->
+<link href="~/onlinecss/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="~/onlinecss/dataTables.bootstrap4.min.css" rel="stylesheet" />
+<link href="~/onlinecss/rowGroup.dataTables.min.css" rel="stylesheet" />
+<link href="~/onlinecss/responsive.dataTables.min.css" rel="stylesheet" />
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="continer-fluid mt-2 px-4">
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+        <h2 class="m-0 text-dark font-weight-bold" id="lblTituloPagina" style="color:#B71C1C !important;">
+            <i class="fas fa-tasks"></i> Certificacion y Gestion (RRHH)
+        </h2>
+        <div class="form-inline">
+            <label class="mr-2 font-weight-bold text-muted">Periodo:</label>
+            <select id="ddlPeriodo" class="form-control form-control-sm border-0 shadow-sm" onchange="actualizarVista()">
+                <option value="">Cargando...</option>
+            </select>
+            <button class="btn btn-sm btn-claro btn-rounded shadow-sm ml-2" onclick="actualizarVista()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-dark btn-rounded shadow-sm ml-2" onclick="abrirModalExclusiones()">
+                <i class="fas fa-ban"></i> Lista de Exclusiones
+            </button>
+            <a href="@Url.Action("GestionMaestra", "Compensacion")" class="btn btn-sm btn-danger btn-rounded shadow-sm ml-2">
+                <i class="fas fa-users-cog"></i> Gestion Maestra
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores de Avance (KPIs) -->
+    <div class="row mb-3 animate__animated animate__fadeIn">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-left-claro bg-white p-3">
+                <h6 class="text-muted small font-weight-bold text-uppercase mb-1" id="lblKPIAvance">Avance Global Jefes</h6>
+                <div class="row no-gutters align-items-center">
+                    <div class="col-auto h5 mb-0 mr-3 font-weight-bold" id="txtKPIPerc">0%</div>
+                    <div class="col">
+                        <div class="progress progress-sm"><div id="barKPI" class="progress-bar bg-claro" style="width:0%"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-left-claro bg-white p-3 text-center">
+                <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Colaboradores Procesados</h6>
+                <div class="h5 mb-0 font-weight-bold" id="txtKPIPlazas">0</div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card shadow-sm border-left-claro bg-light p-3 position-relative">
+                <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Periodo Activo</h6>
+                <div class="h5 mb-0 font-weight-bold text-claro" id="txtKPIPeriodo">...</div>
+                <div id="wrapperBadgeEx" class="position-absolute" style="top: -10px; right: 10px; display: none;">
+                    <span class="badge badge-pill badge-dark shadow-sm py-1 px-2" style="font-size: 10px;">
+                        <i class="fas fa-ban mr-1 text-warning"></i> <span id="countExcluidos">0</span> EXCLUSIONES
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card shadow-sm border-left-claro bg-dark text-white p-3">
+                <h6 class="text-white-50 small font-weight-bold text-uppercase mb-1" id="lblKPICambios">Discrepancias Totales</h6>
+                <div class="h5 mb-0 font-weight-bold text-warning" id="txtKPICambios">0</div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .border-left-claro { border-left: 5px solid #B71C1C !important; }
+        .text-claro { color: #B71C1C; }
+    </style>
+
+    <!-- Seccion de Configuracion de Notificaciones -->
+    <div class="card mb-4 shadow-sm card-config">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-calendar-alt"></i> Fecha Limite de Entrega:</label>
+                    <input type="date" id="txtFechaLimite" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-5" id="colSelectorTipo">
+                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-envelope"></i> Tipo de Notificacion a Enviar:</label>
+                    <div class="d-flex" id="pills-tab">
+                        <button class="btn btn-tipo active py-1 flex-fill" id="btn-tab-1" onclick="setTipo(1)">Comisiones</button>
+                        <button class="btn btn-tipo py-1 flex-fill" id="btn-tab-2" onclick="setTipo(2)">Plantilla Personal (Certificacion)</button>
+                        <button class="btn btn-tipo py-1 flex-fill" id="btn-tab-eval" onclick="mostrarTabEvaluaciones()">Seguimiento Bajas/Ingresos</button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-right">
+                    <button class="btn btn-sm btn-outline-secondary btn-rounded mt-3" onclick="guardarConfig()">
+                        <i class="fas fa-save"></i> Guardar Plazo
+                    </button>
+                    <button class="btn btn-sm btn-primary btn-rounded shadow-sm mt-3 ml-2" id="btnMassMil" onclick="notificarMasivo()" disabled>
+                        <i class="fas fa-paper-plane"></i> Notificar a Validadores Pendientes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Certificaciones (Principal) -->
+    <div id="panelCertificacion">
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-claro py-3 d-flex justify-content-between align-items-center" id="headerTablaPrincipal">
+            <h6 class="m-0 font-weight-bold text-white" id="lblTituloTabla"><i class="fas fa-list"></i> Detalle Maestro de Certificacion (Revision RRHH)</h6>
+            <div id="panelBotonera" class="d-flex align-items-center">
+                <div class="custom-control custom-switch mr-3">
+                    <input type="checkbox" class="custom-control-input" id="chkSoloCambios" onchange="actualizarVista(true)">
+                    <label class="custom-control-label text-white small font-weight-bold" for="chkSoloCambios">
+                        <i class="fas fa-filter mr-1"></i> VER SOLO CAMBIOS
+                    </label>
+                </div>
+                <button class="btn btn-xs btn-light font-weight-bold shadow-sm" onclick="descargarExcel()">
+                    <i class="fas fa-file-excel mr-1 text-success"></i> Exportar CSV
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm mb-0" id="tbMaestroRevision">
+                    <thead class="bg-claro text-white text-center">
+                        <tr>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important; min-width: 250px;">Empleado Oficial</th>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Empresa</th>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Departamento</th>
+                            <th colspan="2" class="align-middle border-white col-cert-header" style="border: 1px solid #fff !important;">Cargo / Puesto</th>
+                            <th colspan="2" class="align-middle border-white col-cert-header" style="border: 1px solid #fff !important;">Jefe Inmediato</th>
+                            <th colspan="2" class="align-middle border-white col-cert-header" style="border: 1px solid #fff !important;">Edificio / Ubicacion</th>
+                            <th colspan="2" class="align-middle border-white col-comision-header" style="border: 1px solid #fff !important;">Comisiona</th>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Observaciones</th>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Acciones</th>
+                        </tr>
+                        <tr class="text-white small">
+                            <th class="bg-dark align-middle border-white col-cert-header" style="border: 1px solid #fff !important; min-width: 100px;">SighoO</th>
+                            <th class="bg-claro align-middle border-white col-cert-header" style="border: 1px solid #fff !important; min-width: 100px;">Reportado</th>
+                            <th class="bg-dark align-middle border-white col-cert-header" style="border: 1px solid #fff !important; min-width: 100px;">SighoO</th>
+                            <th class="bg-claro align-middle border-white col-cert-header" style="border: 1px solid #fff !important; min-width: 100px;">Reportado</th>
+                            <th class="bg-dark align-middle border-white col-cert-header" style="border: 1px solid #fff !important; min-width: 100px;">SighoO</th>
+                            <th class="bg-claro align-middle border-white col-cert-header" style="border: 1px solid #fff !important; min-width: 100px;">Reportado</th>
+                            <th class="bg-dark align-middle border-white col-comision-header" style="border: 1px solid #fff !important; min-width: 50px;">Orig.</th>
+                            <th class="bg-claro align-middle border-white col-comision-header" style="border: 1px solid #fff !important; min-width: 50px;">Act.</th>
+                        </tr>
+                        <tr class="fila-filtros" id="filaFiltrosUI" style="display:none;">
+                            <th></th> <!-- Nombre -->
+                            <th><select id="fEmpresa" class="select-filtro" onchange="filtraLocal()"><option value="">[ Todas ]</option></select></th>
+                            <th></th> <!-- Depto -->
+                            <th class="col-cert-header"><select id="fCargo" class="select-filtro" onchange="filtraLocal()"><option value="">[ Cargos ]</option></select></th><th class="col-cert-header"></th>
+                            <th class="col-cert-header"><select id="fJefe" class="select-filtro" onchange="filtraLocal()"><option value="">[ Jefes ]</option></select></th><th class="col-cert-header"></th>
+                            <th class="col-cert-header"><select id="fUbi" class="select-filtro" onchange="filtraLocal()"><option value="">[ Sedes ]</option></select></th><th class="col-cert-header"></th>
+                            <th class="col-comision-header"></th><th class="col-comision-header"></th>
+                            <th></th> <!-- Obs -->
+                            <th></th> <!-- Acciones -->
+                        </tr>
+                    </thead>
+                    <tbody id="tbCuerpoMaestro">
+                        <tr><td colspan="13" class="text-center p-4 text-muted font-italic">Seleccione un periodo para cargar los datos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Panel de Evaluaciones (Bajas e Ingresos) -->
+    <div id="panelEvaluaciones" style="display:none;">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-claro py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-chart-pie"></i> Resumen de Evaluaciones Pendientes</h6>
+                        <div class="btn-group">
+                            <button class="btn btn-xs btn-light font-weight-bold" onclick="notificarMasivoBajas()"><i class="fas fa-bell"></i> Recordar Bajas</button>
+                            <button class="btn btn-xs btn-light font-weight-bold ml-1" onclick="notificarMasivoIngresos()"><i class="fas fa-bell"></i> Recordar Ingresos</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="bg-dark text-white text-center">
+                                    <tr>
+                                        <th>Gerencia / i?rea</th>
+                                        <th>Bajas Pendientes</th>
+                                        <th>Ingresos Pendientes</th>
+                                        <th>Total Pendiente</th>
+                                        <th>Accon</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbResumenEvalPorGerencia">
+                                    <!-- Dinamico -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4 border-left-claro">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-claro"><i class="fas fa-history"></i> Historial Reciente de Evaluaciones</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover border">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Colaborador</th>
+                                <th>Fecha Baja/Ingreso</th>
+                                <th>Resultado</th>
+                                <th>Evaluador</th>
+                                <th>Fecha Evaluacon</th>
+                                <th>Voucher</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyHistorial"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal Detalle -->
+<div class="modal fade" id="modalDetalle" style="z-index: 1050;">
+    <div class="modal-dialog" style="max-width: 95%;">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-claro text-white">
+                <h5 class="modal-title"><i class="fas fa-users"></i> Detalle de Empleados - <span id="lblGerente"></span></h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0 table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                <table class="table table-sm table-bordered table-hover mb-0" style="font-size: 0.85rem;">
+                    <thead class="text-white text-center" style="position: sticky; top: 0; z-index: 10; font-size: 11px;">
+                        <tr class="bg-claro">
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Empleado Oficial</th>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Empresa</th>
+                            <th rowspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Departamento</th>
+                            <th colspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Cargo / Puesto</th>
+                            <th colspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Jefe Inmediato</th>
+                            <th colspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Edificio / Ubicacion</th>
+                            <th colspan="2" class="align-middle border-white col-comision-header" style="border: 1px solid #fff !important;">Comisiona</th>
+                            <th colspan="2" class="align-middle border-white" style="border: 1px solid #fff !important;">Observaciones</th>
+                        </tr>
+                        <tr class="text-white">
+                            <th class="bg-dark align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">SighoO</th>
+                            <th class="bg-claro align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">Reportado</th>
+                            <th class="bg-dark align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">SighoO</th>
+                            <th class="bg-claro align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">Reportado</th>
+                            <th class="bg-dark align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">SighoO</th>
+                            <th class="bg-claro align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">Reportado</th>
+                            <th class="bg-dark align-middle border-white col-comision-header" style="border: 1px solid #fff !important; min-width: 50px;">Ant.</th>
+                            <th class="bg-claro align-middle border-white col-comision-header" style="border: 1px solid #fff !important; min-width: 50px;">Act.</th>
+                            <th class="bg-dark align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">Ant.</th>
+                            <th class="bg-claro align-middle border-white" style="border: 1px solid #fff !important; min-width: 100px;">Act.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbDetalles"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer bg-light" id="footerAcciones"></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Exclusiones (Blacklist) -->
+<div class="modal fade" id="modalExclusiones">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="fas fa-ban"></i> Gestion de Exclusiones (Depuracion)</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2" style="font-size:12px;">
+                    <i class="fas fa-info-circle"></i> Las gerencias o carnet agregados aqui? <b>no recibiran notificaciones</b> y no apareceran en la lista de revison.
+                </div>
+                <div class="form-row align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label class="small font-weight-bold">Tipo:</label>
+                        <select id="ddlTipoEx" class="form-control form-control-sm">
+                            <option value="OGERENCIA">Gerencia</option>
+                            <option value="CARNET">Carnet Empleado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small font-weight-bold">Valor (Exacto):</label>
+                        <input type="text" id="txtValorEx" class="form-control form-control-sm" placeholder="Ej: NI GERENCIA DE RRHH">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small font-weight-bold">Motivo:</label>
+                        <input type="text" id="txtMotivoEx" class="form-control form-control-sm" placeholder="Opcional">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-dark btn-block" onclick="guardarExclusion()"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 300px;">
+                    <table class="table table-sm table-striped">
+                        <thead class="bg-light"><tr><th>Tipo</th><th>Valor</th><th>Motivo</th><th></th></tr></thead>
+                        <tbody id="tbExclusiones"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal Historial de Auditoria -->
+<div class="modal fade" id="modalHistorial">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-history"></i> Historial de Cambios: <span id="txtHistorialEmp"></span></h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="timelineHistorial" class="p-4" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Se llena con JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Comentario Devolucon -->
+<div class="modal fade" id="modalDevolver">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title font-weight-bold">Devolver a Validador</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtIdDevolver" />
+                <div class="form-group">
+                    <label class="small font-weight-bold text-uppercase">Motivo de la devolucon:</label>
+                    <textarea id="txtComentarioDevolver" class="form-control" rows="4" placeholder="Indique que informacion debe corregir el jefe..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-warning font-weight-bold" onclick="ejecutarDevolucion()">Confirmar Devolucon</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    var TIPO_ACTUAL = @(ViewBag.Tipo ?? 1); 
+
+    function aplicarTemaVisual(tipo) {
+        if(tipo == 2) {
+            $('#lblTituloPagina').html('<i class="fas fa-id-badge"></i> Certificacion de Plantilla de Personal');
+            $('#lblTituloTabla').html('<i class="fas fa-list"></i> Detalle Maestro de Certificacion (Revision RRHH)');
+            $('#btn-tab-eval').hide(); 
+            $('#btnMassMil').text('Notificar Pendientes (Certificacion)');
+            $('.col-comision-header').hide();
+            $('.col-cert-header').show();
+            $('#lblKPIAvance').text('Avance Certificacion Jefes');
+            $('#lblKPICambios').text('Cambios en Estructura Puestos');
+        } else {
+            $('#lblTituloPagina').html('<i class="fas fa-tasks"></i> Gestion de Comisiones de Personal');
+            $('#lblTituloTabla').html('<i class="fas fa-list"></i> Detalle Maestro de Comisiones (Revision RRHH)');
+            $('#btn-tab-eval').hide(); 
+            // En modo comisiones mostramos tambien la estructura
+            $('.col-comision-header').show();
+            $('.col-cert-header').show();
+            $('#btnMassMil').text('Notificar Pendientes (Comisiones)');
+            $('#lblKPIAvance').text('Avance Comisiones Jefes');
+            $('#lblKPICambios').text('Cambios en Comision (SI/NO)');
+        }
+    }
+
+    $(document).ready(function() {
+        aplicarTemaVisual(TIPO_ACTUAL);
+        
+        // Si el tipo viene forzado desde el controlador (por el menu), ocultamos el selector
+        if (@(ViewBag.Tipo != null ? "true" : "false")) {
+            $('#colSelectorTipo').hide();
+        }
+
+        $.get('@Url.Action("ObtenerPeriodos", "Compensacion")', function(res) {
+            if(res.success && res.data.length > 0) {
+                var html = '';
+                res.data.forEach(function(p) {
+                    var sel = (p.PeriodoID === res.activoID) ? 'selected' : '';
+                    html += '<option value="' + p.PeriodoID + '" ' + sel + '>' + p.NombrePeriodo + ' (' + p.Estado + ')</option>';
+                });
+                $('#ddlPeriodo').html(html);
+                actualizarVista();
+            } else {
+                Swal.fire('Error', 'No se pudieron cargar los periodos. ' + (res.message || ''), 'error');
+                $('#ddlPeriodo').html('<option value="">Error de periodos</option>');
+            }
+        }).fail(function() {
+            Swal.fire('Error Critico', 'No se pudo conectar con el servidor para obtener periodos.', 'error');
+        });
+    });
+
+    function setTipo(t) {
+        TIPO_ACTUAL = t;
+        $('.btn-tipo').removeClass('active');
+        $('#btn-tab-' + t).addClass('active');
+        $('#panelCertificacion').show();
+        $('#panelEvaluaciones').hide();
+        aplicarTemaVisual(t);
+        actualizarVista();
+    }
+
+    function aplicarTemaVisual(t) {
+        if(t === 1) { // Comisiones
+            $('#lblTituloPagina').html('<i class="fas fa-money-check-alt"></i> Revision de Comisiones (RRHH)').css('color', '#0277BD');
+            $('#lblTituloTabla').html('<i class="fas fa-dollar-sign"></i> Listado Maestro para Revision de Comisiones');
+            $('#headerTablaPrincipal').removeClass('bg-claro').css('background-color', '#0277BD');
+            $('.border-left-claro').css('border-left-color', '#0277BD');
+        } else { // Personal
+            $('#lblTituloPagina').html('<i class="fas fa-users-cog"></i> Certificacion de Plantilla (RRHH)').css('color', '#B71C1C');
+            $('#lblTituloTabla').html('<i class="fas fa-clipboard-check"></i> Listado Maestro para Certificacion de Personal');
+            $('#headerTablaPrincipal').addClass('bg-claro').css('background-color', '');
+            $('.border-left-claro').css('border-left-color', '');
+        }
+    }
+
+    function mostrarTabEvaluaciones() {
+        $('.btn-tipo').removeClass('active');
+        $('#btn-tab-eval').addClass('active');
+        $('#panelCertificacion').hide();
+        $('#panelEvaluaciones').show();
+        cargarDashboardEvaluaciones();
+    }
+
+    function cargarDashboardEvaluaciones() {
+        $('#tbResumenEvalPorGerencia').html('<tr><td colspan="5" class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Cargando resumen...</td></tr>');
+        
+        // Cargar Resumen por Gerencia
+        $.get('@Url.Action("ObtenerResumenPendientesRRHH", "Compensacion")', function(res) {
+            var html = '';
+            if (res.data && res.data.length > 0) {
+                // Agrupar por Gerencia
+                var map = {};
+                res.data.forEach(function(item) {
+                    if(!map[item.Gerencia]) map[item.Gerencia] = { Bajas: 0, Ingresos: 0 };
+                    if(item.Tipo === 'BAJA') map[item.Gerencia].Bajas = item.Cantidad;
+                    else map[item.Gerencia].Ingresos = item.Cantidad;
+                });
+
+                for (var g in map) {
+                    var total = map[g].Bajas + map[g].Ingresos;
+                    html += '<tr>' +
+                        '<td><strong>' + g + '</strong></td>' +
+                        '<td class="text-center"><span class="badge ' + (map[g].Bajas > 0 ? 'badge-danger' : 'badge-light') + '">' + map[g].Bajas + '</span></td>' +
+                        '<td class="text-center"><span class="badge ' + (map[g].Ingresos > 0 ? 'badge-primary' : 'badge-light') + '">' + map[g].Ingresos + '</span></td>' +
+                        '<td class="text-center font-weight-bold h6">' + total + '</td>' +
+                        '<td class="text-center border-0">' +
+                             '<button class="btn btn-xs btn-outline-danger" onclick="alert(\'Funcionalidad de recordatorio por gerencia en desarrollo\')"><i class="fas fa-envelope"></i> Avisar</button>' +
+                        '</td>' +
+                    '</tr>';
+                }
+            } else {
+                html = '<tr><td colspan="5" class="text-center p-4 text-success"><i class="fas fa-check-circle"></i> No hay evaluaciones pendientes en ninguna gerencia.</td></tr>';
+            }
+            $('#tbResumenEvalPorGerencia').html(html);
+        });
+
+        cargarHistorial();
+    }
+
+    let g_Detalles = [];
+    
+    // Funcon para abrir modal de exclusiones y cargar data
+    function abrirModalExclusiones() {
+        cargarExclusiones();
+        $('#modalExclusiones').modal('show');
+    }
+
+    function cargarExclusiones() {
+        $('#tbExclusiones').html('<tr><td colspan="4" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>');
+        $.get('@Url.Action("ObtenerExclusiones", "Compensacion")', function (res) {
+            if (res.success) {
+                var html = '';
+                res.data.forEach(function(x) {
+                    html += '<tr>' +
+                        '<td><span class="badge badge-dark">' + x.TipoExclusion + '</span></td>' +
+                        '<td>' + x.ValorExclusion + '</td>' +
+                        '<td><small>' + (x.Motivo || '-') + '</small></td>' +
+                        '<td class="text-right">' +
+                            '<button class="btn btn-xs btn-outline-danger border-0" onclick="quitarExclusion(' + x.ExclusionID + ')">' +
+                                '<i class="fas fa-trash"></i>' +
+                            '</button>' +
+                        '</td>' +
+                    '</tr>';
+                });
+                if (res.data.length == 0) html = '<tr><td colspan="4" class="text-center text-muted small">No hay exclusiones configuradas.</td></tr>';
+                $('#tbExclusiones').html(html);
+            }
+        });
+    }
+
+    function guardarExclusion() {
+        const tipo = $('#ddlTipoEx').val();
+        const valor = $('#txtValorEx').val();
+        const motivo = $('#txtMotivoEx').val();
+
+        if (!valor) {
+            Swal.fire('Atencion', 'Debe ingresar un valor (Carnet o Nombre de Gerencia).', 'warning');
+            return;
+        }
+
+        $.post('@Url.Action("AgregarExclusion", "Compensacion")', { tipo, valor, motivo }, function (res) {
+            if (res.success) {
+                $('#txtValorEx').val('');
+                $('#txtMotivoEx').val('');
+                cargarExclusiones();
+                Swal.fire('Exito', 'Exclusion agregada correctamente.', 'success');
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        });
+    }
+
+    function quitarExclusion(id) {
+        Swal.fire({
+            title: 'a?Eliminar exclusion?',
+            text: "Esta gerencia o empleado volvera a ser visible en el sistema.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Si, eliminar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("QuitarExclusion", "Compensacion")', { exclusionId: id }, function (res) {
+                    if (res.success) {
+                        cargarExclusiones();
+                        Swal.fire('Eliminado', 'La exclusion ha sido removida.', 'success');
+                    }
+                });
+            }
+        });
+    }
+    function verHistorial(id, nombre) {
+        $('#txtHistorialEmp').text(nombre);
+        $('#timelineHistorial').html('<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Consultando bitacora...</p></div>');
+        $('#modalHistorial').modal('show');
+
+        $.get('@Url.Action("ObtenerAuditoriaDetalle", "Compensacion")', { detalleId: id }, function (res) {
+            if (res.success) {
+                var html = '';
+                if (res.data.length == 0) {
+                    html = '<div class="text-center p-5 text-muted"><i class="fas fa-info-circle fa-2x mb-3"></i><p>No se registran cambios manuales para este empleado en el periodo actual. Todos los valores coinciden con SighoO1.</p></div>';
+                } else {
+                    res.data.forEach(function(x) {
+                        var fecha = x.FechaModificacion ? new Date(parseInt(x.FechaModificacion.substr(6))).toLocaleString() : '-';
+                        var icono = 'fa-edit';
+                        var color = 'info';
+                        if(x.CampoModificado.indexOf('Comisiona') !== -1) { icono = 'fa-dollar-sign'; color = 'success'; }
+                        if(x.CampoModificado.indexOf('Jefe') !== -1) { icono = 'fa-user-tie'; color = 'primary'; }
+
+                        html += '' +
+                            '<div class="d-flex mb-4">' +
+                                '<div class="mr-3 text-center" style="width: 40px;">' +
+                                    '<div class="rounded-circle bg-' + color + ' text-white shadow-sm d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">' +
+                                        '<i class="fas ' + icono + ' fa-sm"></i>' +
+                                    </div>' +
+                                    '<div class="bg-light mx-auto" style="width: 2px; height: 100%;"></div>' +
+                                '</div>' +
+                                '<div class="flex-grow-1 bg-light p-3 rounded shadow-sm border-left border-' + color + '" style="border-left-width: 4px !important;">' +
+                                    '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                                        '<span class="font-weight-bold text-dark text-uppercase small">' + x.CampoModificado + '</span>' +
+                                        '<span class="badge badge-secondary py-1">' + fecha + '</span>' +
+                                    </div>' +
+                                    '<div class="small">' +
+                                        '<div class="text-muted"><del>' + (x.ValorAnterior || '(Vaci?o)') + '</del></div>' +
+                                        '<div class="font-weight-bold text-success"><i class="fas fa-arrow-right mr-1"></i> ' + x.ValorNuevo + '</div>' +
+                                    </div>' +
+                                    '<div class="mt-2 text-right">' +
+                                        '<small class="text-muted"><i class="fas fa-user-edit mr-1"></i> ' + (x.UsuarioModifica || 'Sistema') + '</small>' +
+                                    </div>' +
+                                '</div>' +
+                            '</div>';
+                    });
+                }
+                $('#timelineHistorial').html(html);
+            } else {
+                $('#timelineHistorial').html('<div class="alert alert-danger m-3">Error al cargar historial: ' + res.message + '</div>');
+            }
+        });
+    }
+
+    function aprobar(id) {
+        Swal.fire({
+            title: 'a?Confirmar Aprobacon?',
+            text: "Al aprobar, la gerencia se marca como lista para el cierre de ni?mina.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Si?, aprobar ahora'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("AprobarPlantilla", "Compensacion")', { plantillid: id }, function (res) {
+                    if (res.success) {
+                        Swal.fire('a?Aprobado!', 'La gerencia ha sido autorizada.', 'success');
+                        actualizarVista();
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function abrirDevolver(id) {
+        $('#txtIdDevolver').val(id);
+        $('#txtComentarioDevolver').val('');
+        $('#modalDevolver').modal('show');
+    }
+
+    function ejecutarDevolucion() {
+        const id = $('#txtIdDevolver').val();
+        const comentario = $('#txtComentarioDevolver').val();
+
+        if (!comentario) {
+            Swal.fire('Falta Comentario', 'Debe indicar el motivo de la devolucon.', 'warning');
+            return;
+        }
+
+        $.post('@Url.Action("DevolverPlantilla", "Compensacion")', { plantillid: id, comentario: comentario }, function (res) {
+            if (res.success) {
+                $('#modalDevolver').modal('hide');
+                Swal.fire('Devuelto', 'La plantilla ha sido devuelta al jefe de area.', 'info');
+                actualizarVista();
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        });
+    }
+
+    function sincronizarSighoo(id) {
+        Swal.fire({
+            title: 'Sincronizar con SighoO1',
+            text: "a?Desea persistir los cambios aprobados en la base de datos de ni?mina?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0277BD',
+            confirmButtonText: 'Si?, sincronizar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Sincronizando...', didOpen: () => { Swal.showLoading() } });
+                $.post('@Url.Action("SincronizarSighoo", "Compensacion")', { plantillid: id }, function (res) {
+                    if (res.success) {
+                        Swal.fire('i?xito', res.message, 'success');
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function descargarExcel() {
+        var idPer = $('#ddlPeriodo').val();
+        window.location.href = '@Url.Action("ExportarExcel", "Compensacion")?periodoId=' + idPer + '&tipo=' + TIPO_ACTUAL;
+    }
+
+    function actualizarVista(mantenerDatos = false) {
+        const idPer = $('#ddlPeriodo').val();
+        if(!idPer) return;
+
+        // Si solo estamos filtrando cambios locales, no re-cargamos de DB
+        if(mantenerDatos) {
+            renderizarTabla(g_Detalles);
+            return;
+        }
+
+        // Cargar KPIs
+        $.get('@Url.Action("ObtenerKPI", "Compensacion")?periodoId=' + idPer, function(res) {
+            if(res.success) {
+                var k = res.kpi;
+                var perc = k.TotalJefes > 0 ? Math.round((k.Terminados / k.TotalJefes) * 100) : 0;
+                $('#txtKPIPerc').text(perc + '%');
+                $('#barKPI').css('width', perc + '%');
+                $('#txtKPIPlazas').text(k.UniversoTotal);
+                $('#txtKPIPeriodo').text($('#ddlPeriodo option:selected').text());
+            }
+        }).fail(function(xhr, status, error) {
+            console.error("KPI Error:", xhr.responseText);
+        });
+
+        $('#tbCuerpoMaestro').html('<tr><td colspan="13" class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Cargando universo de empleados...</td></tr>');
+        
+        // Cargar lista detallada masiva
+        $.get('@Url.Action("ObtenerTodosDetallesRevision", "Compensacion")?periodoId=' + idPer + '&tipo=' + TIPO_ACTUAL, function(res) {
+            if(!res.success) {
+                Swal.fire('Error al Cargar Detalle', res.message, 'error');
+                $('#tbCuerpoMaestro').html('<tr><td colspan="13" class="text-center p-4 text-danger"><b>Error:</b> ' + res.message + '</td></tr>');
+                return;
+            }
+            
+            g_Detalles = res.data || [];
+            
+            // Calcular KPI de Discrepancias
+            var cambios = g_Detalles.filter(function(d) {
+                return (d.Cargo_Reportado && d.Cargo_Reportado !== d.Cargo_SIGHO) ||
+                (d.Jefe_Reportado && d.Jefe_Reportado !== d.Jefe_SIGHO) ||
+                (d.Ubicacion_Reportada && d.Ubicacion_Reportada !== d.Ubicacion_SIGHO) ||
+                (d.Comisiona !== (d.Comisiona_Original || d.Comisiona));
+            }).length;
+            $('#txtKPICambios').text(cambios);
+ 
+            prepararFiltrosUI(g_Detalles);
+            renderizarTabla(g_Detalles);
+        }).fail(function(xhr, status, error) {
+            console.error("Detalle Error:", xhr.responseText);
+            Swal.fire('Error de Conexion', 'No se pudo obtener el detalle maestro. Estado: ' + status + ', Error: ' + error, 'error');
+            $('#tbCuerpoMaestro').html('<tr><td colspan="13" class="text-center p-4 text-danger"><b>Error Tecnico:</b> ' + status + ' - ' + error + '</td></tr>');
+        });
+    }
+
+    function prepararFiltrosUI(detalles) {
+        var setEmpresas = new Set(), setJefes = new Set(), setUbis = new Set(), setCargos = new Set();
+        detalles.forEach(function(d) {
+            setEmpresas.add(d.Empresa_SIGHO || 'N/A');
+            setJefes.add(d.Jefe_SIGHO || 'Sin Jefe');
+            setUbis.add(d.Ubicacion_SIGHO || 'Sin Ubicacion');
+            setCargos.add(d.Cargo_SIGHO || 'Sin Cargo');
+        });
+
+        var sortedEmp = []; setEmpresas.forEach(function(v) { sortedEmp.push(v); });
+        var sortedJef = []; setJefes.forEach(function(v) { sortedJef.push(v); });
+        var sortedUbis = []; setUbis.forEach(function(v) { sortedUbis.push(v); });
+        var sortedCargos = []; setCargos.forEach(function(v) { sortedCargos.push(v); });
+
+        $('#fEmpresa').html('<option value="">[ Todas ]</option>' + sortedEmp.sort().map(function(x) { return '<option value="' + x + '">' + x + '</option>'; }).join(''));
+        $('#fJefe').html('<option value="">[ Jefes ]</option>' + sortedJef.sort().map(function(x) { return '<option value="' + x + '">' + x + '</option>'; }).join(''));
+        $('#fUbi').html('<option value="">[ Sedes ]</option>' + sortedUbis.sort().map(function(x) { return '<option value="' + x + '">' + x + '</option>'; }).join(''));
+        $('#fCargo').html('<option value="">[ Cargos ]</option>' + sortedCargos.sort().map(function(x) { return '<option value="' + x + '">' + x + '</option>'; }).join(''));
+        $('#filaFiltrosUI').show();
+    }
+
+    function filtraLocal() {
+        const valEmp = $('#fEmpresa').val();
+        const valCar = $('#fCargo').val();
+        const valJef = $('#fJefe').val();
+        const valUbi = $('#fUbi').val();
+
+        if (g_Table) {
+            // Empresa es columna i?ndice 2
+            g_Table.column(2).search(valEmp ? '^' + valEmp + '$' : '', true, false);
+            // Cargo SighoO es columna i?ndice 4
+            g_Table.column(4).search(valCar);
+            // Jefe SighoO es columna i?ndice 6
+            g_Table.column(6).search(valJef);
+            // Ubicacion SighoO es columna i?ndice 8
+            g_Table.column(8).search(valUbi);
+            
+            g_Table.draw();
+        }
+    }
+
+    let g_Table = null;
+
+    function renderizarTabla(detalles) {
+        var filtrados = detalles;
+        
+        // FILTRO DE DISCREPANCIAS (Frontend)
+        if($('#chkSoloCambios').is(':checked')) {
+            filtrados = detalles.filter(function(d) {
+                return (d.Cargo_Reportado && d.Cargo_Reportado !== d.Cargo_SIGHO) ||
+                (d.Jefe_Reportado && d.Jefe_Reportado !== d.Jefe_SIGHO) ||
+                (d.Ubicacion_Reportada && d.Ubicacion_Reportada !== d.Ubicacion_SIGHO) ||
+                (d.Comisiona !== (d.Comisiona_Original || d.Comisiona));
+            });
+        }
+
+        if (g_Table) {
+            g_Table.destroy();
+            $('#tbCuerpoMaestro').empty();
+        }
+
+        g_Table = $('#tbMaestroRevision').DataTable({
+            data: filtrados,
+            pageLength: 50,
+            autoWidth: false,
+            responsive: false,
+            columnDefs: [
+                { targets: [10, 11], visible: (TIPO_ACTUAL != 2) }
+            ],
+            order: [[0, 'asc'], [1, 'asc']], // 0: Gerencia (oculta), 1: Nombre
+            rowGroup: {
+                dataSrc: 'OGERENCIA_SIGHO',
+                startRender: function (rows, group) {
+                    var firstRow = rows.data()[0];
+                    var estClass = firstRow.Estado === 'Enviado' ? 'badge-primary' : (firstRow.Estado === 'Aprobado' ? 'badge-success' : 'badge-secondary');
+                    var colorHeader = TIPO_ACTUAL === 1 ? '#01579B' : '#343a40';
+
+                    var html = '<tr class="gerencia-header" style="background-color: ' + colorHeader + '">' +
+                        '<td colspan="11">' +
+                                    '<i class="fas fa-sitemap mr-2"></i> ' + (group || 'Sin asignar') + ' ' + 
+                                    '<span class="badge ' + estClass + ' ml-2">' + (firstRow.Estado || '').toUpperCase() + '</span>' +
+                                    '<small class="ml-2"><b>Validador:</b> ' + (firstRow.NombreGerente || '-') + '</small>' +
+                                 '</td>' +
+                                 '<td colspan="2" class="text-right">';
+                    
+                    if(firstRow.Estado === 'Enviado') {
+                        html += '<button class="btn btn-xs btn-success py-0 px-2 font-weight-bold" onclick="aprobar(' + firstRow.PlantilliD + ')"><i class="fas fa-check"></i> Aprobar</button>' +
+                                '<button class="btn btn-xs btn-danger py-0 px-2 font-weight-bold ml-1" onclick="abrirDevolver(' + firstRow.PlantilliD + ')"><i class="fas fa-undo"></i> Devolver</button>';
+                    }
+                    if(firstRow.Estado === 'Aprobado') {
+                        html += '<button class="btn btn-xs btn-primary py-0 px-2 font-weight-bold" onclick="sincronizarSighoo(' + firstRow.PlantilliD + ')"><i class="fas fa-sync"></i> Sincronizar</button>';
+                    }
+                    
+                    html += '<button class="btn btn-xs btn-info py-0 px-2 font-weight-bold ml-1" onclick="notificarJefe(\'' + firstRow.CarnetGerente + '\')">' +
+                                        '<i class="fas fa-envelope"></i> Notificar' +
+                                    '</button>' +
+                                 '</td></tr>';
+                    return $(html);
+                }
+            },
+            columns: [
+                { data: 'OGERENCIA_SIGHO', visible: false }, // Indice 0
+                { 
+                    data: 'NombreCompleto', // Indice 1
+                    render: function(d, t, r) {
+                        return '<strong>' + r.NombreCompleto + '</strong><br><small class="text-muted">' + r.CarnetEmpleado + '</small>';
+                    }
+                },
+                { data: 'Empresa_SIGHO' }, // Indice 2
+                { data: 'Departamento_SIGHO' }, // Indice 3
+                { 
+                    data: 'Cargo_SIGHO', // Indice 4
+                    visible: true, // Siempre visible para certificar estructura
+                    className: 'small',
+                    render: function(d) { return '<div class="text-truncate" style="max-width:150px" title="' + (d || '') + '">' + (d || '-') + '</div>'; }
+                },
+                { 
+                    data: 'Cargo_Reportado', // Indice 5
+                    visible: true, // Siempre visible
+                    className: 'small font-weight-bold text-primary',
+                    render: function(d) { return '<div class="text-truncate" style="max-width:150px" title="' + (d || '') + '">' + (d || '-') + '</div>'; }
+                },
+                { 
+                    data: 'Jefe_SIGHO', // Indice 6
+                    visible: true, // Siempre visible
+                    className: 'small',
+                    render: function(d) { return '<div class="text-truncate" style="max-width:150px" title="' + (d || '') + '">' + (d || '-') + '</div>'; }
+                },
+                { 
+                    data: 'Jefe_Reportado', // Indice 7
+                    visible: true, // Siempre visible
+                    className: 'small font-weight-bold text-primary',
+                    render: function(d) { return '<div class="text-truncate" style="max-width:150px" title="' + (d || '') + '">' + (d || '-') + '</div>'; }
+                },
+                { 
+                    data: 'Ubicacion_SIGHO',  // Indice 8
+                    visible: true, // Siempre visible
+                    className: 'small' 
+                }, 
+                { 
+                    data: 'Ubicacion_Reportada', // Indice 9
+                    visible: true, // Siempre visible
+                    className: 'small font-weight-bold text-primary' 
+                }, 
+                { 
+                    data: 'Comisiona_Original', // Indice 10
+                    visible: (TIPO_ACTUAL === 1),
+                    className: 'text-center align-middle',
+                    render: function(d) { return d === 'S' ? '<span class="badge badge-success">SI</span>' : '<span class="badge badge-secondary">NO</span>'; }
+                },
+                { 
+                    data: 'Comisiona', // Indice 11
+                    visible: (TIPO_ACTUAL === 1),
+                    className: 'text-center align-middle',
+                    render: function(d, t, r) {
+                        var changed = (r.Comisiona && r.Comisiona !== (r.Comisiona_Original || r.Comisiona)) ? 'bg-warning text-dark font-weight-bold' : '';
+                        return '<span class="badge ' + (changed || (d === 'S' ? 'badge-success' : 'badge-secondary')) + '">' + (d === 'S' ? 'SI' : 'NO') + '</span>';
+                    }
+                },
+                { 
+                    data: 'Observacion', // Indice 12
+                    render: function(d) { return '<small class="text-muted">' + (d || '-') + '</small>'; }
+                },
+                {
+                    data: 'DetalleID', // Indice 13
+                    className: 'text-center',
+                    render: function(d, t, r) { return '<button class="btn btn-xs btn-outline-info" onclick="verHistorial(' + d + ', \'' + escapeJsString(r.NombreCompleto) + '\')"><i class="fas fa-history"></i></button>'; }
+                }
+            ],
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+            }
+        });
+    }
+
+    function aplicarFiltroSuperior() {
+        const emp = $('#selEmpresa').val();
+        const jef = $('#selJefe').val();
+        const ubi = $('#selUbicacion').val();
+
+        if (g_Table) {
+            g_Table.column(1).search(emp); // Columna Empresa
+            g_Table.column(6).search(jef); // Columna Jefe SighoO (aprox, ajustar indice si falla)
+            // Para filtros multiples o complejos, podemos usar g_Table.draw()
+            g_Table.draw();
+        }
+    }
+
+    function notificarJefe(carnet) {
+        const idPer = $('#ddlPeriodo').val();
+        Swal.fire({
+            title: 'Enviar notificacion?',
+            text: "Se enviara un correo con la tabla de su personal al validador designado.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#B71C1C',
+            confirmButtonText: 'Si, enviar ahora'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.showLoading();
+                $.post('@Url.Action("NotificarJefe", "Compensacion")', { periodoId: idPer, carnetJefe: carnet, tipoPlantilla: TIPO_ACTUAL }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Enviado', res.message, 'success');
+                        actualizarVista();
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function guardarConfig() {
+        const idPer = $('#ddlPeriodo').val();
+        const f = $('#txtFechaLimite').val();
+        if(!f) { alert('Seleccione una fecha'); return; }
+
+        $.post('@Url.Action("GuardarConfiguracionPeriodo", "Compensacion")', { periodoId: idPer, fechaLimite: f, cuerpo: '' }, function(res) {
+            if(res.success) {
+                Swal.fire('Guardado', 'Se ha configurado la fecha limite para este periodo.', 'success');
+            }
+        });
+    }
+
+    function notificarMasivo() {
+        var idPer = $('#ddlPeriodo').val();
+        Swal.fire({
+            title: 'Notificar a todos los pendientes?',
+            text: 'Se enviara un correo a todos los validadores que aun tienen su Certificacion en \'Borrador\' para el tipo ' + (TIPO_ACTUAL === 1 ? 'Comisiones' : 'Plantilla Personal (Certificacion)') + '.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#B71C1C',
+            confirmButtonText: 'Si, enviar masivamente'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                Swal.showLoading();
+                $.post('@Url.Action("NotificarMasivo", "Compensacion")', { periodoId: idPer, tipoPlantilla: TIPO_ACTUAL }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Masivo Completado', res.message, 'success');
+                        actualizarVista();
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function abrirModalExclusiones() {
+        cargarExclusiones();
+        $('#modalExclusiones').modal('show');
+    }
+
+    function cargarExclusiones() {
+        $.get('@Url.Action("ObtenerExclusiones", "Compensacion")', function(res) {
+            var html = '';
+            res.data.forEach(function(x) {
+                html += '<tr>' +
+                    '<td class="small">' + x.TipoExclusion + '</td>' +
+                    '<td><strong>' + x.ValorExclusion + '</strong></td>' +
+                    '<td class="small text-muted">' + (x.Motivo || '-') + '</td>' +
+                    '<td class="text-right"><button class="btn btn-sm btn-outline-danger border-0" onclick="quitarExclusion(' + x.ExclusionID + ')"><i class="fas fa-trash-alt"></i></button></td>' +
+                '</tr>';
+            });
+            $('#tbExclusiones').html(html || '<tr><td colspan="4" class="text-center text-muted">No hay exclusiones activas.</td></tr>');
+            
+            // Actualizar badge en cabecera
+            if(res.data.length > 0) {
+                $('#countExcluidos').text(res.data.length);
+                $('#wrapperBadgeEx').fadeIn();
+            } else {
+                $('#wrapperBadgeEx').fadeOut();
+            }
+        });
+    }
+
+    function guardarExclusion() {
+        const t = $('#ddlTipoEx').val();
+        const v = $('#txtValorEx').val();
+        const m = $('#txtMotivoEx').val();
+        if(!v) return;
+
+        $.post('@Url.Action("AgregarExclusion", "Compensacion")', { tipo: t, valor: v, motivo: m }, function(res) {
+            if(res.success) {
+                $('#txtValorEx').val('');
+                $('#txtMotivoEx').val('');
+                cargarExclusiones();
+                actualizarVista();
+            }
+        });
+    }
+
+    function quitarExclusion(id) {
+        $.post('@Url.Action("QuitarExclusion", "Compensacion")', { exclusionId: id }, function(res) {
+            if(res.success) { 
+                cargarExclusiones();
+                actualizarVista();
+            }
+        });
+    }
+
+    function exportarExcel(id) {
+        window.location.href = '@Url.Action("ExportarExcelFinal", "Compensacion")?plantillid=' + id;
+    }
+
+    function cargarHistorial() {
+        $.get('@Url.Action("ObtenerHistorialEvaluaciones", "Compensacion")', function(res) {
+            var html = '';
+            res.data.forEach(function(h) {
+                var fEval = new Date(parseInt(h.FechaEvaluacion.substr(6))).toLocaleDateString();
+                var fEfec = new Date(parseInt(h.FechaBaja || h.Fechingreso)).toLocaleDateString();
+                var badge = h.Tipo === 'BAJA' ? 'badge-danger' : 'badge-primary';
+                html += '<tr>' +
+                    '<td><span class="badge ' + badge + '">' + h.Tipo + '</span></td>' +
+                    '<td>' + h.NombreEmpleado + '<br><small class="text-muted">' + h.CarnetEmpleado + '</small></td>' +
+                    '<td>' + fEfec + '</td>' +
+                    '<td>' + (h.MotivoBaja || h.ResultadoFinal) + '</td>' +
+                    '<td>' + h.CarnetEvaluador + '</td>' +
+                    '<td>' + fEval + '</td>' +
+                '</tr>';
+            });
+            $('#tbodyHistorial').html(html);
+        });
+    }
+
+    function notificarMasivoBajas() {
+        Swal.fire({ title: 'Enviar recordatorios?', text: 'Se notificara a los jefes con evaluaciones de baja pendientes.', icon: 'question', showCancelButton: true }).then(r => {
+            if(r.isConfirmed) {
+                $.post('@Url.Action("NotificarPendientesBaja", "Compensacion")', r => Swal.fire('Enviado', r.message, 'success'));
+            }
+        });
+    }
+
+    function notificarMasivoIngresos() {
+        Swal.fire({ title: 'Enviar recordatorios?', text: 'Se notificara a los jefes con ingresos de periodo de prueba pendientes.', icon: 'question', showCancelButton: true }).then(r => {
+            if(r.isConfirmed) {
+                $.post('@Url.Action("NotificarPendientesIngreso", "Compensacion")', r => Swal.fire('Enviado', r.message, 'success'));
+            }
+        });
+    }
+
+    function sincronizarSighoo(id) {
+        Swal.fire({
+            title: 'Sincronizar con SighoO1?',
+            text: "Esta accion actualizara directamente los cargos y ubicaciones en la base de datos oficial de empleados. Es irreversible!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Si, sincronizar ahora'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.showLoading();
+                $.post('@Url.Action("AplicarCambiosSighoo", "Compensacion")', { plantillid: id }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Sincronizado', res.message, 'success');
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+     function verDetalle(id, nom, est) {
+        $('#lblGerente').text(nom);
+        $.get('@Url.Action("ObtenerDetallePlantilla", "Compensacion")?plantillid=' + id, function(res) {
+            var html = '';
+            res.data.forEach(function(d) {
+                var cCargo = (d.Cargo_Reportado && d.Cargo_Reportado !== d.Cargo_SIGHO) ? 'changed' : '';
+                var cJefe = (d.Jefe_Reportado && d.Jefe_Reportado !== d.Jefe_SIGHO) ? 'changed' : '';
+                var cUbi = (d.Ubicacion_Reportada && d.Ubicacion_Reportada !== d.Ubicacion_SIGHO) ? 'changed' : '';
+                var cCom = (d.Comisiona && d.Comisiona !== (d.Comisiona_Original || d.Comisiona)) ? 'changed' : '';
+                
+                html += '<tr>' +
+                    '<td class="align-middle"><strong>' + d.NombreCompleto + '</strong><br><small class="text-muted">' + d.CarnetEmpleado + '</small></td>' +
+                    '<td class="align-middle small text-muted text-center">' + (d.Empresa_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle small text-muted">' + (d.Departamento_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle small text-muted">' + (d.Cargo_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle ' + cCargo + '">' + (d.Cargo_Reportado || d.Cargo_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle small text-muted">' + (d.Jefe_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle ' + cJefe + '">' + (d.Jefe_Reportado || d.Jefe_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle small text-muted">' + (d.Ubicacion_SIGHO || '-') + '</td>' +
+                    '<td class="align-middle ' + cUbi + '">' + (d.Ubicacion_Reportada || d.Ubicacion_SIGHO || '-') + '</td>';
+
+                if(TIPO_ACTUAL != 2) {
+                    html += '<td class="text-center align-middle small text-muted">' + (d.Comisiona_Original || 'N') + '</td>' +
+                            '<td class="text-center align-middle ' + cCom + '"><b>' + d.Comisiona + '</b></td>';
+                }
+
+                html += '<td class="align-middle small text-muted">-</td>' +
+                    '<td class="align-middle">' + (d.Observacion || '-') + '</td>' +
+                '</tr>';
+            });
+            $('#tbDetalles').html(html);
+
+            var footer = '';
+            if(est === 'Enviado') {
+                footer = '<div class="input-group">' +
+                        '<input type="text" id="txtDev" class="form-control form-control-sm" placeholder="Motivo en caso de devolver...">' +
+                        '<div class="input-group-append">' +
+                            '<button class="btn btn-danger btn-sm" onclick="devolver(' + id + ')"><i class="fas fa-undo"></i> Devolver al Gerente</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-success btn-sm ml-2 shadow-sm font-weight-bold" onclick="aprobar(' + id + ')"><i class="fas fa-check"></i> Aprobar Plantilla Definitiva</button>';
+            } else if (est === 'Aprobado') {
+                footer = '<div class="alert alert-success d-inline-block py-1 px-2 m-0 mr-auto small">' +
+                        '<i class="fas fa-check-double"></i> Plantilla Aprobada' +
+                    '</div>' +
+                    '<button class="btn btn-primary btn-sm shadow-sm font-weight-bold" onclick="sincronizarSighoo(' + id + ')">' +
+                        '<i class="fas fa-sync"></i> Sincronizar con SighoO1' +
+                    '</button>' +
+                    '<button class="btn btn-secondary btn-sm ml-2" data-dismiss="modal">Cerrar</button>';
+            } else {
+                footer = '<button class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>';
+            }
+            $('#footerAcciones').html(footer);
+            $('#modalDetalle').modal('show');
+        });
+    }
+modal('show');
+        });
+    }
+
+    function verHistorial(detalleId, nombreEmp) {
+        $('#lblHistorialEmp').text(nombreEmp);
+        $.get('@Url.Action("ObtenerAuditoria", "Compensacion")?detalleId=' + detalleId, function(res) {
+            var html = '';
+            if(res.data.length === 0){
+                html = '<tr><td colspan="5" class="text-center text-muted p-3">No hay registro de modificaciones o auditoria para este empleado.</td></tr>';
+            } else {
+                res.data.forEach(function(d) {
+                    var fecha = new Date(parseInt(d.FechaCambio.substr(6))).toLocaleString('es-ES');
+                    html += '<tr>' +
+                        '<td class="align-middle">' + fecha + '</td>' +
+                        '<td class="align-middle"><small>' + (d.NombreGeneraCambio || d.CarnetUsuario) + '</small></td>' +
+                        '<td class="align-middle text-primary"><b>' + d.Campo + '</b></td>' +
+                        '<td class="text-danger align-middle">' + (d.ValorAnterior || '-') + '</td>' +
+                        '<td class="text-success align-middle font-weight-bold">' + (d.ValorNuevo || '-') + '</td>' +
+                    '</tr>';
+                });
+            }
+            $('#tbHistorial').html(html);
+            $('#modalHistorial').modal('show');
+        });
+    }
+
+    function abrirDevolver(id) {
+        Swal.fire({
+            title: 'Devolver Plantilla',
+            input: 'text',
+            inputPlaceholder: 'Motivo de devolucion...',
+            showCancelButton: true,
+            confirmButtonText: 'Enviar al Gerente'
+        }).then(function(res) {
+            if(res.value) {
+                $.post('@Url.Action("DevolverPlantilla", "Compensacion")', { plantillid: id, comentario: res.value }, function(r) {
+                    actualizarVista();
+                });
+            }
+        });
+    }
+
+    function aprobar(id) {
+        Swal.fire({
+            title: 'Aprobar Plantilla',
+            text: 'a?Esta seguro de cerrar esta certificacion?',
+            icon: 'question',
+            showCancelButton: true
+        }).then(function(res) {
+            if(res.isConfirmed) {
+                $.post('@Url.Action("AprobarPlantilla", "Compensacion")', { plantillid: id }, function(r) {
+                    actualizarVista();
+                });
+            }
+        });
+    }
+
+    function cargarBitacora() {
+        var list = $('#listBitacora');
+        list.html('<li class="list-group-item text-center"><div class="spinner-border spinner-border-sm text-claro"></div> Cargando historial...</li>');
+
+        $.get('@Url.Action("ObtenerBitacora", "Compensacion")', function(res) {
+            if (res.success && res.logs.length > 0) {
+                var html = '';
+                res.logs.forEach(function(log) {
+                    var fecha = new Date(parseInt(log.FechaCambio.substr(6))).toLocaleString();
+                    html += '<li class="list-group-item">' +
+                        '<div class="d-flex w-100 justify-content-between">' +
+                            '<h6 class="mb-1 text-dark font-weight-bold"><i class="fas fa-edit text-muted"></i> ' + log.Empleado + '</h6>' +
+                            '<small class="text-muted"><i class="far fa-clock"></i> ' + fecha + '</small>' +
+                        '</div>' +
+                        '<p class="mb-1 small">' +
+                            'Cambo <strong>' + log.Campo + '</strong>: de <span class="badge badge-light strike">' + (log.ValorAnterior || '-') + '</span> ' +
+                            'a <span class="badge badge-success shadow-sm">' + log.ValorNuevo + '</span>' +
+                        '</p>' +
+                        '<small class="text-muted"><i class="fas fa-user-tag"></i> Responsable: ' + log.CarnetUsuario + '</small>' +
+                    '</li>';
+                });
+                list.html(html);
+            } else {
+                list.html('<li class="list-group-item text-center text-muted">No hay actividad reciente registrada.</li>');
+            }
+        });
+    }
+</script>
+
+<!-- DataTables JS Support -->
+<script src="~/onlinejs/jquery.dataTables.min.js"></script>
+<script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+<script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+<script src="~/onlinejs/dataTables.responsive.min.js"></script>
+}
+
+
+

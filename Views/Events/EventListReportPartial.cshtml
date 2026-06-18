@@ -1,0 +1,51 @@
+﻿
+@using slnRhonline.Reports
+ 
+@Html.DevExpress().GetStyleSheets(
+        new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" },
+
+        new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+           new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+    )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@Html.DevExpress().DocumentViewer(settings =>
+{
+    settings.Name = "DocumentViewer";
+    settings.CallbackRouteValues = new
+    {
+        Controller = "Events",
+        Action = "EventListReportPartial"
+    };
+    settings.ExportRouteValues = new
+    {
+        Controller = "Events",
+        Action = "ExportEventListReport"
+    };
+    settings.Report = new EventList()
+    {
+        DataSource = Model
+    };
+}).GetHtml()
+
+
+
+
+

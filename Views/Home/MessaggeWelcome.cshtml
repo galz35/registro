@@ -1,0 +1,432 @@
+﻿@model Entities.Employees
+@{
+    ViewBag.Title = "Bienvenidos";
+}@{
+    ViewData["ExcludeDevExpress"] = false;
+}
+<style>
+    .custom-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        gap: 20px;
+    }
+
+
+
+    
+  
+
+    table.dataTable {
+        width: 100%;
+        border-collapse: collapse;
+        border-spacing: 0;
+        background-color: white;
+    }
+
+        table.dataTable th {
+            background-color: #f44336;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            border-bottom: 2px solid #f44336;
+        }
+
+        table.dataTable td {
+            padding: 8px 10px;
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+            vertical-align: top;
+        }
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+    .card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        align-items: center;
+        border-left: 5px solid;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+         font-size: 12px;       
+        line-height: 1.4;
+    }
+
+        
+        .card.proxima {
+            border-image: linear-gradient(90deg, #4caf50, #8bc34a) 1;
+        }
+
+        .card.pasada {
+            border-image: linear-gradient(90deg, #f44336, #ff7961) 1;
+        }
+        .card.hoy {
+            background-color: honeydew;
+            border-left: 5px solid orange;
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #333;
+            display: inline;
+        }
+
+        .card .meta {
+            font-size: 12px;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+    .status {
+        display: block;
+        text-align: center;
+        font-weight: bold;
+        font-size: 14px;
+        color: white;
+        padding: 5px;
+        margin-bottom: 5px;
+        border-radius: 3px;
+    }
+
+        .status.proxima {
+            background-color: #4caf50;
+            display: flex; /* Habilita Flexbox */
+            justify-content: center; /* Centra horizontalmente */
+            align-items: center; /* Centra verticalmente */
+            height: 100%; /* Asegura que ocupe toda la altura del contenedor */
+        }
+
+        .status.pasada {
+            background-color: #f44336;
+            display: flex; /* Habilita Flexbox */
+            justify-content: center; /* Centra horizontalmente */
+            align-items: center; /* Centra verticalmente */
+            height: 100%; /* Asegura que ocupe toda la altura del contenedor */
+        }
+
+
+
+
+    .main-container {
+        flex: 1;
+        max-width: 600px;
+        padding: 20px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    .welcome-message {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+
+        .welcome-message h4 {
+            color: #333;
+            font-weight: 600;
+            font-size: 24px;
+        }
+
+    .content-section {
+        color: #555;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .highlight-text {
+        color: #ff4d4d;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .footer-text {
+        margin-top: 30px;
+        font-weight: 500;
+        text-align: right;
+        /*        color: #333;
+    */ color: tomato;
+    }
+
+    .banner {
+        background-color: #ff4d4d;
+        color: white;
+        padding: 40px;
+        text-align: center;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: float 3s ease-in-out infinite;
+        max-width: 500px;
+        flex: 1;
+        position: relative;
+    }
+
+        .banner::before, .banner::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        .banner::before {
+            width: 200px;
+            height: 200px;
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .banner::after {
+            width: 100px;
+            height: 100px;
+            top: -30px;
+            right: -30px;
+        }
+
+        .banner h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+
+        .banner h2 {
+            font-size: 22px;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+
+    .dates {
+        background: #ffffff;
+        color: #ff4d4d;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+        .dates p {
+            margin: 5px 0;
+        }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+        .contact-info i {
+            font-size: 24px;
+        }
+
+        .contact-info a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+            .contact-info a:hover {
+                text-decoration: underline;
+            }
+    .tabla-container {
+        display: flex;
+        justify-content: flex-start; /* Alinea la tabla a la izquierda */
+        align-items: flex-start;
+         padding-left: 10px; /* Relleno solo en el lado izquierdo */
+        margin-left: 10px; /* Margen solo en el lado izquierdo */
+    }
+    .main-container-cita {
+        flex: 1;
+         padding-left: 40px; /* Relleno solo en el lado izquierdo */
+        border-radius: 0;
+        box-shadow: none;
+    }
+</style>
+@section scripts {
+    <script>
+    $(document).ready(function () {
+        // Llamada AJAX para obtener el managementId
+        $.ajax({
+            url: '@Url.Action("GetManagementIdAsync", "Home")',
+            type: 'GET',
+            success: function (managementId) {
+                // Ahora puedes utilizar el managementId en tu lógica JavaScript
+                console.log('Management ID:', managementId);
+            },
+            error: function () {
+                console.error('Error al obtener el managementId.');
+            }
+        });
+
+        async function cargarEmpleadosAsync() {
+            try {
+                const response = await fetch('/Home/GetempleadolistAsync');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Ahora puedes usar "data" en tu vista
+                    console.log(data);
+                } else {
+                    console.error('Error al cargar los empleados');
+                }
+            } catch (error) {
+                console.error('Error en la solicitud fetch:', error);
+            }
+        }
+            $.ajax({
+            url: '@Url.Action("ObtenerFechasViaticos", "Home")',
+            type: 'GET',
+            success: function (data) {
+                if (data.ReembolsoInicio) {
+                    $('.dates').append('<p style="color:black">Registra tus viáticos de reembolso del:</p><p>' + data.ReembolsoInicio + '</p>');
+                }
+                if (data.Complemento) {
+                    $('.dates').append('<p style="color:black">Registra tus viáticos de complemento del:</p><p>' + data.Complemento + '</p>');
+                }
+                if (data.AnticipoInicio) {
+                    $('.dates').append('<p style="color:black">Registra tus viáticos de anticipo del:</p><p>' + data.AnticipoInicio + '</p>');
+                }
+                if (data.EmergenciaClienteInicio) {
+                    $('.dates').append('<p style="color:black">Registra tus viáticos de emergencia cliente del:</p><p>' + data.EmergenciaClienteInicio + '</p>');
+                }
+                //if (data.FechaMaximaRegistro) {
+                //    $('.dates').append('<p style="color:black">Fecha máxima de registro:</p><p>' + data.FechaMaximaRegistro + '</p>');
+                //}
+            },
+            error: function () {
+                console.error('Error al obtener las fechas de viáticos.');
+            }
+        });
+          @*$.ajax({
+            url: '@Url.Action("obtenercita", "Home")',
+            type: 'GET',
+              success: function (data) {
+                  if(data && data.length > 0) {
+                      $('.tabla-container').show();
+                      const hoy = new Date();
+                      for (let i = 0; i < data.length; i += 5) {
+                          const citas = [data[i], data[i + 1], data[i + 2], data[i + 3], data[i + 4]];
+
+                          $('#tabla-citas tbody').append(`
+             <tr>
+            ${citas.map(cita => {
+                              if (!cita) return '<td></td>';
+                              const fechaCita = new Date(parseInt(cita.HoraCita.match(/\d+/)[0], 10));
+                              const estado = fechaCita >= hoy ? "proxima" : "pasada";
+                              const esHoy = moment(fechaCita).isSame(hoy, 'day');
+                              const estadoTexto = esHoy ? "Hoy" : (estado === 'pasada' ? 'Cita Perdida' : estado.charAt(0).toUpperCase() + estado.slice(1));
+
+                              return `
+                    <td>
+                        <div class="card ${estado} ${esHoy ? 'hoy' : ''}">
+                            <span class="status ${estado}" data-fecha="${fechaCita}">${cita.IdUnidad} - ${estadoTexto}</span>
+                            <h3>Fecha: ${moment(fechaCita).format('DD/MM/YYYY HH:mm')}</h3>
+                            <div class="meta">${cita.NombreEmpleado}</div>
+                        </div>
+                    </td>
+                `;
+                          }).join('')}
+        </tr>
+        `);
+                      }
+
+
+                      // Inicializar DataTables
+                      $('#tabla-citas').DataTable({
+                          pageLength: 3,
+                          order: [[0, "desc"]],
+
+                          language: {
+                              url: "~/Scripts/datatable.es-ES.json"
+                          }, initComplete: function () {
+                              // Esto se ejecuta justo después de que la tabla esté completamente inicializada
+                              //document.getElementById('tabla-citas_info').remove();
+                              //document.getElementById('tabla-citas_length').remove();
+                              //document.getElementById('tabla-citas_paginate').remove();
+                          }
+                      });
+                  }
+              },
+            error: function () {
+                console.error('Error al obtener las citas.');
+            }
+        });
+        // Ejecutar después de 3 segundos (3000 ms)
+       // Retraso de 3000 ms (3 segundos)
+              *@
+
+        // Llama a la función para cargar empleados después de que se cargue la página
+        cargarEmpleadosAsync();
+    });
+    //window.onload = voz("Bienvenido a la plataforma en línea de Recursos Humanos.")
+    function voz(mensaje) {
+        // vozHablar = new SpeechSynthesisUtterance(mensaje);
+        //window.speechSynthesis.speak(vozHablar);
+
+    }
+    </script>
+    <!-- Resto de tu código HTML -->
+}
+<div class="custom-container">
+    <div class="main-container">
+        <div class="welcome-message">
+            <h4>Bienvenido(a), @Html.DisplayFor(x => x.Names)</h4>
+        </div>
+
+        <div class="content-section">
+            <p class="highlight-text">
+                <strong>Estimado Usuario:</strong>
+            </p>
+
+            <p>
+                Toda la información registrada en nuestro sistema debe ser fidedigna y será validada contra sistemas y registros correspondiente.
+            </p>
+
+            <p>
+                Tener en cuenta que la información debe ser real y debe contar con los soportes correspondientes.
+            </p>
+
+            <p class="footer-text">
+                Equipo de Recursos Humanos
+            </p>
+        </div>
+    </div>
+
+    <div class="banner">
+        <h1>Periodo de Viáticos</h1>
+        <h2>Habilitado</h2>
+        <div class="dates">
+            <!-- Aquí se llenarán las fechas dinámicamente -->
+        </div>
+        <div class="contact-info">
+            <i class="fas fa-phone-alt"></i>
+            <span>22745110 22745105</span>
+            <i class="fas fa-envelope"></i>
+            <a href="mailto:soporte.operacion@claro.com.ni">soporte.operacion@claro.com.ni</a>
+        </div>
+    </div>
+
+</div>
+<!--<div class="tabla-container" style="display: none;">
+    <div class="main-container-cita">
+        <table id="tabla-citas" class="display" style="width: 100%;">
+            <caption style="caption-side: top; font-size: 18px; font-weight: bold; color: #f44336; padding: 10px; text-align: left;">
+                Cita Confirmada
+            </caption>
+            <thead>
+                <tr>
+                    <th> </th>
+                </tr>
+            </thead>
+            <tbody>-->
+                <!-- Los datos se generarán dinámicamente -->
+            <!--</tbody>
+        </table>
+    </div> </div>-->

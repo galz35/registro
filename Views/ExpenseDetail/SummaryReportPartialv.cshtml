@@ -1,0 +1,37 @@
+﻿@using slnRhonline.Reports
+ 
+@Html.DevExpress().GetStyleSheets(
+  
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report } 
+
+)
+@Html.DevExpress().GetScripts(
+    
+    new Script { ExtensionSuite = ExtensionSuite.Report } 
+    
+
+)
+@Html.DevExpress().DocumentViewer(settings =>
+{
+    settings.Name = "DocumentViewer";
+    settings.CallbackRouteValues = new
+    {
+        Controller = "ExpenseDetail",
+        Action = "SummaryReportPartialv2"
+    };
+    settings.ExportRouteValues = new
+    {
+        Controller = "ExpenseDetail",
+        Action = "ExportSummaryReportv"
+    };
+    settings.Report = new ExpensesReimbursementv2()
+    {
+        DataSource = Model
+    };
+}).GetHtml()
+
+
+
+
+
+

@@ -1,0 +1,443 @@
+﻿@{
+}
+<style>
+    :root {
+        --rojo: #dc3545;
+        --rojo-osc: #c82333;
+        --negro: #1a1a1a;
+        --gris: #f4f5f7;
+        --borde: #e5e7eb;
+        --verde: #8bd3a3;
+    }
+
+    /* ====== Tarjeta & encabezados ====== */
+    .card {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    }
+
+    .card-header-lite {
+        background: linear-gradient(90deg,var(--rojo),#e35d6a);
+        color: #fff;
+        border-radius: 14px 14px 0 0;
+        padding: .85rem 1rem;
+    }
+
+    .h-title {
+        font-weight: 700;
+        letter-spacing: .2px;
+        margin: 0;
+    }
+
+    .subtle {
+        color: #6b7280;
+    }
+
+    /* ====== Tabla ====== */
+    #tblUsuarios thead th {
+        background: var(--rojo);
+        color: #fff;
+        border: none;
+        position: sticky;
+        top: 0;
+        z-index: 2; /* cabecera fija */
+    }
+
+    #tblUsuarios tbody tr:hover {
+        background: #fff8f8;
+    }
+
+    #tblUsuarios td, #tblUsuarios th {
+        vertical-align: middle;
+    }
+
+    .estado-pill {
+        display: inline-block;
+        padding: .15rem .5rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        background: #fff;
+        color: var(--rojo);
+        border: 1px solid rgba(0,0,0,.06);
+    }
+
+    /* ====== Botones ====== */
+    .btn-rojo {
+        background: var(--rojo);
+        border-color: var(--rojo-osc);
+        color: #fff;
+    }
+
+        .btn-rojo:hover {
+            background: var(--rojo-osc);
+            border-color: #bd2130;
+            color: #fff;
+        }
+
+    .btn-outline-negro {
+        border-color: #cfd3d8;
+        color: #111827;
+    }
+
+        .btn-outline-negro:hover {
+            background: #f3f4f6;
+        }
+
+    /* ====== Modal ====== */
+    #modalMenus .modal-header {
+        background: var(--rojo);
+        color: #fff;
+    }
+
+    .modal-footer-sticky {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        border-top: 1px solid var(--borde);
+    }
+
+    /* ====== Árbol de menús ====== */
+    .menu-actions {
+        display: flex;
+        gap: .5rem;
+        align-items: center;
+        flex-wrap: wrap;
+        background: var(--gris);
+        border-radius: 12px;
+        padding: .5rem .75rem;
+        margin-bottom: .75rem;
+    }
+
+        .menu-actions .form-control {
+            max-width: 260px;
+        }
+
+    .menu-node {
+        border-color: #eaecef !important;
+    }
+
+        .menu-node .card-header {
+            background: #fafafa;
+        }
+
+    .menu-leaf {
+        padding: .35rem .5rem;
+        border-radius: 10px;
+    }
+
+        .menu-leaf:hover {
+            background: #f7f7f7;
+        }
+
+    .resaltado {
+        outline: 2px solid var(--verde);
+        outline-offset: 1px;
+    }
+
+    /* helpers */
+    .w-28 {
+        width: 28px;
+    }
+
+    .fw-600 {
+        font-weight: 600;
+    }
+
+    .cursor {
+        cursor: pointer;
+    }
+</style>
+
+<div class="card shadow mb-4">
+    <div class="card-header-lite d-flex align-items-center justify-content-between">
+        <h1 class="h5 h-title">Gestión de Menús por Usuario</h1>
+        <div class="d-flex gap-2">
+            <!-- refrescar DataTable -->
+            <button id="btnRefrescar" class="btn btn-sm btn-outline-light"><i class="fas fa-sync-alt"></i> Refrescar</button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Filtros superiores -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="subtle">
+                <span class="estado-pill"><i class="far fa-user"></i> Usuarios activos</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="mr-2 mb-0 subtle">Cargo:</label>
+                <select id="filtroCargo" class="form-control form-control-sm" style="min-width:200px">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive" style="max-height:62vh">
+            <table id="tblUsuarios" class="table table-bordered table-hover table-sm" width="100%">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:80px">ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Correo</th>
+                        <th style="width:220px">Cargo</th>
+                        <th class="text-center" style="width:120px">Acción</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar menús -->
+<div class="modal fade" id="modalMenus" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title"><i class="fas fa-sitemap mr-1"></i> Menús de <span id="lblUsuario"></span></h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Acciones rápidas del árbol -->
+                <div class="menu-actions">
+                    <input id="txtBuscarMenu" type="search" class="form-control form-control-sm" placeholder="Buscar menú...">
+                    <button id="btnSelTodo" class="btn btn-sm btn-outline-negro"><i class="far fa-check-square"></i> Seleccionar todo</button>
+                    <button id="btnLimpiar" class="btn btn-sm btn-outline-negro"><i class="far fa-square"></i> Limpiar</button>
+                    <button id="btnExpandir" class="btn btn-sm btn-outline-negro"><i class="fas fa-plus-square"></i> Expandir</button>
+                    <button id="btnColapsar" class="btn btn-sm btn-outline-negro"><i class="fas fa-minus-square"></i> Colapsar</button>
+                    <span class="ml-auto subtle">Seleccionados: <b id="lblSelCount">0</b></span>
+                </div>
+                <div id="divMenusList"></div>
+            </div>
+            <div class="modal-footer modal-footer-sticky py-2">
+                <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button id="btnGuardarMenus" class="btn btn-rojo" disabled>
+                    <i class="fas fa-save mr-1"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script>
+$(function () {
+    let currentUserId = 0;
+    let asignadosOriginal = new Set();  // <-- para detectar cambios
+    let tabla;
+
+    /* =========================
+       DataTable (AJAX + filtros)
+       ========================= */
+    tabla = $('#tblUsuarios').DataTable({
+        ajax: {
+            url: '@Url.Action("GetUsuariosActivos","Rrhh")',
+            dataSrc: ''
+        },
+        columns: [
+            { data: 'idhcm', className:'text-center' },
+            { data: 'nombre_completo' },
+            { data: 'correo' },
+            { data: 'cargo' }, 
+            {
+                data: null, orderable:false, className:'text-center',
+                render: row => `
+                    <button class="btn btn-sm btn-rojo btnEditarMenus"
+                            data-userid="${row.idhcm}"
+                            data-nombre="${row.nombre_completo}">
+                        <i class="fas fa-edit"></i> Menús
+                    </button>`
+            }
+        ],
+        dom:
+          '<"row mb-2"<"col-sm-6"l><"col-sm-6 text-right"f>>' +
+          '<"table-responsive"t>' +
+          '<"row mt-2"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        language:{
+            url:'@Url.Content("~/Scripts/datatable.es-ES.json")',
+            searchPlaceholder:'Buscar usuarios...', search:'',
+            lengthMenu:'Mostrar _MENU_', info:'Mostrando _START_ a _END_ de _TOTAL_'
+        },
+        order:[[1,'asc']], stripeClasses:[]
+    });
+
+    // rellenar filtro Cargo con valores únicos
+    tabla.on('xhr.dt', function(){
+        const data = tabla.ajax.json() || [];
+        const setCargos = new Set(data.map(x=>x.cargo).filter(Boolean));
+        const $sel = $('#filtroCargo').empty().append(`<option value="">Todos</option>`);
+        Array.from(setCargos).sort().forEach(c => $sel.append(`<option>${c}</option>`));
+    });
+
+    // aplicar filtro por Cargo (col 3)
+    $('#filtroCargo').on('change', function(){
+        tabla.column(3).search(this.value).draw();
+    });
+
+    // refrescar
+    $('#btnRefrescar').on('click', () => tabla.ajax.reload(null, false));
+
+    /* =========================
+       Render del árbol de menús
+       ========================= */
+    function renderTree(nodos, padreKey){
+        let html = `<div class="accordion" id="acc_${padreKey}">`;
+        nodos.forEach((n,i)=>{
+            const cid = `${padreKey}_${i}`;
+            const isPadre = n.Children && n.Children.length;
+            html += `
+            <div class="card mb-2 menu-node" data-text="${(n.MenuText||'').toLowerCase()}">
+              <div class="card-header py-1">
+                <div class="d-flex align-items-center justify-content-between">
+                  <button class="btn btn-link text-danger fw-600 p-0" data-toggle="collapse" data-target="#c_${cid}">
+                    <i class="fas fa-folder-open mr-1"></i>${n.MenuText}
+                  </button>
+                  ${!isPadre ? '' : `
+                    <div class="small subtle pr-2">${n.Children.length} elemento(s)</div>
+                  `}
+                </div>
+              </div>
+              <div id="c_${cid}" class="collapse show" data-parent="#acc_${padreKey}">
+                <div class="card-body py-2">
+                  ${isPadre ? renderTree(n.Children, cid) : `
+                    <div class="custom-control custom-switch menu-leaf" data-text="${(n.MenuText||'').toLowerCase()}">
+                      <input type="checkbox" class="custom-control-input chk-menu" id="m_${n.Id}" value="${n.Id}">
+                      <label class="custom-control-label text-dark cursor" for="m_${n.Id}">
+                        <i class="far fa-dot-circle mr-1 text-muted"></i>${n.MenuText}
+                      </label>
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>`;
+        });
+        html += `</div>`;
+        return html;
+    }
+
+    // contar seleccionados + habilitar guardar si hay cambios
+    function refreshSeleccionados(){
+        const count = $('#divMenusList .chk-menu:checked').length;
+        $('#lblSelCount').text(count);
+        const actual = new Set($('#divMenusList .chk-menu:checked').map((_,el)=>el.value).get());
+        const iguales = actual.size===asignadosOriginal.size && [...actual].every(v=>asignadosOriginal.has(v));
+        $('#btnGuardarMenus').prop('disabled', iguales);
+    }
+
+    // expandir/colapsar todo
+    function expandirTodo(show){
+        $('#divMenusList .collapse').collapse(show ? 'show' : 'hide');
+    }
+
+    // búsqueda en árbol (abre ramas con match)
+    function filtrarArbol(q){
+        const qq = q.trim().toLowerCase();
+        if(!qq){
+            $('#divMenusList .menu-node, #divMenusList .menu-leaf').removeClass('d-none resaltado');
+            expandirTodo(true);
+            return;
+        }
+        $('#divMenusList .menu-leaf').each(function(){
+            const match = $(this).data('text').includes(qq);
+            $(this).toggleClass('d-none', !match).toggleClass('resaltado', match);
+        });
+        // mostrar nodos con descendiente visible
+        $('#divMenusList .menu-node').each(function(){
+            const self = $(this);
+            const tieneLeaf = self.find('.menu-leaf:not(.d-none)').length>0;
+            const matchSelf = String(self.data('text')||'').includes(qq);
+            self.toggleClass('d-none', !(tieneLeaf || matchSelf));
+            if(tieneLeaf || matchSelf){
+                self.find('.collapse').collapse('show');
+            }
+        });
+    }
+
+    /* =========================
+       Abrir modal y cargar nodos
+       ========================= */
+    $('#tblUsuarios tbody').on('click', '.btnEditarMenus', function(){
+        currentUserId = $(this).data('userid');
+        const nombre = $(this).data('nombre');
+        $('#lblUsuario').text(`${nombre} (ID: ${currentUserId.toString().padStart(6,'0')})`);
+        $('#divMenusList').empty();
+        $('#txtBuscarMenu').val('');
+        $('#btnGuardarMenus').prop('disabled', true);
+        asignadosOriginal = new Set(); // reset base
+        $.LoadingOverlay('show');
+
+        $.getJSON('@Url.Action("MenusUsuario","Rrhh")', { userId: currentUserId })
+         .done(res=>{
+            // pintar árbol y marcar asignados
+            $('#divMenusList').html(renderTree(res.nodes || [], 'root'));
+            (res.asignados || []).forEach(id=>{
+                asignadosOriginal.add(String(id));
+                $(`#m_${id}`).prop('checked', true);
+            });
+            refreshSeleccionados();
+            $.LoadingOverlay('hide');
+            $('#modalMenus').modal('show');
+         })
+         .fail(()=>{
+            $.LoadingOverlay('hide');
+            Swal.fire('Error','No se pudieron cargar los menús','error');
+         });
+    });
+
+    /* =========================
+       Acciones del árbol
+       ========================= */
+    // seleccionar / limpiar
+    $('#btnSelTodo').on('click', function(){
+        $('#divMenusList .chk-menu').prop('checked', true);
+        refreshSeleccionados();
+    });
+    $('#btnLimpiar').on('click', function(){
+        $('#divMenusList .chk-menu').prop('checked', false);
+        refreshSeleccionados();
+    });
+
+    // expandir / colapsar
+    $('#btnExpandir').on('click', ()=>expandirTodo(true));
+    $('#btnColapsar').on('click', ()=>expandirTodo(false));
+
+    // búsqueda con debounce simple
+    let tSearch = null;
+    $('#txtBuscarMenu').on('input', function(){
+        clearTimeout(tSearch);
+        const val = this.value;
+        tSearch = setTimeout(()=>filtrarArbol(val), 180); // <-- debounce
+    });
+
+    // cambio de checks
+    $('#divMenusList').on('change', '.chk-menu', function(){
+        refreshSeleccionados();
+    });
+
+    /* =========================
+       Guardar cambios
+       ========================= */
+    $('#btnGuardarMenus').on('click', function(){
+        const seleccionados = $('#divMenusList .chk-menu:checked').map((_,el)=>el.value).get();
+        $.LoadingOverlay('show');
+        $.post('@Url.Action("GuardarMenus","Rrhh")',
+            { userId: currentUserId, menuIds: seleccionados },
+            r=>{
+                $.LoadingOverlay('hide');
+                Swal.fire(r.ok?'Éxito':'Error', r.msg, r.ok?'success':'error')
+                  .then(()=>{ if(r.ok) $('#modalMenus').modal('hide'); });
+            }
+        ).fail(()=>{
+            $.LoadingOverlay('hide');
+            Swal.fire('Error','Error al guardar cambios','error');
+        });
+    });
+});
+    </script>
+}

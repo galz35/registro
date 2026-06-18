@@ -1,0 +1,70 @@
+﻿
+@{
+    ViewBag.Title = "Consulta de Horas Extras";
+
+}
+
+@*@using (Html.BeginForm())
+{
+    @Html.DevExpress().FormLayout(settings =>
+{
+    settings.Name = "formLayout";
+
+    settings.Items.AddGroupItem(g =>
+    {
+        settings.Name = "formLayout";
+        g.GroupBoxDecoration = GroupBoxDecoration.Default;
+        g.ColCount = 2;
+
+        settings.Items.AddGroupItem(g =>
+        {
+            g.Caption = "Opciones";
+            g.GroupBoxDecoration = GroupBoxDecoration.Default;
+            g.ColCount = 2;
+
+            g.Items.Add(i =>
+            {
+                i.ShowCaption = DefaultBoolean.False;
+                i.Paddings.PaddingLeft = 0;
+                i.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+                i.NestedExtension().Button(b =>
+                {
+                    b.Name = "btnBack";
+                b.Text = "Volver";
+                b.UseSubmitBehavior = false;
+                b.RouteValues = new { Controller = "ExtraTime", Action = "ParametersConsult" };
+                b.Width = Unit.Pixel(150);
+                b.Images.Image.IconID = IconID.ActionsClose16x16;
+                b.ImagePosition = ImagePosition.Right;
+            });
+        });
+
+
+        g.Items.Add(i =>
+            {
+                i.ShowCaption = DefaultBoolean.False;
+                i.Paddings.PaddingLeft = 0;
+                i.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+                i.NestedExtension().Button(b =>
+                {
+                    b.Name = "btnDetailPreviewXls";
+                b.Text = "Exportar Detalle Xls";
+                b.UseSubmitBehavior = false;
+                b.RouteValues = new { Controller = "ExtraTime", Action = "ExportDetailToXls" };
+                b.Width = Unit.Pixel(150);
+                b.Images.Image.IconID = IconID.ExportExporttoxls16x16;
+                b.ImagePosition = ImagePosition.Right;
+            });
+        });
+
+    }).GetHtml()
+}*@
+
+
+@Html.Action("ExtraHoursConsultDetailPartial")
+ 
+
+
+
+
+

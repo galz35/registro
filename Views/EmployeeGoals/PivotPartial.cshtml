@@ -1,0 +1,107 @@
+﻿@using DevExpress.XtraPivotGrid
+
+
+@Html.DevExpress().PivotGrid(settings => {
+    settings.Name = "PivotGrid";
+    settings.CallbackRouteValues = new { Controller = "EmployeeGoals", Action = "PivotPartial" };
+    settings.OptionsPager.Position = PagerPosition.Bottom;
+    
+    settings.OptionsView.HorizontalScrollBarMode = ScrollBarMode.Auto;
+    settings.OptionsView.VerticalScrollBarMode = ScrollBarMode.Auto;
+    settings.Width = Unit.Percentage(100);
+
+    settings.Styles.CellStyle.Cursor = "pointer";
+    settings.OptionsView.ShowColumnHeaders = false;
+    settings.OptionsView.ShowDataHeaders = false;
+    settings.OptionsView.ShowFilterHeaders = false;
+    settings.OptionsView.ShowRowHeaders = false;
+
+
+    settings.Fields.Add(field =>
+    {
+        field.Area = PivotArea.RowArea;
+        field.FieldName = "EmployeeNumber";
+        field.Caption = "Numero de Empleado";
+        field.AreaIndex = 0;
+    });
+
+
+    settings.Fields.Add(field =>
+    {
+        field.Area = PivotArea.RowArea;
+        field.FieldName = "EmployeeName";
+        field.Caption = "Colaborador";
+        field.AreaIndex = 1;
+    });
+
+    settings.Fields.Add(field =>
+    {
+        field.Area = PivotArea.ColumnArea;
+        field.FieldName = "IndicatorName";
+        field.Caption = "Indicador";
+        field.AreaIndex = 0;
+    });
+    settings.Fields.Add(field =>
+    {
+        field.Area = PivotArea.ColumnArea;
+        field.FieldName = "ProductName";
+        field.Caption = "Producto";
+        field.AreaIndex = 1;
+    });
+    settings.Fields.Add(field =>
+    {
+        field.Area = PivotArea.DataArea;
+        field.FieldName = "Goal";
+        field.Caption = "Meta";
+        field.AreaIndex = 0;
+    });
+    settings.Fields.Add(field =>
+    {
+        field.Area = PivotArea.DataArea;
+        field.FieldName = "Accomplishment";
+        field.Caption = "Cumplido";
+        field.AreaIndex = 0;
+    });
+
+    //settings.HtmlFieldValuePrepared = (sender, e) =>
+    //{
+    //    if (e.Field != null && e.Field.Area == DevExpress.XtraPivotGrid.PivotArea.RowArea)
+    //    {
+    //        ASPxHyperLink link = new ASPxHyperLink();
+    //        if (e.Value != null)
+    //        {
+    //            foreach (Control control in e.Cell.Controls)
+    //            {
+    //                if (control is LiteralControl)
+    //                {
+    //                    e.Cell.Controls.Remove(control);
+    //                    break;
+    //                }
+    //            }
+
+    //            link.Text = e.Value.ToString() + " # Carnet:" + e.CreateDrillDownDataSource()[0]["EmployeeNumber"];
+
+    //            link.NavigateUrl = "#";
+    //        }
+    //        e.Cell.Controls.Add(link);
+    //    }
+    //    e.CreateDrillDownDataSource
+    //};
+
+    //settings.SetCellTemplateContent(c =>
+    //{
+    //    MVCxPivotGrid pivotGrid = (MVCxPivotGrid)c.NamingContainer;
+    //    string key = "";
+    //    var ds = c.Item.CreateDrillDownDataSource();
+    //    if (ds.RowCount > 0)
+    //    {
+    //        key = Convert.ToString(ds[0]["EmployeeNumber"]);
+    //    }
+    //    ViewContext.Writer.Write("<div onDblClick='alert(" + key + ")'>");
+    //    ViewContext.Writer.Write(c.Text);
+    //});
+
+}).Bind(Model).GetHtml()
+
+
+

@@ -1,0 +1,384 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+<style>
+    .ui-autocomplete {
+        z-index: 1051; /* Asegúrate de que sea mayor que el del modal */
+        position: absolute;
+    }
+
+    #popupNuevoEmpleado {
+        z-index: 1050 !important; /* Ajusta según sea necesario */
+    }
+
+    .select2-container {
+        z-index: 1051 !important; /* Asegúrate de que sea mayor que el del modal */
+    }
+
+    .nav-tabs .nav-link {
+        color: #495057 !important; /* Color del texto para las pestañas */
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #ffffff !important; /* Color del texto cuando la pestaña está activa */
+            background-color: #007bff !important; /* Color de fondo de la pestaña activa */
+            border-color: #007bff !important;
+        }
+
+    .tab-pane {
+        overflow-x: auto !important; /* Permitir desplazamiento horizontal si la tabla es más ancha que el contenedor */
+    }
+
+    .table-responsive {
+        width: 100% !important;
+        overflow-x: auto !important;
+    }
+
+    .table {
+        min-width: 1000px !important; /* Ajusta esto según sea necesario para evitar que la tabla sea demasiado pequeña */
+    }
+</style>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h5 class="m-0 font-weight-bold text-primary" style="color: #800 !important;">
+                        Gestión de Evaluaciones
+                    </h5>
+                </div>
+
+                <!-- Nav Tabs -->
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="subir-excel-tab" data-toggle="tab" href="#subir-excel" role="tab" aria-controls="subir-excel" aria-selected="true">Subir Excel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="lista-empleados-tab" data-toggle="tab" href="#lista-empleados" role="tab" aria-controls="lista-empleados" aria-selected="false">Lista de Empleados</a>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="myTabContent">
+                    <!-- Tab Subir Excel -->
+                    <div class="tab-pane fade show active" id="subir-excel" role="tabpanel" aria-labelledby="subir-excel-tab">
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">Subir archivo Excel para Evaluaciones</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="uploadForm" enctype="multipart/form-data" method="post">
+                                    <div class="form-group">
+                                        <label for="fileUpload">Subir archivo Excel</label>
+                                        <input type="file" id="fileUpload" name="fileUpload" class="form-control" accept=".xlsx" />
+                                    </div>
+                                    <button type="button" class="btn btn-primary" onclick="uploadFile()">Subir y Ver Archivo</button>
+                                </form>
+                                <div id="fileContent" style="margin-top: 20px;">
+                                    <!-- Aquí se mostrará el contenido del archivo -->
+                                </div>
+                                <button type="button" class="btn btn-success mt-3" onclick="enviarEvaluaciones()">Enviar Evaluaciones</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Lista de Empleados -->
+                    <div class="tab-pane fade" id="lista-empleados" role="tabpanel" aria-labelledby="lista-empleados-tab">
+                        <div class="card mt-4">
+                            <div class="card-header py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-primary">Lista de empleados a evaluar</h6>
+                                    <!-- Botón para agregar nuevo empleado a evaluar -->
+                                    <a href="#" id="mostrarPopupBtn" onclick="empleadoevalauar()" class="btn btn-primary btn-icon-split">
+                                        <span class="icon text-white-50">
+                                            <i class="fas fa-plus"></i>
+                                        </span>
+                                        <span class="text">Agregar nuevo empleado a evaluar</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-body table-responsive">
+                                <table id="employeeTable2" style="width:100%" class="table table-bordered table-hover display nowrap">
+                                    <thead>
+                                        <tr>
+                                            <th>Acciones</th>
+                                            <th>Carnet</th>
+                                            <th>Nombre del Empleado</th>
+                                            <th>Cargo</th>
+                                            <th>Gerencia</th>
+                                            <th>Área</th>
+                                            <th>Jefe</th>
+                                            <th>Fecha de Ingreso</th>
+                                            <th>Fecha de Asignación</th>
+                                            <th>Duración (Días en Prueba)</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Tab Content -->
+            </div> <!-- End Card -->
+        </div> <!-- End Container Fluid -->
+    </div> <!-- End Content -->
+</div> <!-- End Content Wrapper -->
+
+@section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script src="~/Content/js2024/jquery.jeditable.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            let empleados = [];
+            let evaluaciones = [];
+            window.empleadoevalauar = function () {
+                $('#popupNuevoEmpleado').modal('show');
+            };
+
+            $.LoadingOverlay("show");
+            var tabla_persona = $('#employeeTable2').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("EmployeesListjson", "Evaluacion")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+                    {
+                        "data": "Carnet",
+                        "render": function (data, type, row) {
+                            return `<button class='btn btn-primary btn-sm' onclick='openCreateEvaluationModal("${row.Carnet}", "${row.NombreCompleto}", "${row.Cargo}", "${row.Jefe}", "${row.FechaAsignacion}")'>
+                                        <i class='fas fa-pen'></i> Crear Evaluación
+                                    </button>`;
+                        },
+                        "orderable": false,
+                        "searchable": false,
+                        "width": "150px"
+                    },
+                    { "data": "Carnet" },
+                    { "data": "NombreCompleto" },
+                    { "data": "Cargo" },
+                    { "data": "Gerencia" },
+                    { "data": "Area" },
+                    { "data": "Jefe" },
+                    {
+                        "data": "FechaIngreso",
+                        "render": function (data) {
+                            return moment(data).format('DD-MM-YYYY');
+                        }
+                    },
+                    {
+                        "data": "FechaAsignacion",
+                        "render": function (data) {
+                            return moment(data).format('DD-MM-YYYY');
+                        }
+                    },
+                    { "data": "DiaPrueba" }
+                ],
+                "dom": 'Blfrtip',
+                "lengthMenu": [10, 20, 50, 100],
+                "pageLength": 10,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                responsive: true
+            });
+            $.LoadingOverlay("hide");
+        });
+
+        function openCreateEvaluationModal(carnet, nombre, cargo, jefe, fechaAsignacion) {
+            // Set values in the modal
+            $('#modalCarnet').val(carnet);
+            $('#modalNombre').val(nombre);
+            $('#modalCargo').val(cargo);
+            $('#modalJefe').val(jefe);
+            $('#modalFechaAsignacion').val(moment(fechaAsignacion).format('YYYY-MM-DD'));
+            $('#modalFechaInicio').val(moment(fechaAsignacion).format('YYYY-MM-DD')); // Default to the fechaAsignacion
+            $('#modalCantidadMeses').val(3); // Default to 3 months
+
+            // Open the modal
+            $('#createEvaluationModal').modal('show');
+        }
+
+        $('#saveEvaluationBtn').click(function () {
+            var formData = {
+                Carnet: $('#modalCarnet').val(),
+                FechaInicio: $('#modalFechaInicio').val(),
+                CantidadMeses: $('#modalCantidadMeses').val()
+            };
+
+            $.ajax({
+                url: '@Url.Action("Crearevaluacion", "Evaluacion")',
+                type: 'POST',
+                data: formData,
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire('Éxito', 'Evaluación creada exitosamente.', 'success');
+                        $('#createEvaluationModal').modal('hide');
+                        $('#employeeTable2').DataTable().ajax.reload(); // Reload the table data
+                    } else {
+                        Swal.fire('Error', response.message, 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Error', 'Ocurrió un error al crear la evaluación.', 'error');
+                }
+            });
+        });
+//popup carga lo que existe
+function llenarSelectsEmpleados() {
+                $.ajax({
+                    url: '@Url.Action("EmployeesListjsontodo", "Evaluacion")',
+                    type: 'GET',
+                    success: function (data) {
+                        empleados = data.data.map(function (item) {
+                            return {
+                                label: item.nombre_completo + ' (' + item.carnet2 + ')',
+                                value: item.carnet2,
+                                empleado: item
+                            };
+                        });
+
+
+                        $('#selectEmpleado').select2({
+                            placeholder: 'Seleccione un jefe a evaluar',
+                            data: empleados.map(function (item) {
+                                return { id: item.value, text: item.label };
+                            }),
+                            dropdownParent: $('#popupNuevoEmpleado') // Asegura que el dropdown se muestre dentro del modal
+                        });
+                        // Inicializar Select2 para el select de jefe
+                        $('#selectJefe').select2({
+                            placeholder: 'Seleccione un jefe a evaluar',
+                            data: empleados.map(function (item) {
+                                return { id: item.value, text: item.label };
+                            }),
+                            dropdownParent: $('#popupNuevoEmpleado') // Asegura que el dropdown se muestre dentro del modal
+                        });
+                    }
+                });
+            }
+        // Llamar la función al abrir el modal
+        $('#popupNuevoEmpleado').on('show.bs.modal', function (e) {
+            llenarSelectsEmpleados();
+        });
+         $('#btnGuardarEvaluacion').click(function () {
+            var empleadoId = $('#selectEmpleado').val();
+            var puesto = $('#puestoEmpleado').val();
+            var jefeId = $('#selectJefe').val();
+
+            if (empleadoId && puesto && jefeId) {
+                // Realizar la solicitud para guardar la evaluación
+                $.ajax({
+                    url: '@Url.Action("CrearEvaluacion", "Evaluacion")',
+                    type: 'POST',
+                    data: {
+                        CodigoEmpleado: empleadoId,
+                        Puesto: puesto,
+                        JefeEvaluar: jefeId
+                    },
+                    success: function (response) {
+                        Swal.fire('¡Éxito!', 'La evaluación ha sido guardada.', 'success');
+                        $('#popupNuevoEmpleado').modal('hide');
+                    },
+                    error: function (error) {
+                        Swal.fire('Error', 'Hubo un problema al guardar la evaluación.', 'error');
+                    }
+                });
+            } else {
+                Swal.fire('Error', 'Debe completar todos los campos.', 'error');
+            }
+         });
+         function uploadFile() {
+            var fileInput = $('#fileUpload')[0];
+            var formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+             $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("UploadFile", "Evaluacion")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    // Procesar y mostrar el contenido del archivo en la página
+                    evaluaciones = response.data;
+
+                    var contentHtml = '<table class="table table-bordered"><thead><tr><th>N°</th><th>CARNET</th><th>Carnet Jefe</th><th>PUESTO ACTUAL</th><th>GERENCIA ORIGEN</th><th>FECHA INICIO PERIODO DE PRUEBA</th><th>PUESTO EN PERIODO DE PRUEBA</th><th>GERENCIA NUEVA</th><th>meses</th></tr></thead><tbody>';
+
+                    response.data.forEach(function (item, index) {
+                        var fecha = item.FechaInicioPeriodoPrueba;
+                        var fechaFormateada = moment(fecha).format('DD-MM-YYYY');
+                        contentHtml += '<tr><td>' + item.Numero + '</td><td>' + item.Carnet + '</td><td>' + item.CarnetJefe + '</td><td>' + item.PuestoActual + '</td><td>' + item.GerenciaOrigen + '</td><td>' + fechaFormateada + '</td><td>' + item.PuestoEnPeriodoPrueba + '</td><td>' + item.GerenciaNueva + '</td><td>' + item.Meses + '</td></tr>';
+                    });
+
+                    contentHtml += '</tbody></table>';
+                    $('#fileContent').html(contentHtml);
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Error', 'Hubo un problema al subir el archivo.', 'error');
+                }
+            });
+             $.LoadingOverlay("hide");
+        } function enviarEvaluaciones() {
+            $.LoadingOverlay("show");
+            if (evaluaciones.length === 0) {
+                Swal.fire('Error', 'No hay evaluaciones para enviar. Por favor, suba un archivo primero.', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("CrearEvaluaciones2", "Evaluacion")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(evaluaciones),
+                success: function (response) {
+                    Swal.fire('Éxito', 'Las evaluaciones se han enviado correctamente.', 'success');
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Error', 'Hubo un problema al enviar las evaluaciones.', 'error');
+                }
+            });
+            $.LoadingOverlay("hide");
+        }
+        function enviarEvaluaciones2() {
+    $.ajax({
+        url: '@Url.Action("EnviarEvaluaciones", "Evaluacion")',
+        type: 'POST',
+        success: function (response) {
+            if (response.success) {
+                Swal.fire('Éxito', 'Las evaluaciones han sido enviadas exitosamente.', 'success');
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function (xhr, status, error) {
+            Swal.fire('Error', 'Ocurrió un error al enviar las evaluaciones.', 'error');
+        }
+    });
+}
+
+
+    </script>
+}

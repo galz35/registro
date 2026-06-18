@@ -1,0 +1,64 @@
+﻿@model  List<Entities.EventRegistrationDetail>
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+}
+
+@Html.DevExpress().GridView(settings => {
+    settings.Name = "gvEventRegistrationDetail";
+    settings.KeyFieldName = " EventRegistrationDetailId";
+    settings.Width = Unit.Percentage(100);
+    settings.CallbackRouteValues = new { Controller = "EventRegistrationDetail", Action = "EventRegistrationDetailPartial" };
+    settings.SettingsEditing.BatchUpdateRouteValues = new { Controller = "EventRegistrationDetail", Action = "InsertEventRegistrationDetail" };
+
+    settings.SettingsEditing.Mode = GridViewEditingMode.Batch;
+    settings.SettingsEditing.BatchEditSettings.EditMode = GridViewBatchEditMode.Cell;
+    settings.SettingsEditing.BatchEditSettings.StartEditAction = GridViewBatchStartEditAction.Click;
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+    settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+    settings.CommandColumn.Visible = true;
+    settings.CommandColumn.ShowCancelButton = true;
+    settings.CommandColumn.ShowDeleteButton = true;
+    settings.CommandColumn.ShowNewButtonInHeader = true;
+    settings.CommandColumn.ShowCancelButton = true;
+    settings.CommandColumn.Width = Unit.Pixel(100);
+
+    settings.Columns.Add(c =>
+    {
+        c.FieldName = "CompanionName";
+        c.Caption = "Acompañante";
+        c.Width = Unit.Percentage(100);
+        c.AdaptivePriority = 1;
+        c.EditorProperties().ComboBox(p =>
+        {
+            p.TextField = "FirstName";
+            p.ValueField = "ContactPersonId";
+            p.ValueType = typeof(int);
+            p.DataSource = slnRhonline.Models.Employees.GetAllEmployeeFamily();
+            p.DropDownStyle = DropDownStyle.DropDown;
+        });
+    });
+
+  
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "DocumentId";
+        col.Caption = "Documento de Identidad";
+        col.Width = Unit.Percentage(100);
+        col.AdaptivePriority = 3;
+        
+
+    });
+
+    settings.CellEditorInitialize = (s, e) => {
+        ASPxEdit editor = (ASPxEdit)e.Editor;
+        editor.ValidationSettings.Display = Display.None;
+    };
+
+}).Bind(Model).GetHtml()
+

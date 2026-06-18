@@ -1,0 +1,142 @@
+﻿@model Entities.ViewModels.AppointmentsView
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+
+<script>
+
+
+
+
+
+
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvDetailAppointment.SetHeight(height - 100);
+    }
+
+
+
+   
+
+
+
+
+
+</script>
+@using (Html.BeginForm("SaveAppointment", "Appointments", new { id = "frmAppointment" }))
+{
+    @Html.DevExpress().FormLayout(settings => {
+    settings.Name = "frmIndicator";
+    settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 650;
+    settings.ControlStyle.CssClass = "formLayout";
+
+    settings.Items.AddGroupItem(g => {
+        g.Caption = "";
+        g.ColCount = 2;
+        g.UseDefaultPaddings = false;
+        g.Paddings.PaddingTop = Unit.Pixel(10);
+        g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+        g.Items.Add(m => m.IdCita, i =>
+        {
+            i.Caption = "Id";
+            i.ClientVisible = false;
+            i.NestedExtension().TextBox(s =>
+            {
+
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(100);
+
+
+            });
+        });
+
+        g.Items.Add(i =>
+        {
+            i.FieldName = "FechaCita";
+            i.Caption = "Fecha de Cita";
+            i.NestedExtension().DateEdit(s =>
+            {
+                s.Properties.NullText = "DD/MM/YYYY";
+                s.Properties.EditFormat = EditFormat.Date;
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(100);
+                //s.Properties.ClientSideEvents.ValueChanged = "OnDaysGotFocus";
+                s.ReadOnly = true;
+                //s.Enabled = false;
+            });
+        });
+
+        g.Items.Add(i =>
+        {
+            i.FieldName = "KilometrajeActual";
+            i.Caption = "Km Actual";
+            i.NestedExtension().TextBox(s =>
+            {
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(100);
+                s.ReadOnly = true;
+
+            });
+        });
+
+        g.Items.Add(i =>
+        {
+            i.FieldName = "Observacion";
+            i.Caption = "Observaciones";
+
+            i.NestedExtension().Memo(s =>
+            {
+
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(250);
+                s.Properties.Rows = 3;
+                s.ReadOnly = true;
+
+            });
+        });
+
+
+
+
+    });
+}).GetHtml()
+}
+
+
+<div id="goalGrid">
+    @Html.Action("ConsultAppointmentPartial")
+</div>
+
+
+<br />
+@*<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings => {
+       settings.Name = "btnDanger";
+       settings.Width = 164;
+       settings.Text = "Actualizar";
+       settings.RenderMode = ButtonRenderMode.Danger;
+    settings.ClientSideEvents.Click = "GuardarCita";  //"function(s, e) { top.popImage.Hide(); }";
+
+    }).GetHtml()
+</div>*@

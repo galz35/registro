@@ -1,0 +1,143 @@
+﻿@model Entities.Licenses
+
+
+
+    @using (Html.BeginForm("UpdateLicenseAttached", "Licenses", FormMethod.Post, new { id = "frmlicencia" }))
+    {
+        @Html.Hidden("LicenseId")
+        @Html.DevExpress().FormLayout(settings =>
+   {
+       settings.Name = "formLayout";
+       //settings.ColCount = 2;
+
+       //settings.SettingsItemCaptions.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+       settings.UseDefaultPaddings = false;
+       //settings.AlignItemCaptionsInAllGroups = true;
+       //settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+       //settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+       settings.Width = System.Web.UI.WebControls.Unit.Percentage(100);
+
+
+       settings.Items.AddGroupItem(g =>
+
+       {
+           g.GroupBoxDecoration = GroupBoxDecoration.None;
+           g.Caption = "Edicion de licencia";
+           //g.ColCount = 2;
+
+
+
+           g.Items.Add(m => m.LicenseTypeId, i =>
+           {
+               i.Caption = "Tipo Licencia";
+               i.NestedExtension().ComboBox(de =>
+               {
+
+
+                   de.Width = 200;
+                   de.Height = 25;
+                   de.ShowModelErrors = true;
+                   de.Properties.NullText = "SELECCIONE TIPO DE LICENCIA";
+                   de.Properties.ValidationSettings.Display = Display.Dynamic;
+                   de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                   de.Properties.DropDownStyle = DropDownStyle.DropDown;
+                   de.SelectedIndex = 0;
+                   de.Properties.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                   de.Properties.TextField = "LicenseTypeName";
+                   de.Properties.ValueField = "LicenseTypeId";
+                   de.Properties.ValueType = typeof(int);
+                   de.Properties.DataSource = slnRhonline.Models.LicenseTypes.GetLicenseTypes();
+                   de.Properties.ClearButton.DisplayMode = ClearButtonDisplayMode.OnHover;
+                   de.ReadOnly = true;
+
+
+               });
+           });
+
+           g.Items.Add(m => m.StartDate, i =>
+           {
+               i.Caption = "Fecha de Inicio";
+               i.NestedExtension().DateEdit(de =>
+               {
+                   de.Width = 200;
+                   de.Height = 25;
+                   de.ShowModelErrors = true;
+                   de.Properties.ValidationSettings.Display = Display.Dynamic;
+                   de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                   de.ReadOnly = true;
+
+
+               });
+           });
+           g.Items.Add(m => m.EndDate, i =>
+           {
+               i.Caption = "Fecha de Fin";
+               i.NestedExtension().DateEdit(de =>
+               {
+                   de.Width = 200;
+                   de.Height = 25;
+                   de.ShowModelErrors = true;
+                   de.Properties.ValidationSettings.Display = Display.Dynamic;
+                   de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                   de.ReadOnly = true;
+
+
+               });
+           });
+
+
+
+           g.Items.Add(m => m.Notes, i =>
+           {
+               i.Caption = "Observación";
+               i.NestedExtension().Memo(de =>
+               {
+                   de.Width = 200;
+                   de.Height = 75;
+                   de.ShowModelErrors = true;
+                   de.Properties.ValidationSettings.Display = Display.Dynamic;
+                   de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                   de.ControlStyle.CssClass = "memo";
+                   de.ReadOnly = true;
+
+               });
+           });
+
+           g.Items.Add(i =>
+           {
+               i.Caption = "Subir archivo";
+               i.SetNestedContent(() =>
+               {
+                   Html.DevExpress().Label(lbSettings =>
+                   {
+                       lbSettings.Name = "Nombre de archivo";
+                       lbSettings.Properties.ClientInstanceName = "clientFileName";
+                   }).Render();
+                   Html.RenderPartial("UploadLicensePartial");
+               });
+           });
+       });
+
+       settings.Items.Add(i =>
+       {
+           i.ShowCaption = DefaultBoolean.False;
+           i.HorizontalAlign = FormLayoutHorizontalAlign.Right;
+           //i.ParentContainerStyle.Paddings.PaddingTop = 5;
+           i.ParentContainerStyle.Paddings.PaddingRight = 5;
+           //i.Width = 60;
+
+           i.NestedExtension().Button(s =>
+           {
+               s.Name = "btnSave";
+               s.Text = "Actualizar";
+               // ClientSideEvents.Click = "OnSubmitChanges";
+               s.UseSubmitBehavior = true;
+            //   s.RenderMode = ButtonRenderMode.Danger;
+          //     s.ClientSideEvents.Click = "Guardarlicencia";  //"function(s, e) { top.popImage.Hide(); }";
+
+           });
+       });
+
+   }).GetHtml()
+    }
+    

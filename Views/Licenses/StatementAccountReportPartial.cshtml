@@ -1,0 +1,33 @@
+﻿@using slnRhonline.Reports
+@Html.DevExpress().GetStyleSheets(
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().GetScripts(
+
+    new Script { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().DocumentViewer(settings =>
+{
+    settings.Name = "DocumentViewer";
+    settings.CallbackRouteValues = new
+    {
+        Controller = "Licenses",
+        Action = "StatementAccountReportPartial"
+    };
+    //settings.ExportRouteValues = new
+    //{
+      //  Controller = "Licenses",
+        //Action = "StatementAccountReportExport"
+    //};
+    settings.Report = new StatementAccount()
+    {
+        DataSource = Model,
+
+    };
+}).GetHtml()
+
+
+

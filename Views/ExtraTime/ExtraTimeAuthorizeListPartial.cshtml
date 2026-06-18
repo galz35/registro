@@ -1,0 +1,141 @@
+﻿@{
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "viewListExtraTime";
+        settings.CallbackRouteValues = new { Controller = "ExtraTime", Action = "ExtraTimeAuthorizeListPartial" };
+        settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Paging, new { Controller = "ExtraTime", Action = "GridListExtraTimePagingAction" });
+        settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Filtering, new { Controller = "ExtraTime", Action = "GridListExtraTimeFilteringAction" });
+        settings.ClientSideEvents.SelectionChanged = "onSelectionChanged";
+        settings.ClientSideEvents.BeginCallback = "onBeginCallback";
+
+      
+        settings.SettingsEditing.Mode = GridViewEditingMode.EditFormAndDisplayRow;
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.Width = Unit.Percentage(100);
+        settings.ControlStyle.Border.BorderWidth = 0;
+
+        
+
+        settings.KeyFieldName = "Id";
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Auto;
+        settings.Settings.VerticalScrollableHeight = 100;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+        //settings.SettingsPager.Mode = GridViewPagerMode.ShowAllRecords;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 500;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = true;
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ShowSelectCheckbox = true;
+        settings.CommandColumn.SelectAllCheckboxMode = GridViewSelectAllCheckBoxMode.Page;
+        settings.CommandColumn.Width = 50;
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "EmployeeNumber";
+            //col.MinWidth = 60;
+            //col.Width = 60;
+            col.Caption = "N° Empleado";
+            //col.CellStyle.HorizontalAlign = HorizontalAlign.Center;
+            col.Width = 100;
+            col.AdaptivePriority = 1;
+        });
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Employee";
+           
+            col.Caption = "Nombre Completo";
+
+            col.Width = 100;
+            col.AdaptivePriority = 2;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "ExecutionDate";
+           
+            col.Caption = "Fecha";
+            col.PropertiesEdit.DisplayFormatString = "dd/MM/yyyy";
+            //col.CellStyle.HorizontalAlign = HorizontalAlign.Center;
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.Width = 100;
+            col.AdaptivePriority = 3;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "HourStart";
+       
+            col.Caption = "Hora Inicio";
+            //col.CellStyle.HorizontalAlign = HorizontalAlign.Center;
+            col.PropertiesEdit.DisplayFormatString = "hh:mm tt";
+            col.Width = 100;
+            col.AdaptivePriority = 4;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "HourEnd";
+           
+            col.Caption = "Hora Fin";
+         
+            col.PropertiesEdit.DisplayFormatString = "hh:mm tt";
+            col.Width = 100;
+            col.AdaptivePriority = 5;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Notes";
+
+            col.Caption = "Observaciones";
+
+            col.Width = 100;
+            col.AdaptivePriority = 6;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Service";
+
+            col.Caption = "Orden de Servicio";
+
+            col.Width = 100;
+            col.AdaptivePriority = 7;
+        });
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Status";
+
+            col.Caption = "Estado";
+
+            col.Width = 100;
+            col.AdaptivePriority = 8;
+        });
+
+       
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.BindToCustomData(Model).GetHtml()
+

@@ -1,0 +1,109 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+}
+
+@Html.DevExpress().GridView(settings => {
+    settings.Name = "gvDetalleTraslado";
+    settings.KeyFieldName = "IdCombustibleDetalleTraslado";
+    settings.Width = Unit.Percentage(100);
+    settings.CallbackRouteValues = new { Controller = "Traslados", Action = "DetailPartial" };
+    settings.SettingsEditing.BatchUpdateRouteValues = new { Controller = "Traslados", Action = "EditarDetalleTraslado" };
+
+    settings.SettingsEditing.Mode = GridViewEditingMode.Batch;
+    settings.SettingsEditing.BatchEditSettings.EditMode = GridViewBatchEditMode.Cell;
+    settings.SettingsEditing.BatchEditSettings.StartEditAction = GridViewBatchStartEditAction.Click;
+    //settings.SettingsEditing.BatchEditSettings.HighlightDeletedRows = BatchEditingOptions.HighlightDeletedRows;
+    //settings.SettingsEditing.BatchEditSettings.KeepChangesOnCallbacks = GridViewCallbackCommand. KeepChangesOnCallbacks ? DefaultBoolean.True : DefaultBoolean.False;
+
+    settings.CommandColumn.Visible = true;
+    settings.CommandColumn.ShowCancelButton = true;
+    settings.CommandColumn.ShowDeleteButton = true;
+    settings.CommandColumn.ShowNewButtonInHeader = true;
+    settings.CommandColumn.ShowCancelButton = true;
+    settings.CommandColumn.Width = Unit.Pixel(100);
+
+    settings.Columns.Add(c =>
+    {
+        c.FieldName = "IdUnidadOrigen";
+
+        c.Name = "IdUnidadOrigen";
+        c.Caption = "Origen";
+        c.Width = Unit.Percentage(30);
+        c.AdaptivePriority = 1;
+
+        c.EditorProperties().ComboBox(p =>
+        {
+            //p.CallbackRouteValues = new { Controller = "Consumo", Action = "ObtenerUnidadesPorProveedor" };//, TextField = "IdUnidad", ValueField = "IdUnidad" };
+            p.TextField = "DescripcionUnidad";
+            p.ValueField = "IdUnidad";
+            p.ValueType = typeof(string);
+            p.LoadDropDownOnDemand = true;
+            p.DropDownStyle = DropDownStyle.DropDownList;
+            p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+            p.ValidationSettings.Display = Display.Dynamic;
+
+            p.Width = Unit.Percentage(100);
+         //   p.ClientSideEvents.BeginCallback = "UnidadOrigenBeginCallback";
+          
+            p.BindList(slnRhonline.Data.Unidad.ObtenerListaUnidades(string.Empty));
+
+
+
+        });
+    });
+    settings.Columns.Add(c =>
+    {
+        c.FieldName = "IdUnidadDestino";
+        c.Caption = "Destino";
+        c.Width = Unit.Percentage(30);
+        c.AdaptivePriority = 3;
+        c.EditorProperties().ComboBox(p =>
+        {
+            //p.CallbackRouteValues = new { Controller = "Consumo", Action = "ObtenerUnidadesPorProveedor" };//, TextField = "IdUnidad", ValueField = "IdUnidad" };
+            p.TextField = "DescripcionUnidad";
+            p.ValueField = "IdUnidad";
+            p.ValueType = typeof(string);
+            p.LoadDropDownOnDemand = true;
+            p.DropDownStyle = DropDownStyle.DropDownList;
+            p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+            p.ValidationSettings.Display = Display.Dynamic;
+
+            p.Width = Unit.Percentage(100);
+           // p.ClientSideEvents.BeginCallback = "UnidadDestinoBeginCallback";
+
+            p.BindList(slnRhonline.Data.Unidad.ObtenerListaUnidades(string.Empty));
+        });
+    });
+
+
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "CantidadSolicitada";
+        col.Caption = "Cant.Sol";
+        col.Width = Unit.Percentage(20);
+
+        col.AdaptivePriority = 5;
+    });
+
+
+
+
+    settings.CellEditorInitialize = (s, e) => {
+        ASPxEdit editor = (ASPxEdit)e.Editor;
+        editor.ValidationSettings.Display = Display.None;
+    };
+
+}).Bind(Model).GetHtml()
+
+
+
+
+
+
+

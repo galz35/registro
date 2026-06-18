@@ -1,0 +1,179 @@
+﻿@model Entities.ViewModels.ExpenseParametersView
+@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+    ViewBag.Title = "Reporte de Viáticos";
+}
+ 
+<html>
+<head>
+
+    <style type="text/css">
+        .buttonsContainer {
+            text-align: right;
+            padding-top: 12px;
+        }
+
+        .submitButton,
+        .cancelButton {
+            margin-bottom: 12px;
+        }
+
+        .cancelButton {
+            margin-left: 8px;
+        }
+
+        .groupCaption {
+            margin-top: -6px;
+        }
+
+        .clearPaddings {
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group label {
+            font-weight: bold;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+            .card-header h2 {
+                font-size: 1.5rem;
+                margin: 0;
+            }
+    </style>
+</head>
+<body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column align-items-center">
+        <div id="content">
+            <div class="container">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2 class="mb-0">Reporte de Viáticos</h2>
+                        </div>
+                    </div>
+                    <div class="card-body form-container">
+                        <form id="expenseForm" method="post" action="@Url.Action("ExpensesDetailReport", "ExpenseDetail")">
+                            <div class="form-group">
+                                <label for="classId">Tipo de Viático</label>
+                                <select id="classId" name="ClassId" class="form-control">
+                                    <option value="0">SELECCIONE TIPO DE VIATICO</option>
+                                    @foreach (var item in slnRhonline.Models.Concepts.GetAllConcepts().Where(c => c.ConceptTypeId == 4))
+                                    {
+                                        <option value="@item.ConceptId">@item.ConceptName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="periodId">Periodo</label>
+                                <select id="periodId" name="PeriodId" class="form-control">
+                                    <option value="0">SELECCIONE PERIODO</option>
+                                    <!-- Opciones dinámicas se cargarán aquí -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="company">Empresa</label>
+                                <select id="company" name="Company" class="form-control">
+                                    <option value="0">SELECCIONE EMPRESA</option>
+                                    <option value="ENITEL-NI02">ENITEL-NI02</option>
+                                    <option value="ESTESA-NI04">ESTESA-NI04</option>
+                                    <option value="SITES-NI06">SITES-NI06</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="bank">Banco</label>
+                                <select id="bank" name="Banco" class="form-control">
+                                    <option value="0">SELECCIONE BANCO</option>
+                                    <option value="BAC">BAC</option>
+                                    <option value="BANPRO">BANPRO</option>
+                                    <option value="BANPRO ACH">BANPRO ACH</option>
+                                    <option value="FICOHSA">FICOHSA</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reportType">Reporte</label>
+                                <select id="reportType" name="ReportType" class="form-control">
+                                    <option value="0">SELECCIONE EL REPORTE</option>
+                                    <option value="DETALLE">DETALLE</option>
+                                    <option value="CONSOLIDADO">CONSOLIDADO</option>
+                                    <option value="PENDIENTES DE RENDICION">PENDIENTES DE RENDICION</option>
+                                    <option value="DESEMBOLSO">DESEMBOLSO</option>
+                                    <option value="RENDICIÓN">RENDICIÓN</option>
+                                    <option value="CUENTA">CUENTA</option>
+
+                                </select>
+                            </div>
+                            <div class="buttonsContainer">
+                                <button type="submit" class="btn btn-primary submitButton">Aceptar</button>
+                                <button type="reset" class="btn btn-secondary cancelButton">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+          $(document).ready(function() {
+            $('#classId').on('change', function() {
+                var selectedClassId = $(this).val();
+                var periodSelect = $('#periodId');
+                periodSelect.empty().append('<option value="0">SELECCIONE PERIODO</option>');
+
+                if (selectedClassId != 0) {
+
+                    $.ajax({
+                        type: 'GET',
+                        url: '@Url.Action("GetAllPeriodsByClassjson", "Expenses")',
+                        data: { classId: selectedClassId },
+                        success: function(data) {
+                            if (Array.isArray(data) && data.length) {
+                                $.each(data, function(index, item) {
+                                    periodSelect.append('<option value="' + item.ExpensePeriodId + '">' + item.Notes + '</option>');
+                                });
+                            } else {
+                                console.error('La respuesta no contiene una lista válida de periodos');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error en la solicitud:', error);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+    <!-- End of Page Wrapper -->
+
+</body>
+</html>

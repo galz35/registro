@@ -1,0 +1,22 @@
+﻿
+@model DevExpress.XtraReports.UI.XtraReport
+
+@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+@Html.DevExpress().GetStyleSheets(
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().GetScripts(
+
+    new Script { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().WebDocumentViewer(settings =>
+{
+    settings.Name = "documentViewer";
+
+}).Bind(Model).GetHtml()
+

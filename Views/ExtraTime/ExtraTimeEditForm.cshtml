@@ -1,0 +1,213 @@
+﻿@using System.Web.UI.WebControls
+@using slnRhonline.Models;
+
+
+<script type="text/javascript">
+    var linesLimit = 800;
+    var label = formLayout.GetItemByName("Total");
+    function OnInit(s, e) {
+        $(s.GetInputElement()).keydown(function (e) {
+            newLines = s.GetText().split('\n').length;
+            if (e.keyCode == 13) 
+            var nNewLines = linesLimit - newLines;
+            FormLayout.GetEditor("Total").SetValue(nNewLines);
+        });
+    }
+
+</script>
+
+<style>
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+
+@{
+    ViewBag.Title = "Registro de Horas Extras";
+
+    var ExtraTime = ViewData["ExtraTime"];
+    Html.DevExpress().FormLayout(form =>
+    {
+        form.Name = "FormLayout";
+        form.ColCount = 2;
+        form.SettingsItemCaptions.Location = LayoutItemCaptionLocation.Top;
+        //form.UseDefaultPaddings = false;
+        //form.ShowItemCaptionColon = false;
+        //form.Styles.LayoutItem.Paddings.PaddingLeft = Unit.Pixel(20);
+
+        form.Width = Unit.Percentage(100);
+        form.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        form.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+        form.Items.Add(i =>
+
+        {
+            i.Caption = "Fecha";
+            i.CaptionSettings.AssociatedNestedExtensionName = "ExecutionDate";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().DateEdit(settings =>
+                {
+                    settings.Name = "ExecutionDate";
+                    settings.Properties.NullText = "DD/MM/YYYY";
+                    settings.Properties.EditFormat = EditFormat.Date;
+                    settings.Properties.EditFormatString = "dd/MM/yyyy";
+                    settings.Properties.DisplayFormatString = "dd/MM/yyyy";
+                    settings.ShowModelErrors = true;
+                    settings.Properties.CalendarProperties.ShowWeekNumbers = false;
+                    settings.Properties.CalendarProperties.HighlightWeekends = true;
+                    settings.Properties.MinDate = Convert.ToDateTime(ViewData["PeriodStarDate"]);
+                    settings.Properties.MaxDate = Convert.ToDateTime(ViewData["PeriodEndDate"]);
+                    //settings.Width = 100;
+                    settings.Width= Unit.Percentage(100);
+                    //settings.TabIndex = 0;
+
+                }).Bind(DataBinder.Eval(ExtraTime, "ExecutionDate")).Render();
+            });
+        });
+        form.Items.Add(i =>
+        {
+            i.Caption = "Motivo";
+            i.CaptionSettings.AssociatedNestedExtensionName = "ReasonId";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().ComboBox(
+      settings =>
+      {
+          settings.Name = "ReasonId";
+          settings.Properties.NullText = "Seleccione...";
+          settings.Width = Unit.Percentage(100); //250;
+          settings.SelectedIndex = 0;
+          settings.Properties.TextField = "ReasonName";
+          settings.Properties.ValueField = "ReasonId";
+          settings.Properties.ValueType = typeof(int);
+      }).BindList(Reasons.GetReasons()).Bind(DataBinder.Eval(ExtraTime, "ReasonId")).Render();
+            });
+        });
+
+        form.Items.Add(i =>
+        {
+            i.Caption = "Hora de Inicio";
+            i.CaptionSettings.AssociatedNestedExtensionName = "HourStart";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().TimeEdit(settings =>
+                {
+                    settings.Name = "HourStart";
+                    settings.Properties.NullText = "hh:mm tt";
+                    settings.Properties.DisplayFormatString = "hh:mm tt";
+
+                    settings.Properties.EditFormat = EditFormat.Custom;
+                    settings.Properties.EditFormatString = "hh:mm tt";
+                    settings.ShowModelErrors = true;
+                    settings.Width = Unit.Percentage(100); //100;
+                    //    settings.TabIndex = 1;
+                }).Bind(DataBinder.Eval(ExtraTime, "HourStart")).Render();
+            });
+        });
+        form.Items.Add(i =>
+        {
+            i.Caption = "Orden de Servicio";
+            i.CaptionSettings.AssociatedNestedExtensionName = "Service";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().TextBox(settings =>
+                {
+                    settings.Name = "Service";
+                    settings.ShowModelErrors = true;
+                    settings.Width = Unit.Percentage(100);//250;
+                    settings.Properties.MaxLength = 300;
+
+                }).Bind(DataBinder.Eval(ExtraTime, "Service")).Render();
+            });
+        });
+
+        form.Items.Add(i =>
+        {
+            i.Caption = "Hora de Fin";
+            i.CaptionSettings.AssociatedNestedExtensionName = "HourEnd";
+            i.VerticalAlign = FormLayoutVerticalAlign.Top;
+            i.SetNestedContent(() =>
+            {
+
+                Html.DevExpress().TimeEdit(settings =>
+                {
+                    settings.Name = "HourEnd";
+                    settings.Properties.NullText = "hh:mm tt";
+                    settings.Properties.EditFormat = EditFormat.Custom;
+                    settings.Properties.EditFormatString = "hh:mm tt";
+                    settings.Properties.DisplayFormatString = "hh:mm tt";
+                    settings.ShowModelErrors = true;
+                    settings.Width = Unit.Percentage(100); //100;
+
+                }).Bind(DataBinder.Eval(ExtraTime, "HourEnd")).Render();
+            });
+        });
+        form.Items.Add(i =>
+        {
+            i.Caption = "Descripcion de la actividad a realizar";
+            i.CaptionSettings.AssociatedNestedExtensionName = "Notes";
+            i.SetNestedContent(() =>
+            {
+                Html.DevExpress().Memo(settings =>
+                {
+                    settings.Name = "Notes";
+                    settings.ShowModelErrors = true;
+                    //settings.Properties.Columns = 31;
+                    settings.Properties.MaxLength = 800;
+                    settings.Properties.Rows = 6;
+                    settings.ControlStyle.CssClass = "memo";
+                    settings.Width= Unit.Percentage(100);
+
+
+                }).Bind(DataBinder.Eval(ExtraTime, "Notes")).Render();
+            });
+        });
+        form.Items.AddGroupItem(g =>
+        {
+            g.GroupBoxDecoration = GroupBoxDecoration.HeadingLine;
+            g.ColSpan = 2;
+            g.ColCount = 4;
+            g.ShowCaption = DefaultBoolean.False;
+            var item = g.Items.AddEmptyItem();
+            item.ColSpan = 2;
+            item.Width = Unit.Percentage(100);
+            g.Items.Add(i =>
+            {
+                i.ShowCaption = DefaultBoolean.False;
+                i.SetNestedContent(() =>
+                {
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.Width = 65;
+                        btnSettings.Height = 25;
+                        btnSettings.ClientSideEvents.Click = "function(s, e) {GridView.UpdateEdit();}";
+                    }).Render();
+                });
+            });
+            g.Items.Add(i =>
+            {
+                i.ShowCaption = DefaultBoolean.False;
+                i.SetNestedContent(() =>
+                {
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Width = 65;
+                        btnSettings.Height = 25;
+                        btnSettings.ClientSideEvents.Click = "function(s, e) {GridView.CancelEdit();}";
+                    }).Render();
+                });
+            });
+        });
+    }).Render();
+
+    @*<div class="form-group">
+        <div id="text-counter-parent" class="col-md-offset-2 col-md-10" aria-live="assertive" aria-atomic="true"><span id="text-counter">800</span> character(s) left.</div>
+    </div>*@
+    }

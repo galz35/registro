@@ -1,0 +1,228 @@
+﻿
+@model List<Entities.ViewModels.AppointmentsView>
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+}
+
+@Html.DevExpress().GridView(settings => {
+    settings.Name = "gvAppointments";
+    settings.KeyFieldName = "IdCita";
+    settings.CallbackRouteValues = new { Controller = "Appointments", Action = "ListPartial" };
+    settings.Width = Unit.Percentage(100);
+    settings.Settings.ShowGroupPanel = false;
+    settings.SettingsBehavior.AllowSelectByRowClick = true;
+    settings.ControlStyle.Border.BorderWidth = 1;
+    settings.Settings.ShowFooter = true;
+    settings.KeyboardSupport = true;
+
+    settings.EnableRowsCache = false;
+
+    settings.ClientSideEvents.Init = "OnInit";
+    settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+    settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+    settings.SettingsBehavior.AllowEllipsisInText = true;
+
+    #region Paging
+    settings.SettingsPager.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+    settings.SettingsPager.PageSize = 10;
+    #endregion
+    #region filtering
+    settings.SettingsSearchPanel.CustomEditorName = "search";
+    settings.Settings.ShowHeaderFilterButton = true;
+    settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+    settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+    settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+    #endregion
+    #region Sorting
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "IdCita");
+    //settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "ValorCordobas");
+    #endregion
+
+    settings.Toolbars.Add(t =>
+    {
+        t.Enabled = true;
+        t.ItemAlign = GridToolbarItemAlign.Right;
+        //t.Items.Add(i =>
+        //{
+        //    i.Text = "Exportar a";
+        //    i.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsDownload16x16office2013;
+        //    i.BeginGroup = true;
+        //    i.Items.Add(GridViewToolbarCommand.ExportToPdf).Text = "Exportar a PDF";
+        //    i.Items.Add(GridViewToolbarCommand.ExportToDocx).Text = "Exportar a Word";
+        //    i.Items.Add(GridViewToolbarCommand.ExportToXls).Text = "Exportar a Excel";
+
+        //});
+        t.Items.Add(i =>
+        {
+            i.BeginGroup = true;
+            i.SetTemplateContent(c =>
+            {
+                Html.DevExpress().ButtonEdit(s =>
+                {
+                    s.Name = "search";
+                    s.Properties.NullText = "Buscar..";
+                    s.Properties.Buttons
+                        .Add()
+                        .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+                }).Render();
+            });
+        });
+
+    });
+
+    settings.Columns.Add(c =>
+    {
+        c.Caption = "#";
+        c.SetDataItemTemplateContent(tc =>
+        {
+            ViewContext.Writer.Write(
+                @Html.DevExpress().Button(p =>
+                {
+                    p.Name = "btnEditAppointment" + tc.KeyValue;
+                    p.Text = "";
+                    p.Width = 5;
+                    p.EnableTheming = false;
+
+                    p.Images.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+                    p.ImagePosition = ImagePosition.Left;
+                    p.ToolTip = "Editar cita";
+                    p.ClientSideEvents.Click = string.Format("function(s,e) {{EditarCita(s.name,'{0}'); }}", Url.Action("Edit", "Appointments", new { appointmentId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+
+                }).GetHtml()
+            );
+
+            ViewContext.Writer.Write(
+
+         @Html.DevExpress().Button(p =>
+         {
+             p.Name = "btnDeleteAppointment" + tc.KeyValue;
+             p.Text = "";
+             p.Width = 5;
+             p.EnableTheming = false;
+             p.Images.Image.Url = Url.Content("~/Content/Icons/trash.png");
+             p.ImagePosition = ImagePosition.Left;
+             p.ToolTip = "Anular Cita";
+             //p.RouteValues = new { Controller = "Expenses", Action = "DeleteExpense", expenseId = DataBinder.Eval(tc.DataItem, "ExpenseId") };
+             p.ClientSideEvents.Click = string.Format("function(s,e) {{AnularCita(s.name,'{0}'); }}", Url.Action("AnularCita", "Appointments", new { idCita = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+         }).GetHtml()
+         );
+            ViewContext.Writer.Write(
+
+        @Html.DevExpress().Button(p =>
+        {
+            p.Name = "btnConsultAppointment" + tc.KeyValue;
+            p.Text = "";
+            p.Width = 5;
+            p.EnableTheming = false;
+            p.Images.Image.Url = Url.Content("~/Content/Icons/ViewDetail.png");
+            p.ImagePosition = ImagePosition.Left;
+            p.ToolTip = "Consultar Cita";
+
+            p.ClientSideEvents.Click = string.Format("function(s,e) {{ConsultarCita(s.name,'{0}'); }}", Url.Action("ConsultAppointment", "Appointments", new { appointmentId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+        }).GetHtml()
+        );
+
+
+
+
+        });
+
+        c.SetHeaderTemplateContent(tc =>
+        {
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "Nuevo";
+                p.Text = "";
+                p.Width = 5;
+                p.EnableTheming = false;
+                p.Images.Image.Url = Url.Content("~/Content/Icons/Add.png");
+                p.ImagePosition = ImagePosition.Right;
+                p.ClientSideEvents.Click = string.Format("function(s,e) {{ShowEditAppointment(s.name,'{0}'); }}", Url.Action("Edit", "Appointments", new { appointmentId = -1 }));
+                p.ToolTip = "Agregar nuevo registro";
+            }).GetHtml();
+
+
+        });
+        c.Settings.AllowDragDrop = DefaultBoolean.False;
+        c.Settings.AllowSort = DefaultBoolean.False;
+        c.Width = Unit.Percentage(10);
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "IdCita";
+        col.Caption = "IdCita";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 1;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+        col.Visible = false;
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "IdUnidad";
+        col.Caption = "Unidad";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 1;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "FechaCita";
+        col.Caption = "Fecha Cita";
+        col.ColumnType = MVCxGridViewColumnType.DateEdit;
+        col.AdaptivePriority = 2;
+        col.Width = Unit.Percentage(20);
+    });
+
+    settings.Columns.Add(col =>
+    {
+
+        col.FieldName = "KilometrajeActual";
+        col.Caption = "Km Actual";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 3;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EstadoCita";
+        col.Caption = "Estado";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 4;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+
+    });
+
+    settings.ClientLayout = (s, e) => {
+        if(e.LayoutMode == ClientLayoutMode.Loading) {
+            if(Session["GridState"] != null)
+                e.LayoutData = (string)Session["GridState"];
+        }
+        else
+            Session["GridState"] = e.LayoutData;
+    };
+
+
+}).Bind(Model).GetHtml()
+
+

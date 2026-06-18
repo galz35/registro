@@ -1,0 +1,196 @@
+﻿@using slnRhonline.Models
+
+@{
+    ViewBag.Title = "Enviar Evaluación";
+    List<EvaluacionCicloViewModel> lstEmployees = Session["levaluaciontotalx"] as List<EvaluacionCicloViewModel>;
+    EvaluacionCicloViewModel evaluacion = new EvaluacionCicloViewModel();
+    evaluacion = lstEmployees.FirstOrDefault();
+
+}
+<h2>Enviar Evaluación</h2>
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form id="enviarEvaluacionForm">
+                <div class="form-group">
+                    <label for="nombre-colaborador">Nombre:</label>
+                    <input type="text" class="form-control" id="nombre-colaborador" name="nombreColaborador" value="@evaluacion.colaborador" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="periodo-evaluacion">Período:</label>
+                    <input type="text" class="form-control" id="periodo-evaluacion" name="periodoEvaluacion" value="@evaluacion.MesCiclo-@evaluacion.FechaInicio.Year" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="puesto-colaborador">Puesto:</label>
+                    <input type="text" class="form-control" id="puesto-colaborador" name="puestoColaborador" value="@evaluacion.Cargo2" readonly>
+                </div>
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Objetivo</th>
+                            <th>% de Cumplimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" class="form-control" id="objetivo1" name="objetivo1" placeholder="Objetivo 1"></td>
+                            <td>
+                                <select class="form-control" id="cumplimiento1" name="cumplimiento1">
+                                    <option value="">Seleccione...</option>
+                                    @for (int j = 0; j <= 100; j += 10)
+                                    {
+                        <option value="@j">@j%</option>}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="objetivo2" name="objetivo2" placeholder="Objetivo 2"></td>
+                            <td>
+                                <select class="form-control" id="cumplimiento2" name="cumplimiento2">
+                                    <option value="">Seleccione...</option>
+                                    @for (int j = 0; j <= 100; j += 10)
+                                    {
+                        <option value="@j">@j%</option>}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="objetivo3" name="objetivo3" placeholder="Objetivo 3"></td>
+                            <td>
+                                <select class="form-control" id="cumplimiento3" name="cumplimiento3">
+                                    <option value="">Seleccione...</option>
+                                    @for (int j = 0; j <= 100; j += 10)
+                                    {
+                        <option value="@j">@j%</option>}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="objetivo4" name="objetivo4" placeholder="Objetivo 4"></td>
+                            <td>
+                                <select class="form-control" id="cumplimiento4" name="cumplimiento4">
+                                    <option value="">Seleccione...</option>
+                                    @for (int j = 0; j <= 100; j += 10)
+                                    {
+                        <option value="@j">@j%</option>}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="objetivo5" name="objetivo5" placeholder="Objetivo 5"></td>
+                            <td>
+                                <select class="form-control" id="cumplimiento5" name="cumplimiento5">
+                                    <option value="">Seleccione...</option>
+                                    @for (int j = 0; j <= 100; j += 10)
+                                    {
+                        <option value="@j">@j%</option>}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="objetivo6" name="objetivo6" placeholder="Objetivo 6"></td>
+                            <td>
+                                <select class="form-control" id="cumplimiento6" name="cumplimiento6">
+                                    <option value="">Seleccione...</option>
+                                    @for (int j = 0; j <= 100; j += 10)
+                                    {
+                        <option value="@j">@j%</option>}
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-primary" id="submitEvaluacion">Enviar Evaluación</button>
+            </form>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script src="~/Content/js2024/jquery.jeditable.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#submitEvaluacion').click(function () {
+                var formData = [];
+                
+
+                // Recorrer cada objetivo y su cumplimiento correspondiente
+                for (var i = 1; i <= 6; i++) {
+                    var objetivo = $('#objetivo' + i).val();
+                    var cumplimiento = $('#cumplimiento' + i).val();
+
+                    if (objetivo !== "" && cumplimiento !== "") {
+                        formData.push({
+                            DescripcionObjetivo: objetivo,
+                            PorcentajeCumplimientoEsperado: cumplimiento
+                        });
+                    }
+                }
+
+                if (formData.length > 0) {
+                    $.ajax({
+                        url: '@Url.Action("EnviarEvaluacion", "Evaluacion")',
+                        type: 'POST',
+                        data: {
+                         
+                            objetivos: formData
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: '¡Evaluación Enviada!',
+                                    text: 'La evaluación se ha enviado correctamente.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = '@Url.Action("Encurso", "Evaluacion")';
+                                    }
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Hubo un problema al enviar la evaluación.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Ocurrió un error: ' + error,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar'
+                            });
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Debes llenar al menos un objetivo y su porcentaje.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+            });
+        });
+    </script>
+}

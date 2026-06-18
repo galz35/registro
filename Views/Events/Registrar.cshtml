@@ -1,0 +1,665 @@
+﻿@{
+    ViewBag.Title = "Registro de Equipos Deportivos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<style>
+    :root {
+        --primary: #ef3829;
+        --secondary: #002f6c;
+        --bg-body: #f4f7fa;
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-body);
+        color: #334155;
+    }
+
+    .container-margin {
+        margin: 40px auto;
+        max-width: 1200px;
+        padding: 0 15px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        background: #ffffff;
+        margin-bottom: 25px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: #ffffff !important;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 18px 25px;
+    }
+
+        .card-header h3, .card-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .card-body {
+        padding: 25px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+
+    .form-control-sm {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(239, 56, 41, 0.1);
+    }
+
+    .form-control:disabled, .form-control[readonly] {
+        background-color: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    .btn {
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 10px 18px;
+        transition: all 0.2s;
+    }
+
+    .btn-danger {
+        background-color: var(--primary);
+        border: none;
+    }
+
+        .btn-danger:hover {
+            background-color: #d62d20;
+            transform: translateY(-1px);
+        }
+
+    .btn-primary {
+        background-color: var(--secondary);
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background-color: #001f4d;
+            transform: translateY(-1px);
+        }
+
+    .btn-dark {
+        background-color: #1e293b;
+        border: none;
+    }
+
+    table.dataTable.no-footer {
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    #tbdata thead th, #tbProducto thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 15px;
+    }
+
+    .modal-content {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 20px 25px;
+    }
+
+    .modal-title {
+        font-weight: 700;
+        color: var(--secondary);
+    }
+</style>
+
+<div class="container-margin">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-flag mr-2"></i> Información del Equipo</h3>
+        </div>
+        <div class="card-body">
+            <form id="form">
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        <label>Nombre del Equipo</label>
+                        <input type="text" class="form-control form-control-sm" id="txtRuc" name="equipo" placeholder="Ej: Los Intocables">
+                        <input type="hidden" id="txtRuc3" name="campoOculto">
+                        <input type="hidden" id="txtRuc4" name="campoOculto">
+                        <input type="hidden" id="txtRuc2" readonly>
+                        <input type="hidden" id="txtIdLiga" value="0">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Disciplina</label>
+                        <select class="form-control form-control-sm" id="cbdisciplina">
+                            <option value="" disabled selected>Seleccione una...</option>
+                            <option value="Softball">Softball</option>
+                            <option value="Football Sala">Football Sala</option>
+                            <option value="Tenis de Mesa">Tenis de Mesa</option>
+                            <option value="Volibol">Volibol</option>
+                            <option value="Basketball">Basketball</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Su Teléfono</label>
+                        <input type="text" class="form-control form-control-sm" id="txtTelefonoCreador" placeholder="Ej: 88888888">
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="form-group col-md-4">
+                        <label>Su Talla Uniforme</label>
+                        <select class="form-control form-control-sm" id="cbCamisaCreador">
+                            <option value="" disabled selected>Talla...</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
+                            <option value="XXXL">XXXL</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Sus Zapatos (USA)</label>
+                        <input type="number" step="0.5" min="4" max="14" class="form-control form-control-sm" id="txtZapatosCreador" placeholder="Ej: 9 o 9.5">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end" style="gap: 10px; margin-bottom: 1rem;">
+                        <button id="btnBuscarTienda" type="button" class="btn btn-danger flex-fill" onclick="Guardardiciplina()">
+                            <i class="fas fa-save mr-1"></i> Crear Equipo
+                        </button>
+                        <button id="btnBuscarTienda2" type="button" class="btn btn-dark flex-fill" onclick="Guardardiciplinaf()">
+                            <i class="fas fa-lock mr-1"></i> Finalizar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4><i class="fas fa-users mr-2"></i> Asignar Jugadores al Equipo</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="form-group col-md-3">
+                    <label>Empleado</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm" id="txtCodigo" readonly placeholder="Carnet">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary btn-sm" type="button" onclick="abrirModalProducto()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Teléfono</label>
+                    <input type="text" class="form-control form-control-sm" id="txtNombre" placeholder="Ej: 88888888">
+                </div>
+                <div class="form-group col-md-3">
+                    <label>Talla Uniforme</label>
+                    <select class="form-control form-control-sm" id="cbCamisa">
+                        <option value="" disabled selected>Talla...</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                        <option value="XXXL">XXXL</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Zapatos (USA)</label>
+                    <input type="number" step="0.5" min="4" max="14" class="form-control form-control-sm" id="txtZapatos" placeholder="Ej: 9 o 9.5">
+                </div>
+                <div class="col-md-2 d-flex align-items-end" style="margin-bottom: 1rem;">
+                    <button id="btnAsignar" type="button" class="btn btn-primary btn-block" onclick="asignarProducto()">
+                        <i class="fas fa-user-plus mr-1"></i> Asignar
+                    </button>
+                </div>
+            </div>
+            <input id="txtIdProducto" type="hidden" value="0" />
+
+            <hr class="my-4">
+
+            <div class="table-responsive">
+                <table id="tbdata" class="table table-hover w-100">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Carnet</th>
+                            <th>Teléfono</th>
+                            <th>Talla Uniforme</th>
+                            <th>Zapatos</th>
+                            <th>Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalProducto" tabindex="-1" role="dialog" data-backdrop="static" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Buscar Empleado</h5>
+                    <button type="button" class="close" onclick="cerrarModalt1()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table id="tbProducto" class="table table-striped table-bordered w-100">
+                            <thead>
+                                <tr>
+                                    <th>Seleccionar</th>
+                                    <th>Carnet</th>
+                                    <th>Nombre</th>
+                                    <th>Gerencia</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="cerrarModalt1()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="~/onlinecss/jquery.fancybox.min.css" rel="stylesheet" />
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/responsive.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/jszip3.10.1.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+
+    <script>
+        var tabladata, tablaproducto;
+
+        $(document).ready(function () {
+            $.LoadingOverlay("show");
+
+            // INICIALIZAR EQUIPO Y BUSCAR EL ID DE FORMA INTELIGENTE
+            $.ajax({
+                url: '@Url.Action("Obtenerequipo", "Events")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    if (data.data && data.data.Nombre) {
+
+                        // Busca el ID sin importar la capitalización desde el backend
+                        var idReal = data.data.idliga || data.data.IdLiga || data.data.idLiga || data.data.ID || data.data.Id || 0;
+                        $("#txtIdLiga").val(idReal);
+
+                        // Impresión en consola para depuración
+                        console.log("Datos del equipo cargado:", data.data);
+                        console.log("ID detectado y guardado en campo oculto:", idReal);
+
+                        $("#txtRuc").val(data.data.Nombre).prop("disabled", true);
+                        $("#txtRuc2").val(data.data.fullnombre);
+                        $("#txtRuc3").val(data.data.estado);
+                        $("#txtRuc4").val(data.data.rg);
+                        $("#cbdisciplina").val(data.data.Disciplina).prop("disabled", true);
+
+                        $("#btnBuscarTienda").hide();
+                        $("#txtTelefonoCreador, #cbCamisaCreador, #txtZapatosCreador").prop("disabled", true);
+
+                        if (data.data.rg !== "ok" || data.data.estado === "F") {
+                            $("#btnBuscarTienda2, #btnAsignar, #txtCodigo, #txtNombre, #cbCamisa, #txtZapatos").prop("disabled", true);
+                            if (data.data.estado === "F") {
+                                Swal.fire("Inscripción Finalizada", "No se permiten más cambios en este equipo.", "success");
+                            }
+                        }
+                    } else {
+                        $("#btnBuscarTienda2, #btnAsignar, #txtCodigo, #txtNombre, #cbCamisa, #txtZapatos").prop("disabled", true);
+                    }
+                }
+            });
+
+            // TABLA DE EMPLEADOS (MODAL)
+            tablaproducto = $('#tbProducto').DataTable({
+                "ajax": { "url": '@Url.Action("Obtener", "Events")', "type": "GET" },
+                "columns": [
+                    {
+                        "data": "carnet",
+                        "render": function (data, type, row) {
+                            return `<button class='btn btn-sm btn-primary' type='button' onclick='productoSelect(${JSON.stringify(row)})'><i class='fas fa-check'></i> Seleccionar</button>`;
+                        },
+                        "width": "120px"
+                    },
+                    { "data": "carnet" },
+                    { "data": "nombre" },
+                    { "data": "gerente" }
+                ],
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json" }
+            });
+
+            // TABLA DE JUGADORES INSCRITOS
+            tabladata = $('#tbdata').DataTable({
+                "ajax": {
+                    "url": '@Url.Action("Obtenerequipo2", "Events")',
+                    "type": "GET",
+                    "dataSrc": function(json) { return json.data || []; }
+                },
+                "columns": [
+                    { "data": "nombre" },
+                    { "data": "carnet" },
+                    { "data": "telefono" },
+                    { "data": "TallaCamisa", "defaultContent": "N/A" }, // Asume que la API retorna "TallaCamisa" para la talla uniforme
+                    { "data": "TallaZapato", "defaultContent": "N/A" },
+                    {
+                        "data": "iddliga",
+                        "render": function (data) {
+                            return `<button class='btn btn-danger btn-sm' onclick='eliminar(${data})'><i class='fa fa-trash'></i></button>`;
+                        },
+                        "width": "50px"
+                    }
+                ],
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json" }
+            });
+
+            // BLOQUEO ESTRICTO: Talla de Zapatos (Máximo 14) en Tiempo Real
+            $('#txtZapatosCreador, #txtZapatos').on('input', function () {
+                var valorActual = parseFloat($(this).val());
+                if (valorActual > 14) {
+                    $(this).val(14);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Atención',
+                        text: 'No se pase de la talla 14'
+                    });
+                }
+            });
+
+            $.LoadingOverlay("hide");
+        });
+
+        // FUNCIONES DEL MODAL
+        function abrirModalProducto() {
+            if($("#txtRuc3").val() === "F") return;
+            $("#modalProducto").modal("show");
+        }
+
+        function productoSelect(json) {
+            $("#txtIdProducto").val(json.carnet);
+            $("#txtCodigo").val(json.carnet);
+            $("#modalProducto").modal('hide');
+        }
+
+        function cerrarModalt1() {
+            $("#modalProducto").modal('hide');
+        }
+
+        // ==========================================
+        // CREAR EQUIPO
+        // ==========================================
+        function Guardardiciplina() {
+            var nombre = $("#txtRuc").val();
+            var seleccion = $("#cbdisciplina option:selected").text();
+
+            var telCreador = $("#txtTelefonoCreador").val();
+            var tallaUniforme = $("#cbCamisaCreador").val();
+            var zapatosCreador = $("#txtZapatosCreador").val();
+
+            if (!nombre || !$("#cbdisciplina").val() || !telCreador || !tallaUniforme || !zapatosCreador) {
+                return Swal.fire("Atención", "Todos los campos (incluyendo el teléfono) son obligatorios", "warning");
+            }
+
+            var numZapatos = parseFloat(zapatosCreador);
+            if (isNaN(numZapatos) || numZapatos < 4 || numZapatos > 14) {
+                return Swal.fire("Talla de zapato inválida", "Asegúrese de ingresar una talla formato USA (ej: 9 o 9.5) y que no pase de 14", "warning");
+            }
+
+            var telFinal = "N/A";
+            if (telCreador && telCreador.trim() !== "") {
+                var cleanTel = telCreador.replace(/[-\s]/g, '');
+                if (!/^[578]\d{7}$/.test(cleanTel)) {
+                    return Swal.fire("Teléfono Inválido", "El teléfono debe tener exactamente 8 números y comenzar con 5, 7 u 8.", "warning");
+                }
+                telFinal = cleanTel;
+            }
+
+            Swal.fire({
+                title: "¿Crear equipo?",
+                text: "Se registrará el equipo " + nombre,
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonText: "Confirmar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var $data = {
+                        oPersona: {
+                            Nombre: nombre,
+                            Disciplina: seleccion,
+                            Telefono: telFinal,
+                            TallaCamisa: tallaUniforme,
+                            TallaPantalon: tallaUniforme, // Mandamos la misma talla unificada
+                            TallaZapato: zapatosCreador
+                        }
+                    };
+
+                    $.LoadingOverlay("show");
+                    $.ajax({
+                        url: "@Url.Action("Guardar", "Events")",
+                        type: "POST",
+                        data: JSON.stringify($data),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+                            $.LoadingOverlay("hide");
+                            if (data && data.resultado) {
+                                var mensaje = String(data.resultado);
+                                if (mensaje.includes("OK") || mensaje.includes("exitosamente")) {
+                                    Swal.fire("Guardado", "Equipo creado con éxito", "success").then(() => {
+                                        location.reload();
+                                    });
+                                 } else {
+                                    Swal.fire("Error", mensaje, "error");
+                                }
+                            } else {
+                                Swal.fire("Error", "Respuesta irreconocible del servidor", "error");
+                            }
+                        },
+                        error: function() {
+                            $.LoadingOverlay("hide");
+                            Swal.fire("Error", "Fallo de comunicación con el servidor", "error");
+                        }
+                    });
+                }
+            });
+        }
+
+        // ==========================================
+        // FINALIZAR EQUIPO (POR ID - FLEXIBLE)
+        // ==========================================
+     // ==========================================
+        // FINALIZAR EQUIPO (LEYENDO DESDE SESIÓN EN C#)
+        // ==========================================
+        function Guardardiciplinaf() {
+            Swal.fire({
+                title: "¿Finalizar Inscripción?",
+                text: "Ya no podrá agregar ni eliminar jugadores.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sí, finalizar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    $.LoadingOverlay("show");
+
+                    $.ajax({
+                        url: "@Url.Action("Guardarf", "Events")",
+                        type: "POST",
+                        // ¡MAGIA!: Ya no mandamos la variable "data" ni "contentType".
+                        // El controlador C# se encargará de sacar el ID de la Sesión.
+                        success: function (data) {
+                            $.LoadingOverlay("hide");
+                            console.log("Respuesta servidor al finalizar:", data);
+
+                            var resStr = typeof data === 'object' ? JSON.stringify(data).toLowerCase() : String(data).toLowerCase();
+
+                            if (resStr.includes("finalizado") || resStr.includes("ok") || resStr.includes("true") || (data && data.resultado === true)) {
+                                Swal.fire("¡Éxito!", "Inscripción finalizada correctamente", "success").then(() => {
+                                    location.reload();
+                                });
+                            }
+                            else if (data && (data.resultado || data.mensaje)) {
+                                var msj = data.resultado ? data.resultado : data.mensaje;
+                                Swal.fire("Atención", String(msj), "info");
+                            }
+                            else {
+                                Swal.fire("Aviso", "Se envió la petición. La página se recargará para verificar cambios.", "info").then(() => {
+                                    location.reload();
+                                });
+                            }
+                        },
+                        error: function() {
+                            $.LoadingOverlay("hide");
+                            Swal.fire("Error", "Fallo de comunicación con el servidor", "error");
+                        }
+                    });
+                }
+            });
+        }
+
+        // ==========================================
+        // ASIGNAR JUGADORES
+        // ==========================================
+        function asignarProducto() {
+            var carnet = $("#txtCodigo").val();
+            var tel = $("#txtNombre").val();
+            var tallaUniforme = $("#cbCamisa").val();
+            var zapatos = $("#txtZapatos").val();
+
+            if (!carnet || !tel || !tallaUniforme || !zapatos) {
+                return Swal.fire("Atención", "Debe completar todos los datos del jugador, incluyendo el teléfono", "warning");
+            }
+
+            var numZapatos = parseFloat(zapatos);
+            if (isNaN(numZapatos) || numZapatos < 4 || numZapatos > 14) {
+                return Swal.fire("Talla de zapato inválida", "Asegúrese de ingresar una talla formato USA (ej: 9 o 9.5) y no pasarse de 14", "warning");
+            }
+
+            var cleanTel = tel.replace(/[-\s]/g, '');
+            if (!/^[578]\d{7}$/.test(cleanTel)) {
+                return Swal.fire("Teléfono Inválido", "El teléfono debe tener exactamente 8 números y comenzar con 5, 7 u 8.", "warning");
+            }
+
+            var $data = {
+                oPersona: {
+                    Nombre: carnet,
+                    Disciplina: cleanTel,
+                    TallaCamisa: tallaUniforme,
+                    TallaPantalon: tallaUniforme, // Mandamos la misma talla unificada
+                    TallaZapato: zapatos
+                }
+            };
+
+            $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("Guardar2", "Events")',
+                type: "POST",
+                data: JSON.stringify($data),
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    $.LoadingOverlay("hide");
+                    var mensaje = data && data.resultado ? String(data.resultado) : "";
+
+                    if (mensaje.includes("ok")) {
+                        Swal.fire("Guardado", "Jugador agregado al equipo", "success");
+                        // Limpiamos los campos
+                        $("#txtNombre, #txtCodigo, #txtZapatos").val("");
+                        $("#cbCamisa").prop('selectedIndex', 0);
+
+                        tabladata.ajax.reload(null, false);
+                        tablaproducto.ajax.reload(null, false);
+                    } else {
+                        Swal.fire("Error", mensaje || "Error desconocido", "error");
+                    }
+                },
+                error: function() {
+                    $.LoadingOverlay("hide");
+                    Swal.fire("Error", "Fallo en la comunicación con el servidor", "error");
+                }
+            });
+        }
+
+        // ==========================================
+        // ELIMINAR JUGADORES
+        // ==========================================
+        function eliminar(id) {
+            if ($("#txtRuc3").val() === "F") return;
+
+            Swal.fire({
+                title: "¿Eliminar jugador?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                confirmButtonText: "Sí, eliminar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("Guardar3", "Events")?id=' + id,
+                        type: "GET",
+                        success: function (data) {
+                            if (data && data.resultado) {
+                                Swal.fire("Eliminado", "El jugador ha sido removido", "success");
+                                tabladata.ajax.reload(null, false);
+                                tablaproducto.ajax.reload(null, false);
+                            } else {
+                                Swal.fire("Error", "No se pudo eliminar", "error");
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

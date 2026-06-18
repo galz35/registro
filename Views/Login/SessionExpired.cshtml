@@ -1,0 +1,32 @@
+﻿
+
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().PopupControl(settings =>
+{
+    settings.Theme = "Mulberry";
+    settings.Name = "pcModalMode";
+    settings.AllowResize = false;
+    settings.ShowHeader = true;
+    settings.HeaderText = "Login";
+    settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settings.ShowOnPageLoad = !(ViewBag.ErrorMessage == null);
+    settings.AllowDragging = false;
+    settings.CloseAction = CloseAction.CloseButton;
+    settings.CloseOnEscape = true;
+    settings.Modal = true;
+
+    settings.SetContent(() =>
+    {
+        if (ViewBag.ErrorMessage != null)
+            ViewContext.Writer.Write(ViewBag.ErrorMessage);
+    });
+
+}).GetHtml()
+}
+
+
+
+
+

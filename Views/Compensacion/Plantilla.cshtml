@@ -1,0 +1,1172 @@
+@{ ViewBag.Title = "Gestion de Comisiones"; }
+
+<style>
+    :root {
+        --primary: #B71C1C;
+        --accent: #9e9e9e;
+        --dark: #1e1e2d;
+        --glass: rgba(255, 255, 255, 0.05);
+    }
+
+    body {
+        background-color: #f8fafc;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    #pageLoader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255, 255, 255, 0.9); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .spinner-border-premium { width: 4rem; height: 4rem; border-width: 0.3em; color: var(--primary); }
+
+    .status-card {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 25px;
+        padding: 20px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .min-card {
+        border-radius: 30px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+        overflow: hidden;
+        background: white;
+    }
+
+        .min-card .card-header {
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 25px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+    .table thead th { 
+        background: #f8fafc; color: #64748b; text-transform: uppercase; 
+        font-size: 0.7rem; letter-spacing: 1px; border: none; padding: 20px; font-weight: 700;
+        position: sticky; top: 0; z-index: 1 !important; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .filter-row td, .filter-row th { position: sticky; top: 40px; z-index: 0 !important; background: #f8fafc; border-bottom: 2px solid #eee; }
+    .table tbody td { vertical-align: middle; padding: 12px 15px; border-color: #f1f5f9; font-size: 0.85rem; }
+
+    /* Proteccion de Capas Maestra para evitar solapamientos con el Menu Lateral */
+    #accordionSidebar { z-index: 1100 !important; }
+    #accordionSidebar .collapse { z-index: 1101 !important; }
+    #accordionSidebar .dropdown-menu { z-index: 1102 !important; }
+    .swal2-container { z-index: 1200 !important; }
+    .modal { z-index: 1150 !important; }
+    .modal-backdrop { z-index: 1140 !important; }
+    .fixed-top, .sb-topnav { z-index: 1050 !important; }
+
+    .input-premium {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        padding: 6px 8px;
+        transition: 0.2s;
+        background: #fcfcfc;
+        width: 100%;
+        min-width: 170px;
+        color: #333;
+        font-weight: 500;
+    }
+
+        .input-premium:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 66, 66, 0.1);
+            background: white;
+        }
+
+    .btn-floating {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        display: flex;
+        gap: 15px;
+        background: white;
+        padding: 15px 25px;
+        border-radius: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        border: 1px solid #eee;
+    }
+
+    .gerencia-header {
+        background: #1e293b !important;
+        color: white !important;
+        font-weight: 600;
+        padding: 12px 25px !important;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .dif-bg {
+        background-color: #fffbeb !important;
+        border-left: 4px solid #f59e0b !important;
+    }
+
+    .missing-evidence {
+        background-color: #fef2f2 !important;
+        border-left: 4px solid #ef4444 !important;
+        animation: shake 0.5s;
+    }
+
+    @@keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .badge-pill {
+        padding: 5px 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.7rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #212121;
+            border-color: #212121;
+        }
+</style>
+
+<div id="pageLoader">
+    <div class="spinner-border spinner-border-premium" role="status"></div>
+    <h4 class="mt-4 font-weight-bold text-dark">Cargando Colaboradores...</h4>
+    <p class="text-muted">Por favor espere un momento</p>
+</div>
+
+<div class="continer-fluid px-4 mt-4" style="margin-bottom: 100px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="font-weight-bold m-0 text-dark"><i class="fas fa-wallet mr-2"></i> <span id="lblTituloModulo">Gestion de Comisiones</span></h3>
+            <div class="mt-2 text-muted" style="font-size: 0.85rem;"><span class="font-weight-bold">ESTADO DE NOMINA:</span> <span id="badgeEstado" class="badge badge-dark ml-1">---</span></div>
+        </div>
+        <div class="d-flex align-items-center bg-white p-2 shadow-sm border" style="border-radius: 10px;">
+            <select id="ddlPeriodo" class="form-control-sm border-0 bg-light font-weight-bold mr-3" style="border-radius: 6px; height: 35px;" onchange="recargarConPeriodo()"></select>
+            <button class="btn btn-outline-success btn-sm font-weight-bold px-3 mr-2" style="border-radius: 6px; height: 35px;" onclick="exportarExcel()">
+                <i class="fas fa-file-excel mr-2"></i> Exportar
+            </button>
+            <button class="btn btn-outline-danger btn-sm font-weight-bold px-3 mr-2" style="border-radius: 6px; height: 35px;" onclick="abrirModalCatalogoRapido()">
+                <i class="fas fa-plus-circle mr-1"></i> + Puesto/Depto
+            </button>
+            <button class="btn btn-dark btn-sm font-weight-bold px-4" style="border-radius: 6px; height: 35px;" onclick="abrirModalAgregar()">
+                <i class="fas fa-user-plus mr-2"></i> Agregar Colaborador
+            </button>
+        </div>
+    </div>
+
+    <div class="card min-card border">
+        <div class="card-header bg-white pb-0 border-0 pt-4">
+            <div class="d-flex align-items-center flex-wrap">
+                <i class="fas fa-filter text-muted mr-3"></i>
+                <select id="fGerencia" class="form-control-sm border bg-light px-3 font-weight-bold mr-2 mb-1" style="border-radius: 6px; min-width: 200px;" onchange="aplicarFiltros()"></select>
+                <select id="fSubgerencia" class="form-control-sm border bg-light px-3 font-weight-bold mr-2 mb-1" style="border-radius: 6px; min-width: 200px;" onchange="aplicarFiltros()"></select>
+                <select id="fArea" class="form-control-sm border bg-light px-3 font-weight-bold mb-1 mr-3" style="border-radius: 6px; min-width: 200px;" onchange="aplicarFiltros()"></select>
+                <div class="ml-auto pr-3">
+                    <span class="badge badge-pill badge-light border text-muted px-3 py-2" style="font-size: 0.9rem;">
+                        <i class="fas fa-users mr-2"></i> <span id="lblContador">0</span> Colaboradores
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+                <table class="table mb-0" id="tbMaestro">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th style="cursor:pointer;" onclick="ordenarTabla('NombreCompleto')">Colaborador <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th style="cursor:pointer;" onclick="ordenarTabla('Departamento_SIGHO')">Departamento / Area <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th style="cursor:pointer;" onclick="ordenarTabla('Cargo_SIGHO')">Puesto <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th style="cursor:pointer;" onclick="ordenarTabla('Jefe_SIGHO')">Jefe <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th style="cursor:pointer;" onclick="ordenarTabla('Ubicacion_SIGHO')">Sede / Ubicacion <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="text-center">Comisiona</th>
+                            <th class="text-center">Evid.</th>
+                            <th style="width:200px;">Justificacion</th>
+                            <th style="width:200px;">Observaciones</th>
+                        </tr>
+                        <tr class="bg-light border-0">
+                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Buscar carnet/nom..." onkeyup="aplicarFiltros()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Departamento..." onkeyup="aplicarFiltros()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Cargo..." onkeyup="aplicarFiltros()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Jefe..." onkeyup="aplicarFiltros()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Ubicacion..." onkeyup="aplicarFiltros()"></th>
+                            <th class="text-center">
+                                <select class="form-control form-control-sm border-0 bg-white filter-input" onchange="aplicarFiltros()">
+                                    <option value="">[Todos]</option>
+                                    <option value="S">Si</option>
+                                    <option value="N">No</option>
+                                </select>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbEmpleados"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Justificacion de Cambio -->
+<div class="modal fade" id="modalJustificacion" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="d-inline-block p-3 rounded-circle" style="background:#fff3e0; color:#e65100; font-size: 2rem;">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h4 class="mt-3 font-weight-bold text-dark">Justificacion de Cambio</h4>
+                    <p class="text-muted small">Se detecto un cambio en <b id="lblCampoModificado"></b>. Complete la siguiente informacion obligatoria.</p>
+                </div>
+                <div class="p-3 mb-3" style="background:#fafafa; border-radius:15px; border:1px solid #eee;">
+                    <div class="small font-weight-bold text-dark mb-1"><i class="fas fa-user mr-1"></i> <span id="lblEmpleadoCambio"></span></div>
+                    <div class="small text-muted"><span id="lblValorAnterior"></span> → <b class="text-danger" id="lblValorNuevo"></b></div>
+                </div>
+                <input type="hidden" id="justDetalleID">
+                <input type="hidden" id="justCampo">
+                <input type="hidden" id="justValor">
+                <label class="small font-weight-bold text-muted">?POR QUE SE REALIZA EL CAMBIO?</label>
+                <textarea id="justMotivo" class="form-control border bg-light mb-3" rows="2" style="border-radius:10px;" placeholder="Ej: Traslado por necesidad operativa..."></textarea>
+                <label class="small font-weight-bold text-muted">?A QUIEN VA A REPONER?</label>
+                <input type="text" id="justReposicion" class="form-control border bg-light mb-3" style="border-radius:10px;" placeholder="Nombre del colaborador que reemplaza o N/A">
+                <label class="small font-weight-bold text-muted">?POR CUANTO TIEMPO?</label>
+                <select id="justTiempo" class="form-control border bg-light mb-4" style="border-radius:10px;">
+                    <option value="">-- Seleccione --</option>
+                    <option value="1 mes">1 mes</option>
+                    <option value="2 meses">2 meses</option>
+                    <option value="3 meses">3 meses</option>
+                    <option value="6 meses">6 meses</option>
+                    <option value="Indefinido">Indefinido / Permanente</option>
+                </select>
+                <div class="row">
+                    <div class="col-5"><button class="btn btn-light btn-block font-weight-bold py-3" style="border-radius:15px;" onclick="cancelarJustificacion()">Cancelar Cambio</button></div>
+                    <div class="col-7"><button class="btn btn-dark btn-block font-weight-bold py-3" style="border-radius:15px;" onclick="confirmarJustificacion()"><i class="fas fa-check mr-2"></i>Confirmar</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Actions -->
+<div class="btn-floating" id="panelBotonera">
+    <button class="btn btn-warning font-weight-bold px-4" style="border-radius:15px; color:#533f03;" onclick="guardarBorrador()">
+        <i class="fas fa-save mr-2"></i> Guardar Borrador
+    </button>
+    <button class="btn font-weight-bold px-4 text-white" style="border-radius:15px; background:#424242;" onclick="enviarPlantilla()">
+        <i class="fas fa-paper-plane mr-2"></i> Finalizar y Enviar
+    </button>
+</div>
+
+<!-- Modal Agregar -->
+<div class="modal fade" id="modalAgregarExtra">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 25px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="d-inline-block p-3 rounded-circle" style="background:#f5f5f5; color:var(--primary); font-size: 2rem;">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                    <h4 class="mt-3 font-weight-bold">Busqueda de Personal</h4>
+                    <p class="text-muted">Si un colaborador no aparece en su lista, puede buscarlo por carnet.</p>
+                </div>
+
+                <label class="small font-weight-bold text-muted">CARNET O CORREO</label>
+                <div class="input-group mb-3">
+                    <input type="text" id="txtCarnetExtra" class="form-control border-0 bg-light" style="border-radius: 12px 0 0 12px;" placeholder="Ej: 500xxx o correo">
+                    <div class="input-group-append">
+                        <button class="btn btn-dark px-3" style="border-radius: 0 12px 12px 0;" onclick="buscarReferenciaSighoo()"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+
+                <div id="infoEmpleadoExtra" class="alert alert-light border-0 bg-light mb-3" style="display:none; border-radius: 15px;"></div>
+
+                <label class="small font-weight-bold text-muted">GERENCIA DE DESTINO</label>
+                <select id="selGerenciaDestino" class="form-control border-0 bg-light mb-4" style="border-radius: 12px;"></select>
+
+                <div class="row">
+                    <div class="col-6"><button class="btn btn-light btn-block font-weight-bold py-3" style="border-radius: 15px;" data-dismiss="modal">Cancelar</button></div>
+                    <div class="col-6"><button class="btn btn-dark btn-block font-weight-bold py-3" style="border-radius: 15px;" onclick="ejecutarAgregarExtra()">Agregar</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Modal Evidencia -->
+<div class="modal fade" id="modalEvidencia">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 25px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div id="evIconCont" class="d-inline-block p-3 rounded-circle bg-light text-danger" style="font-size: 2rem;">
+                        <i class="fas fa-paperclip"></i>
+                    </div>
+                    <h4 class="mt-3 font-weight-bold">Adjuntar Evidencia</h4>
+                    <p class="text-muted small">Cargue el sustento (PDF, Word, Excel o Foto) para el cambio solicitado.</p>
+                </div>
+
+                <div id="evInfoActual" class="alert alert-success border-0 mb-3" style="display:none; border-radius:15px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="small">
+                            <i class="fas fa-file-alt mr-2"></i> <span id="lblNombreArchivo">archivo.pdf</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-link text-danger mr-1" onclick="descargarMiEvidencia()" title="Ver Adjunto"><i class="fas fa-download"></i></button>
+                            <button class="btn btn-sm btn-link text-danger" onclick="borrarEvidenciaActual()" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="evFormCarga">
+                    <input type="file" id="fileEvidencia" class="d-none" onchange="procesarArchivoSel()">
+                    <button class="btn btn-primary btn-block font-weight-bold py-3 mb-3" style="border-radius:15px;" onclick="$('#fileEvidencia').click()">
+                        <i class="fas fa-upload mr-2"></i> Seleccionar Archivo
+                    </button>
+                </div>
+
+                <input type="hidden" id="hdnDetalleIdEv">
+                <button class="btn btn-light btn-block font-weight-bold py-2" style="border-radius:12px;" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Catalogo Rapido -->
+<div class="modal fade" id="modalCatalogoRapido" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="d-inline-block p-3 rounded-circle" style="background:#eef2f6; color:var(--primary); font-size: 2rem;">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h4 class="mt-3 font-weight-bold">Agregar Puesto / Depto</h4>
+                    <p class="text-muted small">Crea una nueva opcion que no exista en el catalogo de autocompletado.</p>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">TIPO DE ELEMENTO</label>
+                    <select id="selTipoCatalogo" class="form-control border-0 bg-light" style="border-radius: 12px; height: 45px;">
+                        <option value="puesto">Puesto (Cargo)</option>
+                        <option value="departamento">Departamento / Area</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="small font-weight-bold text-muted">NOMBRE</label>
+                    <input type="text" id="txtNombreCatalogo" class="form-control border-0 bg-light" style="border-radius: 12px; height: 45px;" placeholder="Escriba el nombre exacto...">
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <button class="btn btn-light btn-block font-weight-bold py-3" style="border-radius: 15px;" data-dismiss="modal">Cancelar</button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-dark btn-block font-weight-bold py-3" style="border-radius: 15px;" onclick="guardarCatalogoRapido()"><i class="fas fa-check mr-2"></i>Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/onlinejs/select2.min.js"></script>
+    <script>
+    var g_Plantillid = 0, cambiosPendientes = {}, g_Detalles = [], g_Tipo = @(ViewBag.Tipo ?? 1);
+    var optsCargos = '', optsUbis = '', optsJefes = '', optsDeptos = '';
+
+    $(document).ready(function() {
+        if(g_Tipo == 2) {
+            $('#lblTituloModulo').text('Certificacion de Personal');
+            $('.fas.fa-wallet').removeClass('fa-wallet').addClass('fa-user-check');
+        }
+        inicializarPeriodos();
+        cargarGerenciasAsignadas();
+    });
+
+    function cargarGerenciasAsignadas() {
+        $.get('@Url.Action("ObtenerGerenciasValidador", "Compensacion")', function(res) {
+            if(res.success) {
+                let html = '<option value="">-- SELECCIONE GERENCIA --</option>';
+                res.data.forEach(g => { html += '<option value="'+g+'">'+g+'</option>'; });
+                $('#selGerenciaDestino').html(html);
+            }
+        });
+    }
+
+    function inicializarPeriodos() {
+        $.get('@Url.Action("ObtenerPeriodos", "Compensacion")', function(res) {
+            if(res.success && res.data.length > 0) {
+                let html = '';
+                res.data.forEach(p => {
+                    html += '<option value="' + p.PeriodoID + '" ' + (p.PeriodoID === res.activoID ? 'selected' : '') + '>' + p.NombrePeriodo + '</option>';
+                });
+                $('#ddlPeriodo').html(html);
+                recargarConPeriodo();
+            }
+        });
+    }
+
+    function recargarConPeriodo() {
+        var idPer = $('#ddlPeriodo').val();
+        $('#pageLoader').show();
+        $('#tbEmpleados').html('<tr><td colspan="6" class="text-center p-5"><div class="spinner-border text-dark"></div></td></tr>');
+        $.get('@Url.Action("CargarMiPlantilla", "Compensacion")', { periodoId: idPer, tipo: g_Tipo }, function(res) {
+            if(res.message === "SESION_EXPIRADA") { window.location.reload(); return; }
+            if(!res.success) { Swal.fire('Error', res.message, 'error'); return; }
+            g_Plantillid = res.plantilla.PlantillaID || res.plantilla.PlantilliD;
+            $('#badgeEstado').text(res.plantilla.Estado);
+
+            // Generar Datalists para autocompletado nativo
+            let dlHtml = '<datalist id="dlCargos">' + (res.cargos || []).map(x => '<option value="' + x + '">').join('') + '</datalist>';
+            dlHtml += '<datalist id="dlUbis">' + (res.ubicaciones || []).map(x => '<option value="' + x + '">').join('') + '</datalist>';
+            dlHtml += '<datalist id="dlJefes">' + (res.jefes || []).map(x => '<option value="' + x + '">').join('') + '</datalist>';
+            dlHtml += '<datalist id="dlDeptos">' + (res.departamentos || []).map(x => '<option value="' + x + '">').join('') + '</datalist>';
+            
+            // Inyectar datalists al final del body una sola vez
+            $('#datalistsContainer').remove();
+            $('body').append('<div id="datalistsContainer">' + dlHtml + '</div>');
+
+            g_Detalles = res.detalles;
+            aplicarFiltros(res.plantilla.Estado !== 'Borrador' && res.plantilla.Estado !== 'Devuelto');
+        }).fail(function() {
+            Swal.fire('Error', 'Problema de conexion al cargar.', 'error');
+        }).always(function() {
+            $('#pageLoader').fadeOut(300);
+        });
+    }
+
+    window._columnaOrden = 'Ubicacion_SIGHO';
+    window._direccionOrden = 1;
+
+    window.ordenarTabla = function(columna) {
+        if (window._columnaOrden === columna) {
+            window._direccionOrden *= -1; // Invertir orden
+        } else {
+            window._columnaOrden = columna;
+            window._direccionOrden = 1;
+        }
+        aplicarFiltros();
+    }
+
+    function aplicarFiltros(isLocked) {
+        if(isLocked === undefined) {
+            let estado = $('#badgeEstado').text();
+            isLocked = (estado !== 'Borrador' && estado !== 'Devuelto' && estado !== '---');
+        }
+
+        // Obtener valores de los nuevos filtros de cabecera
+        let filters = [];
+        $('.filter-input').each(function() { filters.push($(this).val() ? $(this).val().toLowerCase() : ''); });
+
+        // Configurar dropdowns dinámicos (Chained Filters)
+        let valGer = $('#fGerencia').val();
+        let valSub = $('#fSubgerencia').val();
+        let valArea = $('#fArea').val();
+
+        // 1. Poblar Gerencias (Siempre disponibles)
+        let setGer = new Set(g_Detalles.map(d => d.OGERENCIA_SIGHO));
+        let htmlGer = '<option value="">[ Todas las Gerencias ]</option>';
+        Array.from(setGer).sort().forEach(g => { htmlGer += '<option value="'+g+'">'+g+'</option>'; });
+        if($('#fGerencia option').length !== htmlGer.split('<option').length) {
+            $('#fGerencia').html(htmlGer).val(valGer);
+        }
+
+        // 2. Poblar Subgerencias (Depende de Gerencia)
+        let detSub = valGer ? g_Detalles.filter(x => x.OGERENCIA_SIGHO === valGer) : g_Detalles;
+        let setSub = new Set(detSub.map(d => d.OSUBGERENCIA_SIGHO).filter(x => x));
+        let htmlSub = '<option value="">[ Todas las Subgerencias ]</option>';
+        Array.from(setSub).sort().forEach(s => { htmlSub += '<option value="'+s+'">'+s+'</option>'; });
+        $('#fSubgerencia').html(htmlSub).val(valSub);
+
+        // 3. Poblar Areas (Depende de Subgerencia)
+        let detArea = valSub ? detSub.filter(x => x.OSUBGERENCIA_SIGHO === valSub) : detSub;
+        let setArea = new Set(detArea.map(d => d.Area_SIGHO).filter(x => x));
+        let htmlArea = '<option value="">[ Todas las Areas ]</option>';
+        Array.from(setArea).sort().forEach(a => { htmlArea += '<option value="'+a+'">'+a+'</option>'; });
+        $('#fArea').html(htmlArea).val(valArea);
+
+        // Recapturar valores por si se resetearon al no existir en la nueva lista
+        valGer = $('#fGerencia').val();
+        valSub = $('#fSubgerencia').val();
+        valArea = $('#fArea').val();
+
+        let filtrados = g_Detalles.filter(d => {
+            let matchGer = (valGer === '' || d.OGERENCIA_SIGHO === valGer);
+            let matchSub = (valSub === '' || d.OSUBGERENCIA_SIGHO === valSub);
+            let matchArea = (valArea === '' || d.Area_SIGHO === valArea);
+            let matchCol = true;
+            
+            // Filtros de cabecera
+            if (filters[0] && !(d.NombreCompleto + ' ' + d.CarnetEmpleado).toLowerCase().includes(filters[0])) matchCol = false;
+            if (filters[1] && !(d.Departamento_SIGHO || '').toLowerCase().includes(filters[1])) matchCol = false;
+            if (filters[2] && !(d.Cargo_Reportado || d.Cargo_SIGHO || '').toLowerCase().includes(filters[2])) matchCol = false;
+            if (filters[3] && !(d.Jefe_Reportado || d.Jefe_SIGHO || '').toLowerCase().includes(filters[3])) matchCol = false;
+            if (filters[4] && !(d.Ubicacion_Reportada || d.Ubicacion_SIGHO || '').toLowerCase().includes(filters[4])) matchCol = false;
+            if (filters[5] && d.Comisiona !== filters[5]) matchCol = false;
+
+            return matchGer && matchSub && matchArea && matchCol;
+        });
+
+        $('#lblContador').text(filtrados.length);
+
+        filtrados.sort((a,b) => {
+            let resGer = (a.OGERENCIA_SIGHO||'').localeCompare(b.OGERENCIA_SIGHO||'');
+            if(resGer !== 0) return resGer;
+
+            let valA = (a[window._columnaOrden] || '').toString();
+            let valB = (b[window._columnaOrden] || '').toString();
+            return valA.localeCompare(valB) * window._direccionOrden;
+        });
+
+        // Renderizar por lotes para no bloquear el navegador
+        let tbody = document.getElementById('tbEmpleados');
+        tbody.innerHTML = '';
+
+        if(filtrados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center p-5 text-muted">No se encontraron colaboradores en las areas filtradas.</td></tr>';
+            if(isLocked) $('#panelBotonera').hide(); else $('#panelBotonera').show();
+            return;
+        }
+
+        let BATCH = 80;
+        let idx = 0;
+        let currentGer = '';
+
+        function renderBatch() {
+            console.log("Renderizando lote: idx=" + idx + " de " + filtrados.length);
+            let frag = document.createDocumentFragment();
+            let end = Math.min(idx + BATCH, filtrados.length);
+
+            for(let i = idx; i < end; i++) {
+                let d = filtrados[i];
+                if(d.OGERENCIA_SIGHO !== currentGer) {
+                    let trH = document.createElement('tr');
+                    trH.className = 'gerencia-header';
+                    trH.innerHTML = '<td colspan="9"><i class="fas fa-sitemap mr-2"></i> ' + (d.OGERENCIA_SIGHO || 'Sin Gerencia') + '</td>';
+                    frag.appendChild(trH);
+                    currentGer = d.OGERENCIA_SIGHO;
+                }
+
+                let dis = isLocked ? 'disabled' : '';
+                let btnCls = d.Comisiona === 'S' ? 'btn-dark' : 'btn-light text-muted';
+                let badgePrueba = (d.EsPrueba_SIGHO === 'S' && g_Tipo == 1) ? '<span class="badge badge-warning ml-1" style="font-size:10px;">PRUEBA</span>' : '';
+
+                let editDeptoHtml = '<div class="small text-muted mb-1 italic">' + (d.Departamento_SIGHO || '-') + '</div><input type="text" class="input-premium" list="dlDeptos" value="'+(d.Departamento_Reportado||d.Departamento_SIGHO)+'" onfocus="this.dataset.old=this.value; this.value=\'\';" onblur="if(this.value===\'\') this.value=this.dataset.old;" onchange="marcar('+d.DetalleID+',\'Departamento_Reportado\',this.value)" '+dis+'>';
+
+                let editCargoHtml = '';
+                if(g_Tipo == 2) {
+                    editCargoHtml = '<div class="text-danger font-weight-bold p-2 bg-light border" style="border-radius:6px; font-size:11px;">Certificado</div>';
+                } else {
+                    editCargoHtml = '<input type="text" class="form-control-sm input-premium" list="dlCargos" value="'+(d.Cargo_Reportado||d.Cargo_SIGHO)+'" onfocus="this.dataset.old=this.value; this.value=\'\';" onblur="if(this.value===\'\') this.value=this.dataset.old;" onchange="marcar('+d.DetalleID+',\'Cargo_Reportado\',this.value)" '+dis+'>';
+                }
+
+                let tr = document.createElement('tr');
+                tr.id = 'tr_' + d.DetalleID;
+                
+                // Priorizar datos en memoria (cambios pendientes) sobre los originales de la BD
+                let cp = cambiosPendientes[d.DetalleID] || {};
+                let jMotivo = cp.JustMotivo || d.JustMotivo || '';
+                let jRepo = cp.JustReposicion || d.JustReposicion || '';
+                let jTiemp = cp.JustTiempo || d.JustTiempo || '';
+
+                let justHtml = jMotivo.trim() !== '' 
+                    ? '<div class="p-1 px-2 bg-light text-primary border" style="border-radius:6px; font-size:10px; line-height:1.2;"><b>Motivo:</b> '+jMotivo+'<br><b>Repone a:</b> '+jRepo+' ('+jTiemp+')</div>' 
+                    : '<span class="text-muted opacity-50 small">Sin justificacion</span>';
+
+                let comisionaActual = (cp && cp.Comisiona) ? cp.Comisiona : d.Comisiona;
+                let tieneCambioEstructura = false;
+                if (cp) {
+                    if (cp.Cargo_Reportado && cp.Cargo_Reportado !== d.Cargo_SIGHO) tieneCambioEstructura = true;
+                    if (cp.Jefe_Reportado && cp.Jefe_Reportado !== d.Jefe_SIGHO) tieneCambioEstructura = true;
+                    if (cp.Ubicacion_Reportada && cp.Ubicacion_Reportada !== d.Ubicacion_SIGHO) tieneCambioEstructura = true;
+                    if (cp.Departamento_Reportado && cp.Departamento_Reportado !== d.Departamento_SIGHO) tieneCambioEstructura = true;
+                }
+
+                // Determinar si hay discrepancia real en BD (solo Cargo, Jefe, Ubicacion o Departamento, omitiendo Comisiona = 'N')
+                let tieneDiscrepanciaRealBD = false;
+                if (d.EsDiscrepancia === 1) {
+                    if (d.Cargo_Reportado && d.Cargo_Reportado !== d.Cargo_SIGHO) tieneDiscrepanciaRealBD = true;
+                    if (d.Jefe_Reportado && d.Jefe_Reportado !== d.Jefe_SIGHO) tieneDiscrepanciaRealBD = true;
+                    if (d.Ubicacion_Reportada && d.Ubicacion_Reportada !== d.Ubicacion_SIGHO) tieneDiscrepanciaRealBD = true;
+                    if (d.Departamento_Reportado && d.Departamento_Reportado !== d.Departamento_SIGHO) tieneDiscrepanciaRealBD = true;
+                }
+
+                let colorCls = 'text-muted opacity-25';
+                if (d.HasEvidencia) {
+                    colorCls = 'text-success';
+                } else if ((tieneDiscrepanciaRealBD || tieneCambioEstructura) && comisionaActual === 'S') {
+                    colorCls = 'text-danger font-weight-bold';
+                }
+
+                // Proteccion contra undefined/null en inputs
+                let valDepto = cp.Departamento_Reportado || d.Departamento_Reportado || d.Departamento_SIGHO || '';
+                let valCargo = cp.Cargo_Reportado || d.Cargo_Reportado || d.Cargo_SIGHO || '';
+                let valJefe = cp.Jefe_Reportado || d.Jefe_Reportado || d.Jefe_SIGHO || '';
+                let valUbi = cp.Ubicacion_Reportada || d.Ubicacion_Reportada || d.Ubicacion_SIGHO || '';
+                let valObs = cp.Observacion || d.Observacion || '';
+
+                tr.innerHTML =
+                    '<td class="text-muted small align-middle">' + (i + 1) + '</td>' +
+                    '<td><div class="font-weight-bold text-dark">' + (d.NombreCompleto || '-') + '</div><small class="text-muted">' + (d.CarnetEmpleado || '-') + '</small>' + badgePrueba + '</td>' +
+                    '<td><div class="small text-muted mb-1 italic">' + (d.Departamento_SIGHO || '-') + '</div><input type="text" class="input-premium" list="dlDeptos" value="'+valDepto+'" onfocus="this.dataset.old=this.value; this.value=\'\';" onblur="if(this.value===\'\') this.value=this.dataset.old;" onchange="marcar('+d.DetalleID+',\'Departamento_Reportado\',this.value)" '+dis+'></td>' +
+                    '<td><div class="small text-muted mb-1 italic">' + (d.Cargo_SIGHO || '-') + '</div>' + (g_Tipo == 2 ? '<div class="text-danger font-weight-bold p-2 bg-light border" style="border-radius:6px; font-size:11px;">Certificado</div>' : '<input type="text" class="form-control-sm input-premium" list="dlCargos" value="'+valCargo+'" onfocus="this.dataset.old=this.value; this.value=\'\';" onblur="if(this.value===\'\') this.value=this.dataset.old;" onchange="marcar('+d.DetalleID+',\'Cargo_Reportado\',this.value)" '+dis+'>') + '</td>' +
+                    '<td><div class="small text-muted mb-1 italic">' + (d.Jefe_SIGHO || '-') + '</div><input type="text" class="input-premium" list="dlJefes" value="'+valJefe+'" onfocus="this.dataset.old=this.value; this.value=\'\';" onblur="if(this.value===\'\') this.value=this.dataset.old;" onchange="marcar('+d.DetalleID+',\'Jefe_Reportado\',this.value)" '+dis+'></td>' +
+                    '<td><div class="small text-muted mb-1 italic">' + (d.Ubicacion_SIGHO || '-') + '</div><input type="text" class="input-premium" list="dlUbis" value="'+valUbi+'" onfocus="this.dataset.old=this.value; this.value=\'\';" onblur="if(this.value===\'\') this.value=this.dataset.old;" onchange="marcar('+d.DetalleID+',\'Ubicacion_Reportada\',this.value)" '+dis+'></td>' +
+                    '<td class="text-center">' +
+                        '<button class="btn btn-sm font-weight-bold px-4 '+btnCls+'" style="border-radius:10px;" onclick="marcarComision('+d.DetalleID+',this)" '+dis+'>'+(comisionaActual==='S'?'SI':'NO')+'</button>' +
+                    '</td>' +
+                    '<td class="text-center">' +
+                        '<i class="fas fa-paperclip ' + (dis===''?'cursor-pointer':'') + ' ' + colorCls + '" style="font-size:1.2rem; '+(dis!==''?'cursor:not-allowed':'cursor:pointer')+'" onclick="'+(dis===''?'gestionarEvidencia(' + d.DetalleID + ')':'')+'"></i>' +
+                    '</td>' +
+                    '<td id="just_cell_'+d.DetalleID+'">' + justHtml + '</td>' +
+                    '<td><div class="d-flex align-items-center">' +
+                        '<input type="text" class="input-premium flex-grow-1 mr-2" id="obs_'+d.DetalleID+'" value="'+valObs+'" onchange="marcar('+d.DetalleID+',\'Observacion\',this.value)" '+dis+'>' +
+                        '<button class="btn btn-sm btn-outline-danger mr-1" title="Eliminar definitivamente" onclick="eliminarEmpleadoExtra('+d.DetalleID+')" '+dis+'><i class="fas fa-trash"></i></button>' +
+                        '<button class="btn btn-sm btn-outline-warning" title="No valido a este usuario" onclick="rechazarUsuario('+d.DetalleID+')" '+dis+'><i class="fas fa-user-times"></i></button>' +
+                    '</div></td>';
+                frag.appendChild(tr);
+            }
+
+            tbody.appendChild(frag);
+
+            // Asignar valores a los selects del lote recien insertado
+            let rows = tbody.querySelectorAll('tr');
+            for(let i = idx; i < end; i++) {
+                let rowIdx = i + (filtrados.length > 0 ? 1 : 0); // offset por headers
+                // Buscar selects en las filas recientes
+            }
+
+            idx += BATCH;
+            if(idx < filtrados.length) {
+                requestAnimationFrame(renderBatch);
+            }
+        }
+
+        requestAnimationFrame(renderBatch);
+        if(isLocked) $('#panelBotonera').hide(); else $('#panelBotonera').show();
+    }
+
+    function marcarComision(id, btn) {
+        let val = $(btn).text() === 'SI' ? 'N' : 'S';
+        $(btn).text(val === 'S' ? 'SI' : 'NO').toggleClass('btn-dark btn-light text-muted');
+        marcar(id, 'Comisiona', val);
+    }
+
+    function rechazarUsuario(id) {
+        Swal.fire({
+            title: 'Confirmar accion?',
+            text: 'Seguro que deseas reportar que este usuario NO te corresponde?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si, reportar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Marcar que NO comisiona con el validador actual
+                let btn = $('#tr_'+id+' button').filter(function() { return $(this).text() === 'SI'; });
+                if (btn.length > 0) {
+                    btn.text('NO').toggleClass('btn-dark btn-light text-muted');
+                    marcar(id, 'Comisiona', 'N');
+                }
+                
+                // Poner el texto en la observacion
+                let msj = 'NO CORRESPONDE A MI GERENCIA/AREA';
+                $('#obs_'+id).val(msj);
+                marcar(id, 'Observacion', msj);
+                
+                Swal.fire('Reportado', 'Usuario marcado como no correspondiente. RRHH sera notificado.', 'info');
+            }
+        });
+    }
+
+    var _justBackupSelect = null; // Para revertir si cancela
+
+    function marcar(id, prop, val) {
+        if(!cambiosPendientes[id]) cambiosPendientes[id] = { DetalleID: id };
+        cambiosPendientes[id][prop] = val; $('#tr_'+id).addClass('dif-bg');
+
+        // Si cambiaron Ubicacion o Jefe, pedir Justificacion obligatoria
+        if(prop === 'Ubicacion_Reportada' || prop === 'Jefe_Reportado' || prop === 'Cargo_Reportado' || prop === 'Departamento_Reportado') {
+            // El usuario pido "ubicacion o organizacion o jefe". Incluyo Cargo y Departamento por si acaso, 
+            // pero nos centramos en Ubicacion y Jefe como principales.
+            var det = g_Detalles.find(x => x.DetalleID === id);
+            if(!det) return;
+
+            var campoLabel = prop === 'Ubicacion_Reportada' ? 'Ubicacion / Edificio' : 
+                             prop === 'Jefe_Reportado' ? 'Jefe Inmediato' : 
+                             prop === 'Cargo_Reportado' ? 'Cargo / Puesto' : 'Departamento / area';
+            var valorAnterior = prop === 'Ubicacion_Reportada' ? (det.Ubicacion_SIGHO || '-') : 
+                                prop === 'Jefe_Reportado' ? (det.Jefe_SIGHO || '-') : 
+                                prop === 'Cargo_Reportado' ? (det.Cargo_SIGHO || '-') : (det.Departamento_SIGHO || '-');
+
+            // Solo abrir si realmente cambió respecto al original
+            if(val === valorAnterior) return;
+
+            // Verificar si ya tiene justificación (en memoria o cargada de la BD)
+            var yaJustificado = (cambiosPendientes[id] && cambiosPendientes[id].JustMotivo && cambiosPendientes[id].JustMotivo.trim() !== '') || 
+                                (det.JustMotivo && det.JustMotivo.trim() !== '');
+
+            // Si ya justificó un cambio previo en este usuario, no volver a pedirlo
+            if (yaJustificado) return;
+
+            $('#justDetalleID').val(id);
+            $('#justCampo').val(prop);
+            $('#justValor').val(val);
+            $('#lblCampoModificado').text(campoLabel);
+            $('#lblEmpleadoCambio').text(det.NombreCompleto + ' (' + det.CarnetEmpleado + ')');
+            $('#lblValorAnterior').text(valorAnterior);
+            $('#lblValorNuevo').text(val);
+            $('#justMotivo').val('');
+            $('#justReposicion').val('');
+            $('#justTiempo').val('');
+
+            // Guardar referencia del select para revertir si cancela
+            _justBackupSelect = { id: id, prop: prop, original: valorAnterior };
+
+            $('#modalJustificacion').modal('show');
+        }
+    }
+
+    function confirmarJustificacion() {
+        var motivo = $('#justMotivo').val().trim();
+        var reposicion = $('#justReposicion').val().trim();
+        var tiempo = $('#justTiempo').val();
+
+        if(!motivo || !reposicion || !tiempo) {
+            Swal.fire('Campos Obligatorios', 'Debe completar las 3 preguntas para justificar el cambio.', 'warning');
+            return;
+        }
+
+        var id = parseInt($('#justDetalleID').val());
+        var campo = $('#justCampo').val();
+        var campoLabel = campo === 'Ubicacion_Reportada' ? 'UBICACION' : 
+                         campo === 'Jefe_Reportado' ? 'JEFE' : 
+                         campo === 'Cargo_Reportado' ? 'CARGO' : 'DEPARTAMENTO';
+
+        // Asegurar que el objeto para este ID exista sin borrar lo que ya tenía (ej. Observacion)
+        if (!cambiosPendientes[id]) {
+            cambiosPendientes[id] = { DetalleID: id };
+        }
+        
+        // Asignar los campos de justificacion conservando los demás
+        cambiosPendientes[id].JustMotivo = motivo;
+        cambiosPendientes[id].JustReposicion = reposicion;
+        cambiosPendientes[id].JustTiempo = tiempo;
+        
+        // Se elimina la concatenación en Observacion para evitar que se borre si el usuario edita el input.
+        // La justificación queda guardada correctamente en la memoria para el guardado.
+
+        // Actualización inmediata de la celda para que el usuario lo vea al instante
+        let htmlJust = '<div class="p-1 px-2 bg-light text-primary border" style="border-radius:6px; font-size:10px; line-height:1.2;"><b>Motivo:</b> ' + motivo + '<br><b>Repone a:</b> ' + reposicion + ' (' + tiempo + ')</div>';
+        $('#just_cell_' + id).html(htmlJust);
+
+        // Redibujar la tabla para mantener consistencia general (esto respeta todos los cambiosPendientes)
+        aplicarFiltros();
+
+        _justBackupSelect = null;
+        $('#modalJustificacion').modal('hide');
+        Swal.fire({title:'Justificacion Registrada', text:'La informacion se guardara con el borrador.', icon:'success', timer:2000, showConfirmButton:false});
+    }
+
+    function cancelarJustificacion() {
+        // Revertir el cambio en el select
+        if(_justBackupSelect) {
+            var sel = $('#tr_' + _justBackupSelect.id + ' select').filter(function() {
+                return $(this).data('v') !== undefined;
+            });
+            // Revertir el valor del campo al original
+            var id = _justBackupSelect.id;
+            var prop = _justBackupSelect.prop;
+            if(cambiosPendientes[id]) delete cambiosPendientes[id][prop];
+            // Revertir visualmente recargando los filtros
+            aplicarFiltros();
+        }
+        _justBackupSelect = null;
+        $('#modalJustificacion').modal('hide');
+    }
+
+    function guardarBorrador() {
+        if(Object.keys(cambiosPendientes).length === 0) return;
+        $.ajax({
+            url: '@Url.Action("GuardarBorrador", "Compensacion")', type: 'POST',
+            contentType: 'application/json', data: JSON.stringify(Object.values(cambiosPendientes)),
+            success: function(res) { 
+                if(res.message === "SESION_EXPIRADA") { window.location.reload(); return; }
+                if(res.success) { 
+                    Swal.fire('Exito', 'Borrador guardado.', 'success'); 
+                    cambiosPendientes = {}; 
+                    $('.dif-bg').removeClass('dif-bg'); 
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            }
+        }).fail(function() {
+            Swal.fire('Error', 'No se pudo conectar con el servidor para guardar.', 'error');
+        });
+    }
+
+    function enviarPlantilla() {
+        // Quitar marcas de error previas
+        $('.missing-evidence').removeClass('missing-evidence');
+
+        // Validacion estricta de evidencias
+        // Solo pedir evidencia si REALMENTE hay una diferencia con SIGHO
+        let pendientes = g_Detalles.filter(d => {
+            let cp = cambiosPendientes[d.DetalleID];
+            let tieneCambioReal = false;
+
+            if (cp) {
+                if (cp.Cargo_Reportado && cp.Cargo_Reportado !== d.Cargo_SIGHO) tieneCambioReal = true;
+                if (cp.Jefe_Reportado && cp.Jefe_Reportado !== d.Jefe_SIGHO) tieneCambioReal = true;
+                if (cp.Ubicacion_Reportada && cp.Ubicacion_Reportada !== d.Ubicacion_SIGHO) tieneCambioReal = true;
+                if (cp.Departamento_Reportado && cp.Departamento_Reportado !== d.Departamento_SIGHO) tieneCambioReal = true;
+            }
+
+            // EXCEPCION: Si NO comisiona, no es obligatorio el adjunto segun solicitud del usuario
+            let comisionaActual = (cp && cp.Comisiona) ? cp.Comisiona : d.Comisiona;
+            if (comisionaActual === 'N') return false;
+
+            // Determinar si hay discrepancia real en BD (solo Cargo, Jefe, Ubicacion o Departamento, omitiendo Comisiona = 'N')
+            let esDiscrepanciaRealBD = false;
+            if (d.EsDiscrepancia === 1) {
+                if (d.Cargo_Reportado && d.Cargo_Reportado !== d.Cargo_SIGHO) esDiscrepanciaRealBD = true;
+                if (d.Jefe_Reportado && d.Jefe_Reportado !== d.Jefe_SIGHO) esDiscrepanciaRealBD = true;
+                if (d.Ubicacion_Reportada && d.Ubicacion_Reportada !== d.Ubicacion_SIGHO) esDiscrepanciaRealBD = true;
+                if (d.Departamento_Reportado && d.Departamento_Reportado !== d.Departamento_SIGHO) esDiscrepanciaRealBD = true;
+            }
+            
+            return (esDiscrepanciaRealBD || tieneCambioReal) && !d.HasEvidencia;
+        });
+        
+        if(pendientes.length > 0) {
+            // Marcar las filas con error
+            pendientes.forEach(p => {
+                $('#tr_' + p.DetalleID).addClass('missing-evidence');
+            });
+
+            // Hacer scroll a la primera fila con error
+            let firstId = pendientes[0].DetalleID;
+            document.getElementById('tr_' + firstId).scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            Swal.fire({
+                title: 'Evidencia Requerida',
+                text: 'Hay ' + pendientes.length + ' cambios reportados que no tienen su evidencia adjunta (resaltados en rojo). RRHH requiere un sustento para cada cambio.',
+                icon: 'error',
+                confirmButtonColor: '#d33'
+            });
+            return;
+        }
+
+        // Si hay cambios pendientes, guardarlos primero automaticamente
+        if(Object.keys(cambiosPendientes).length > 0) {
+            Swal.fire({
+                title: 'Guardando y Enviando...',
+                text: 'Se estan guardando sus cambios pendientes antes del envio final.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            $.ajax({
+                url: '@Url.Action("GuardarBorrador", "Compensacion")', type: 'POST',
+                contentType: 'application/json', data: JSON.stringify(Object.values(cambiosPendientes)),
+                success: function(res) { 
+                    if(res.success) {
+                        cambiosPendientes = {};
+                        ejecutarEnvioFinal();
+                    } else {
+                        Swal.fire('Error', 'No se pudieron guardar los cambios: ' + res.message, 'error');
+                    }
+                }
+            }).fail(function() {
+                Swal.fire('Error', 'Fallo de conexion al guardar.', 'error');
+            });
+        } else {
+            ejecutarEnvioFinal();
+        }
+    }
+
+    function ejecutarEnvioFinal() {
+        Swal.fire({ 
+            title: 'Enviar Reporte', 
+            text: 'Se cerrara la edicion y RRHH recibira su validacion.', 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonColor: '#424242',
+            confirmButtonText: 'Si, enviar ahora'
+        }).then(r => {
+            if(r.isConfirmed) {
+                Swal.fire({ title: 'Enviando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                $.post('@Url.Action("EnviarPlantilla", "Compensacion")', { plantillaId: g_Plantillid }, res => { 
+                    if(res.success) {
+                        Swal.fire('Exito!', 'Reporte enviado correctamente.', 'success').then(() => { location.reload(); });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function gestionarEvidencia(id) {
+        let d = g_Detalles.find(x => x.DetalleID === id);
+        $('#hdnDetalleIdEv').val(id);
+        $('#fileEvidencia').val('');
+        
+        if(d.HasEvidencia) {
+            $('#lblNombreArchivo').text('Documento Adjunto');
+            $('#evInfoActual').show(); $('#evFormCarga').hide();
+        } else {
+            $('#evInfoActual').hide(); $('#evFormCarga').show();
+        }
+        $('#modalEvidencia').modal('show');
+    }
+
+    function procesarArchivoSel() {
+        let id = $('#hdnDetalleIdEv').val();
+        let file = $('#fileEvidencia')[0].files[0];
+        if(!file) return;
+
+        let formData = new FormData();
+        formData.append('detalleId', id);
+        formData.append('file', file);
+
+        Swal.fire({ title: 'Subiendo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+        $.ajax({
+            url: '@Url.Action("SubirEvidencia", "Compensacion")',
+            type: 'POST', data: formData, processData: false, contentType: false,
+            success: function(res) {
+                if(res.success) {
+                    let d = g_Detalles.find(x => x.DetalleID == id);
+                    d.HasEvidencia = true;
+                    Swal.fire('Listo', 'Evidencia cargada correctamente.', 'success');
+                    $('#modalEvidencia').modal('hide');
+                    aplicarFiltros();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            }
+        });
+    }
+
+    function descargarMiEvidencia() {
+        let id = $('#hdnDetalleIdEv').val();
+        window.location.href = '@Url.Action("DescargarEvidencia", "Compensacion")?detalleId=' + id;
+    }
+
+    function borrarEvidenciaActual() {
+        let id = $('#hdnDetalleIdEv').val();
+        Swal.fire({ title: 'Quitar evidencia?', text: 'Se eliminara el archivo adjunto.', icon: 'warning', showCancelButton: true }).then(r => {
+            if(r.isConfirmed) {
+                $.post('@Url.Action("EliminarEvidencia", "Compensacion")', { detalleId: id }, function(res) {
+                    if(res.success) {
+                        let d = g_Detalles.find(x => x.DetalleID == id);
+                        d.HasEvidencia = false;
+                        $('#modalEvidencia').modal('hide');
+                        aplicarFiltros();
+                    }
+                });
+            }
+        });
+    }
+    
+    function descargarEvidencia(id) {
+        window.location.href = '@Url.Action("DescargarEvidencia", "Compensacion")?detalleId=' + id;
+    }
+
+    function abrirModalAgregar() { 
+        let setGer = new Set(g_Detalles.map(d => d.OGERENCIA_SIGHO));
+        let htmlGer = '<option value="">-- SELECCIONE GERENCIA --</option>';
+        Array.from(setGer).sort().forEach(g => {
+            if(g) htmlGer += '<option value="'+g+'">'+g+'</option>';
+        });
+        $('#selGerenciaDestino').html(htmlGer);
+        $('#modalAgregarExtra').modal('show'); 
+    }
+    function buscarReferenciaSighoo() {
+        let car = $('#txtCarnetExtra').val().trim(); if(!car) return;
+        $.get('@Url.Action("BuscarEmpleadoSighoo", "Compensacion")', { carnet: car }, res => {
+            if(res.success) {
+                var nombre = res.data.NombreCompleto || res.data.nombreCompleto || res.data.CARNET;
+                var cargo = res.data.Cargo_SIGHO || res.data.cargo_SIGHO || '';
+                $('#infoEmpleadoExtra').html('<strong>'+nombre+'</strong><br><small>'+cargo+'</small>').show();
+            }
+            else $('#infoEmpleadoExtra').html('<span class="text-danger">No encontrado</span>').show();
+        });
+    }
+    function ejecutarAgregarExtra() {
+        let car = $('#txtCarnetExtra').val(), ger = $('#selGerenciaDestino').val();
+        if(!car || !ger) return Swal.fire('Atencion', 'Complete los campos.', 'warning');
+        $.post('@Url.Action("AgregarEmpleadoManual", "Compensacion")', { carnet: car, plantillaId: g_Plantillid, gerencia: ger }, res => { 
+            if(res.success) location.reload(); 
+            else Swal.fire('Error', res.message || 'Error del servidor', 'error');
+        });
+    }
+
+    function eliminarEmpleadoExtra(detalleId) {
+        Swal.fire({
+            title: 'Eliminar colaborador?',
+            text: 'Se borrara de la plantilla. Solo haga esto si lo agrego por error.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Si, eliminar'
+        }).then(r => {
+            if(r.isConfirmed) {
+                $.post('@Url.Action("EliminarEmpleadoManual", "Compensacion")', { detalleId: detalleId }, res => {
+                    if(res.success) {
+                        Swal.fire('Eliminado', res.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function abrirModalCatalogoRapido() {
+        $('#txtNombreCatalogo').val('');
+        $('#selTipoCatalogo').val('puesto');
+        $('#modalCatalogoRapido').modal('show');
+    }
+
+    function guardarCatalogoRapido() {
+        var tipo = $('#selTipoCatalogo').val();
+        var nombre = $('#txtNombreCatalogo').val().trim();
+
+        if (nombre === '') {
+            Swal.fire('Atencion', 'El nombre es obligatorio.', 'warning');
+            return;
+        }
+
+        var url = tipo === 'puesto' 
+            ? '@Url.Action("AgregarCargoRapido", "Compensacion")' 
+            : '@Url.Action("AgregarDepartamentoRapido", "Compensacion")';
+
+        Swal.fire({
+            title: 'Guardando...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { nombre: nombre },
+            success: function(res) {
+                Swal.close();
+                if (res.success) {
+                    Swal.fire('Exito', res.message, 'success');
+                    $('#modalCatalogoRapido').modal('hide');
+
+                    // Agregar al datalist respectivo
+                    if (tipo === 'puesto') {
+                        if ($('#dlCargos').length > 0) {
+                            $('#dlCargos').append('<option value="' + res.nombre + '">');
+                        }
+                    } else {
+                        if ($('#dlDeptos').length > 0) {
+                            $('#dlDeptos').append('<option value="' + res.nombre + '">');
+                        }
+                    }
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            },
+            error: function() {
+                Swal.close();
+                Swal.fire('Error', 'No se pudo completar la solicitud.', 'error');
+            }
+        });
+    }
+
+    function exportarExcel() {
+        if (!g_Detalles || g_Detalles.length === 0) return Swal.fire('Error', 'No hay datos para exportar', 'error');
+
+        // Capturar filtros actuales
+        let valGer = $('#fGerencia').val();
+        let valSub = $('#fSubgerencia').val();
+        let valArea = $('#fArea').val();
+        let filters = [];
+        $('.filter-input').each(function() { filters.push($(this).val() ? $(this).val().toLowerCase() : ''); });
+
+        // Filtrar datos igual que en la tabla
+        let paraExportar = g_Detalles.filter(d => {
+            let matchGer = (valGer === '' || d.OGERENCIA_SIGHO === valGer);
+            let matchSub = (valSub === '' || d.OSUBGERENCIA_SIGHO === valSub);
+            let matchArea = (valArea === '' || d.Area_SIGHO === valArea);
+            let matchCol = true;
+            if (filters[0] && !(d.NombreCompleto + ' ' + d.CarnetEmpleado).toLowerCase().includes(filters[0])) matchCol = false;
+            if (filters[1] && !(d.Departamento_SIGHO || '').toLowerCase().includes(filters[1])) matchCol = false;
+            if (filters[2] && !(d.Cargo_Reportado || d.Cargo_SIGHO || '').toLowerCase().includes(filters[2])) matchCol = false;
+            if (filters[3] && !(d.Jefe_Reportado || d.Jefe_SIGHO || '').toLowerCase().includes(filters[3])) matchCol = false;
+            if (filters[4] && !(d.Ubicacion_Reportada || d.Ubicacion_SIGHO || '').toLowerCase().includes(filters[4])) matchCol = false;
+            if (filters[5] && d.Comisiona !== filters[5]) matchCol = false;
+            return matchGer && matchSub && matchArea && matchCol;
+        });
+
+        if (paraExportar.length === 0) return Swal.fire('Atencion', 'No hay registros con los filtros actuales', 'warning');
+
+        // Generar CSV
+        let csv = "\ufeff"; // BOM para Excel
+        csv += "Carnet;Colaborador;Gerencia;Subgerencia;Area;Puesto SIGHO;Puesto Reportado;Departamento SIGHO;Departamento Reportado;Jefe SIGHO;Jefe Reportado;Ubicacion SIGHO;Ubicacion Reportada;Comisiona;Justificacion;Observaciones\n";
+
+        paraExportar.forEach(d => {
+            let row = [
+                d.CarnetEmpleado,
+                d.NombreCompleto,
+                d.OGERENCIA_SIGHO,
+                d.OSUBGERENCIA_SIGHO,
+                d.Area_SIGHO,
+                d.Cargo_SIGHO,
+                d.Cargo_Reportado || "",
+                d.Departamento_SIGHO,
+                d.Departamento_Reportado || "",
+                d.Jefe_SIGHO,
+                d.Jefe_Reportado || "",
+                d.Ubicacion_SIGHO,
+                d.Ubicacion_Reportada || "",
+                d.Comisiona,
+                (d.JustMotivo || "") + " " + (d.JustReposicion || ""),
+                d.Observacion || ""
+            ];
+            csv += row.map(v => '"' + (v || '').toString().replace(/"/g, '""') + '"').join(';') + "\n";
+        });
+
+        let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Plantilla_Comisiones_" + new Date().getTime() + ".csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    </script>
+}
+
+
+

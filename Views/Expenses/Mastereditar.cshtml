@@ -1,0 +1,810 @@
+﻿ 
+
+@model Entities.Expenses
+@{ string url = Url.Action("EmployeesList", "Expenses");
+    string url2 = Url.Action("Index", "Home");
+    string url4 = Url.Action("EmployeesList", "Expenses");
+    string url3 = Url.Action("RegisterDetailx", "Expenses"); // Generar URL para RegisterDetailx
+    ViewBag.Title = "Mastereditar";
+                                                              }
+<div class="breadcrumb-container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@url2">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-home"></i> Home
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="@url4">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-users"></i> Lista empleado
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="@url3">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-list"></i> Lista viático
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                <span class="breadcrumb-box">
+                    <i class="fas fa-file-alt"></i> Registro viático
+                </span>
+            </li>
+        </ol>
+    </nav>
+</div>
+
+<style>
+    .breadcrumb-container {
+        margin: 20px 0;
+    }
+
+    .breadcrumb {
+        background-color: transparent; /* No background for breadcrumb */
+        margin-bottom: 0; /* Remove bottom margin */
+        display: flex;
+        align-items: center;
+    }
+
+    .breadcrumb-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+
+        .breadcrumb-item a {
+            color: blue;
+            text-decoration: none;
+        }
+
+    .breadcrumb-box {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+        .breadcrumb-box:hover {
+            background-color: #e2e6ea;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    .breadcrumb-item.active .breadcrumb-box {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .breadcrumb-item.active .breadcrumb-box:hover {
+            background-color: #5a6268;
+        }
+
+    .breadcrumb-box i {
+        margin-right: 5px; /* Space between icon and text */
+    }
+</style>
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary" style="color: #800 !important;"> Viático</h6>
+                </div>
+                <div class="card border-primary">
+                    <div class="card-body">
+
+
+                        <form>
+                            <div class="row">
+                                <div class="col-4">
+                                    <div class="row mb-3">
+                                        <label for="ExpenseDate" class="col-6 col-form-label font-weight-bold">Fecha de solicitud:</label>
+                                        <div class="col-sm-12">
+                                            <input type="date" class="form-control" ena id="ExpenseDate" name="ExpenseDate" value="@Model.ExpenseDate.ToString("yyyy-MM-dd")" tabindex="1" readonly  />
+                                         
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <label for="Route" class="col-6 col-form-label font-weight-bold">Ruta:</label>
+                                        <div class="col-sm-12">
+                                            <textarea class="form-control" rows="2" id="Route" name="Route" tabindex="4" readonly >@Model.Route</textarea>
+                                     
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="row mb-3">
+                                        <label for="ClassId" class="col-6 col-form-label font-weight-bold">Clase:</label>
+                                        <div class="col-sm-12">
+                                            <select class="form-control" id="ClassId" name="ClassId" tabindex="2" readonly >
+                                                <option value="">SELECCIONE CLASE</option>
+                                                @foreach (var concept in slnRhonline.Models.Concepts.GetAllConcepts().Where(c => c.ConceptTypeId == 4))
+                                                {
+                                    <option value="@concept.ConceptId" @(Model.ClassId == concept.ConceptId ? "selected" : "")>@concept.ConceptName</option>}
+                                            </select>
+                                    
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <label for="ServiceNumber" class="col-6 col-form-label font-weight-bold">Orden de servicio:</label>
+                                        <div class="col-sm-12">
+                                            <textarea class="form-control" rows="2" id="ServiceNumber" name="ServiceNumber" tabindex="5" readonly >@Model.ServiceNumber</textarea>
+                                         
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="row mb-3">
+                                        <label for="ReasonId" class="col-6 col-form-label font-weight-bold">Motivo</label>
+                                        <div class="col-sm-12">
+                                            <select id="ReasonId" class="form-control" name="ReasonId" tabindex="3" readonly >
+                                                <option value="">SELECCIONE MOTIVO</option>
+                                                @foreach (var reason in slnRhonline.Models.Reasons.GetReasons())
+                                                {
+                                    <option value="@reason.ReasonId" @(Model.ReasonId == reason.ReasonId ? "selected" : "")>@reason.ReasonName</option>}
+                                            </select>
+                                       
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <label for="VehicleNumber" class="col-6 col-form-label font-weight-bold">Unidad de Vehiculo:</label>
+                                        <div class="col-sm-12">
+                                            <textarea class="form-control" rows="2" id="VehicleNumber" name="VehicleNumber" tabindex="6" readonly >@Model.VehicleNumber</textarea>
+                              
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <label for="Justify" class="col-6 col-form-label font-weight-bold">Justificación:*</label>
+                                <div class="col-sm-12">
+                                    <textarea class="form-control" rows="2" id="Justify" name="Justify" maxlength="300" required tabindex="7">@Model.Justify</textarea>
+                                    <!-- Contador de caracteres -->
+                                    <small id="contadorCaracteres" class="form-text text-muted">0/300 caracteres</small>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row justify-content-end mt-3">
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-primary mr-2" data-toggle="modal" data-target="#popupModal" tabindex="8">
+                                        Registrar detalle
+                                    </button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-secondary" id="saveButton" tabindex="9">
+                                        Guardar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card border-primary">
+    <div class="card-body">
+
+        <h5 class="card-title font-weight-bold text-primary">Detalle de viático </h5>
+        <table id="expenseDetailsTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Clasificacion</th>
+                    <th>Categoria</th>
+                    <th>Sub Categoria</th>
+                    <th>Departamento</th>
+                    <th>Nota</th>
+                    <th>Monto</th>
+                    <th>Hora Inicio</th>
+
+
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="popupModalLabel">Agregar línea de detalle</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="row">
+                                <label for="ClasificationId" class="col-6 col-form-label font-weight-bold">Clasificación:*</label>
+                                <div class="col-sm-12">
+                                    <select id="ClasificationId" class="form-control" name="ClasificationId" required>
+                                        <option value="">SELECCIONE CLASIFICACIÓN</option>
+                                        @foreach (var item in slnRhonline.Models.Concepts.GetAllClasification())
+                                        {
+                            <option value="@item.ClasificationId">@item.ClasificationName</option>}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <label for="SubCategoryId" class="col-12 col-form-label font-weight-bold">Sub Categoría:*</label>
+                                <div class="col-sm-12">
+                                    <select id="SubCategoryId" class="form-control" name="SubCategoryId" required>
+                                        <option value="">SELECCIONE SUB CATEGORÍA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <label for="HourStart" class="col-6 col-form-label font-weight-bold">Hora:*</label>
+                                <div class="col-sm-12">
+                                    <input type="text" class="form-control" id="HourStart" name="HourStart" placeholder="Selecciona una hora" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="row">
+                                <label for="CategoryId" class="col-12 col-form-label font-weight-bold">Categoría:*</label>
+                                <div class="col-sm-12">
+                                    <select id="CategoryId" class="form-control" name="CategoryId" required>
+                                        <option value="">SELECCIONE CATEGORÍA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <label for="DepartmentId" class="col-12 col-form-label font-weight-bold">Departamento:*</label>
+                                <div class="col-sm-12">
+                                    <select id="DepartmentId" class="form-control" name="DepartmentId" required>
+                                        <option value="">SELECCIONE DEPARTAMENTO</option>
+                                        @foreach (var item in slnRhonline.Models.Departments.GetAllDepartments())
+                                        {
+                            <option value="@item.DepartmentId">@item.DepartmentName</option>}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <label for="Amount" class="col-6 col-form-label font-weight-bold">Monto:*</label>
+                                <div class="col-sm-12">
+                                    <input type="number" class="form-control" id="Amount" name="Amount" required>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="row">
+                            <label for="ExpenseDetailNotes" class="col-6 col-form-label font-weight-bold">Nota:</label>
+                            <div class="col-sm-12">
+                                <textarea class="form-control" rows="2" id="ExpenseDetailNotes" name="ExpenseDetailNotes" maxlength="200"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="saveChanges">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="~/Content/css2024/flatpickr.min.css" rel="stylesheet" />
+
+@section scripts{
+    @{ var categories = Json.Encode(slnRhonline.Models.Concepts.GetAllCategories()); ;
+        var categoriessub = Json.Encode(slnRhonline.Models.Concepts.GetAllSubCategories()); ;
+        var departments = Json.Encode(slnRhonline.Models.Departments.GetAllDepartments());
+        var clasificsl = Json.Encode(slnRhonline.Models.Concepts.GetAllClasification()); }
+    <script src="~/Content/js2024/jquery.jeditable.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        flatpickr('#HourStart', {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "h:i K", // Formato de 12 horas (AM/PM)
+            time_24hr: false // Usa tiempo de 12 horas
+        });
+        var table
+                    $(document).ready(function () {
+                        document.getElementById('Justify').addEventListener('input', function () {
+                            var cantidad = this.value.length;
+                            document.getElementById('contadorCaracteres').textContent = cantidad + '/300 caracteres';
+                        });
+                          $('#saveButton').click(function() {
+                              event.preventDefault(); // Prevenir el envío del formulario por defecto
+
+                              // Recopilar datos del formulario
+                              var formData = {
+                                  ExpenseDate: $('#txtnombres').val(), // El id es txtnombres
+                                  Route: $('#route').val(),
+                                  ClassId: $('#ClassId').val(),
+                                  ServiceNumber: $('#serviceNumber').val(),
+                                  ReasonId: $('#reasonId').val(),
+                                  VehicleNumber: $('#VehicleNumber').val(),
+                                  Justify: $('#Justify').val()
+                              };
+
+
+            $.ajax({
+                url: '@Url.Action("SaveExpensejson1", "Expenses")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Éxito',
+                            text: response.message || 'El registro ha sido guardado exitosamente.'
+                        });
+                        window.location.href = "@url3";
+                        window.location.assign("@url3");
+                        window.location.replace("@url3");
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'Hubo un problema al guardar el registro.'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Hubo un problema al guardar el registro.'
+                    });
+                }
+            });
+        });
+                 var categories = @Html.Raw(categories);
+            var departments = @Html.Raw(departments);
+                        var clasifi = @Html.Raw(clasificsl);
+                        var sub = @Html.Raw(categoriessub);
+
+              function getCategoryName(categoryId) {
+                  var category = categories.find(function (cat) {
+                      return cat.CategoryId === categoryId;
+                  });
+                  return category ? category.CategoryName : '';
+              }
+
+            function getClasificName(ClasificationId) {
+                var category = clasifi.find(function (cat) {
+                    return cat.ClasificationId === ClasificationId;
+                });
+                return category ? category.ClasificationName : '';
+            }
+
+              function getSubCategoryName(subCategoryId) {
+                  var subCategory = sub.find(function (cat) {
+                      return cat.SubCategoryId === subCategoryId;
+                  });
+                  return subCategory ? subCategory.SubCategoryName : '';
+              }
+
+              function getDepartmentName(departmentId) {
+                  var department = departments.find(function (dep) {
+                      return dep.DepartmentId === departmentId;
+                  });
+                  return department ? department.DepartmentName : '';
+              }
+                     table = $('#expenseDetailsTable').DataTable({
+        "ajax": {
+            "url": "@Url.Action("GetExpenseDetails1", "Expenses")",
+            "type": "GET",
+                             "datatype": "json"
+        },
+        "columns": [
+            {
+                "data": "ClasificationId",
+                "render": function (data, type, row) {
+                    return getClasificName(data);
+                },
+                "defaultContent": '<input type="text" class="form-control">'
+            },
+            {
+                "data": "CategoryId",
+                "render": function (data, type, row) {
+                    return getCategoryName(data);
+                },
+                "defaultContent": '<input type="text" class="form-control">'
+            },
+            {
+                "data": "SubCategoryId",
+                "render": function (data, type, row) {
+                    return getSubCategoryName(data);
+                },
+                "defaultContent": '<input type="text" class="form-control">'
+            },
+            {
+                "data": "DepartmentId",
+                "render": function (data, type, row) {
+                    return getDepartmentName(data);
+                },
+                "defaultContent": '<input type="text" class="form-control">'
+            },
+            {
+                "data": "ExpenseDetailNotes",
+                "defaultContent": '<input type="text" class="form-control">',
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).editable(function (value, settings) {
+                        rowData.ExpenseDetailNotes = value;
+                        updateDetail(rowData);
+                        return value;
+                    }, {
+                        "type": 'text',
+                        "submit": 'OK',
+                        "cancel": 'Cancel'
+                    });
+                }
+            },
+            {
+                "data": "Amount",
+                "defaultContent": '<input type="number" class="form-control">',
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).editable(function (value, settings) {
+                        rowData.Amount = value;
+                        updateDetail(rowData);
+                        return value;
+                    }, {
+                        "type": 'text',
+                        "submit": 'OK',
+                        "cancel": 'Cancel'
+                    });
+                }
+            },
+            {
+                "data": "HourStart",
+                "render": function (data, type, row) {
+                    return moment(data).format('hh:mm A');
+                },
+                "defaultContent": '<input type="text" class="form-control">'
+            },
+            {
+                "data": "ExpenseDetailId",
+                "render": function (data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-cogs"></i> Acciones
+                            </button>
+                            <div class="dropdown-menu">
+                                
+                                <a class="dropdown-item delete-btn" href="javascript:void(0);" data-id="${data}"><i class="fas fa-trash"></i> Eliminar</a>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        "dom": 'Blfrtip',
+        "lengthMenu": [10, 20, 50, 100],
+        "pageLength": 10,
+        "language": {
+            "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+        },
+        "responsive": true
+    });
+
+
+
+                        $('#expenseDetailsTable').on('click', '.edit-btn', function () {
+        var cell = table.cell($(this).parents('td, th'));
+        $(cell.node()).editable(function(value, settings) {
+            var columnIndex = cell.index().column;
+            var rowData = cell.row(cell.index().row).data();
+
+            // Actualizar el valor en la celda
+            rowData[cell.column(columnIndex).dataSrc()] = value;
+
+            // Realizar la actualización en la sesión
+            $.ajax({
+                url: '@Url.Action("UpdateDetailLinejson", "Expenses")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(rowData),
+                success: function(response) {
+                    if (response.success) {
+                        table.ajax.reload(); // Recargar la tabla
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Éxito',
+                            text: 'El registro ha sido actualizado exitosamente.'
+
+                        });
+
+
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Hubo un problema al actualizar el registro.'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Hubo un problema al actualizar el registro.'
+                    });
+                }
+            });
+
+            return value;
+        }, {
+            "width": "100%",
+            "height": "100%"
+        });
+    });
+              @*$('#expenseDetailsTable').on('click', '.save-btn', function () {
+        var data = table.row($(this).parents('tr')).data();
+        var updatedData = {
+            ExpenseDetailId: data.ExpenseDetailId,
+            ClasificationId: $(this).closest('tr').find('input:eq(0)').val(),
+            CategoryId: $(this).closest('tr').find('input:eq(1)').val(),
+            SubCategoryId: $(this).closest('tr').find('input:eq(2)').val(),
+            DepartmentId: $(this).closest('tr').find('input:eq(3)').val(),
+            ExpenseDetailNotes: $(this).closest('tr').find('input:eq(4)').val(),
+            Amount: $(this).closest('tr').find('input:eq(5)').val(),
+            HourStart: $(this).closest('tr').find('input:eq(6)').val()
+
+        };
+
+        $.ajax({
+            url: '@Url.Action("UpdateDetailLinejson", "Expenses")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(updatedData),
+            success: function (response) {
+                if (response.success) {
+                    table.ajax.reload(); // Recargar la tabla
+                } else {
+                    alert('Error al actualizar el registro.');
+                }
+            }
+        });
+    });*@
+            $('#expenseDetailsTable').on('click', '.delete-btn', function() {
+        var id = $(this).data('id');
+        $.ajax({
+            url: '@Url.Action("DeleteDetailLinex", "Expenses")',
+            type: 'POST',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    table.ajax.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: 'El registro ha sido eliminado exitosamente.'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Hubo un problema al eliminar el registro.'
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Hubo un problema al eliminar el registro.'
+                });
+            }
+        });
+    });
+
+            //$('#expenseDetailsTable').on('click', '.edit-btn', function () {
+            //    var data = table.row($(this).parents('tr')).data();
+            //    openEditModal(data);
+
+
+            //});
+                        function updateDetail(rowData) {
+        $.ajax({
+            url: '@Url.Action("UpdateDetailLinejson", "Expenses")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(rowData),
+            success: function(response) {
+                if (response.success) {
+                    table.ajax.reload(); // Recargar la tabla
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: 'El registro ha sido actualizado exitosamente.'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Hubo un problema al actualizar el registro.'
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Hubo un problema al actualizar el registro.'
+                });
+            }
+        });
+    }
+
+
+           function openEditModal(data) {
+                // Aquí puedes abrir un modal con los datos actuales para editar
+                // por ejemplo:
+                $('#popupModal').modal('show');
+                $('#ClasificationId').val(data.ClasificationId);
+                $('#CategoryId').val(data.CategoryId);
+                $('#SubCategoryId').val(data.SubCategoryId);
+                $('#DepartmentId').val(data.DepartmentId);
+                $('#ExpenseDetailNotes').val(data.ExpenseDetailNotes);
+                $('#Amount').val(data.Amount);
+                $('#HourStart').val(data.HourStart);
+
+                $('#editId').val(data.ExpenseDetailId);
+            }
+
+            $('#saveChanges').on('click', function () {
+                var ExpenseDetailId = $('#editId').val();
+                var ClasificationId = $('#ClasificationId').val();
+                var CategoryId = $('#CategoryId').val();
+                var SubCategoryId = $('#SubCategoryId').val();
+                var DepartmentId = $('#DepartmentId').val();
+                var ExpenseDetailNotes = $('#ExpenseDetailNotes').val();
+                var Amount = $('#Amount').val();
+                var HourStart = $('#HourStart').val();
+
+
+
+                // Validación básica (puedes agregar más validaciones según sea necesario)
+                if (!ClasificationId || !CategoryId || !SubCategoryId || !DepartmentId || !Amount || !HourStart) {
+                    alert('Por favor complete todos los campos obligatorios.');
+                    return;
+                }
+
+                var updatedData = {
+                    ExpenseDetailId: ExpenseDetailId,
+                    ClasificationId: ClasificationId,
+                    CategoryId: CategoryId,
+                    SubCategoryId: SubCategoryId,
+                    DepartmentId: DepartmentId,
+                    ExpenseDetailNotes: ExpenseDetailNotes,
+                    Amount: Amount,
+                    HourStart: HourStart
+
+                };
+
+
+                $.ajax({
+                    url: '@Url.Action("AddDetailLinejson", "Expenses")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(updatedData),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#popupModal').modal('hide');
+                            table.ajax.reload(); // Recargar la tabla
+                        } else {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'informacion',
+                                text: response.message
+                            });
+                        }
+                    }
+                });
+            });
+        });
+        // Evento al cambiar la clasificación
+        document.getElementById('ClasificationId').addEventListener('change', function () {
+            console.log('ClasificationId changed');
+
+            var selectedClasificationId = this.value;
+            var categorySelect = document.getElementById('CategoryId');
+            categorySelect.innerHTML = ''; // Limpiar las opciones actuales
+            categorySelect.appendChild(new Option('SELECCIONE CATEGORÍA', ''));
+             var categories = @Html.Raw(Json.Encode(slnRhonline.Models.Concepts.GetAllCategories()));
+
+            categories.forEach(function (category) {
+                if (category.ClasificationId == selectedClasificationId) {
+                    categorySelect.appendChild(new Option(category.CategoryName, category.CategoryId));
+                }
+            });
+
+            // Limpiar el select de subcategorías también
+            var subCategorySelect = document.getElementById('SubCategoryId');
+            subCategorySelect.innerHTML = '';
+            subCategorySelect.appendChild(new Option('SELECCIONE SUB CATEGORÍA', ''));
+        });
+
+        // Evento al cambiar la categoría
+        document.getElementById('CategoryId').addEventListener('change', function () {
+            var categoryId = this.value;
+            $.ajax({
+                url: '@Url.Action("GetAllSubCategories", "Expenses")',
+                type: 'GET',
+                data: { categoryId: categoryId },
+                success: function (data) {
+                    var subCategorySelect = $('#SubCategoryId');
+                    subCategorySelect.empty();
+                    subCategorySelect.append($('<option>').val('').text('SELECCIONE SUB CATEGORÍA'));
+                    $.each(data, function (i, item) {
+                        var subCategoryName = item.SubCategoryName || '';
+                        var sanitizedSubCategoryName = subCategoryName.replace(' - ', '–'); // Reemplaza " - " con "–"
+
+                        subCategorySelect.append($('<option>').val(item.SubCategoryId).text(sanitizedSubCategoryName + ' - ' + item.Amount));
+                    });
+                }
+            });
+        });
+
+        // Evento al cambiar la subcategoría
+        document.getElementById('SubCategoryId').addEventListener('change', function () {
+            var selectedSubCategoryId = this.value;
+            var prueba = $('#SubCategoryId').val();
+            var selectedOptionText = $(this).find('option:selected').text();
+            var amount = selectedOptionText.split(' - ')[1];
+            if (amount) {
+                document.getElementById('Amount').value = amount;
+
+                // Realizar llamada AJAX para almacenar el valor en la sesión
+                $.ajax({
+                    url: '@Url.Action("StoreSubCategoryId", "Expenses")',
+                    type: 'POST',
+                    data: { subCategoryId: selectedSubCategoryId },
+                    success: function (response) {
+                        if (response.success) {
+                            console.log('SubCategoryId stored in session successfully');
+                        } else {
+                            console.log('Failed to store SubCategoryId in session');
+                        }
+                    },
+                    error: function () {
+                        console.log('Error occurred while storing SubCategoryId in session');
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+

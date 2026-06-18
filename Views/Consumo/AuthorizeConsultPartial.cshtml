@@ -1,0 +1,92 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.ViewModels.ExtraPlanDetailView>(settings =>
+    {
+        settings.Name = "gvAuthorizeConsult";
+        settings.KeyFieldName = "IdCombustibleDetalleExtraPlan";
+        settings.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "AuthorizeConsultPartial" };
+
+        settings.Settings.ShowFooter = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.Width = Unit.Percentage(100);
+
+
+//Configuracion de Columnas
+
+
+settings.Columns.Add(m => m.FechaActividad, column =>
+        {
+            column.Caption = "Fecha";
+            column.ReadOnly = true;
+            column.Width = 80;
+            column.EditorProperties().DateEdit(p =>
+            {
+
+
+                p.DisplayFormatString = "dd/MM/yyyy";
+
+
+
+            });
+        });
+
+        settings.Columns.Add(m => m.Localizacion, column =>
+        {
+            column.Caption = "Localizacion";
+            column.ReadOnly = true;
+            column.Width = 120;
+
+        });
+        settings.Columns.Add(m => m.Actividad, column =>
+        {
+            column.Caption = "Actividad";
+            column.ReadOnly = true;
+            column.Width = 120;
+
+        });
+        settings.Columns.Add(m => m.Departamento, column =>
+        {
+            column.Caption = "Departamento";
+            column.ReadOnly = true;
+            column.Width = 80;
+
+        });
+
+
+        settings.Columns.Add(m => m.KmsRecorrer, column =>
+        {
+            column.Caption = "Km Recorrer";
+            column.Width = 60;
+            column.EditorProperties().SpinEdit(p =>
+            {
+                p.DisplayFormatString = "n2";
+
+            });
+        });
+
+
+
+
+//Sub Totales
+settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "KmsRecorrer");
+
+
+
+    });
+
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+
+@grid.Bind(Model).GetHtml()
+
+
+
+
+
+

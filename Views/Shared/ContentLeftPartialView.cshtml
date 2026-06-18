@@ -1,0 +1,559 @@
+@using System.Drawing
+
+@*<style>
+
+
+    .sidebar {
+        margin: 0;
+        padding: 0;
+        width: 15%;
+        background-color: white;
+        position: fixed;
+        height: 78%;
+        overflow: auto;
+        
+        
+    }
+        
+    @@media screen and (max-width: 700px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  .sidebar a {float: left;}
+  div.content {margin-left: 0;}
+}
+
+@@media screen and (max-width: 400px) {
+  .sidebar a {
+    text-align: center;
+    float: none;
+  }
+}
+</style>*@
+
+
+<div class="sidebar">
+    @*@Html.DevExpress().NavBar(
+            settings => {
+                settings.Name = "LeftNavBar";
+                settings.AutoCollapse = true;
+                settings.EnableAnimation = true;
+                settings.Width = System.Web.UI.WebControls.Unit.Percentage(100);
+                settings.Styles.GroupHeader.BackColor = Color.Firebrick;
+                settings.Styles.GroupHeader.ForeColor = Color.WhiteSmoke;
+                settings.Styles.GroupContent.BackColor= Color.Firebrick;
+                settings.Styles.GroupHeader.Border.BorderColor = Color.WhiteSmoke;
+                settings.Styles.Item.BackColor = Color.WhiteSmoke;
+                settings.Styles.Item.Font.Bold = true;
+                settings.Styles.Item.Font.Name = "Courier New";
+        
+                settings.AllowSelectItem = true;
+                settings.AllowExpanding = true;
+                settings.EnableHotTrack = true;
+                settings.SyncSelectionMode = SyncSelectionMode.CurrentPathAndQuery;
+                settings.SaveStateToCookies = true;
+                settings.Styles.GroupHeader.Font.Bold = true;
+                settings.Styles.GroupContent.Font.Size = 8;
+
+            }
+        ).Bind(Model).GetHtml()*@
+
+
+    @*Menu estatico*@
+
+    @Html.DevExpress().NavBar(settings => {
+
+        settings.Name = "LeftNavBar";
+        settings.AutoCollapse = true;
+        settings.EnableAnimation = true;
+        settings.Width = System.Web.UI.WebControls.Unit.Percentage(100);
+        settings.Height = System.Web.UI.WebControls.Unit.Percentage(100);
+        settings.Styles.Item.BackColor = System.Drawing.Color.WhiteSmoke;
+        settings.Styles.GroupHeader.BackColor = Color.Firebrick;
+        settings.Styles.GroupHeader.ForeColor = Color.WhiteSmoke;
+        settings.Styles.GroupContent.BackColor= Color.Firebrick;
+        settings.Styles.GroupHeader.Border.BorderColor = Color.WhiteSmoke;
+        settings.Styles.Item.Font.Bold = true;
+        settings.Styles.Item.Font.Name = "Courier New";
+        //settings.ControlStyle.Border.BorderWidth = System.Web.UI.WebControls.Unit.Pixel(0);
+        //settings.ControlStyle.Paddings.Padding = System.Web.UI.WebControls.Unit.Pixel(0);
+
+        //settings.Styles.GroupContent.CssClass = "groupContent";
+        settings.Styles.GroupHeader.Height = Unit.Percentage(60);
+        //settings.Styles.GroupHeader.Paddings.PaddingTop = 20;
+
+        settings.AllowSelectItem = true;
+        settings.AllowExpanding = true;
+        settings.EnableHotTrack = true;
+        settings.SyncSelectionMode = SyncSelectionMode.CurrentPathAndQuery;
+        settings.SaveStateToCookies = true;
+
+        settings.Styles.GroupHeader.Font.Bold = true;
+        settings.Styles.GroupContent.Font.Size = 9;
+        //settings.Styles.GroupContent.CssClass = "groupContent";
+
+
+
+        //Menu de Administracion de sistema
+        //settings.Groups.Add(group =>
+        //{
+        //    group.Text = "Administracion";
+        //    group.ItemImagePosition = ImagePosition.Left;
+        //    group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+        //    group.ContentStyle.BackColor = System.Drawing.Color.White;
+        //    group.HeaderImage.Url = Url.Content("~/Content/Icons/PersonalInfo.png");
+
+
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Usuarios";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "SystemUsers", Action = "List" });
+
+        //    });
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Perfiles";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Profiles", Action = "List" });
+
+        //    });
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Menu";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Menu", Action = "List" });
+
+        //    });
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Opciones";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Options", Action = "List" });
+
+        //    });
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Asignar Sub Menu";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "SystemUsers", Action = "List" });
+
+        //    });
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Asignar Perfil";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "SystemUsers", Action = "List" });
+
+        //    });
+
+
+
+        //});
+        //Menu de Administracion de sistema
+
+
+        //settings.Groups.Add(group =>
+        //{
+        //    group.Text = "Comisiones";
+        //    group.ItemImagePosition = ImagePosition.Left;
+        //    group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+        //    group.ContentStyle.BackColor = System.Drawing.Color.White;
+        //    group.HeaderImage.Url = Url.Content("~/Content/Icons/PersonalInfo.png");
+
+
+
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Plantilla";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "EmployeeGoals", Action = "Commission" });
+
+        //    });
+        //    group.Items.Add(item =>
+        //    {
+        //        item.Text = "Indicador Producto";
+        //        item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+        //        item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "IndicatorProducts", Action = "List" });
+
+        //    });
+
+        //});
+
+        //Menu de actualizacion de datos
+
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Mis Datos";
+            group.HeaderStyle.Height = Unit.Percentage(100);
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/PersonalInfo.png");
+            //group.ItemStyle.BackColor = System.Drawing.Color.Yellow;
+            //group.HeaderStyle.BackColor= System.Drawing.Color.Green;
+            group.Items.Add(item =>
+            {
+                item.Text = "Actualizar Datos";
+                item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Employees", Action = "UpdateEmployee" });
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Agradecimientos";
+                item.Image.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Gratefulness", Action = "List" });
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Reporte";
+                item.Image.Url = Url.Content("~/Content/Icons/Reportes.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Gratefulness", Action = "ReportParameters" });
+            });
+
+
+
+        });
+
+        //Menu de horas extras
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Horas Extras";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+            //group.ContentStyle.Font.Size = 8;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/HorasExtras.png");
+            group.Items.Add(item =>
+            {
+                item.Text = "Registrar";
+
+                item.Image.Url = Url.Content("~/Content/Icons/Registrar.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraTime", Action = "EmployeesList" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Aut. Pendientes";
+                item.Image.Url = Url.Content("~/Content/Icons/AutoPend.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraTime", Action = "AuthorizeBoss" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Aut. Gerente";
+                item.Image.Url = Url.Content("~/Content/Icons/AutorizacionGer.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraTime", Action = "AuthorizeManager" });
+            });
+
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Consultar";
+                item.Image.Url = Url.Content("~/Content/Icons/search.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraTime", Action = "ParametersConsult" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Histórico Consumo";
+                item.Image.Url = Url.Content("~/Content/Icons/historico.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraTime", Action = "Chart" });
+            });
+
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Consolidado";
+                item.Image.Url = Url.Content("~/Content/Icons/Reportes.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraTime", Action = "ParametersReport" });
+
+            });
+
+
+        });
+
+        //Menu de modulo de viáticos
+
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Viáticos";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/Viaticos.png");
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+            group.Items.Add(item =>
+            {
+                item.Text = "Registrar";
+                item.Image.Url = Url.Content("~/Content/Icons/Registrar.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "EmployeesList" });
+
+            });
+
+            group.Items.Add(item =>
+            {
+
+                item.Text = "Aut. Pendientes";
+                item.Image.Url = Url.Content("~/Content/Icons/AutoPend.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "AuthorizeBoss" });
+            });
+
+            group.Items.Add(item =>
+            {
+
+                item.Text = "Aut. Coordinador";
+                item.Image.Url = Url.Content("~/Content/Icons/AutC.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "AuthorizeCoordinator" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Aut. Gerencial";
+
+                item.Image.Url = Url.Content("~/Content/Icons/AutorizacionGer.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "AuthorizeManager" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Auto. RRHH";
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "AuthorizeRrhh" });
+            });
+
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Aut. Rendición";
+                item.Image.Url = Url.Content("~/Content/Icons/AutRend.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "AuthorizeYield" });
+            });
+
+
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Consultar";
+                item.Image.Url = Url.Content("~/Content/Icons/search.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "ParametersConsult" });
+
+            });
+
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Reportes";
+                item.Image.Url = Url.Content("~/Content/Icons/Reportes.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "ParametersReport" });
+
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Finanzas";
+                item.Image.Url = Url.Content("~/Content/Icons/Reportes.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Expenses", Action = "FinancialParameters" });
+
+            });
+        });
+
+        //Menu de modulo de licencias de permiso
+
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Licencias";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/Vacacaiones.png");
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+            group.Items.Add(item =>
+            {
+                item.Text = "Registrar";
+                item.Image.Url = Url.Content("~/Content/Icons/Registrar.png");
+
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "EmployeesList" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Aut. Pendientes";
+                item.Image.Url = Url.Content("~/Content/Icons/AutoPend.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "AuthorizeBoss" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Aut. RRHH";
+                item.Image.Url = Url.Content("~/Content/Icons/AutRH.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "AuthorizeRh" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Detalle";
+                item.Image.Url = Url.Content("~/Content/Icons/DetalleAus.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "ConsultDetailParameters" });
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Acumulado";
+                item.Image.Url = Url.Content("~/Content/Icons/Rpt.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "EmployeesBalanceParameters" });
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Estado Cuenta";
+                item.Image.Url = Url.Content("~/Content/Icons/EstadoCuenta.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "StatementAccountParameters" });
+            });
+        });
+
+
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Combustible";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/combustible_32x32.png");
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Unidades";
+                item.Image.Url = Url.Content("~/Content/Icons/unidadesSubMenu.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Consumo", Action = "CarsList" });
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Autorización EP Jefe";
+                item.Image.Url = Url.Content("~/Content/Icons/AutoPend.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraPlan", Action = "AuthorizeBoss" });
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Autorización EP Gerente";
+                item.Image.Url = Url.Content("~/Content/Icons/AutorizacionGer.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraPlan", Action = "AuthorizeManagement" });
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Solicitudes Consumo";
+                item.Image.Url = Url.Content("~/Content/Icons/solicitudesCombustibeSubMenu.png");
+
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Consumo", Action = "VouchersList" });
+            });
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Solicitudes Traslado";
+                item.Image.Url = Url.Content("~/Content/Icons/solicitudesCombustibeSubMenu.png");
+
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Traslados", Action = "List" });
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Solicitudes Extra Plan";
+                item.Image.Url = Url.Content("~/Content/Icons/solicitudesCombustibeSubMenu.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "ExtraPlan", Action = "List" });
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Reporte de Consumo";
+                item.Image.Url = Url.Content("~/Content/Icons/solicitudesCombustibeSubMenu.png");
+
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Consumo", Action = "ReportParameters" });
+            });
+
+
+        });
+
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Citas Transporte";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/m_appointment32x32.png");
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Citas";
+                item.Image.Url = Url.Content("~/Content/Icons/AutRH.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Appointments", Action = "CarsList" });
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Incidencias";
+                item.Image.Url = Url.Content("~/Content/Icons/AutRH.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Incidencias", Action = "CarsList" });
+            });
+
+        });
+
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Eventos";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/EventMenu.png");
+
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Eventos";
+                item.Image.Url = Url.Content("~/Content/Icons/EventSubMenu.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Events", Action = "List" });
+
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Inscripcion";
+                item.Image.Url = Url.Content("~/Content/Icons/RegistrationSubMenu.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "EventRegistration", Action = "List" });
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "Reportes";
+                item.Image.Url = Url.Content("~/Content/Icons/RegistrationSubMenu.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "EventRegistration", Action = "EventParameters" });
+
+            });
+            group.Items.Add(item =>
+            {
+                item.Text = "EventosDatatable";
+                item.Image.Url = Url.Content("~/Content/Icons/RegistrationSubMenu.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Events", Action = "All" });
+
+            });
+
+
+        });
+
+    
+        settings.Groups.Add(group =>
+        {
+            group.Text = "Compensación";
+            group.ItemImagePosition = ImagePosition.Left;
+            group.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
+            group.HeaderImage.Url = Url.Content("~/Content/Icons/datosgenerales.png");
+            group.ContentStyle.BackColor = System.Drawing.Color.White;
+
+            group.Items.Add(item =>
+            {
+                item.Text = "Requisiciones";
+                item.Image.Url = Url.Content("~/Content/Icons/documento.png");
+                item.NavigateUrl = DevExpressHelper.GetUrl(new { Controller = "Requisicion", Action = "Index" });
+            });
+
+
+        });
+\n    }).GetHtml()
+</div>

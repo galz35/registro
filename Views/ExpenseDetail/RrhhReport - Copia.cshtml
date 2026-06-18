@@ -1,0 +1,82 @@
+﻿@*@model Entities.MyEntities.ExpensesParameters*@
+@{
+    ViewBag.Title = "Reporte de detalle de viaticos";
+}
+
+<br />
+<form  >
+    <div class="form-group row">
+        <div class="col-md-12 d-flex">
+            <button type="button" class="btn btn-secondary mr-2" onclick="location.href='@Url.Action("FinancialParameters", "Expenses")'">
+                <i class="fas fa-arrow-left"></i> Volver
+            </button>
+            <button type="button" class="btn btn-success" id="btnExportar">
+    <i class="fas fa-file-excel"></i> Exportar excel
+</button>
+
+        </div>
+    </div>
+</form>
+
+@Html.Action("RrhhReportPartial")
+
+
+
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="2" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+}
+
+
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+<script>
+    $('#btnExportar').on('click', function () {
+        Swal.fire({
+            title: 'Enviando...',
+            text: 'Estamos generando el reporte y enviándolo a su correo.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: '@Url.Action("ExportDetailAllUsersv2", "ExpenseDetail")',
+            type: 'GET',
+            success: function (data) {
+                Swal.close();
+
+                if (data === "exito") {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: 'El detalle de viáticos fue enviado correctamente a su correo.'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Sin resultados',
+                        text: 'No se encontraron datos para exportar.'
+                    });
+                }
+            },
+            error: function () {
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al exportar los datos.'
+                });
+            }
+        });
+    });
+</script>
+
+
+
+

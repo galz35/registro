@@ -1,0 +1,43 @@
+﻿@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+<title></title>
+<script>
+
+    function OnInit(s, e) {
+    var message = '@ViewData["EditError"]';
+    if(message) {
+    s.SetContentHtml(message);
+    s.Show();
+    }
+
+    }
+</script>
+
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "pc";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Información";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 200;
+    //settingsPopup.Modal = true;
+    settingsPopup.ClientSideEvents.Init = "OnInit";
+
+
+
+    settingsPopup.SetContent(() =>
+    {
+        ViewContext.Writer.Write(ViewData["EditError"]);
+    });
+}).GetHtml()
+}
+
+
+
+
+
+

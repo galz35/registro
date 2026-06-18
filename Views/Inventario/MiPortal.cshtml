@@ -1,0 +1,413 @@
+﻿@{
+    ViewBag.Title = "Mi Portal de Dotación";
+    string carnetUsuario = User.Identity.Name;
+}
+
+<style>
+    :root {
+        --rojo: #b30000;
+        --rojo2: #ff4343;
+        --negro: #111;
+        --gris: #f4f7f6;
+        --gris2: #e9ecf2;
+    }
+
+    body {
+        background-color: var(--gris);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Hero Simplificado */
+    .hero {
+        background: linear-gradient(135deg, var(--rojo), var(--rojo2));
+        color: #fff;
+        border-radius: 20px;
+        padding: 25px 30px;
+        box-shadow: 0 10px 30px rgba(179,0,0,0.2);
+        margin-bottom: 30px;
+    }
+
+    /* Catálogo en Tarjetas */
+    .product-card {
+        background: #fff;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid transparent;
+        transition: 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .product-card:hover {
+            border-color: var(--rojo2);
+            box-shadow: 0 8px 25px rgba(179,0,0,0.1);
+            transform: translateY(-3px);
+        }
+
+    .product-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--negro);
+        line-height: 1.2;
+        margin-bottom: 5px;
+    }
+
+    .product-type {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    /* Carrito Lateral (Sticky) */
+    .cart-panel {
+        background: #fff;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 20px;
+    }
+
+    .cart-item {
+        padding: 12px 0;
+        border-bottom: 1px dashed var(--gris2);
+    }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+    /* Badges y Burbujas */
+    .bubble-resp {
+        background: #f0f2f5;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        border-left: 3px solid var(--rojo);
+    }
+
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .status-pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-aprobada {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-atendida {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    /* Input Search Global */
+    .search-main {
+        border-radius: 50px;
+        padding: 10px 20px;
+        border: 2px solid var(--gris2);
+        font-weight: 600;
+    }
+
+        .search-main:focus {
+            border-color: var(--rojo);
+            box-shadow: none;
+        }
+</style>
+
+<div class="container-fluid mt-3 mb-5">
+
+    <div class="hero d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h2 class="font-weight-bold mb-1">Hola, @carnetUsuario.</h2>
+            <p class="mb-0 opacity-75">Selecciona los implementos que necesitas solicitar.</p>
+        </div>
+        <div class="mt-3 mt-lg-0 text-right">
+            <button class="btn btn-light font-weight-bold shadow-sm rounded-pill px-4" onclick="$('#menuTabs a[href=\'#secHistorial\']').tab('show')">
+                <i class="fas fa-history mr-2"></i> Ver mis trámites
+            </button>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-4 d-none" id="menuTabs">
+        <li><a data-toggle="pill" href="#secNueva">Nueva Solicitud</a></li>
+        <li><a data-toggle="pill" href="#secHistorial">Historial</a></li>
+    </ul>
+
+    <div class="tab-content">
+
+        <div class="tab-pane fade show active" id="secNueva">
+            <div class="row">
+
+                <div class="col-lg-8">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold m-0 text-muted">Catálogo Disponible</h5>
+                        <input type="text" id="busqVisual" class="form-control search-main w-50" placeholder="Buscar artículo...">
+                    </div>
+
+                    <div class="row" id="catalogoGrid">
+                        <div class="col-12 text-center text-muted py-5" id="loadCatalogo">
+                            <div class="spinner-border text-danger" role="status"></div><br>Cargando artículos...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="cart-panel">
+                        <h5 class="font-weight-bold mb-3"><i class="fas fa-shopping-bag text-danger mr-2"></i> Mi Solicitud</h5>
+
+                        <div class="form-group mb-4">
+                            <label class="small font-weight-bold text-muted">MOTIVO DEL PEDIDO</label>
+                            <textarea id="txtMotivo" class="form-control border-0 bg-light" rows="2" placeholder="Explica por qué solicitas esto..."></textarea>
+                        </div>
+
+                        <label class="small font-weight-bold text-muted">ARTÍCULOS SELECCIONADOS</label>
+                        <div id="cartItems" class="mb-4">
+                        </div>
+
+                        <div id="emptyCart" class="text-center py-4 bg-light rounded" style="border: 2px dashed #ddd;">
+                            <p class="text-muted small mb-0">Selecciona artículos del catálogo a la izquierda.</p>
+                        </div>
+
+                        <button class="btn btn-danger btn-lg btn-block shadow-lg mt-3 font-weight-bold" id="btnEnviar" disabled onclick="enviarSolicitud()">
+                            ENVIAR A MI JEFE
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="secHistorial">
+            <div class="card shell">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-weight-bold m-0">Mis Solicitudes Anteriores</h5>
+                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="$('#menuTabs a[href=\'#secNueva\']').tab('show')">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver a pedir
+                    </button>
+                </div>
+
+                <table id="tblHistorial" class="table table-hover w-100">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Respuesta de RRHH</th>
+                            <th class="text-center">Detalle</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="mdlDet" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:20px">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold">Artículos Solicitados</h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm" id="tblDetLines">
+                    <thead class="text-muted small">
+                        <tr><th>Artículo</th><th>Variante</th><th class="text-center">Pidió</th><th class="text-center">Entregado</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const CARNET = "@carnetUsuario";
+        let CATALOGO = [];
+        let CARRITO = [];
+
+        $(document).ready(function() {
+            cargarArticulosUI();
+            initHistorial();
+
+            // Buscador visual en el catálogo
+            $('#busqVisual').on('input', function() {
+                let q = $(this).val().toLowerCase();
+                $('.product-col').each(function() {
+                    let txt = $(this).data('search').toLowerCase();
+                    $(this).toggle(txt.includes(q));
+                });
+            });
+        });
+
+        // 1. CARGA DE CATÁLOGO COMO TARJETAS
+        function cargarArticulosUI() {
+            $.get('/Inventario/Articulos', { carnetUsuario: CARNET }, function(res) {
+                if(res.ok) {
+                    CATALOGO = res.data;
+                    let html = '';
+
+                    CATALOGO.forEach(a => {
+                        html += `
+                        <div class="col-md-6 col-xl-4 mb-4 product-col" data-search="${a.Nombre} ${a.Codigo} ${a.Tipo}">
+                            <div class="product-card">
+                                <span class="product-type">${a.Tipo}</span>
+                                <div class="product-title mt-1">${a.Nombre}</div>
+                                <small class="text-muted mb-3 d-block">Cód: ${a.Codigo}</small>
+
+                                <div class="mt-auto">
+                                    <div class="row no-gutters">
+                                        <div class="col-8 pr-1">
+                                            <select class="form-control form-control-sm bg-light border-0" id="var_${a.IdArticulo}">
+                                                <option value="UNI|N">Talla Única</option>
+                                                <option value="S|M">S - Masc</option>
+                                                <option value="M|M">M - Masc</option>
+                                                <option value="L|M">L - Masc</option>
+                                                <option value="S|F">S - Fem</option>
+                                                <option value="M|F">M - Fem</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control form-control-sm bg-light border-0 text-center" id="cant_${a.IdArticulo}" value="1" min="1">
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-dark btn-sm btn-block mt-2 font-weight-bold" onclick="addCardToCart(${a.IdArticulo})">
+                                        Agregar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+
+                    $('#catalogoGrid').html(html);
+                }
+            });
+        }
+
+        // 2. GESTIÓN DEL CARRITO
+        function addCardToCart(id) {
+            const art = CATALOGO.find(x => x.IdArticulo === id);
+            const varVal = $(`#var_${id}`).val();
+            const cant = parseInt($(`#cant_${id}`).val());
+
+            if(!varVal || cant <= 0) return;
+
+            const [talla, sexo] = varVal.split('|');
+
+            // Evitar duplicados
+            if(CARRITO.find(x => x.IdArticulo === id && x.Talla === talla && x.Sexo === sexo)) {
+                alert("Esa variante ya está en tu carrito."); return;
+            }
+
+            CARRITO.push({
+                IdArticulo: id,
+                Nombre: art.Nombre,
+                Talla: talla,
+                Sexo: sexo,
+                Cantidad: cant
+            });
+
+            // Resetea cantidad en la tarjeta
+            $(`#cant_${id}`).val(1);
+
+            renderCartUI();
+        }
+
+        function renderCartUI() {
+            let html = '';
+            CARRITO.forEach((item, index) => {
+                html += `
+                <div class="cart-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="d-block" style="font-size: 0.9rem; line-height: 1.1">${item.Nombre}</strong>
+                        <small class="text-muted">${item.Talla} | ${item.Sexo} &nbsp;&bull;&nbsp; <span class="text-danger font-weight-bold">x${item.Cantidad}</span></small>
+                    </div>
+                    <button class="btn btn-sm text-danger" onclick="removeFromCart(${index})"><i class="fas fa-times"></i></button>
+                </div>`;
+            });
+
+            $('#cartItems').html(html);
+
+            const hasItems = CARRITO.length > 0;
+            $('#emptyCart').toggle(!hasItems);
+            $('#btnEnviar').prop('disabled', !hasItems);
+        }
+
+        function removeFromCart(i) {
+            CARRITO.splice(i, 1);
+            renderCartUI();
+        }
+
+        function enviarSolicitud() {
+            const motivo = $('#txtMotivo').val();
+            if(!motivo.trim()) {
+                alert("Por favor explica brevemente por qué necesitas estos artículos.");
+                $('#txtMotivo').focus(); return;
+            }
+
+            if(!confirm("¿Deseas enviar esta solicitud a tu Jefe para aprobación?")) return;
+
+            // Bloquear botón para evitar doble clic
+            $('#btnEnviar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
+
+            $.post('/Inventario/SolicitudesCrear', {
+                carnetEmpleado: CARNET,
+                motivo: motivo,
+                detallesJson: JSON.stringify(CARRITO)
+            }, function(res) {
+                if(res.ok) {
+                    alert("¡Solicitud enviada con éxito!");
+                    location.reload();
+                } else {
+                    alert("Error: " + res.msg);
+                    $('#btnEnviar').prop('disabled', false).html('ENVIAR A MI JEFE');
+                }
+            });
+        }
+
+        // 3. HISTORIAL (DataTables)
+        function initHistorial() {
+            $('#tblHistorial').DataTable({
+                ajax: '/Inventario/MisSolicitudes?carnet=' + CARNET,
+                order: [[0, 'desc']],
+                pageLength: 10,
+                columns: [
+                    { data: 'FechaCreacion', render: d => moment(d).format('DD/MM/YYYY HH:mm') },
+                    { data: 'Estado', render: s => `<span class="badge-status status-${s.toLowerCase()}">${s}</span>` },
+                    { data: 'RespuestaRRHH', render: r => r ? `<div class="bubble-resp">${r}</div>` : '<span class="text-muted small">En revisión...</span>' },
+                    { data: 'IdSolicitud', className: 'text-center', render: id => `<button class="btn btn-sm btn-light border font-weight-bold" onclick="verDetalle(${id})">Ver ítems</button>` }
+                ],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json" }
+            });
+        }
+
+        function verDetalle(id) {
+            $.get('/Inventario/SolicitudDetalle', { idSolicitud: id }, function(res) {
+                let h = '';
+                res.data.forEach(d => {
+                    h += `<tr>
+                        <td><b>${d.Nombre}</b></td>
+                        <td>${d.Talla} | ${d.Sexo}</td>
+                        <td class="text-center">${d.CantidadSolicitada}</td>
+                        <td class="text-center font-weight-bold text-success">${d.CantidadEntregada}</td>
+                    </tr>`;
+                });
+                $('#tblDetLines tbody').html(h);
+                $('#mdlDet').modal('show');
+            });
+        }
+    </script>
+}

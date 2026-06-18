@@ -1,0 +1,211 @@
+﻿@model Entities.IndicatorProducts
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+
+<script>
+    function OnInitInidicator() {
+
+        IndicatorId.PerformCallback();
+    }
+
+    function OnSelectedIndicatorChanged() {
+
+        ProductId.PerformCallback();
+    }
+
+   
+
+    function OnIndicatorBeginCallback(s, e) {
+
+        e.customArgs["managementId"] = top.ManagementId.GetValue();
+        
+    }
+    function OnProductBeginCallback(s, e) {
+
+        e.customArgs["indicatorId"] = IndicatorId.GetValue();
+      
+        ProductId.SetReadOnly(false);
+    }
+   
+
+    function OnSelectedProductChanged(s, e) {
+        //alert(treeList.GetFocusedNodeKey());
+        //var nodeKey = treeList.GetFocusedNodeKey();
+        var indicator = IndicatorId.GetValue();
+        var product = ProductId.GetValue();
+        //var nodeKey = treeList.GetFocusedNodeKey();
+        
+        //s.GetNodeValues(nodeKey, "OrganizationId");
+          $.ajax({
+              url: '@Url.Action("EditPartial")',
+              //contentType: 'application/json; charset=utf-8',
+              type: 'GET',
+              //dataType: 'json',
+              cache: false,
+              data: { indicatorId: indicator, productId: product}
+                }).done(function(result) {
+                        $('#goalGrid').html(result);
+                });
+    }
+
+    
+    
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvEditGoal.SetHeight(height - 100);
+    }
+
+    function HidePopup(s, e) {
+        
+        top.popImage.Hide();
+    }
+    
+     function OnUpdateClick(s, e) {
+         var area = top.treeList.GetFocusedNodeKey();
+         var period = top.PeriodId.GetValue();
+
+           $.ajax({
+            url: '@Url.Action("UpdateDatabase")',
+            type: "POST",
+               data: { areaId: area, periodId: period },
+            //dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                 //HidePopup();
+                 swal({
+                    title: "Exito!",
+                    text: "Informacion actualizada",
+                    icon: "success",
+                    button: "Aceptar",
+                })
+                    .then((willSaved) => {
+                        if (willSaved) {
+                            HidePopup();
+                            Reload();
+                            @*location.href='@Url.Action("List","Events")';*@
+                            }
+                        
+                    });
+                 
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+
+    
+    }
+
+     function Reload(s, e) {
+  
+         var area = top.treeList.GetFocusedNodeKey();
+         var period = top.PeriodId.GetValue();
+          $.ajax({
+              url: '@Url.Action("PivotPartial")',
+              //contentType: 'application/json; charset=utf-8',
+              type: 'GET',
+              //dataType: 'json',
+              cache: false,
+              data: { areaId: area, periodId: period}
+                }).done(function(result) {
+                        $('#pivot').html(result);
+                });
+    }
+
+</script>
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().FormLayout(settings => {
+    settings.Name = "frmIndicator";
+    settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 500;
+    settings.ControlStyle.CssClass = "formLayout";
+
+    settings.Items.AddGroupItem(g => {
+        g.Caption = "";
+        g.ColCount = 2;
+        g.UseDefaultPaddings = false;
+        g.Paddings.PaddingTop = Unit.Pixel(10);
+        g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+        g.Items.Add(m => m.IndicatorId, i => {
+            i.Caption = "Indicador";
+            //i.Width = Unit.Percentage(20);
+            i.NestedExtension().ComboBox(s => {
+                s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                s.CallbackRouteValues = new { Controller = "Indicators", Action = "GetIndicatorsByManagement", TextField = "IndicatorDescription", ValueField = "IndicatorId" };
+                s.Properties.TextField = "IndicatorDescription";
+                s.Properties.ValueField = "IndicatorId";
+                s.Properties.ValueType = typeof(string);
+                s.Properties.DataSource = slnRhonline.Data.Indicator.GetAllIndicators();
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.ShowModelErrors = true;
+                s.Width= Unit.Percentage(100);
+                s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedIndicatorChanged";
+                s.Properties.ClientSideEvents.BeginCallback = "OnIndicatorBeginCallback";
+                s.Properties.ClientSideEvents.Init = "OnInitInidicator";
+
+            });
+        });
+
+        g.Items.Add(i =>
+        {
+            i.FieldName = "ProductId";
+            i.Caption = "Producto";
+            i.NestedExtension().ComboBox(s =>
+            {
+                s.CallbackRouteValues = new { Controller = "Products", Action = "GetProductsByIndicator", TextField = "ProductName", ValueField = "ProductId" };
+                s.Properties.TextField = "ProductDescription";
+                s.Properties.ValueField = "ProductId";
+                s.Properties.ValueType = typeof(int);
+                s.Properties.LoadDropDownOnDemand = true;
+                s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(100);
+                s.Properties.ClientSideEvents.BeginCallback = "OnProductBeginCallback";
+                s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedProductChanged";
+                s.Properties.DataSource = slnRhonline.Data.Product.GetAllProducts();
+                s.ReadOnly = true;
+
+
+            });
+        });
+
+
+    });
+}).GetHtml()
+}
+
+<div id="goalGrid">
+    @using (Html.BeginForm())
+    {
+        @Html.Partial("EditPartial")
+    }
+ </div>
+<br />
+<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings => {
+       settings.Name = "btnDanger";
+       settings.Width = 164;
+       settings.Text = "Actualizar";
+       settings.RenderMode = ButtonRenderMode.Danger;
+    settings.ClientSideEvents.Click = "OnUpdateClick";  //"function(s, e) { top.popImage.Hide(); }";
+
+    }).GetHtml()
+</div>

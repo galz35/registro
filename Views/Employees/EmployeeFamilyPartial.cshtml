@@ -1,0 +1,236 @@
+﻿
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.ViewModels.EmployeeFamilyView>(settings =>
+    {
+        settings.Name = "gvEmployeeFamily";
+        settings.KeyFieldName = "Id";
+        settings.CallbackRouteValues = new { Controller = "Employees", Action = "EmployeeFamilyPartial" };
+
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Employees", Action = "AddFamily" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Employees", Action = "EditFamily" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Employees", Action = "DeleteFamily" };
+        //settings.ClientSideEvents.Init = "OnInit";
+        //settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+        //Configuracion basica del grid
+        settings.Width = Unit.Percentage(100);
+       // settings.Height = Unit.Percentage(500);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+        //settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 0;
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+
+
+        //Configuracion del grid para hacerlo responsive
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 120;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+        //Configuracion del popup
+
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de datos del familiar";
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+
+
+
+        #region Personalizacion de botones
+        //Configuracion de botones de accion
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.Width = 70;
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.CommandColumn.ShowDeleteButton = true;
+        settings.CommandColumn.ShowEditButton = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+        settings.SettingsCommandButton.NewButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsAdd16x16;
+        settings.SettingsCommandButton.EditButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditEdit16x16;
+        settings.SettingsCommandButton.UpdateButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsApply16x16;
+        settings.SettingsCommandButton.DeleteButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditDelete16x16;
+        settings.SettingsCommandButton.CancelButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsCancel16x16;
+        #endregion
+
+        //Configuracion de Columnas
+
+
+        settings.Columns.Add(m => m.FirstName, column =>
+        {
+            column.Caption = "Primer Nombre";
+            column.AdaptivePriority = 1;
+            column.EditorProperties().TextBox(p =>
+            {
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = Unit.Percentage(100);
+                p.Style.CssClass = "upperCase";
+                p.MaxLength = 150;
+
+            });
+        });
+
+        settings.Columns.Add(m => m.MiddleName, column =>
+        {
+            column.Caption = "Segundo Nombre";
+            column.AdaptivePriority = 2;
+            column.EditorProperties().TextBox(p =>
+            {
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = Unit.Percentage(100);
+                p.Style.CssClass = "upperCase";
+                p.MaxLength = 60;
+
+            });
+        });
+
+        settings.Columns.Add(m => m.LastName, column =>
+        {
+            column.Caption = "Apellidos";
+            column.AdaptivePriority = 3;
+
+            column.EditorProperties().TextBox(p =>
+            {
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = Unit.Percentage(100);
+                p.Style.CssClass = "upperCase";
+                p.MaxLength = 150;
+            });
+        });
+
+        settings.Columns.Add(m => m.DateOfBirth, column =>
+        {
+            column.Caption = "Fecha.Nac";
+            column.AdaptivePriority = 4;
+            column.EditorProperties().DateEdit(p =>
+            {
+
+                p.NullText = "dd/mm/yyyy";
+
+                p.EditFormat = EditFormat.Date;
+
+                p.Width = Unit.Percentage(100);
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+            });
+        });
+
+        settings.Columns.Add(m => m.Sex, column =>
+        {
+            column.Caption = "Sexo";
+            column.AdaptivePriority = 5;
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = Unit.Percentage(100);
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+
+                p.ValueType = typeof(string);
+                p.Items.Add("MASCULINO", "M");
+                p.Items.Add("FEMENINO", "F");
+
+
+            });
+        });
+
+        settings.Columns.Add(m => m.RelationshipType, column =>
+        {
+            column.Caption = "Relación";
+            column.AdaptivePriority = 5;
+
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.Width = Unit.Percentage(100);
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                p.ValueType = typeof(string);
+                p.Items.Add("HIJO", "C");
+                p.Items.Add("HIJASTRO", "T");
+                p.Items.Add("PAREJA", "D");
+                p.Items.Add("HIJO ADOPTADO", "A");
+                p.Items.Add("HERMANO", "BROTHER");
+                p.Items.Add("PADRE", "JP_FT");
+                p.Items.Add("MADRE", "JP_MT");
+                p.Items.Add("CONYUGUE", "S");
+                p.Items.Add("PADRE", "P");
+                p.Items.Add("PADRASTRO", "PDR");
+                p.Items.Add("AMIGO", "F");
+                p.Items.Add("NIETO", "NI");
+                p.Items.Add("SOBRINO", "NEPHE");
+                p.Items.Add("ABUELO", "AB");
+                p.Items.Add("PRIMO", "PR");
+                p.Items.Add("TIO", "12");
+
+        
+
+
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+            });
+        });
+
+        settings.Columns.Add(m => m.DocumentId, column =>
+        {
+            column.Caption = "Cedula";
+            column.AdaptivePriority = 6;
+
+            column.EditorProperties().TextBox(p =>
+            {
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = Unit.Percentage(100);
+                p.Style.CssClass = "upperCase";
+                p.MaskSettings.Mask = "999-999999-9999l";
+                p.MaskSettings.IncludeLiterals = MaskIncludeLiteralsMode.None;
+                p.MaskSettings.ErrorText = "Numero de cedula invalido";
+            });
+        });
+
+
+
+
+
+        //settings.PreRender = (sender, e) =>
+        //{
+        //    ((MVCxGridView)sender).StartEdit(4);
+        //};
+        settings.CellEditorInitialize = (s, e) =>
+        {
+            ((ASPxEdit)e.Editor).ValidationSettings.Display = Display.Dynamic;
+        };
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+
+

@@ -1,0 +1,74 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+}
+
+@Html.DevExpress().GridView(settings => {
+    settings.Name = "gvEditGoal";
+    settings.KeyFieldName = "PersonId";
+    settings.Width = Unit.Percentage(100);
+    settings.CallbackRouteValues = new { Controller = "Editing", Action = "EditPartial" };
+    settings.SettingsEditing.BatchUpdateRouteValues = new { Controller = "EmployeeGoals", Action = "EditGoal" };
+
+    settings.SettingsEditing.Mode = GridViewEditingMode.Batch;
+    settings.SettingsEditing.BatchEditSettings.EditMode = GridViewBatchEditMode.Cell;
+    settings.SettingsEditing.BatchEditSettings.StartEditAction = GridViewBatchStartEditAction.Click;
+    //settings.SettingsEditing.BatchEditSettings.HighlightDeletedRows = BatchEditingOptions.HighlightDeletedRows;
+    //settings.SettingsEditing.BatchEditSettings.KeepChangesOnCallbacks = GridViewCallbackCommand. KeepChangesOnCallbacks ? DefaultBoolean.True : DefaultBoolean.False;
+
+    settings.CommandColumn.Visible = true;
+    settings.CommandColumn.ShowCancelButton = true;
+    settings.CommandColumn.ShowDeleteButton = true;
+    settings.CommandColumn.ShowNewButtonInHeader = true;
+    settings.CommandColumn.ShowCancelButton = true;
+    settings.CommandColumn.Width = Unit.Pixel(100);
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EmployeeNumber";
+        col.Caption = "#Carnet";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 1;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EmployeeName";
+        col.Caption = "Nombres y Apellidos";
+        col.Width = Unit.Percentage(50);
+        col.AdaptivePriority = 2;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "Goal";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 3;
+        col.EditorProperties().SpinEdit(p =>
+        {
+            p.NumberType = SpinEditNumberType.Integer;
+            p.MinValue = 0;
+            p.MaxValue = 10000;
+        });
+
+    });
+
+    settings.CellEditorInitialize = (s, e) => {
+        ASPxEdit editor = (ASPxEdit)e.Editor;
+        editor.ValidationSettings.Display = Display.None;
+    };
+    //settings.ClientSideEvents.BeginCallback = "OnBeginGridCallback";
+
+    //DevExpress.Web.Demos.GridViewFeaturesHelper.SetupGlobalGridViewBehavior(settings);
+}).Bind(Model).GetHtml()
+
+
+
+
+

@@ -1,0 +1,65 @@
+﻿<!-- ───────── Views/ExtraTime/ConsultaHorasExtras.cshtml ───────── -->
+@{
+    ViewBag.Title = "Consulta de Horas Extras";
+}
+<div class="d-flex gap-2 mb-3">
+    <a href="@Url.Action("ParametersConsult","ExtraTime")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+    <a href="@Url.Action("ExportarPdf","ExtraTime")" class="btn btn-danger">
+        <i class="fas fa-file-pdf"></i> PDF
+    </a>
+    <a href="@Url.Action("ExportarXls","ExtraTime")" class="btn btn-success">
+        <i class="fas fa-file-excel"></i> Excel
+    </a>
+    <a href="@Url.Action("DetalleHorasExtras","ExtraTime")" class="btn btn-info">
+        <i class="fas fa-list"></i> Detalle
+    </a>
+</div>
+
+<!-- ===== Views/ExtraTime/ConsultaHorasExtras.cshtml (tabla) ===== -->
+<table id="tblResumen" class="table table-striped w-100">
+    <thead>
+        <tr><th>Área</th><th>Total Horas</th></tr>
+    </thead>
+    <tfoot>
+        <tr><th class="text-right">Total:</th><th id="tHoras"></th></tr>
+    </tfoot>
+</table>
+
+
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+$(function () {
+  $('#tblResumen').DataTable({
+    ajax:{ url:'@Url.Action("ObtenerResumenHorasconsolidado")', dataSrc:'data' },
+    columns:[ {data:'AreaName'}, {data:'TotalHours'} ],
+    pageLength:10,
+    drawCallback:function(){
+      const api=this.api();
+      const total=api.column(1,{page:'current'}).data()
+                    .reduce((a,b)=>a+parseFloat(b||0),0);
+      $('#tHoras').text(total.toFixed(2));
+    }
+  });
+});
+    </script>
+
+}
+

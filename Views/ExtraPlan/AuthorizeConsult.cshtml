@@ -1,0 +1,68 @@
+﻿@model  List<Entities.ViewModels.ExtraPlanDetailView>
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+
+@Html.DevExpress().GetStyleSheets(
+         new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+      new StyleSheet { ExtensionSuite = ExtensionSuite.Editors  },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+          new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+          new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+            new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+     )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+
+<script>
+
+    //function OnInit(s, e) {
+    //    AdjustSize();
+    //    ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+    //        AdjustSize();
+    //    });
+    //}
+    //function OnEndCallback(s, e) {
+    //    AdjustSize();
+    //}
+    //function AdjustSize() {
+    //    var height = document.documentElement.clientHeight;
+    //    gvDetailExtraPlan.SetHeight(height - 100);
+    //}
+
+
+
+</script>
+
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+<div id="authorizePartial">
+
+    @Html.Partial("AuthorizeConsultPartial", Model)
+</div>
+
+
+
+

@@ -1,0 +1,264 @@
+@{ ViewBag.Title = "Relaciones Laborales"; Layout = "~/Views/Shared/_mainLayout.cshtml"; }
+
+<link href="~/onlinecss/style-rlaborales.css" rel="stylesheet" />
+<link href="~/onlinecss/jquery.dataTables.min.css" rel="stylesheet" />
+
+<div id="rlPage">
+    <!-- KPIs -->
+    <div class="row mb-3" id="kpiRowRL">
+        <div class="col-xl-3 col-md-6 mb-2">
+            <div class="card border-left-danger shadow-sm h-100 py-2">
+                <div class="card-body py-2">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Sanciones</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiTotalSanc">0</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-2">
+            <div class="card border-left-warning shadow-sm h-100 py-2">
+                <div class="card-body py-2">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Actas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiTotalActa">0</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-file-alt fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-2">
+            <div class="card border-left-success shadow-sm h-100 py-2">
+                <div class="card-body py-2">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Este Mes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiMes">0</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-calendar fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-2">
+            <div class="card border-left-info shadow-sm h-100 py-2">
+                <div class="card-body py-2">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Costo Acumulado</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiCosto">C$0</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-dollar-sign fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header p-0 bg-white">
+            <ul class="nav nav-tabs rl-tabs" id="rlTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active font-weight-bold" id="tabSanc" data-toggle="tab" href="#panelSanc" role="tab">
+                        <i class="fas fa-gavel mr-1"></i> Sanciones <span class="badge badge-danger ml-1" id="badgeSanc">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link font-weight-bold" id="tabActa" data-toggle="tab" href="#panelActa" role="tab">
+                        <i class="fas fa-file-signature mr-1"></i> Actas <span class="badge badge-warning ml-1" id="badgeActa">0</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <div class="tab-content" id="rlTabContent">
+
+                <!-- ======== TAB SANCIONES ======== -->
+                <div class="tab-pane fade show active" id="panelSanc" role="tabpanel">
+                    <!-- Formulario colapsable -->
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-danger" type="button" data-toggle="collapse" data-target="#formSancion">
+                            <i class="fas fa-plus mr-1"></i> Nueva Sancion
+                        </button>
+                    </div>
+                    <div class="collapse" id="formSancion">
+                        <div class="card card-body bg-light mb-3 border-left-danger">
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Empleado</label>
+                                    <input type="text" id="sEmpleado" class="form-control form-control-sm" placeholder="Buscar por nombre o carnet..." autocomplete="off" />
+                                    <input type="hidden" id="sCarnet" />
+                                    <div id="sEmpleadoList" class="autocomplete-list"></div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Tipo de Falta</label>
+                                    <select id="sTipoFalta" class="form-control form-control-sm"></select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Gravedad</label>
+                                    <select id="sGrado" class="form-control form-control-sm"></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <label class="small font-weight-bold">Reincidencia</label>
+                                    <select id="sReincidencia" class="form-control form-control-sm"></select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small font-weight-bold">Categoria</label>
+                                    <input type="text" id="sCategoria" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="small font-weight-bold">Minutos</label>
+                                    <input type="text" id="sMinutos" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="small font-weight-bold">Costo (C$)</label>
+                                    <input type="number" id="sCosto" class="form-control form-control-sm" step="0.01" />
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="small font-weight-bold">Fecha Inicio</label>
+                                    <input type="date" id="sFechaIni" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-2 mb-2">
+                                    <label class="small font-weight-bold">Fecha Fin</label>
+                                    <input type="date" id="sFechaFin" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Sancion a Aplicar</label>
+                                    <textarea id="sSancionAplicar" class="form-control form-control-sm" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Observacion</label>
+                                    <textarea id="sObservacion" class="form-control form-control-sm" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-2 mb-2 d-flex align-items-end">
+                                    <button class="btn btn-danger btn-block btn-sm" id="btnGuardarSancion">
+                                        <i class="fas fa-save mr-1"></i> Guardar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- DataTable Sanciones -->
+                    <div class="table-responsive">
+                        <table id="tablaSanciones" class="table table-sm table-bordered table-striped w-100" style="font-size:.8rem;">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th><th>Carnet</th><th>Cargo</th><th>Tipo Falta</th><th>Grado</th>
+                                    <th>Sancion</th><th>Reincidencia</th><th>Categoria</th><th>Costo</th>
+                                    <th>F.Inicio</th><th>F.Fin</th><th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ======== TAB ACTAS ======== -->
+                <div class="tab-pane fade" id="panelActa" role="tabpanel">
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-warning text-dark" type="button" data-toggle="collapse" data-target="#formActa">
+                            <i class="fas fa-plus mr-1"></i> Nueva Acta
+                        </button>
+                    </div>
+                    <div class="collapse" id="formActa">
+                        <div class="card card-body bg-light mb-3 border-left-warning">
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Empleado</label>
+                                    <input type="text" id="aEmpleado" class="form-control form-control-sm" placeholder="Buscar por nombre o carnet..." autocomplete="off" />
+                                    <input type="hidden" id="aCarnet" />
+                                    <div id="aEmpleadoList" class="autocomplete-list"></div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small font-weight-bold">Categoria</label>
+                                    <input type="text" id="aCategoria" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="small font-weight-bold">Monto (C$)</label>
+                                    <input type="number" id="aMonto" class="form-control form-control-sm" step="0.01" />
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="small font-weight-bold">F.Inicio</label>
+                                    <input type="date" id="aFechaIni" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="small font-weight-bold">F.Fin</label>
+                                    <input type="date" id="aFechaFin" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-8 mb-2">
+                                    <label class="small font-weight-bold">Observacion</label>
+                                    <textarea id="aObservacion" class="form-control form-control-sm" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-2 mb-2 d-flex align-items-end">
+                                    <button class="btn btn-warning btn-block btn-sm text-dark" id="btnGuardarActa">
+                                        <i class="fas fa-save mr-1"></i> Guardar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="tablaActas" class="table table-sm table-bordered table-striped w-100" style="font-size:.8rem;">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th><th>Carnet</th><th>Cargo</th><th>Gerencia</th><th>Categoria</th>
+                                    <th>Monto</th><th>Observacion</th><th>F.Inicio</th><th>F.Fin</th><th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DOCUMENTO -->
+<div class="modal fade" id="modalDocumento" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:12px;">
+            <div class="modal-header text-white" style="background:linear-gradient(135deg,#e74a3b 0%,#b82315 100%);border-radius:12px 12px 0 0;">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-file-image mr-2"></i>Documento</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" style="opacity:1;text-shadow:none;"><span>&times;</span></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <input type="hidden" id="docId" /><input type="hidden" id="docTipo" /><input type="hidden" id="docCarnet" />
+                <div class="dropzone-rl text-center mb-3" id="dropzoneRL">
+                    <p class="mb-1"><i class="fas fa-cloud-upload-alt fa-2x text-muted"></i></p>
+                    <p class="small text-muted mb-1">Arrastra una imagen o PDF aqui, o haz clic para seleccionar</p>
+                    <input type="file" id="fileDocRL" accept="image/*,.pdf" class="form-control-file mx-auto" style="max-width:300px;" />
+                </div>
+                <div id="previewDocRL" class="text-center" style="max-height:60vh;overflow:auto;"></div>
+            </div>
+            <div class="modal-footer border-top-0 bg-light">
+                <button class="btn btn-success btn-sm shadow-sm" id="btnSubirDoc"><i class="fas fa-upload mr-1"></i> Subir</button>
+                <button class="btn btn-outline-danger btn-sm" id="btnEliminarDoc"><i class="fas fa-trash mr-1"></i> Eliminar</button>
+                <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script>
+        var urlBase = '@Url.Content("~/RLaborales/")';
+    </script>
+    <script src="~/onlinejs/rlaborales-core.js"></script>
+}

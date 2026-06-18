@@ -1,0 +1,199 @@
+﻿
+@{
+    ViewBag.Title = "Dashboard";
+}
+
+@Html.DevExpress().GetStyleSheets(
+   new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+      new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+<head>
+
+    <meta name="viewport" content="width=device-width,  user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+
+    @*<script src="~/Scripts/js/jquery-3.3.1.min.js"></script>*@
+    <script type="text/javascript" src="~/Scripts/js/Chart.min.js"></script>
+    <script type="text/javascript" src="~/Scripts/js/bootstrap.min.js"></script>
+
+
+</head>
+
+@*<script type="text/javascript">
+        var labels_e = [];
+        var types_e = [];
+        var values_e = [];
+        var colors_e = [];
+
+        var labels_d = [];
+        var types_d = [];
+        var values_d = [];
+        var colors_d = [];
+
+        $.ajax({
+            type: "POST",
+            url:'@Url.Action("GetChartExpensesExecutedAssignment", "Home")',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                $.each(data, function (key, val) {
+
+                    if (val.Type === 'Ejecutado') {
+                        labels_e.push(val.PeriodId);
+                        types_e.push(val.Type);
+                        values_e.push(val.Amount);
+                        colors_e.push('rgba(255, 0, 0, 1)')
+                    } else {
+                        labels_d.push(val.PeriodId);
+                        types_d.push(val.Type);
+                        values_d.push(val.Amount);
+                        colors_d.push('rgba(54, 162, 235, 1)')
+                    }
+                });
+                var ctx = document.getElementById("chartExpenseExeAsig");
+                var chartExpenseExeAsig = new Chart(ctx, {
+                    type: 'horizontalBar',
+                    data: {
+                        // labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                        labels: labels_d,
+                        datasets: [{
+                            label: 'Disponible',
+                            // data: [12, 19, 3, 5, 2, 3],
+                            data: values_d,
+                            backgroundColor: colors_d
+                        },
+                        {
+                            label: 'Ejecutado',
+                            data: values_e,
+                            backgroundColor: colors_e
+                        }
+
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        title: { display: true, text: 'Asignacion vs Ejecucion de Viáticos' },
+                        legend: { position: 'bottom' },
+                        scales: {
+                            yAxes: [{
+                                stacked: true,
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }],
+                            xAxes: [{ stacked: true }],
+                        }
+                    }
+                });
+
+            }
+        });
+    </script>*@
+<script type="text/javascript">
+    var labels_eh = [];
+    var types_eh = [];
+    var values_eh = [];
+    var colors_eh = [];
+
+    var labels_dh = [];
+    var types_dh = [];
+    var values_dh = [];
+    var colors_dh = [];
+
+    $.ajax({
+        type: "POST",
+        url: '@Url.Action("GetChartExtraTimeExecutedAssignment", "Home")', /* "/Home/GetChartExtraTimeExecutedAssignment",*/
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (data) {
+            $.each(data, function (key, val) {
+                console.log(val);
+                if (val.Type === 'Ejecutadas') {
+                    labels_eh.push(val.PeriodId);
+                    types_eh.push(val.Type);
+                    values_eh.push(val.Hours);
+                    colors_eh.push('rgba(255, 0, 0, 1)')
+                } else {
+                    labels_dh.push(val.PeriodId);
+                    types_dh.push(val.Type);
+                    values_dh.push(val.Hours);
+                    colors_dh.push('rgba(54, 162, 235, 1)')
+                }
+            });
+            var ctxx = document.getElementById("budgetExtraTime");
+            var budgetExtraTime = new Chart(ctxx, {
+                type: 'horizontalBar',
+                data: {
+                    // labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                    labels: labels_dh,
+                    datasets: [{
+                        label: 'Disponible',
+
+                        data: values_dh,
+                        backgroundColor: colors_dh
+                    },
+                    {
+                        label: 'Ejecutado',
+                        data: values_eh,
+                        backgroundColor: colors_eh
+                    }
+
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    title: { display: true, text: 'Asignacion vs Ejecucion de Horas Extras' },
+                    legend: { position: 'bottom' },
+                    scales: {
+                        yAxes: [{
+                            stacked: true,
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }],
+                        xAxes: [{ stacked: true }],
+                    }
+                }
+            });
+
+        }
+    });
+</script>
+
+
+<body>
+
+    @*<div>
+
+            <canvas id="chartExpenseExeAsig"> </canvas>
+
+        </div>*@
+
+    <div>
+        <canvas id="budgetExtraTime">  </canvas>
+    </div>
+
+
+
+</body>
+

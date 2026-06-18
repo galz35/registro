@@ -1,0 +1,165 @@
+﻿@{
+    ViewBag.Title = "Reporte Viáticos – Avanzado";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<!-- ====== KPI + Filtros ====== -->
+<div class="container-fluid mt-3">
+    <div id="kpiRow" class="row mb-4"></div>   <!-- ➊ aquí se inyectarán las tarjetas -->
+    <!-- Filtro fecha -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <label class="font-weight-bold">Seleccione fecha:</label>
+            <input type="text" id="fechafin" class="form-control" placeholder="DD/MM/YYYY">
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button class="btn btn-success btn-block" id="btnBuscar">Buscar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== TABLA ====== -->
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Consulta de Viáticos</h6></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tablaViaticos" class="table table-bordered table-hover table-sm" width="100%">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Empleado</th>
+                            <th>Departamento</th>
+                            <th>Gerencia</th>
+                            <th>Fecha Gasto</th>
+                            <th>Monto</th>
+                            <th>Rinde</th>
+                            <th>Categoría</th>
+                            <th>Subcategoría</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet" />
+
+    <script>
+    // Paleta para KPI dinámico (pastel/visibles)
+    const paleta = [
+        "#6c757d", "#007bff", "#dc3545", "#28a745", "#17a2b8",
+        "#ffc107", "#6610f2", "#fd7e14", "#e83e8c", "#20c997"
+    ];
+
+    // Datepicker solo día 8 o 18
+    $("#fechafin").datepicker({
+        dateFormat:'dd/mm/yy', changeMonth:true, changeYear:true,
+        beforeShowDay:d=>[(d.getDate()===8||d.getDate()===18)]
+    });
+
+    // DataTable inicial vacío
+    const tabla = $('#tablaViaticos').DataTable({
+        language:{ url:'@Url.Content("~/Scripts/datatable.es-ES.json")' },
+        dom:'Bfrtip', buttons:['excelHtml5'], responsive:true,
+        columns:[
+            { data:"EMPLOYEE_NUMBER"}, // enumeración
+            {data:"FULLNAME"},
+            {data:"DEPARTAMENTO"},
+            {data:"GERENCIA"},
+            {data:"EXPENSE_DATE",render:d=>moment(d).format("DD/MM/YYYY")},
+            {data:"AMOUNT", className:"text-right", render:d=>"C$"+(+d).toFixed(2)},
+            {data:"YIELD_AMOUNT",className:"text-right",render:d=>"C$"+(+d).toFixed(2)},
+            {data:"CATEGORY"},
+            {data:"SUBCATEGORY"},
+            {
+                data:"STATUS",
+                render: function(d,type,row,meta) {
+                    // badge pastel auto (también funciona con badge solo si deseas)
+                    return `<span class="badge" style="background:${getEstadoColor(d)};color:#fff;">${d}</span>`;
+                }
+            }
+        ],
+        drawCallback:function(){
+            const api=this.api(); let i=1;
+            api.rows({page:'current'}).every(function(){ this.cell(this.index(),0).data(i++); });
+        }
+    });
+
+    // Genera y asigna color estable para cada estado (en el orden que aparecen)
+    let estadoColorMap = {};
+    function getEstadoColor(estado) {
+        if (!estadoColorMap[estado]) {
+            const idx = Object.keys(estadoColorMap).length % paleta.length;
+            estadoColorMap[estado] = paleta[idx];
+        }
+        return estadoColorMap[estado];
+    }
+
+    // KPI completamente dinámico
+    function renderKPI(dataArr){
+        estadoColorMap = {}; // reinicia para cada búsqueda nueva
+        const cont = {};
+        dataArr.forEach(x => {
+            let est = x.STATUS;
+            cont[est] = (cont[est]||0)+1;
+        });
+        cont["Total"] = dataArr.length;
+
+        // Quita el anterior y renderiza nuevos KPI
+        const $row = $('#kpiRow').empty();
+        // Estados únicos (excluye "Total" para el orden)
+        const estados = Object.keys(cont).filter(e => e !== "Total");
+        [...estados, "Total"].forEach((estado) => {
+            const bg = (estado==="Total") ? "#343a40" : getEstadoColor(estado);
+            $row.append(`
+                <div class="col-md-2 mb-2">
+                  <div class="card text-white" style="background:${bg};">
+                    <div class="card-body p-2 text-center">
+                      <small>${estado}</small>
+                      <h4 class="m-0">${cont[estado]}</h4>
+                    </div>
+                  </div>
+                </div>
+            `);
+        });
+        $row.show();
+    }
+
+    // Buscar
+    $("#btnBuscar").click(function(){
+        const fecha=$("#fechafin").val();
+        if(!fecha){ alert("Seleccione una fecha válida."); return; }
+        $.ajax({
+            url:'@Url.Action("Reportefinanza22","Rrhh")',
+            type:'POST', data:{fechafin:fecha},
+            beforeSend:()=>$.LoadingOverlay("show"),
+            success:data=>{
+                tabla.clear().rows.add(data).draw();
+                renderKPI(data);
+            },
+            error:()=>alert("Error al cargar los datos."),
+            complete:()=>$.LoadingOverlay("hide")
+        });
+    });
+    </script>
+}

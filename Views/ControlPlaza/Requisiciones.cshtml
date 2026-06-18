@@ -1,0 +1,738 @@
+@{
+    ViewBag.Title = "Requisiciones de Personal";
+}
+
+<style>
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    .card {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        color: #000;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .kpi-card {
+        background-color: #ffffff;
+        color: #000;
+        border-left: 0.25rem solid #ff0000;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12) !important;
+    }
+
+    .kpi-card .card-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .kpi-card .card-body .icon {
+        font-size: 2.5em;
+        opacity: 0.7;
+        color: #ff0000;
+    }
+
+    .kpi-card.kpi-pendiente { border-left-color: #ffc107; }
+    .kpi-card.kpi-pendiente .icon { color: #ffc107; }
+    .kpi-card.kpi-aprobada { border-left-color: #28a745; }
+    .kpi-card.kpi-aprobada .icon { color: #28a745; }
+    .kpi-card.kpi-rechazada { border-left-color: #dc3545; }
+    .kpi-card.kpi-rechazada .icon { color: #dc3545; }
+
+    .animated { animation-duration: 0.8s; animation-fill-mode: both; }
+    .fadeInUp { animation-name: fadeInUp; }
+
+    @@keyframes fadeInUp {
+        from { opacity: 0; transform: translate3d(0, 30px, 0); }
+        to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    .table thead th {
+        background-color: #c0392b;
+        color: white;
+        text-transform: uppercase;
+        text-align: center;
+        font-size: 0.85em;
+    }
+
+    .table tbody tr td {
+        font-size: 0.88em;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    table.display tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .badge-pendiente { background-color: #ffc107; color: #333; }
+    .badge-aprobada { background-color: #28a745; color: #fff; }
+    .badge-rechazada { background-color: #dc3545; color: #fff; }
+
+    .badge {
+        font-size: 0.85em;
+        padding: 5px 10px;
+        border-radius: 12px;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        color: #000;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #c0392b;
+        color: #fff !important;
+    }
+
+    .nav-pills .nav-link {
+        color: #333 !important;
+        margin-right: 5px;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
+
+    .nav-pills .nav-link:hover {
+        background-color: #f8d7da;
+    }
+
+    .btn-nueva-req {
+        background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+        border: none;
+        color: #fff;
+        padding: 10px 24px;
+        font-size: 1em;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(192, 57, 43, 0.3);
+    }
+
+    .btn-nueva-req:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(192, 57, 43, 0.5);
+        color: #fff;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9em;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+</style>
+
+<div class="container-fluid">
+    <!-- Encabezado con titulo y boton -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="font-weight-bold text-dark mb-0">
+            <i class="fas fa-file-alt mr-2" style="color: #c0392b;"></i> Requisiciones de Personal
+        </h4>
+        <button class="btn btn-nueva-req" onclick="abrirModalNueva()">
+            <i class="fas fa-plus-circle mr-1"></i> Nueva Requisicion
+        </button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row">
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card shadow mb-4 animated fadeInUp delay-1">
+                <div class="card-body">
+                    <div>
+                        <div class="text-uppercase mb-1" style="font-size: 0.78em; font-weight: 600;">Total Requisiciones</div>
+                        <div class="h4 mb-0 font-weight-bold" id="kpiTotal">0</div>
+                    </div>
+                    <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card kpi-pendiente shadow mb-4 animated fadeInUp delay-2">
+                <div class="card-body">
+                    <div>
+                        <div class="text-uppercase mb-1" style="font-size: 0.78em; font-weight: 600;">Pendientes</div>
+                        <div class="h4 mb-0 font-weight-bold" id="kpiPendientes">0</div>
+                    </div>
+                    <div class="icon"><i class="fas fa-clock"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card kpi-aprobada shadow mb-4 animated fadeInUp delay-3">
+                <div class="card-body">
+                    <div>
+                        <div class="text-uppercase mb-1" style="font-size: 0.78em; font-weight: 600;">Aprobadas (Mes)</div>
+                        <div class="h4 mb-0 font-weight-bold" id="kpiAprobadas">0</div>
+                    </div>
+                    <div class="icon"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card kpi-rechazada shadow mb-4 animated fadeInUp delay-4">
+                <div class="card-body">
+                    <div>
+                        <div class="text-uppercase mb-1" style="font-size: 0.78em; font-weight: 600;">Rechazadas (Mes)</div>
+                        <div class="h4 mb-0 font-weight-bold" id="kpiRechazadas">0</div>
+                    </div>
+                    <div class="icon"><i class="fas fa-times-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Principal -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow animated fadeInUp">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold" style="color: #333;">Bandeja de Requisiciones</h6>
+                    <!-- Filtros por estado -->
+                    <ul class="nav nav-pills mb-0" id="filtroEstado">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-estado="" onclick="filtrarEstado(this, '')">Todas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-estado="Pendiente" onclick="filtrarEstado(this, 'Pendiente')">
+                                <i class="fas fa-clock mr-1"></i> Pendientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-estado="Aprobada" onclick="filtrarEstado(this, 'Aprobada')">
+                                <i class="fas fa-check mr-1"></i> Aprobadas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-estado="Rechazada" onclick="filtrarEstado(this, 'Rechazada')">
+                                <i class="fas fa-times mr-1"></i> Rechazadas
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tablaRequisiciones" class="table table-striped table-bordered" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Puesto</th>
+                                    <th>Tipo</th>
+                                    <th>Motivo</th>
+                                    <th>Solicitante</th>
+                                    <th>Fecha Solicitud</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Requisicion -->
+<div class="modal fade" id="modalNuevaRequisicion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color: #fff;">
+                <h5 class="modal-title"><i class="fas fa-plus-circle mr-2"></i> Nueva Requisicion de Personal</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formRequisicion">
+                    <div class="row">
+                        <!-- Plaza Origen -->
+                        <div class="col-md-12 mb-3">
+                            <div class="form-group">
+                                <label><i class="fas fa-link mr-1"></i> Plaza Origen (opcional - vincular a vacante)</label>
+                                <select id="cboPlazaOrigen" class="form-control">
+                                    <option value="">-- Sin vincular (plaza nueva) --</option>
+                                </select>
+                                <small class="form-text text-muted">Si la requisicion es para reemplazar una vacante existente, seleccione la posicion.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label><i class="fas fa-briefcase mr-1"></i> Puesto Solicitado *</label>
+                                <input type="text" id="txtPuesto" class="form-control" placeholder="Ej: Analista de Sistemas" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label><i class="fas fa-tag mr-1"></i> Tipo *</label>
+                                <div class="mt-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="tipoReq" id="tipoNueva" value="S">
+                                        <label class="form-check-label" for="tipoNueva">Nueva Plaza</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="tipoReq" id="tipoReemplazo" value="N" checked>
+                                        <label class="form-check-label" for="tipoReemplazo">Reemplazo</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt mr-1"></i> Ubicacion</label>
+                                <select id="cboUbicacion" class="form-control">
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Managua - Edificio Central">Managua - Edificio Central</option>
+                                    <option value="Managua - Data Center">Managua - Data Center</option>
+                                    <option value="Managua - Altamira">Managua - Altamira</option>
+                                    <option value="Leon">Leon</option>
+                                    <option value="Chinandega">Chinandega</option>
+                                    <option value="Matagalpa">Matagalpa</option>
+                                    <option value="Esteli">Esteli</option>
+                                    <option value="Granada">Granada</option>
+                                    <option value="Masaya">Masaya</option>
+                                    <option value="Rivas">Rivas</option>
+                                    <option value="Jinotega">Jinotega</option>
+                                    <option value="Bluefields">Bluefields</option>
+                                    <option value="Puerto Cabezas">Puerto Cabezas</option>
+                                    <option value="Juigalpa">Juigalpa</option>
+                                    <option value="Otra">Otra</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label><i class="fas fa-exclamation-circle mr-1"></i> Motivo *</label>
+                                <select id="cboMotivo" class="form-control" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Renuncia">Renuncia</option>
+                                    <option value="Plaza Nueva">Plaza Nueva</option>
+                                    <option value="Traslado">Traslado</option>
+                                    <option value="Promocion">Promocion</option>
+                                    <option value="Despido">Despido</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label><i class="fas fa-user-tie mr-1"></i> Reporta A</label>
+                                <input type="text" id="txtReporta" class="form-control" placeholder="Nombre del jefe directo" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label><i class="fas fa-align-left mr-1"></i> Justificacion *</label>
+                                <textarea id="txtJustificacion" class="form-control" rows="4" placeholder="Describa el motivo detallado de esta requisicion..." required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-nueva-req" onclick="enviarRequisicion()">
+                    <i class="fas fa-paper-plane mr-1"></i> Enviar Requisicion
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Resolver Requisicion -->
+<div class="modal fade" id="modalResolver" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #2c3e50; color: #fff;">
+                <h5 class="modal-title"><i class="fas fa-gavel mr-2"></i> Resolver Requisicion</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="resolverRequisicionId" />
+                <div class="mb-3">
+                    <p class="mb-1"><strong>Puesto:</strong> <span id="resolverPuesto"></span></p>
+                    <p class="mb-1"><strong>Solicitante:</strong> <span id="resolverSolicitante"></span></p>
+                    <p class="mb-1"><strong>Motivo:</strong> <span id="resolverMotivo"></span></p>
+                </div>
+                <hr />
+                <div class="form-group">
+                    <label><i class="fas fa-comment mr-1"></i> Comentario de RRHH</label>
+                    <textarea id="txtComentarioRRHH" class="form-control" rows="3" placeholder="Agregue un comentario (opcional para aprobar, obligatorio para rechazar)..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="resolverReq('Rechazada')">
+                    <i class="fas fa-times mr-1"></i> Rechazar
+                </button>
+                <button type="button" class="btn btn-success" onclick="resolverReq('Aprobada')">
+                    <i class="fas fa-check mr-1"></i> Aprobar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle -->
+<div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #34495e; color: #fff;">
+                <h5 class="modal-title"><i class="fas fa-info-circle mr-2"></i> Detalle de Requisicion</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="detalleContenido">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+
+    <script>
+        var tablaReq = null;
+        var filtroActual = '';
+
+        $(document).ready(function () {
+            cargarKPIs();
+            inicializarTabla();
+            cargarVacantes();
+        });
+
+        // ===== KPIs =====
+        function cargarKPIs() {
+            $.ajax({
+                url: '@Url.Action("ObtenerKPIsRequisiciones", "ControlPlaza")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    animarNumero('#kpiTotal', data.Total || 0);
+                    animarNumero('#kpiPendientes', data.Pendientes || 0);
+                    animarNumero('#kpiAprobadas', data.AprobadasMes || 0);
+                    animarNumero('#kpiRechazadas', data.RechazadasMes || 0);
+                },
+                error: function () {
+                    console.error('Error al cargar KPIs');
+                }
+            });
+        }
+
+        function animarNumero(selector, valor) {
+            var $el = $(selector);
+            $({ num: parseInt($el.text()) || 0 }).animate({ num: valor }, {
+                duration: 600,
+                easing: 'swing',
+                step: function () { $el.text(Math.floor(this.num)); },
+                complete: function () { $el.text(valor); }
+            });
+        }
+
+        // ===== TABLA =====
+        function inicializarTabla() {
+            tablaReq = $('#tablaRequisiciones').DataTable({
+                "ajax": {
+                    "url": '@Url.Action("ObtenerRequisiciones", "ControlPlaza")',
+                    "type": "GET",
+                    "datatype": "json",
+                    "data": function (d) {
+                        d.estado = filtroActual;
+                    }
+                },
+                "columns": [
+                    { "data": "RequisicionId" },
+                    { "data": "NombrePuesto" },
+                    {
+                        "data": "Nueva",
+                        "render": function (data) {
+                            if (data === 'S') {
+                                return '<span class="badge" style="background-color:#3498db; color:#fff;">Nueva</span>';
+                            }
+                            return '<span class="badge" style="background-color:#95a5a6; color:#fff;">Reemplazo</span>';
+                        }
+                    },
+                    { "data": "Motivo" },
+                    { "data": "SolicitanteNombre" },
+                    {
+                        "data": "FechaSolicitud",
+                        "render": function (data) {
+                            if (!data) return '';
+                            return moment(data).format('DD/MM/YYYY HH:mm');
+                        }
+                    },
+                    {
+                        "data": "Estado",
+                        "render": function (data) {
+                            var cls = 'badge-pendiente';
+                            if (data === 'Aprobada') cls = 'badge-aprobada';
+                            else if (data === 'Rechazada') cls = 'badge-rechazada';
+                            return '<span class="badge ' + cls + '">' + data + '</span>';
+                        }
+                    },
+                    {
+                        "data": "RequisicionId",
+                        "render": function (data, type, row) {
+                            var btns = '<div class="btn-group btn-group-sm">';
+                            btns += '<button class="btn btn-info btn-sm" onclick="verDetalle(' + JSON.stringify(row).replace(/"/g, '&quot;') + ')" title="Ver Detalle"><i class="fas fa-eye"></i></button>';
+                            if (row.Estado === 'Pendiente') {
+                                btns += ' <button class="btn btn-success btn-sm" onclick="abrirResolver(' + data + ', \'' + (row.NombrePuesto || '').replace(/'/g, "\\'") + '\', \'' + (row.SolicitanteNombre || '').replace(/'/g, "\\'") + '\', \'' + (row.Motivo || '').replace(/'/g, "\\'") + '\')" title="Resolver"><i class="fas fa-gavel"></i></button>';
+                            }
+                            btns += '</div>';
+                            return btns;
+                        },
+                        "orderable": false,
+                        "searchable": false
+                    }
+                ],
+                "dom": 'Blfrtip',
+                "buttons": [
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="fas fa-file-excel mr-1"></i> Excel',
+                        className: 'btn btn-sm btn-success',
+                        title: 'Requisiciones de Personal'
+                    }
+                ],
+                "lengthMenu": [10, 25, 50, 100],
+                "pageLength": 25,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                "responsive": true,
+                "order": [[5, 'desc']]
+            });
+        }
+
+        // ===== FILTROS =====
+        function filtrarEstado(el, estado) {
+            $('#filtroEstado .nav-link').removeClass('active');
+            $(el).addClass('active');
+            filtroActual = estado;
+            tablaReq.ajax.reload();
+        }
+
+        // ===== CARGAR VACANTES =====
+        function cargarVacantes() {
+            $.ajax({
+                url: '@Url.Action("ObtenerVacantesParaRequisicion", "ControlPlaza")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    var sel = $('#cboPlazaOrigen');
+                    if (response.data) {
+                        response.data.forEach(function (v) {
+                            sel.append('<option value="' + v.PositionCode + '">[' + v.PositionCode + '] ' + v.NombrePosicion + ' - ' + v.GERENCIA + ' (' + v.Categoria + ')</option>');
+                        });
+                    }
+                }
+            });
+        }
+
+        // ===== MODAL NUEVA =====
+        function abrirModalNueva() {
+            $('#formRequisicion')[0].reset();
+            $('#cboPlazaOrigen').val('');
+            $('#tipoReemplazo').prop('checked', true);
+            $('#modalNuevaRequisicion').modal('show');
+        }
+
+        // Prellenar desde vacante (para integracion con Control.cshtml)
+        function abrirModalDesdeVacante(positionCode, nombrePosicion) {
+            abrirModalNueva();
+            $('#cboPlazaOrigen').val(positionCode);
+            $('#txtPuesto').val(nombrePosicion);
+            $('#tipoReemplazo').prop('checked', true);
+        }
+
+        // ===== ENVIAR REQUISICION =====
+        function enviarRequisicion() {
+            var puesto = $('#txtPuesto').val().trim();
+            var motivo = $('#cboMotivo').val();
+            var justificacion = $('#txtJustificacion').val().trim();
+
+            if (!puesto) {
+                Swal.fire('Campo requerido', 'Ingrese el puesto solicitado.', 'warning');
+                return;
+            }
+            if (!motivo) {
+                Swal.fire('Campo requerido', 'Seleccione un motivo.', 'warning');
+                return;
+            }
+            if (!justificacion) {
+                Swal.fire('Campo requerido', 'Ingrese la justificacion.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Confirmar envio',
+                text: 'Esta seguro de enviar esta requisicion?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#c0392b',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Si, enviar',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    var datos = {
+                        PositionCode: $('#cboPlazaOrigen').val() || null,
+                        NombrePuesto: puesto,
+                        Nueva: $('input[name="tipoReq"]:checked').val(),
+                        Ubicacion: $('#cboUbicacion').val(),
+                        Motivo: motivo,
+                        Reporta: $('#txtReporta').val().trim(),
+                        Justificacion: justificacion
+                    };
+
+                    $.ajax({
+                        url: '@Url.Action("CrearRequisicion", "ControlPlaza")',
+                        type: 'POST',
+                        data: datos,
+                        success: function (resp) {
+                            if (resp.success) {
+                                $('#modalNuevaRequisicion').modal('hide');
+                                Swal.fire('Enviada', resp.message, 'success');
+                                tablaReq.ajax.reload();
+                                cargarKPIs();
+                            } else {
+                                Swal.fire('Error', resp.message, 'error');
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Error de conexion al servidor.', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // ===== RESOLVER =====
+        function abrirResolver(id, puesto, solicitante, motivo) {
+            $('#resolverRequisicionId').val(id);
+            $('#resolverPuesto').text(puesto);
+            $('#resolverSolicitante').text(solicitante);
+            $('#resolverMotivo').text(motivo);
+            $('#txtComentarioRRHH').val('');
+            $('#modalResolver').modal('show');
+        }
+
+        function resolverReq(estado) {
+            var id = $('#resolverRequisicionId').val();
+            var comentario = $('#txtComentarioRRHH').val().trim();
+
+            if (estado === 'Rechazada' && !comentario) {
+                Swal.fire('Comentario requerido', 'Debe agregar un comentario al rechazar.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Confirmar ' + (estado === 'Aprobada' ? 'aprobacion' : 'rechazo'),
+                text: 'Esta seguro de ' + (estado === 'Aprobada' ? 'aprobar' : 'rechazar') + ' esta requisicion?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: estado === 'Aprobada' ? '#28a745' : '#dc3545',
+                confirmButtonText: 'Si, confirmar',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("ResolverRequisicion", "ControlPlaza")',
+                        type: 'POST',
+                        data: {
+                            requisicionId: id,
+                            estado: estado,
+                            comentario: comentario
+                        },
+                        success: function (resp) {
+                            if (resp.success) {
+                                $('#modalResolver').modal('hide');
+                                Swal.fire(estado, resp.message, 'success');
+                                tablaReq.ajax.reload();
+                                cargarKPIs();
+                            } else {
+                                Swal.fire('Error', resp.message, 'error');
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Error de conexion al servidor.', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // ===== DETALLE =====
+        function verDetalle(row) {
+            var estadoBadge = 'badge-pendiente';
+            if (row.Estado === 'Aprobada') estadoBadge = 'badge-aprobada';
+            else if (row.Estado === 'Rechazada') estadoBadge = 'badge-rechazada';
+
+            var html = '<div class="row">';
+            html += '<div class="col-md-6"><p><strong>ID:</strong> ' + row.RequisicionId + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Estado:</strong> <span class="badge ' + estadoBadge + '">' + row.Estado + '</span></p></div>';
+            html += '<div class="col-md-6"><p><strong>Puesto:</strong> ' + (row.NombrePuesto || '') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Tipo:</strong> ' + (row.Nueva === 'S' ? 'Nueva Plaza' : 'Reemplazo') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Motivo:</strong> ' + (row.Motivo || '') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Ubicacion:</strong> ' + (row.Ubicacion || 'N/A') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Reporta A:</strong> ' + (row.Reporta || 'N/A') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Solicitante:</strong> ' + (row.SolicitanteNombre || '') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Fecha Solicitud:</strong> ' + (row.FechaSolicitud ? moment(row.FechaSolicitud).format('DD/MM/YYYY HH:mm') : '') + '</p></div>';
+            html += '<div class="col-md-6"><p><strong>Position Code:</strong> ' + (row.PositionCode || 'N/A') + '</p></div>';
+            html += '<div class="col-md-12"><hr/><p><strong>Justificacion:</strong></p><p>' + (row.Justificacion || 'Sin justificacion') + '</p></div>';
+
+            if (row.ComentarioRRHH) {
+                html += '<div class="col-md-12"><hr/><p><strong>Comentario RRHH:</strong></p><p>' + row.ComentarioRRHH + '</p></div>';
+            }
+            if (row.FechaResolucion) {
+                html += '<div class="col-md-6"><p><strong>Fecha Resolucion:</strong> ' + moment(row.FechaResolucion).format('DD/MM/YYYY HH:mm') + '</p></div>';
+                html += '<div class="col-md-6"><p><strong>Resuelto Por:</strong> ' + (row.ResueltoPor || '') + '</p></div>';
+            }
+
+            html += '</div>';
+            $('#detalleContenido').html(html);
+            $('#modalDetalle').modal('show');
+        }
+    </script>
+}

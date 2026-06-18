@@ -1,0 +1,728 @@
+﻿@* Vista V4/V6 con filtros por columna en thead (fila extra bajo encabezado) *@
+@{
+}
+<link href="~/onlinecss/bootstrap533.min.css" rel="stylesheet" />
+<link href="~/onlinecss/leaflet.css" rel="stylesheet" />
+<link href="~/onlinecss/datatables218.min.css" rel="stylesheet" />
+<link href="~/onlinecss/MarkerCluster.css" rel="stylesheet" />
+<link href="~/onlinecss/MarkerCluster.Default.css" rel="stylesheet" />
+
+<style>
+    :root {
+        --rojo: #dc3545;
+        --verde: #28a745;
+        --naranja: #fd7e14;
+        --azul: #0d6efd;
+        --morado: #6f42c1;
+        --bg: #f5f6fa;
+        --txt: #111;
+        --muted: #6c757d;
+        --green-soft: #e8f7ee;
+        --orange-soft: #fff3e6;
+        --red-soft: #fdecef;
+        --chip-bg: #fff;
+        --chip-shadow: 0 6px 16px rgba(0,0,0,.08)
+    }
+
+    body {
+        background: var(--bg)
+    }
+
+    .toolbar-card {
+        border: 0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(0,0,0,.08)
+    }
+
+    .tool-flex {
+        display: flex;
+        align-items: end;
+        gap: .75rem;
+        flex-wrap: wrap
+    }
+
+        .tool-flex .form-label {
+            font-size: .8rem;
+            color: #555;
+            margin-bottom: .25rem
+        }
+
+    .btn-compact {
+        padding: .35rem .6rem;
+        font-size: .9rem;
+        white-space: nowrap
+    }
+
+    .kpi-wrap {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap
+    }
+
+    .kpi {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .45rem .7rem;
+        border-radius: 999px;
+        background: var(--chip-bg);
+        box-shadow: var(--chip-shadow);
+        cursor: pointer;
+        user-select: none;
+        border: 1px solid #eee;
+        transition: transform .08s,box-shadow .12s,background .15s
+    }
+
+        .kpi:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0,0,0,.10)
+        }
+
+        .kpi.active {
+            background: #eef3ff;
+            border-color: #cfe2ff
+        }
+
+        .kpi .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%
+        }
+
+        .kpi .lbl {
+            font-size: .8rem;
+            color: #555
+        }
+
+        .kpi .val {
+            font-weight: 800;
+            font-size: .95rem;
+            letter-spacing: .2px
+        }
+
+    /* MAPA */
+    #mapGlobal {
+        height: 62vh;
+        min-height: 420px;
+        border-radius: 16px;
+        box-shadow: 0 6px 16px rgba(0,0,0,.08);
+        position: relative;
+        z-index: 0
+    }
+
+        #mapGlobal .leaflet-pane, #mapGlobal .leaflet-control, #mapGlobal .leaflet-top, #mapGlobal .leaflet-bottom {
+            z-index: -1 !important
+        }
+
+    .map-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.55);
+        z-index: 5
+    }
+
+    .d-none {
+        display: none !important
+    }
+
+    .pin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        color: #fff;
+        font-weight: 700;
+        border: 2px solid rgba(0,0,0,.2);
+        box-shadow: 0 2px 6px rgba(0,0,0,.25)
+    }
+
+        .pin.in {
+            background: var(--verde);
+            border-color: #1e7e34
+        }
+
+        .pin.out {
+            background: var(--rojo);
+            border-color: #b21f2d
+        }
+
+        .pin.mix {
+            background: var(--morado);
+            border-color: #512e90
+        }
+
+    .legend {
+        padding: 6px 10px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.2)
+    }
+
+    .icon-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%
+    }
+
+    .lbl {
+        background: #fff;
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        box-shadow: 0 1px 4px rgba(0,0,0,.2);
+        font-size: .85rem;
+        white-space: nowrap
+    }
+
+    table.dataTable tbody td {
+        vertical-align: middle
+    }
+
+    .col-fecha {
+        width: 68px !important;
+        text-align: center
+    }
+
+    .tag {
+        display: inline-block;
+        padding: .18rem .55rem;
+        border-radius: 10px;
+        font-size: .78rem;
+        font-weight: 700
+    }
+
+    .tag-in {
+        background: #d1e7dd;
+        color: #0f5132
+    }
+
+    .tag-out {
+        background: #ffe5d0;
+        color: #663c00
+    }
+
+    .tag-nogps {
+        background: #e2e3e5;
+        color: #343a40
+    }
+
+    .tag-none {
+        background: #f5c2c7;
+        color: #58151c
+    }
+
+    .prec-note {
+        font-weight: 700;
+        font-size: .72rem;
+        margin-left: .35rem;
+        padding: .05rem .4rem;
+        border-radius: 8px;
+        border: 1px solid #eee
+    }
+
+    .prec-good {
+        background: #e7f5ff;
+        color: #0b5ed7
+    }
+
+    .prec-warn {
+        background: #fff3cd;
+        color: #664d03
+    }
+    /* 500–699m */
+    .prec-bad {
+        background: #fde2e4;
+        color: #842029
+    }
+    /* ≥700m */
+
+    .row-dentro {
+        background: var(--green-soft) !important
+    }
+
+    .row-fuera {
+        background: var(--orange-soft) !important
+    }
+
+    .row-nomarca {
+        background: var(--red-soft) !important
+    }
+
+    #loading {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.6);
+        z-index: 2000
+    }
+
+    /* UI global sobre mapa */
+    .offcanvas, .modal, .dropdown-menu, .popover, .tooltip, .menu-lateral, .main-popup {
+        position: relative;
+        z-index: 5000 !important
+    }
+
+    .modal-backdrop, .offcanvas-backdrop {
+        z-index: 4990 !important
+    }
+
+    .leaflet-popup, .leaflet-tooltip, .leaflet-control-container {
+        z-index: 1000 !important
+    }
+
+    body.menu-open #mapGlobal {
+        pointer-events: none
+    }
+
+    /* Fila de filtros compacta */
+    #tblGeoDia thead tr.filtros th {
+        padding: .3rem
+    }
+
+    #tblGeoDia thead tr.filtros input,
+    #tblGeoDia thead tr.filtros select {
+        height: 30px;
+        font-size: .8rem
+    }
+</style>
+
+<div class="container-fluid py-3">
+    <div class="toolbar-card p-3 mb-3">
+        <div class="tool-flex">
+            <div>
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" id="fi" class="form-control form-control-sm" style="min-width:145px">
+            </div>
+            <div>
+                <label class="form-label">Fecha fin</label>
+                <input type="date" id="ff" class="form-control form-control-sm" style="min-width:145px">
+            </div>
+            <div>
+                <label class="form-label">Radio (m)</label>
+                <input type="number" id="radio" class="form-control form-control-sm" value="150" min="10" step="10" style="width:110px">
+            </div>
+            <div class="form-check ms-1" style="padding-bottom:.35rem">
+                <input class="form-check-input" type="checkbox" id="chkSoloSel" checked>
+                <label class="form-check-label" for="chkSoloSel">Solo seleccionado en mapa</label>
+            </div>
+            <button id="btnBuscar" class="btn btn-dark btn-compact ms-1">Buscar</button>
+
+            <div class="kpi-wrap ms-auto">
+                <div class="kpi" data-kpi="dentro"><span class="dot" style="background:var(--verde)"></span><span class="lbl">Dentro</span><span class="val" id="kpiDentroVal">0</span></div>
+                <div class="kpi" data-kpi="fuera"><span class="dot" style="background:var(--naranja)"></span><span class="lbl">Fuera</span><span class="val" id="kpiFueraVal">0</span></div>
+                <div class="kpi" data-kpi="singps"><span class="dot" style="background:#888)"></span><span class="lbl">Sin GPS</span><span class="val" id="kpiSinGPSVal">0</span></div>
+                <div class="kpi" data-kpi="sinmarca"><span class="dot" style="background:var(--rojo)"></span><span class="lbl">Sin marca</span><span class="val" id="kpiSinMarcaVal">0</span></div>
+                <div class="kpi" data-kpi=""><span class="dot" style="background:#222"></span><span class="lbl">Total</span><span class="val" id="kpiTotalVal">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-xl-4">
+            <div id="mapGlobal" class="bg-white">
+                <div id="mapLoading" class="map-loading d-none">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="small mt-2">Cargando mapa…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-8">
+            <table id="tblGeoDia" class="table table-striped table-hover w-100 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mapa</th>
+                        <th class="col-fecha">Fec.</th>
+                        <th>Carnet</th>
+                        <th>Nombre</th>
+                        <th>Gerencia</th>
+                        <th>Ubicación</th>
+                        <th>Hora IN</th>
+                        <th>Estado IN</th>
+                        <th>Hora OUT</th>
+                        <th>Estado OUT</th>
+                        <th>Depto</th>
+                        <th>Dispositivo IN</th>
+                        <th>Dispositivo OUT</th>
+                    </tr>
+                    @* La segunda fila con filtros se inyecta por JS clonando este <tr> *@
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- overlay global -->
+<div id="loading" class="d-none">
+    <div class="text-center">
+        <div class="spinner-border" role="status"></div>
+        <div class="small mt-2">Consultando datos…</div>
+    </div>
+</div>
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.7.1.min.js"></script>
+    <script src="~/onlinejs/datatables2.1.8.min.js"></script>
+    <script src="~/onlinejs/bootstrap5.3.3.bundle.min.js"></script>
+    <script src="~/onlinejs/leaflet.js"></script>
+    <script src="~/onlinejs/leaflet.markercluster.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <link href="~/onlinecss/buttons.dataTables.min.css" rel="stylesheet" />
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+
+    <script>
+$(function () {
+  /* ==== Precisión ==== */
+  const PREC_WARN = 500, PREC_BAD = 700;
+
+  /* ==== Mapa ==== */
+  let map, clusterIn, clusterOut, selectedLayer=L.layerGroup(), ringsLayer=L.layerGroup();
+  function initMap(){
+    map = L.map('mapGlobal').setView([12.12,-86.25], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+    clusterIn  = L.markerClusterGroup({ spiderfyOnMaxZoom:true, showCoverageOnHover:false });
+    clusterOut = L.markerClusterGroup({ spiderfyOnMaxZoom:true, showCoverageOnHover:false });
+    L.control.layers(null, { 'Entradas': clusterIn, 'Salidas': clusterOut }, { collapsed:false }).addTo(map);
+    legend(map);
+    ringsLayer.addTo(map);
+    selectedLayer.addTo(map);
+    window.addEventListener('resize', ()=> setTimeout(()=> map.invalidateSize(true), 80));
+  }
+  function legend(target){
+    const ctl = L.control({position:'bottomright'});
+    ctl.onAdd = function(){
+      const div = L.DomUtil.create('div','legend');
+      div.innerHTML =
+        '<div class="small"><span class="icon-dot me-2" style="background:var(--verde)"></span>Entrada</div>'+
+        '<div class="small"><span class="icon-dot me-2" style="background:var(--rojo)"></span>Salida</div>'+
+        '<div class="small"><span class="icon-dot me-2" style="background:var(--azul)"></span>Radios permitidos</div>'+
+        '<div class="small"><span class="icon-dot me-2" style="background:var(--morado)"></span>IN & OUT juntos</div>';
+      return div;
+    };
+    ctl.addTo(target);
+  }
+  function divIcon(kind){
+    const clazz = kind==='in'?'pin in':kind==='out'?'pin out':'pin mix';
+    const txt   = kind==='in'?'E':kind==='out'?'S':'ES';
+    return L.divIcon({className:clazz, html:txt, iconSize:[28,28], iconAnchor:[14,14]});
+  }
+  const varAzul = () => getComputedStyle(document.documentElement).getPropertyValue('--azul').trim() || '#0d6efd';
+
+  /* ==== Helpers ==== */
+  const fmtHora = h => h ? String(h).substring(0,8) : '';
+  const fmtPrec = p => (p!=null && p!=='' && !isNaN(p)) ? ` ±${parseInt(p,10)} m` : '';
+  function precClass(p){ if(p==null||p==='')return ''; const v=Number(p); if(v>=PREC_BAD)return'prec-bad'; if(v>=PREC_WARN)return'prec-warn'; return'prec-good'; }
+  function chipEstado(cat, dist, prec){
+    if(!cat || cat==='SIN MARCA') return `<span class="tag tag-none">Sin marca</span>`;
+    if(cat==='SIN COORDENADA')   return `<span class="tag tag-nogps">Sin GPS</span>`;
+    const d=(dist!=null&&dist!==''&&!isNaN(dist))?` · ${parseInt(dist,10)} m`:'';
+    const base=(cat==='DENTRO DE RADIO')?'tag-in':(cat==='FUERA DE RADIO')?'tag-out':'bg-light text-dark';
+    const pStr=fmtPrec(prec), pc=precClass(prec);
+    const warn=(pc==='prec-warn'||pc==='prec-bad')
+      ? ` <span class="prec-note ${pc}">⚠ Precisión ${prec>=PREC_BAD?'muy mala':'baja'}${pStr.replace(' ±',' · ')}</span>`
+      : (pStr?` <span class="prec-note ${pc}">${pStr.replace(' ±','± ')}</span>`:'');
+    return `<span class="tag ${base}">${cat}${d}</span>${warn}`;
+  }
+  function peorClase(r){
+    const no=( !r.HoraEntrada && !r.HoraSalida ) || (r.CategoriaEntrada==='SIN MARCA' && r.CategoriaSalida==='SIN MARCA');
+    if(no) return 'row-nomarca';
+    if(r.CategoriaEntrada==='FUERA DE RADIO' || r.CategoriaSalida==='FUERA DE RADIO') return 'row-fuera';
+    if(r.CategoriaEntrada==='DENTRO DE RADIO' || r.CategoriaSalida==='DENTRO DE RADIO') return 'row-dentro';
+    return '';
+  }
+
+  /* ==== Filtro KPI (actualizado a índices reales) ==== */
+  const COL_EST_IN = 7, COL_EST_OUT = 9; // Estado IN y OUT
+  let currentKpi=null;
+  $.fn.dataTable.ext.search.push(function(settings,data){
+    if (settings.nTable.id !== 'tblGeoDia') return true;
+    if(!currentKpi) return true;
+    const inTxt  = (data[COL_EST_IN]  || '').toLowerCase();
+    const outTxt = (data[COL_EST_OUT] || '').toLowerCase();
+    if(currentKpi==='dentro'   && !(inTxt.includes('dentro') || outTxt.includes('dentro'))) return false;
+    if(currentKpi==='fuera'    && !(inTxt.includes('fuera')  || outTxt.includes('fuera')))  return false;
+    if(currentKpi==='singps'   && !(inTxt.includes('sin gps')|| outTxt.includes('sin gps')))return false;
+    if(currentKpi==='sinmarca' && !(inTxt.includes('sin marca') && outTxt.includes('sin marca'))) return false;
+    return true;
+  });
+
+  /* ==== Mapa ON ==== */
+  initMap();
+
+  /* ==== Dispositivo ==== */
+  function renderDevice(d){
+    if (!d) return '<span class="text-muted">N/A</span>';
+    if (d === 'Móvil') return '<span class="badge bg-success">📱 Móvil</span>';
+    if (d === 'Computador') return '<span class="badge bg-primary">🌐 Web</span>';
+    return d;
+  }
+
+  /* ==== Filtros por columna: Clonar encabezado y dibujar inputs/selects ==== */
+  const $thead   = $('#tblGeoDia thead');
+  const $filtros = $thead.find('tr').first().clone(false).addClass('filtros').appendTo($thead);
+
+  $filtros.find('th').each(function(i){
+    if (i === 0){ $(this).html(''); return; } // sin filtro en "Mapa"
+
+    // Select para Estados IN/OUT
+    if (i === 7 || i === 9){
+      $(this).html(
+        '<select class="form-select form-select-sm">' +
+          '<option value="">Todos</option>' +
+          '<option value="Dentro">Dentro</option>' +
+          '<option value="Fuera">Fuera</option>' +
+          '<option value="Sin GPS">Sin GPS</option>' +
+          '<option value="Sin marca">Sin marca</option>' +
+        '</select>'
+      );
+      return;
+    }
+    // Input texto para las demás columnas
+    const titulo = $thead.find('tr').first().find('th').eq(i).text().trim();
+    $(this).html('<input type="text" class="form-control form-control-sm" placeholder="Filtrar ' + titulo + '">');
+  });
+
+  /* ==== DataTable ==== */
+  const tabla = $('#tblGeoDia').DataTable({
+    processing:true,
+    language:{ processing:'<div class="spinner-border spinner-border-sm" role="status"></div> Cargando…' },
+    ajax:{
+      url:'@Url.Action("MarcasWebV4Json","ExtraTime")',
+      data: d => { d.fechaIni=$('#fi').val(); d.fechaFin=$('#ff').val(); d.radio=$('#radio').val(); }
+    },
+    deferRender:true, stateSave:true, responsive:true, autoWidth:false,
+    fixedHeader:true, orderCellsTop:true, /* <-- necesario para filtros en thead */
+    pageLength:5, lengthMenu:[5,10,20,50],
+    dom:"<'row mb-2'<'col-sm-12 col-md-6'f><'col-sm-12 col-md-6 text-end'B>>t<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+    buttons:[{ extend:'excelHtml5', text:'📥 Exportar Excel', className:'btn btn-success btn-sm' }],
+    columnDefs:[
+      { targets:0, orderable:false, searchable:false, width:'64px', responsivePriority:0 },
+      { targets:1, className:'col-fecha', responsivePriority:1 },
+      { targets:3, responsivePriority:2 },
+      { targets:[11,12], className:'all', responsivePriority:0 },
+      { targets:'_all', defaultContent:'' }
+    ],
+    columns:[
+      { data:null, render:r=>{
+          const hasEntGPS = r.LatEntrada!=null && r.LonEntrada!=null;
+          const hasSalGPS = r.LatSalida !=null && r.LonSalida!=null;
+          const hasAny = hasEntGPS || hasSalGPS;
+          return hasAny
+            ? `<button class="btn btn-outline-success btn-compact ver-mapa" title="Enfocar en el mapa">Ver</button>`
+            : (r.HoraEntrada||r.HoraSalida) ? `<span class="text-muted small">Sin GPS</span>` : `<span class="text-muted small">Sin marca</span>`;
+        }},
+      { data:'Fecha', render:d=> d? moment(d).format('DD/MM'):'' },
+      { data:'carnet' },
+      { data:'nombre_completo' },
+      { data:'OGERENCIA' },
+      { data:'DefaultUbicacion' },
+      { data:'HoraEntrada', render:d=> fmtHora(d) },
+      { data:null, render:r=> chipEstado(r.CategoriaEntrada, r.DistanciaEntrada, r.PrecisionIn) },
+      { data:'HoraSalida',  render:d=> fmtHora(d) },
+      { data:null, render:r=> chipEstado(r.CategoriaSalida,  r.DistanciaSalida,  r.PrecisionOut) },
+      { data:'oDEPARTAMENTO' },
+      { data:null, title:'Dispositivo IN',  render:r=> renderDevice(r.DispositivoIn  ?? r.dispositivoIn)  },
+      { data:null, title:'Dispositivo OUT', render:r=> renderDevice(r.DispositivoOut ?? r.dispositivoOut) }
+    ],
+    createdRow:(row,data)=>{ const cls = peorClase(data); if (cls) $(row).addClass(cls); },
+    drawCallback:function(){
+      const all = this.api().data().toArray();
+      if (!$('#chkSoloSel').is(':checked')) pintarClusters(all);
+      actualizarKPIs(all);
+    },
+    order:[[1,'asc'],[4,'asc']],
+    /* Enlazar filtros por columna */
+    initComplete:function(){
+      const api = this.api();
+      $thead.find('tr.filtros th').each(function(i){
+        const $el = $(this).find('input,select');
+        if(!$el.length) return;
+        $el.on('keyup change clear', function(){
+          const val = this.value;
+          if (api.column(i).search() !== val){
+            api.column(i).search(val).draw();
+          }
+        });
+      });
+    }
+  });
+
+  /* ==== Loading global ==== */
+  const $loading = $('#loading');
+  $('#tblGeoDia').on('preXhr.dt', ()=> $loading.removeClass('d-none'))
+                 .on('xhr.dt error.dt', ()=> $loading.addClass('d-none'));
+
+  /* ==== Interacciones ==== */
+  $('.kpi').on('click', function(){
+    const key = $(this).data('kpi') || null;
+    if (currentKpi === key){ currentKpi=null; $('.kpi').removeClass('active'); }
+    else { currentKpi=key; $('.kpi').removeClass('active'); $(this).addClass('active'); }
+    tabla.draw();
+  });
+
+  $('#btnBuscar').on('click', ()=> tabla.ajax.reload());
+
+  $('#tblGeoDia').on('click','.ver-mapa', function(){
+    const d = tabla.row($(this).closest('tr')).data();
+    if (d) enfocarSeleccion(d, true);
+  });
+  $('#tblGeoDia tbody').on('click','tr', function(e){
+    if ($(e.target).closest('.ver-mapa').length) return;
+    const d = tabla.row(this).data();
+    if (d) enfocarSeleccion(d, false);
+  });
+
+  $('#chkSoloSel').on('change', function(){
+    if (this.checked){ map.removeLayer(clusterIn); map.removeLayer(clusterOut); }
+    else { map.addLayer(clusterIn); map.addLayer(clusterOut); ringsLayer.clearLayers(); selectedLayer.clearLayers(); }
+  });
+
+  /* ==== KPIs ==== */
+  function actualizarKPIs(rows){
+    let dentro=0, fuera=0, sinGPS=0, sinMarca=0;
+    rows.forEach(r=>{
+      const no = (!r.HoraEntrada && !r.HoraSalida) || (r.CategoriaEntrada==='SIN MARCA' && r.CategoriaSalida==='SIN MARCA');
+      if (no) sinMarca++;
+      if ((r.HoraEntrada && !(r.LatEntrada && r.LonEntrada)) || (r.HoraSalida && !(r.LatSalida && r.LonSalida))) sinGPS++;
+      if (r.CategoriaEntrada==='DENTRO DE RADIO') dentro++;
+      if (r.CategoriaSalida ==='DENTRO DE RADIO') dentro++;
+      if (r.CategoriaEntrada==='FUERA DE RADIO')  fuera++;
+      if (r.CategoriaSalida ==='FUERA DE RADIO')  fuera++;
+    });
+    $('#kpiDentroVal').text(dentro);
+    $('#kpiFueraVal').text(fuera);
+    $('#kpiSinGPSVal').text(sinGPS);
+    $('#kpiSinMarcaVal').text(sinMarca);
+    $('#kpiTotalVal').text(rows.length);
+  }
+
+  /* ==== Clústeres ==== */
+  function pintarClusters(rows){
+    clusterIn.clearLayers(); clusterOut.clearLayers();
+    selectedLayer.clearLayers(); ringsLayer.clearLayers();
+    const bounds = [];
+    rows.forEach(r=>{
+      const hasIN  = r.LatEntrada!=null && r.LonEntrada!=null;
+      const hasOUT = r.LatSalida !=null && r.LonSalida!=null;
+      const pinPrec = p => (p!=null && !isNaN(p) ? ` · ±${parseInt(p,10)} m` : '');
+      if (hasIN && hasOUT){
+        const pIn  = L.latLng(Number(r.LatEntrada), Number(r.LonEntrada));
+        const pOut = L.latLng(Number(r.LatSalida),  Number(r.LonSalida));
+        if (pIn.distanceTo(pOut) <= 5){
+          const mk = L.marker(pIn, { icon:divIcon('mix') })
+            .bindPopup(`<b>${r.nombre_completo}</b><br>${moment(r.Fecha).format('DD/MM/YYYY')}<br>
+                        IN ${fmtHora(r.HoraEntrada)}${pinPrec(r.PrecisionIn)} · OUT ${fmtHora(r.HoraSalida)}${pinPrec(r.PrecisionOut)}<br>
+                        ${r.DefaultUbicacion||''}`);
+          clusterIn.addLayer(mk); bounds.push(pIn); return;
+        }
+      }
+      if (hasIN){
+        const p = L.latLng(Number(r.LatEntrada), Number(r.LonEntrada));
+        const mk = L.marker(p, { icon:divIcon('in') })
+          .bindPopup(`<b>${r.nombre_completo}</b><br>${moment(r.Fecha).format('DD/MM/YYYY')} · IN ${fmtHora(r.HoraEntrada)}${pinPrec(r.PrecisionIn)}<br>
+                      ${r.PermEdificioIn?('Perm: '+r.PermEdificioIn):''}`);
+        clusterIn.addLayer(mk); bounds.push(p);
+      }
+      if (hasOUT){
+        const p = L.latLng(Number(r.LatSalida), Number(r.LonSalida));
+        const mk = L.marker(p, { icon:divIcon('out') })
+          .bindPopup(`<b>${r.nombre_completo}</b><br>${moment(r.Fecha).format('DD/MM/YYYY')} · OUT ${fmtHora(r.HoraSalida)}${pinPrec(r.PrecisionOut)}<br>
+                      ${r.PermEdificioOut?('Perm: '+r.PermEdificioOut):''}`);
+        clusterOut.addLayer(mk); bounds.push(p);
+      }
+    });
+    if (!map.hasLayer(clusterIn))  map.addLayer(clusterIn);
+    if (!map.hasLayer(clusterOut)) map.addLayer(clusterOut);
+    if (bounds.length && !$('#chkSoloSel').is(':checked')) map.fitBounds(L.latLngBounds(bounds).pad(0.2));
+    setTimeout(()=> map.invalidateSize(true), 60);
+  }
+
+  /* ==== Enfocar fila ==== */
+  function enfocarSeleccion(d, centerNow){
+    const radio = Number($('#radio').val()||150);
+    ringsLayer.clearLayers(); selectedLayer.clearLayers();
+    if ($('#chkSoloSel').is(':checked')) { map.removeLayer(clusterIn); map.removeLayer(clusterOut); }
+
+    const pEnt = (d.LatEntrada!=null && d.LonEntrada!=null) ? [Number(d.LatEntrada), Number(d.LonEntrada)] : null;
+    const pSal = (d.LatSalida !=null && d.LonSalida!=null) ? [Number(d.LatSalida), Number(d.LonSalida)] : null;
+
+    const $mapLoading = $('#mapLoading'); $mapLoading.removeClass('d-none');
+    $.getJSON('@Url.Action("PermisosEmpleadoV4","ExtraTime")', { personId: d.PersonId, carnet: d.carnet })
+      .done(resp=>{
+        const bounds = [];
+        if (resp && resp.ok && Array.isArray(resp.data)){
+          resp.data.forEach(ed=>{
+            if (ed.LatEdif!=null && ed.LonEdif!=null){
+              const centro = [Number(ed.LatEdif), Number(ed.LonEdif)];
+              L.circle(centro, { radius: radio, color: varAzul(), opacity:.4, weight:1, fill:false }).addTo(ringsLayer);
+              L.circleMarker(centro, { radius:4, color: varAzul(), weight:1, fillColor: varAzul(), fillOpacity:.9 })
+                .addTo(ringsLayer).bindTooltip(ed.Edificio || 'Permitido', {permanent:false});
+              bounds.push(centro);
+            }
+          });
+        }
+
+        const highlightRing = (lat,lon,color) => {
+          if (lat!=null && lon!=null){
+            const c = [Number(lat), Number(lon)];
+            L.circle(c, { radius: radio, color, weight:3, fill:false, opacity:0.9, dashArray:'6,4' }).addTo(ringsLayer);
+            L.circleMarker(c, { radius:6, color, weight:2, fillColor:color, fillOpacity:.15 }).addTo(ringsLayer);
+            bounds.push(c);
+          }
+        };
+        highlightRing(d.PermLatIn,  d.PermLonIn,  '#198754'); // ganador IN
+        highlightRing(d.PermLatOut, d.PermLonOut, '#b21f2d'); // ganador OUT
+
+        const tag = (text, pt) => L.marker(pt, { icon:L.divIcon({className:'lbl', html:text, iconSize:null}) }).addTo(selectedLayer);
+        const distLabel = (delta) => (delta!=null && delta!==undefined && delta!=='') ? ` · Δ ${parseInt(delta,10)} m` : '';
+        const precLabel = (p) => (p!=null && p!=='') ? ` · ±${parseInt(p,10)} m` : '';
+
+        if (pEnt && pSal && L.latLng(pEnt).distanceTo(pSal)<=5){
+          L.marker(pEnt,{icon:divIcon('mix')}).addTo(selectedLayer);
+          tag(`IN ${fmtHora(d.HoraEntrada)}${precLabel(d.PrecisionIn)} · OUT ${fmtHora(d.HoraSalida)}${precLabel(d.PrecisionOut)}${distLabel(d.DistanciaEntrada || d.DistanciaSalida)}`, pEnt);
+          bounds.push(pEnt);
+        }else{
+          if (pEnt){
+            L.marker(pEnt,{icon:divIcon('in')}).addTo(selectedLayer);
+            tag(`IN ${fmtHora(d.HoraEntrada)}${precLabel(d.PrecisionIn)}${distLabel(d.DistanciaEntrada)}`, pEnt);
+            bounds.push(pEnt);
+          }
+          if (pSal){
+            L.marker(pSal,{icon:divIcon('out')}).addTo(selectedLayer);
+            tag(`OUT ${fmtHora(d.HoraSalida)}${precLabel(d.PrecisionOut)}${distLabel(d.DistanciaSalida)}`, pSal);
+            bounds.push(pSal);
+          }
+          if (pEnt && pSal) L.polyline([pEnt,pSal],{weight:3,opacity:.7}).addTo(selectedLayer);
+        }
+        if (bounds.length && centerNow!==false) map.fitBounds(L.latLngBounds(bounds).pad(0.2));
+        setTimeout(()=> map.invalidateSize(true), 60);
+      })
+      .always(()=> $mapLoading.addClass('d-none'));
+  }
+
+  /* ==== Semana actual (lun-dom) ==== */
+  (function initRange(){
+    const hoy = moment();
+    const lunes = hoy.clone().startOf('isoWeek');
+    const domingo = lunes.clone().add(6,'days');
+    $('#fi').val(lunes.format('YYYY-MM-DD'));
+    $('#ff').val(domingo.format('YYYY-MM-DD'));
+    $('#tblGeoDia').DataTable().ajax.reload();
+  })();
+
+});
+    </script>
+}

@@ -1,0 +1,68 @@
+﻿@using System.Drawing;
+@Html.DevExpress().Chart(settings =>
+{
+    // Specify the obligatory chart name.
+    settings.Name = "ExecutedChartbyArea";
+    settings.Width = Unit.Pixel(1100);
+    settings.Height = Unit.Pixel(500);
+
+    settings.BorderOptions.Visibility = DefaultBoolean.False;
+    settings.EmptyChartText.Text = "No se encontraron registros";
+    settings.ToolTipEnabled = DefaultBoolean.True;
+
+    settings.CrosshairEnabled = DefaultBoolean.True;
+
+
+    settings.Legends.Default(l =>
+    {
+        l.AlignmentHorizontal = LegendAlignmentHorizontal.Right;
+        
+    });
+
+    settings.Series.Template(t =>
+    {
+        t.Views().StackedBarSeriesView(v =>
+        {
+            v.SeriesLabel(l =>
+            {
+                l.ResolveOverlappingMode = ResolveOverlappingMode.Default;
+                //l.TextPattern = "{V:0,,.0}";
+                l.Font = new Font("Tahoma", 8, FontStyle.Bold);
+                l.Position = BarSeriesLabelPosition.Center;
+                //l.TextOrientation = options.TextOrientation;
+                //l.Indent = options.LabelIndent;
+            });
+        });
+        t.SetDataMembers("Managnment", "Hours");
+        t.LabelsVisibility = DefaultBoolean.True;
+    });
+
+
+    settings.XYDiagram(d =>
+    {
+        d.Rotated = true;
+        d.AxisY.Interlaced = true;
+        d.AxisY.Title.Text = "Horas";
+        d.AxisY.GridLines.MinorVisible = true;
+        d.AxisY.Title.Visibility = DefaultBoolean.True;
+       
+    });
+
+    settings.Titles.Add(new ChartTitle()
+    {
+        Font = new Font("Tahoma", 12, FontStyle.Bold),
+        Text = "Consumo de Horas Extras por período",
+        TextColor = Color.SteelBlue
+    });
+    settings.Titles.Add(new ChartTitle()
+    {
+        Alignment = StringAlignment.Far,
+        Dock = ChartTitleDockStyle.Bottom,
+        Font = new Font("Tahoma", 8),
+        TextColor = Color.Gray,
+        Text = ""
+    });
+
+
+
+}).Bind(Model, seriesDataMember: "Period").GetHtml()

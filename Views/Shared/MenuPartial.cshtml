@@ -1,0 +1,65 @@
+ <script>
+    $(document).ready(function () {
+        $('.nav-link').click(function (e) {
+            e.preventDefault();
+            $(this).toggleClass('collapsed');
+            $($(this).data('target')).toggleClass('show');
+        });
+    });
+</script>
+
+ 
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+    <!-- Sidebar - Brand -->
+ 
+    @{
+        List<Entities.MenuRhOnline> listapaginas = (List<Entities.MenuRhOnline>)Session["Menulista"];
+
+
+
+    }
+    @foreach (Entities.MenuRhOnline oPaginaCLS in listapaginas)
+    {
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#@oPaginaCLS.Controller" aria-expanded="true" aria-controls=@oPaginaCLS.Controller>
+                <span>@*<i class="fas fa-fw @oPaginaCLS.icono"></i>*@</span>
+                <span>@oPaginaCLS.MenuText</span>
+            </a>
+            @if (oPaginaCLS.MenuList.Count > 0)
+            {
+                <div id=@oPaginaCLS.Controller class="collapse" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">@oPaginaCLS.MenuText:</h6>
+                        @foreach (Entities.MenuRhOnline oPaginaCLSx in oPaginaCLS.MenuList)
+                        {
+                            if (oPaginaCLSx.MenuList.Count > 0)
+                            {
+                                <div id=@oPaginaCLSx.Controller class="collapse" data-parent="#accordionSidebar">
+                                    <div class="bg-white py-2 collapse-inner rounded">
+                                        <h6 class="collapse-header">@oPaginaCLSx.MenuText:</h6>
+                                        @foreach (Entities.MenuRhOnline oPaginaCLSx2 in oPaginaCLSx.MenuList)
+                                        {
+                                            <a class="collapse-item" href="@Url.Action(oPaginaCLSx2.Action, oPaginaCLSx2.Controller)">@oPaginaCLSx2.MenuText</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <a class="collapse-item" href="@Url.Action(oPaginaCLSx.Action, oPaginaCLSx.Controller)">@oPaginaCLSx.MenuText</a>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </li>
+    }
+
+    <!-- Divider -->
+    
+
+    <!-- Sidebar Toggler (Sidebar) -->
+         <button class="rounded-circle border-0" id="sidebarToggle"></button>
+ 
+    <!-- Sidebar Message -->
+</ul>

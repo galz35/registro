@@ -1,0 +1,509 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingProduct(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.Licenses();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvLicensesRegisterDetail";
+        settings.KeyFieldName = "LicenseId";
+        settings.CallbackRouteValues = new { Controller = "Licenses", Action = "RegisterDetailPartial", personId = Url.RequestContext.RouteData.Values["PersonId"] };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Licenses", Action = "AddLicense" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Licenses", Action = "UpdateLicense" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Licenses", Action = "DeleteLicense" };
+        settings.ClientSideEvents.EndCallback = "OnBatchEditRowValidating";
+        //settings.CustomJSProperties = (send, evargs) =>
+        //{
+        //    evargs.Properties["cpCallbackResult"] = ViewData["EditError"];
+
+        //};
+
+
+        //settings.ClientSideEvents.Init = "OnInitGrid";
+        #region Configuracion del popup
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de licencia";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        #endregion
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.Width = Unit.Percentage(100);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+
+        settings.EnableRowsCache = false;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+       
+
+        #region Personalizacion de Botones del GridView
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.SettingsText.ConfirmDelete = "Seguro quiere borrar el registro?";
+        settings.CommandColumn.ShowDeleteButton = true;
+
+        settings.SettingsCommandButton.DeleteButton.Image.Url = Url.Content("~/Content/Icons/trash.png");
+
+        //GridViewCommandColumnCustomButton btnPrint = new GridViewCommandColumnCustomButton();
+        //btnPrint.ID = "btnPrintId";
+        //btnPrint.Text = "";
+        //btnPrint.Image.Url = "~/Content/Icons/Print.png";
+        //settings.CommandColumn.CustomButtons.Add(btnPrint);
+        //settings.CommandColumn.Width = 20;
+        
+
+        GridViewCommandColumnCustomButton btnPdf = new GridViewCommandColumnCustomButton();
+        btnPdf.ID = "btnPdfId";
+        btnPdf.Text = "";
+        btnPdf.Image.Url = "~/Content/Icons/Acrobat.png";
+        settings.CommandColumn.CustomButtons.Add(btnPdf);
+        settings.ClientSideEvents.CustomButtonClick =
+                  string.Format("function(s, e) {{ ShowLicenseClick(s, e, '{0}','{1}'); }}",
+                  Url.Action("LoadLicense", "Licenses"), Url.Action("PrintingLicense", "Licenses"));
+
+        settings.CommandColumn.Width = 20;
+        #endregion
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "EmployeeNumber";
+            col.Caption = "No.Empleado";
+            col.Width = 20;
+            col.AdaptivePriority = 1;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "FullName";
+            col.AdaptivePriority = 2;
+            col.Caption = "Empleado";
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+            col.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+            col.Width = 40;
+
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "LicenseTypeId";
+            col.Caption = "Licencia";
+            col.AdaptivePriority = 3;
+            col.Width = 60;
+            col.ColumnType = MVCxGridViewColumnType.ComboBox;
+            var comboBoxProperties = col.PropertiesEdit as ComboBoxProperties;
+            comboBoxProperties.DataSource = slnRhonline.Models.LicenseTypes.GetLicenseTypesCombo();
+            comboBoxProperties.TextField = "LicenseTypeName";
+            comboBoxProperties.ValueField = "LicenseTypeId";
+            comboBoxProperties.ValueType = typeof(int);
+            comboBoxProperties.DropDownStyle = DropDownStyle.DropDownList;
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "StartDate";
+            col.Caption = "Inicio";
+            col.Width = 30;
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.AdaptivePriority = 4;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "EndDate";
+            col.Caption = "Fin";
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.AdaptivePriority = 5;
+            col.Width = 30;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Notes";
+            col.Caption = "Notas";
+            col.ColumnType = MVCxGridViewColumnType.Memo;
+            col.AdaptivePriority = 6;
+            col.Width = 60;
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "NotesRh";
+            col.Caption = "Justificacion RH";
+            col.ColumnType = MVCxGridViewColumnType.Memo;
+            col.AdaptivePriority = 6;
+            col.Width = 60;
+
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "LicenseStatus";
+            col.Caption = "Estado";
+            col.Width = 20;
+            col.AdaptivePriority = 7;
+        });
+
+
+
+        //settings.Columns.Add(col =>
+        //{
+        //    col.FieldName = "LicenseFile";
+        //    col.AdaptivePriority = 8;
+        //    col.Caption = "Adjuntar";
+        //    col.Width = 100;
+        //    col.EditorProperties().BinaryImage(p =>
+        //    {
+        //        p.ImageHeight = 170;
+        //        p.ImageWidth = 160;
+        //        p.EnableServerResize = true;
+        //        p.ImageSizeMode = ImageSizeMode.FitProportional;
+        //        p.CallbackRouteValues = new { Action = "BinaryImageColumnPhotoUpdate", Controller = "Licenses" };
+        //        p.EditingSettings.Enabled = true;
+        //        p.EditingSettings.UploadSettings.UploadValidationSettings.MaxFileSize = 4194304;
+        //        p.EditingSettings.UploadSettings.UploadMode = UploadControlUploadMode.Advanced;
+        //        p.EditingSettings.UploadSettings.TemporaryFolder = "~/Content/Images/";
+        //    });
+        //col.SetDataItemTemplateContent(c =>
+        //{
+        //    Html.DevExpress().ImageZoom(zoomSettings =>
+        //    {
+        //        zoomSettings.Name = "zoom" + c.ID;
+        //        zoomSettings.LargeImageLoadMode = LargeImageLoadMode.OnPageLoad;
+        //        zoomSettings.ShowHintText = false;
+        //        //zoomSettings.ExpandWindowText = string.Format(ExpantWindowTextTemplate, DataBinder.Eval(c.DataItem, "Brand"),
+        //        //    DataBinder.Eval(c.DataItem, "Model"), DataBinder.Eval(c.DataItem, "Price"));
+
+        //        zoomSettings.ImageContentBytes = DataBinder.Eval(c.DataItem, "LicenseFile") as byte[];
+        //        zoomSettings.LargeImageContentBytes = DataBinder.Eval(c.DataItem, "LicenseFile") as byte[];
+        //        zoomSettings.SettingsAutoGeneratedImages.ImageCacheFolder = "~/Content/ImageZoom/";
+        //        zoomSettings.SettingsAutoGeneratedImages.ImageWidth = Unit.Pixel(200);
+        //        zoomSettings.SettingsAutoGeneratedImages.ImageHeight = Unit.Pixel(200);
+        //        zoomSettings.SettingsAutoGeneratedImages.LargeImageWidth = Unit.Pixel(600);
+        //        zoomSettings.SettingsAutoGeneratedImages.LargeImageHeight = Unit.Pixel(600);
+
+        //        zoomSettings.SettingsZoomMode.ZoomWindowWidth = Unit.Pixel(350);
+        //        zoomSettings.SettingsZoomMode.ZoomWindowHeight = Unit.Pixel(350);
+        //        zoomSettings.SettingsZoomMode.ZoomWindowPosition = ZoomWindowPosition.Bottom;
+        //        zoomSettings.ControlStyle.Border.BorderStyle = BorderStyle.None;
+        //    }).GetHtml();
+        //});
+
+        // });
+
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+                //Html.Hidden("LicenseStatus");
+                flSettings.Name = "FormLayoutProducts";
+                flSettings.Width = Unit.Percentage(100);
+             
+               
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+              
+
+                flSettings.ColCount = 2;
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "LicenseTypeId";
+                    i.Caption = "Tipo de Licencia";
+                    i.NestedExtension().ComboBox(s =>
+                    {
+                        s.Properties.TextField = "LicenseTypeName";
+                        s.Properties.ValueField = "LicenseTypeId";
+                        s.Properties.ValueType = typeof(int);
+                        s.Properties.DataSource = slnRhonline.Models.LicenseTypes.GetLicenseTypesCombo().Where(x => x.LicenseTypeId != 3 && x.LicenseTypeId != 4);
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                        s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedLicenseTypeIdChanged";
+                        //s.ReadOnly = true;
+                        //s.Enabled = false;
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "TypePermissionId";
+                    i.Caption = "Motivo";
+                    i.NestedExtension().ComboBox(s =>
+                    {
+                        s.CallbackRouteValues = new { Controller = "TypePermissions", Action = "GetTypePermissionsById", TextField = "DescriptionType", ValueField = "TypeId" };
+                        s.Properties.TextField = "DescriptionType";
+                        s.Properties.ValueField = "TypeId";
+                        s.Properties.ValueType = typeof(int);
+                        s.Properties.LoadDropDownOnDemand = true;
+                        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.ClientSideEvents.BeginCallback = "TypePermissionBeginCallback";
+                        s.Properties.DataSource = slnRhonline.Models.TypePermissions.GetTypePermisions();
+                        s.ReadOnly = true;
+                        //s.Enabled = false;
+
+                    });
+                });
+
+
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "IsPartial";
+                    i.Caption = "Total o Parcial";
+                    i.NestedExtension().RadioButtonList(s =>
+                    {
+
+                        s.Properties.RepeatDirection = RepeatDirection.Horizontal;
+                        s.Properties.Items.Add("Total", 1);
+                        s.Properties.Items.Add("Parcial", 2);
+                        s.ControlStyle.Border.BorderStyle = BorderStyle.None;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.ClientSideEvents.SelectedIndexChanged = "OnIsPartialChanged";
+
+
+                    });
+                });
+                flSettings.Items.AddEmptyItem();
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "StartDate";
+                    i.Caption = "Fecha de Inicio";
+                    i.NestedExtension().DateEdit(s =>
+                    {
+                        s.Properties.NullText = "DD/MM/YYYY";
+                        s.Properties.EditFormat = EditFormat.Date;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.ClientSideEvents.ValueChanged = "OnDaysGotFocus";
+                        //s.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "EndDate";
+                    i.Caption = "Fecha de Fin";
+                    i.NestedExtension().DateEdit(s =>
+                    {
+                        s.Properties.NullText = "DD/MM/YYYY";
+                        s.Properties.EditFormat = EditFormat.Date;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.ClientSideEvents.ValueChanged = "OnDaysGotFocus";
+                        //s.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "StartHour";
+                    i.Caption = "Hora de Inicio";
+                    i.NestedExtension().TimeEdit(s =>
+                    {
+                        s.Properties.NullText = "hh:mm tt";
+                        s.Properties.EditFormat = EditFormat.Custom;
+                        s.Properties.EditFormatString = "hh:mm tt";
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.ClientSideEvents.ValueChanged = "OnHoursGotFocus";
+                        //s.ReadOnly = true;
+                        // s.Enabled = false;
+                    });
+                });
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "EndHour";
+                    i.Caption = "Hora de Fin";
+                    i.NestedExtension().TimeEdit(s =>
+                    {
+                        s.Properties.NullText = "hh:mm tt";
+                        s.Properties.EditFormat = EditFormat.Custom;
+                        s.Properties.EditFormatString = "hh:mm tt";
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.ClientSideEvents.ValueChanged = "OnHoursGotFocus";
+                        //.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "DaysQuantity";
+                    i.Caption = "Total de Dias";
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "HoursQuantity";
+                    i.Caption = "Total de Horas";
+                    i.NestedExtension().SpinEdit(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.Properties.DisplayFormatString = "#.00";
+
+
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "Notes";
+                    i.Caption = "Justificación";
+                    i.NestedExtension().Memo(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Height = 80;
+                        s.ControlStyle.CssClass = "memo";
+                        //s.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.Caption = "Subir esquela";
+                    i.SetNestedContent(() =>
+                    {
+                        Html.DevExpress().Label(lbSettings =>
+                        {
+                            lbSettings.Name = "Nombre de archivo";
+
+                            lbSettings.Properties.ClientInstanceName = "clientFileName";
+                        }).Render();
+                        Html.RenderPartial("UploadLicensePartial");
+                    });
+                });
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "LicenseStatus";
+                    i.Caption = "Estado";
+                    i.CaptionStyle.ForeColor = System.Drawing.Color.White;
+
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ControlStyle.ForeColor = System.Drawing.Color.White;
+                        s.ReadOnly = true;
+                        s.ControlStyle.Border.BorderColor = System.Drawing.Color.White;
+                    });
+                });
+
+
+
+               
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvLicensesRegisterDetail.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvLicensesRegisterDetail.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["License"] ?? GetEditingProduct(c.Grid))
+            .Render();
+        });
+        //settings.PreRender = (sender, e) =>
+        //{
+        //    ((MVCxGridView)sender).StartEdit(1);
+        //};
+
+
+
+
+
+
+        //DevExpress.Web.Demos.GridViewFeaturesHelper.SetupGlobalGridViewBehavior(settings);
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()

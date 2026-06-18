@@ -1,0 +1,199 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.ExpenseDetail>(settings =>
+    {
+        settings.Name = "gvEditing";
+        settings.KeyFieldName = "ExpenseDetailId";
+        settings.CallbackRouteValues = new { Controller = "Expenses", Action = "DetailPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Expenses", Action = "AddDetailLine" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Expenses", Action = "UpdateDetailLine" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Expenses", Action = "DeleteDetailLine" };
+
+        settings.Width = Unit.Percentage(95);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+        settings.ControlStyle.Border.BorderWidth = 0;
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Auto;
+        settings.Settings.VerticalScrollableHeight = 100;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Agregar linea de detalle";
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.Center;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ShowNewButton = true;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.CommandColumn.ShowDeleteButton = true;
+        settings.CommandColumn.ShowEditButton = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+        settings.SettingsCommandButton.NewButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsAdd16x16;
+        settings.SettingsCommandButton.EditButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditEdit16x16;
+        settings.SettingsCommandButton.UpdateButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsApply16x16;
+        settings.SettingsCommandButton.DeleteButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditDelete16x16;
+        settings.SettingsCommandButton.CancelButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsCancel16x16;
+
+        settings.CommandColumn.Width = 100;
+
+        settings.Columns.Add(m => m.ClasificationId, column =>
+        {
+            column.Caption = "Clasificación";
+            column.AdaptivePriority = 1;
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.Width = 150;
+                p.TextField = "ClasificationName";
+                p.ValueField = "ClasificationId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.Concepts.GetAllClasification();
+                p.ClientSideEvents.SelectedIndexChanged = "OnSelectedClasificationChanged";
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                p.ValidationSettings.ErrorTextPosition = ErrorTextPosition.Bottom;
+            });
+        });
+
+        settings.Columns.Add(m => m.CategoryId, column =>
+        {
+            column.Caption = "Categoría";
+            column.AdaptivePriority = 2;
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.Width = 150;
+                p.CallbackRouteValues = new { Controller = "Concepts", Action = "GetAllCategories", TextField = "CategoryName", ValueField = "CategoryId" };
+                p.TextField = "CategoryName";
+                p.ValueField = "CategoryId";
+                p.ValueType = typeof(int);
+                p.ClientSideEvents.BeginCallback = "CategoryComboBox_BeginCallback";
+                p.DataSource = slnRhonline.Models.Concepts.GetAllCategories();
+                p.ClientSideEvents.SelectedIndexChanged = "OnSelectedCategoryChanged";
+                p.ClientSideEvents.ButtonClick = "OnCategoryGotFocus";
+                p.ClientSideEvents.Init = "OnCategoryInit";
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+            });
+        });
+
+        settings.Columns.Add(m => m.SubCategoryId, column =>
+        {
+            column.Caption = "Sub Categoría";
+            column.AdaptivePriority = 3;
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                p.Width = 150;
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.TextFormatString = "{0}";
+                p.CallbackRouteValues = new { Controller = "Concepts", Action = "GetAllSubCategories", TextField = "SubCategoryName", ValueField = "SubCategoryId" };
+                p.TextField = "SubCategoryName";
+                p.ValueField = "SubCategoryId";
+                p.ValueType = typeof(int);
+                p.ClientSideEvents.BeginCallback = "SubCategoryComboBox_BeginCallback";
+                p.DataSource = slnRhonline.Models.Concepts.GetAllSubCategories();
+                p.Columns.Add("SubCategoryName", "SubCategoría", 130);
+                p.Columns.Add("Amount", "Monto", 130);
+                p.ClientSideEvents.SelectedIndexChanged = "OnSelectedIndexChanged1";
+                p.ClientSideEvents.ButtonClick = "OnSubCategoryGotFocus";
+                p.ClientSideEvents.Init = "OnSubCategoryInit";
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+            });
+        });
+
+        settings.Columns.Add(m => m.Amount, column =>
+        {
+            column.Caption = "Monto";
+            column.AdaptivePriority = 4;
+            column.EditorProperties().SpinEdit(p =>
+            {
+                p.Width = 150;
+                p.DisplayFormatString = "c";
+                p.DisplayFormatInEditMode = true;
+                p.MinValue = 0;
+                p.MaxValue = 1000000;
+                p.SpinButtons.ShowLargeIncrementButtons = true;
+                p.ClientSideEvents.Init = "OnAmountInit";
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+            });
+        });
+
+        settings.Columns.Add(m => m.DepartmentId, column =>
+        {
+            column.Caption = "Departamento";
+            column.AdaptivePriority = 5;
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.Width = 150;
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.TextField = "DepartmentName";
+                p.ValueField = "DepartmentId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.Departments.GetAllDepartments();
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+            });
+        });
+
+        settings.Columns.Add(m => m.HourStart, column =>
+        {
+            column.Caption = "Hora";
+            column.AdaptivePriority = 6;
+            column.EditorProperties().TimeEdit(p =>
+            {
+                p.NullText = "hh:mm tt";
+                p.DisplayFormatString = "hh:mm tt";
+                p.EditFormat = EditFormat.Custom;
+                p.EditFormatString = "hh:mm tt";
+                p.Width = 150;
+                p.AllowNull = true;
+                p.ValidationSettings.RequiredField.IsRequired = false;
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+            });
+        });
+
+        settings.Columns.Add(m => m.ExpenseDetailNotes, column =>
+        {
+            column.Caption = "Nota";
+            column.AdaptivePriority = 7;
+            column.EditorProperties().Memo(p =>
+            {
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                p.Width = 200;
+                p.Height = 50;
+                p.MaxLength = 500;
+            });
+        });
+
+        settings.CellEditorInitialize = (s, e) =>
+        {
+            ((ASPxEdit)e.Editor).ValidationSettings.Display = Display.Dynamic;
+        };
+    });
+
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+
+@grid.Bind(Model).GetHtml()

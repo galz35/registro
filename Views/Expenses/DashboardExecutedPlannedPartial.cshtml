@@ -1,0 +1,93 @@
+﻿@using System.Drawing;
+@Html.DevExpress().Button(settings =>
+{
+    settings.Name = "btExport";
+    settings.Text = "";
+    settings.RouteValues = new { Controller = "Expenses", Action = "ExportChart" };
+    settings.Images.Image.IconID = IconID.ActionsDownload16x16office2013;
+    settings.ToolTip = "Exportar a pdf";
+}).GetHtml()
+@Html.DevExpress().Chart(settings =>
+{
+    // Specify the obligatory chart name.
+    settings.Name = "ExpenseChart";
+    //settings.Width = 510;
+    //settings.Height = 340;
+    settings.Width = Unit.Pixel(500);
+    settings.Height = Unit.Pixel(330);
+    //settings.AutoLayout = false;
+
+    settings.BorderOptions.Visibility = DefaultBoolean.True;
+    settings.EmptyChartText.Text = "No se encontraron registros";
+    settings.ToolTipEnabled = DefaultBoolean.True;
+
+    settings.CrosshairEnabled = DefaultBoolean.True;
+
+
+    settings.Legends.Default(l =>
+    {
+        //l.AlignmentHorizontal = LegendAlignmentHorizontal.RightOutside;
+        l.AlignmentHorizontal = LegendAlignmentHorizontal.Center;
+        l.AlignmentVertical = LegendAlignmentVertical.BottomOutside;
+        l.Direction = LegendDirection.LeftToRight;
+
+    });
+
+    settings.Series.Template(t =>
+    {
+        t.Views().StackedBarSeriesView(v =>
+        {
+            v.SeriesLabel(l =>
+            {
+                l.ResolveOverlappingMode = ResolveOverlappingMode.Default;
+                //l.TextPattern = "{V:0,,.0}";
+                l.Font = new Font("Tahoma", 8, FontStyle.Bold);
+                l.Position = BarSeriesLabelPosition.Center;
+                //l.TextOrientation = options.TextOrientation;
+                //l.Indent = options.LabelIndent;
+
+            });
+        });
+        t.SetDataMembers("PeriodId", "Amount");
+        t.LabelsVisibility = DefaultBoolean.True;
+    });
+
+
+    settings.XYDiagram(d =>
+    {
+        d.Rotated = true;
+        d.AxisY.Interlaced = true;
+        d.AxisY.Title.Text = "Monto en Córdobas";
+        d.AxisY.GridLines.MinorVisible = true;
+        d.AxisY.Title.Visibility = DefaultBoolean.True;
+        //d.AxisY.Label.TextPattern = "{V:0,,}";
+        //d.DefaultPane.StackedBarTotalLabel.Visible = options.ShowTotalLabels;
+        //d.DefaultPane.StackedBarTotalLabel.TextPattern = "Total\n{TV: 0,,.0}";
+
+    });
+
+    //settings.AnnotationRepository.Add(new TextAnnotation("Annotation 1"));
+    //settings.AnnotationRepository[0].AnchorPoint =
+    //           new SeriesPointAnchorPoint(settings.Series[0].Points[2]);
+
+
+    settings.Titles.Add(new ChartTitle()
+    {
+        Font = new Font("Tahoma", 12, FontStyle.Bold),
+        Text = "Asignación vs Ejecución Viáticos",
+        TextColor = Color.SteelBlue
+    });
+    //settings.Titles.Add(new ChartTitle()
+    //{
+    //    Alignment = StringAlignment.Far,
+    //    Dock = ChartTitleDockStyle.Bottom,
+    //    Font = new Font("Tahoma", 8),
+    //    TextColor = Color.Gray,
+    //    Text = "From www.cia.gov"
+    //});
+
+
+
+}).Bind(Model, seriesDataMember: "Type").GetHtml()
+
+

@@ -1,0 +1,343 @@
+﻿@{
+    ViewBag.Title = "Carga Masiva de Contactos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+<link rel="stylesheet" href="~/onlinejs/dataTables.bootstrap4.min.css" />
+<style>
+    .card-header {
+        background: #b30000;
+        color: #fff;
+    }
+
+    .btn-dark {
+        background: #212529;
+        border-color: #212529;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="card shadow">
+        <div class="card-header">
+            <h5 class="mb-0">Carga Masiva de Contactos HCM</h5>
+        </div>
+        <div class="card-body">
+            <form id="frmUpload" enctype="multipart/form-data">
+                <div class="form-row align-items-end">
+                    <div class="col-md-5">
+                        <label>Archivo Excel (.xlsx)</label>
+                        <input type="file" name="archivo" id="archivo" accept=".xlsx,.xls" class="form-control" />
+                    </div>
+                    <div class="col-md-7">
+                        <button type="button" id="btnSubir" class="btn btn-dark mt-4">
+                            <i class="fas fa-file-upload"></i> Subir y previsualizar
+                        </button>
+                        <button type="button" id="btnEnviar" class="btn btn-success mt-4" disabled>
+                            <i class="fas fa-paper-plane"></i> Enviar a HCM
+                        </button>
+                        <span id="badgeCount" class="badge badge-secondary badge-pill ml-2">0 registros</span>
+                    </div>
+                </div>
+            </form>
+
+            <hr />
+            <div class="table-responsive">
+                <table id="tblPreview" class="table table-striped table-bordered table-sm" width="100%">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Carnet</th>
+                            <th>Primer Nombre</th>
+                            <th>Segundo Nombre</th>
+                            <th>Primer Apellido</th>
+                            <th>Segundo Apellido</th>
+                            <th>Fecha Nacimiento</th>
+                            <th>Género</th>
+                            <th>Tipo Relación</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div id="panelResultados" class="mt-3"></div>
+ 
+ 
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script>
+    var dt;
+
+    function initTable(data) {
+        if (dt) { dt.clear().destroy(); }
+        dt = $('#tblPreview').DataTable({
+            data: data || [],
+            columns: [
+                { data: null, render: function (d, t, r, m) { return m.row + 1; } },
+                { data: 'Carnet' },
+                { data: 'PrimerNombre' },
+                { data: 'SegundoNombre' },
+                { data: 'PrimerApellido' },
+                { data: 'SegundoApellido' },
+                { data: 'FechaNacimiento' },
+                { data: 'Genero' },
+                { data: 'TipoRelacion' }
+            ],
+            paging: true, pageLength: 20, lengthMenu: [10, 20, 50, 100],
+            responsive: true, searching: true, ordering: false, info: true
+        });
+    }
+    initTable([]);
+
+    // SUBIR Y PREVISUALIZAR
+    $('#btnSubir').click(function () {
+        var file = $('#archivo')[0].files[0];
+        if (!file) { Swal.fire('Seleccione un archivo'); return; }
+
+        var fd = new FormData();
+        fd.append('archivo', file);
+
+        $.LoadingOverlay('show');
+        $.ajax({
+            url: '@Url.Action("ImportarExcel", "Rrhh")',
+            type: 'POST',
+            data: fd,
+            contentType: false,
+            processData: false,
+            success: function (r) {
+                if (r && r.ok) {
+                    cargarPreview();
+                } else {
+                    $.LoadingOverlay('hide');
+                    Swal.fire('Error', r && r.msg ? r.msg : 'No se pudo procesar el archivo.', 'error');
+                }
+            },
+            error: function () {
+                $.LoadingOverlay('hide');
+                Swal.fire('Error', 'Falla al subir el archivo.', 'error');
+            }
+        });
+    });
+        function aCSV(arr, campos) {
+            const encabezado = campos.join(',');
+            const filas = (arr || []).map(o => campos.map(c => {
+                const v = (o[c] == null ? '' : String(o[c]));
+                // escapado CSV
+                const needsQuotes = /[",\n]/.test(v);
+                return (needsQuotes ? '"' + v.replace(/"/g, '""') + '"' : v);
+            }).join(','));
+            return [encabezado].concat(filas).join('\n');
+        }
+
+        // Dispara descarga de archivo (CSV)
+        function descargar(nombre, contenido) {
+            const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = nombre;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+        }
+
+    // Cargar preview desde el servidor (Session)
+    function cargarPreview() {
+        $.get('@Url.Action("Preview", "Rrhh")', function (data) {
+            $.LoadingOverlay('hide');
+            initTable(data || []);
+            $('#badgeCount').text((data && data.length ? data.length : 0) + ' registros');
+            $('#btnEnviar').prop('disabled', !(data && data.length));
+            if (data && data.length) Swal.fire('Listo', 'Vista previa cargada.', 'success');
+            
+        });
+    }
+
+    // ====== ENVIAR 1×1 ======
+    $('#btnEnviar').click(async function () {
+        var rows = dt ? dt.rows().data().toArray() : [];
+        if (!rows.length) { Swal.fire('Nada para enviar'); return; }
+
+        // Modal de progreso
+        await Swal.fire({
+            title: 'Enviando a HCM…',
+            html: `
+                <div style="text-align:left">
+                  <div><b>Total:</b> ${rows.length}</div>
+                  <div id="ctr-ok">OK: 0</div>
+                  <div id="ctr-exist">Ya existía: 0</div>
+                  <div id="ctr-err">Errores: 0</div>
+                  <div id="ctr-rem">Restantes: ${rows.length}</div>
+                  <div class="progress mt-2">
+                    <div id="pg" class="progress-bar" role="progressbar" style="width:0%"></div>
+                  </div>
+                </div>`,
+            allowOutsideClick: false,
+            didOpen: async () => {
+                Swal.showLoading();
+
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i];
+
+                    try {
+                        // Importante: enviamos como form-urlencoded para binding sencillo en MVC
+                        const res = await $.ajax({
+                            url: '@Url.Action("EnviarHcm", "Rrhh")',
+                            type: 'POST',
+                            data: r
+                        });
+
+                        // Actualizar contadores con lo que diga el server
+                        const c = (res && res.counters) ? res.counters : {};
+                        $('#ctr-ok').text('OK: ' + (c.ok || 0));
+                        $('#ctr-exist').text('Ya existía: ' + (c.exist || 0));
+                        $('#ctr-err').text('Errores: ' + (c.err || 0));
+                        $('#ctr-rem').text('Restantes: ' + (c.remaining || (rows.length - (i + 1))));
+
+                    } catch (e) {
+                        // Si falla la llamada, pedimos contadores vigentes y seguimos
+                        try {
+                            const c = await $.get('@Url.Action("Contadores", "Rrhh")');
+                            $('#ctr-ok').text('OK: ' + (c.ok || 0));
+                            $('#ctr-exist').text('Ya existía: ' + (c.exist || 0));
+                            $('#ctr-err').text('Errores: ' + (c.err || 0));
+                            $('#ctr-rem').text('Restantes: ' + (c.remaining || 0));
+                        } catch { /* ignore */ }
+                    }
+
+                    // Progreso visual
+                    const pct = Math.round(((i + 1) / rows.length) * 100);
+                    $('#pg').css('width', pct + '%').text(pct + '%');
+                }
+
+                Swal.hideLoading();
+                Swal.clickConfirm();
+            }
+        });
+
+        // Final: recarga preview (lo que quede en Session) y muestra tablas de resultados
+        cargarPreview();
+
+        try {
+            const rs = await $.get('@Url.Action("Resultados","Rrhh")');
+            mostrarResultados(rs);
+        } catch {
+            Swal.fire('Completado', 'Proceso finalizado.', 'info');
+        }
+    });
+
+  function mostrarResultados(rs) {
+      const ok = rs.ok || [];
+      const ex = rs.exist || [];
+      const er = rs.err || [];
+
+      // columnas exportables
+      const cols = ['Carnet', 'TipoRelacion', 'Nombre', 'Estado', 'PersonNumber', 'Mensaje'];
+
+      // HTML fijo en la página
+      const html = `
+      <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Resultado del envío</h6>
+          <small class="text-white-50">Persistente (no modal)</small>
+        </div>
+        <div class="card-body">
+          <p><b>Resumen:</b> OK: ${ok.length} | Ya existían: ${ex.length} | Errores: ${er.length}</p>
+
+          <div class="mb-3">
+            <button type="button" class="btn btn-success btn-sm mr-1" id="csv-ok">Descargar OK (.csv)</button>
+            <button type="button" class="btn btn-warning btn-sm mr-1" id="csv-ex">Descargar Ya Existían (.csv)</button>
+            <button type="button" class="btn btn-danger btn-sm mr-1" id="csv-er">Descargar Errores (.csv)</button>
+            <button type="button" class="btn btn-dark btn-sm" id="abrir-tab">Abrir en pestaña</button>
+          </div>
+
+          <h6>OK</h6>
+          ${renderTableMini(ok)}
+          <hr/>
+          <h6>Ya existían</h6>
+          ${renderTableMini(ex)}
+          <hr/>
+          <h6>Errores</h6>
+          ${renderTableMini(er)}
+        </div>
+      </div>`;
+
+      $('#panelResultados').html(html);
+
+      // Eventos descarga CSV
+      $('#csv-ok').off('click').on('click', function () {
+          descargar('contactos_ok.csv', aCSV(ok, cols));
+      });
+      $('#csv-ex').off('click').on('click', function () {
+          descargar('contactos_existentes.csv', aCSV(ex, cols));
+      });
+      $('#csv-er').off('click').on('click', function () {
+          descargar('contactos_errores.csv', aCSV(er, cols));
+      });
+
+      // Abrir en pestaña (HTML simple con las tres tablas)
+      $('#abrir-tab').off('click').on('click', function () {
+          const win = window.open('', '_blank');
+          if (!win) return;
+          const estilo = `
+            <style>
+              body{font-family:Arial,Helvetica,sans-serif;margin:16px;}
+              h3{margin-top:24px;}
+              table{border-collapse:collapse;width:100%;}
+              th,td{border:1px solid #ddd;padding:6px;font-size:12px;}
+              thead{background:#f5f5f5;}
+            </style>`;
+          const bloque = (titulo, arr) => `
+            <h3>${titulo} (${arr.length})</h3>
+            ${renderTableMini(arr)}`;
+          win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Resultados Carga HCM</title>${estilo}</head><body>
+            <h2>Resultados de Envío a HCM</h2>
+            <p><b>Resumen:</b> OK: ${ok.length} | Ya existían: ${ex.length} | Errores: ${er.length}</p>
+            ${bloque('OK', ok)}
+            ${bloque('Ya existían', ex)}
+            ${bloque('Errores', er)}
+        </body></html>`);
+          win.document.close();
+      });
+}
+
+
+
+    function renderTableMini(arr) {
+        if (!arr || !arr.length) return '<div class="text-muted">– vacío –</div>';
+        let rows = arr.map(x => `
+        <tr>
+          <td>${escapeHtml(x.Carnet || '')}</td>
+          <td>${escapeHtml(x.TipoRelacion || '')}</td>
+          <td>${escapeHtml(x.Nombre || '')}</td>
+          <td>${escapeHtml(x.Estado || '')}</td>
+          <td>${escapeHtml(x.PersonNumber || '')}</td>
+          <td>${escapeHtml(x.Mensaje || '')}</td>
+        </tr>`).join('');
+        return `
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+          <thead class="thead-light">
+            <tr>
+              <th>Carnet</th><th>TipoRel</th><th>Nombre</th><th>Estado</th><th>PN</th><th>Mensaje</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"'`=\/]/g, function (c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[c];
+        });
+    }
+    </script>
+}

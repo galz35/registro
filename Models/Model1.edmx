@@ -1,0 +1,436 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="SARHModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="ligadetalle">
+          <Key>
+            <PropertyRef Name="iddliga" />
+          </Key>
+          <Property Name="iddliga" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="idliga" Type="int" />
+          <Property Name="carnet" Type="nvarchar" MaxLength="50" />
+          <Property Name="gerencia" Type="nvarchar" MaxLength="50" />
+          <Property Name="cargo" Type="nvarchar" MaxLength="50" />
+          <Property Name="fecha" Type="date" />
+          <Property Name="estado" Type="nvarchar" MaxLength="10" />
+          <Property Name="year" Type="nvarchar" MaxLength="20" />
+          <Property Name="area" Type="nvarchar" MaxLength="100" />
+          <Property Name="tipo" Type="nvarchar" MaxLength="100" />
+          <Property Name="nombre" Type="nvarchar" MaxLength="100" />
+          <Property Name="usuario" Type="nvarchar" MaxLength="50" />
+          <Property Name="telefono" Type="nvarchar" MaxLength="50" />
+          <Property Name="sexo" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="ligamaster">
+          <Key>
+            <PropertyRef Name="idliga" />
+          </Key>
+          <Property Name="idliga" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="year" Type="nvarchar" MaxLength="50" />
+          <Property Name="nombre" Type="nvarchar" MaxLength="200" />
+          <Property Name="disciplina" Type="nvarchar" MaxLength="50" />
+          <Property Name="estado" Type="nvarchar" MaxLength="10" />
+          <Property Name="fecha" Type="date" />
+          <Property Name="creador" Type="nvarchar" MaxLength="100" />
+          <Property Name="carnet" Type="nvarchar" MaxLength="50" />
+          <Property Name="equipo" Type="nvarchar" MaxLength="200" />
+        </EntityType>
+        <!--Errores durante la generación:
+advertencia 6002: La tabla o vista 'SARH.dbo.EMP2024' no tiene definida ninguna clave principal. Se ha inferido la clave y la definición se creado como una vista o tabla de solo lectura.-->
+        <!--Errores durante la generación:
+advertencia 6002: La tabla o vista 'SARH.dbo.vep2' no tiene definida ninguna clave principal. Se ha inferido la clave y la definición se creado como una vista o tabla de solo lectura.-->
+        <EntityType Name="vep2">
+          <Key>
+            <PropertyRef Name="userlevel" />
+            <PropertyRef Name="idorg" />
+          </Key>
+          <Property Name="idhcm" Type="int" />
+          <Property Name="carnet" Type="nvarchar" MaxLength="100" />
+          <Property Name="carnet2" Type="nvarchar" MaxLength="100" />
+          <Property Name="nombre_completo" Type="nvarchar" MaxLength="203" />
+          <Property Name="nom_jefe1" Type="nvarchar" MaxLength="203" />
+          <Property Name="correo_jefe1" Type="nvarchar" MaxLength="100" />
+          <Property Name="cargo_jefe1" Type="nvarchar" MaxLength="100" />
+          <Property Name="idhcm_jefe1" Type="int" />
+          <Property Name="carnet_jefe1" Type="nvarchar" MaxLength="100" />
+          <Property Name="o1" Type="bigint" />
+          <Property Name="nom_jefe2" Type="nvarchar" MaxLength="203" />
+          <Property Name="correo_jefe2" Type="nvarchar" MaxLength="100" />
+          <Property Name="cargo_jefe2" Type="nvarchar" MaxLength="100" />
+          <Property Name="idhcm_jefe2" Type="int" />
+          <Property Name="carnet_jefe2" Type="nvarchar" MaxLength="100" />
+          <Property Name="o2" Type="bigint" />
+          <Property Name="nom_jefe3" Type="nvarchar" MaxLength="203" />
+          <Property Name="correo_jefe3" Type="nvarchar" MaxLength="100" />
+          <Property Name="cargo_jefe3" Type="nvarchar" MaxLength="100" />
+          <Property Name="idhcm_jefe3" Type="int" />
+          <Property Name="carnet_jefe3" Type="nvarchar" MaxLength="100" />
+          <Property Name="o3" Type="bigint" />
+          <Property Name="nom_jefe4" Type="nvarchar" MaxLength="203" />
+          <Property Name="correo_jefe4" Type="nvarchar" MaxLength="100" />
+          <Property Name="cargo_jefe4" Type="nvarchar" MaxLength="100" />
+          <Property Name="idhcm_jefe4" Type="int" />
+          <Property Name="carnet_jefe4" Type="nvarchar" MaxLength="100" />
+          <Property Name="o4" Type="bigint" />
+          <Property Name="SUBGERENTECORREO" Type="nvarchar" MaxLength="100" />
+          <Property Name="SUBGERENTE" Type="nvarchar" MaxLength="203" />
+          <Property Name="GERENTECORREO" Type="nvarchar" MaxLength="100" />
+          <Property Name="GERENTE" Type="nvarchar" MaxLength="203" />
+          <Property Name="GERENTECARNET" Type="nvarchar" MaxLength="100" />
+          <Property Name="fechaingreso" Type="date" />
+          <Property Name="fechabaja" Type="date" />
+          <Property Name="pais" Type="nvarchar" MaxLength="50" />
+          <Property Name="organizacion" Type="bigint" />
+          <Property Name="correo" Type="nvarchar" MaxLength="100" />
+          <Property Name="cargo" Type="nvarchar" MaxLength="100" />
+          <Property Name="empresa" Type="nvarchar" MaxLength="100" />
+          <Property Name="cedula" Type="nvarchar" MaxLength="100" />
+          <Property Name="jefe" Type="bigint" />
+          <Property Name="userlevel" Type="int" Nullable="false" />
+          <Property Name="idorg" Type="bigint" Nullable="false" />
+          <Property Name="primernivel" Type="nvarchar" MaxLength="100" />
+          <Property Name="nivel" Type="nvarchar" MaxLength="200" />
+          <Property Name="padre" Type="bigint" />
+          <Property Name="segundo_nivel" Type="nvarchar" MaxLength="100" />
+          <Property Name="tercer_nivel" Type="nvarchar" MaxLength="100" />
+          <Property Name="cuarto_nivel" Type="nvarchar" MaxLength="100" />
+          <Property Name="quinto_nivel" Type="nvarchar" MaxLength="100" />
+          <Property Name="sexto_nivel" Type="nvarchar" MaxLength="100" />
+          <Property Name="Departamento" Type="nvarchar" MaxLength="100" />
+          <Property Name="Municipio" Type="nvarchar" MaxLength="100" />
+          <Property Name="Direccion" Type="nvarchar" MaxLength="200" />
+          <Property Name="Expr1" Type="nvarchar" MaxLength="50" />
+          <Property Name="Nombreubicacion" Type="nvarchar" MaxLength="200" />
+          <Property Name="datos" Type="nvarchar" MaxLength="200" />
+          <Property Name="Idhrms" Type="nvarchar" MaxLength="50" />
+          <Property Name="LVL" Type="int" />
+          <Property Name="userlvl" Type="int" />
+          <Property Name="oDEPARTAMENTO" Type="nvarchar" MaxLength="100" />
+          <Property Name="OGERENCIA" Type="nvarchar" MaxLength="100" />
+          <Property Name="oSUBGERENCIA" Type="nvarchar" MaxLength="100" />
+        </EntityType>
+        <Function Name="actualizarregistro" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" />
+        <EntityContainer Name="SARHModelStoreContainer">
+          <EntitySet Name="ligadetalle" EntityType="Self.ligadetalle" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ligamaster" EntityType="Self.ligamaster" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="vep2" EntityType="Self.vep2" store:Type="Views" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+    [vep2].[idhcm] AS [idhcm], 
+    [vep2].[carnet] AS [carnet], 
+    [vep2].[carnet2] AS [carnet2], 
+    [vep2].[nombre_completo] AS [nombre_completo], 
+    [vep2].[nom_jefe1] AS [nom_jefe1], 
+    [vep2].[correo_jefe1] AS [correo_jefe1], 
+    [vep2].[cargo_jefe1] AS [cargo_jefe1], 
+    [vep2].[idhcm_jefe1] AS [idhcm_jefe1], 
+    [vep2].[carnet_jefe1] AS [carnet_jefe1], 
+    [vep2].[o1] AS [o1], 
+    [vep2].[nom_jefe2] AS [nom_jefe2], 
+    [vep2].[correo_jefe2] AS [correo_jefe2], 
+    [vep2].[cargo_jefe2] AS [cargo_jefe2], 
+    [vep2].[idhcm_jefe2] AS [idhcm_jefe2], 
+    [vep2].[carnet_jefe2] AS [carnet_jefe2], 
+    [vep2].[o2] AS [o2], 
+    [vep2].[nom_jefe3] AS [nom_jefe3], 
+    [vep2].[correo_jefe3] AS [correo_jefe3], 
+    [vep2].[cargo_jefe3] AS [cargo_jefe3], 
+    [vep2].[idhcm_jefe3] AS [idhcm_jefe3], 
+    [vep2].[carnet_jefe3] AS [carnet_jefe3], 
+    [vep2].[o3] AS [o3], 
+    [vep2].[nom_jefe4] AS [nom_jefe4], 
+    [vep2].[correo_jefe4] AS [correo_jefe4], 
+    [vep2].[cargo_jefe4] AS [cargo_jefe4], 
+    [vep2].[idhcm_jefe4] AS [idhcm_jefe4], 
+    [vep2].[carnet_jefe4] AS [carnet_jefe4], 
+    [vep2].[o4] AS [o4], 
+    [vep2].[SUBGERENTECORREO] AS [SUBGERENTECORREO], 
+    [vep2].[SUBGERENTE] AS [SUBGERENTE], 
+    [vep2].[GERENTECORREO] AS [GERENTECORREO], 
+    [vep2].[GERENTE] AS [GERENTE], 
+    [vep2].[GERENTECARNET] AS [GERENTECARNET], 
+    [vep2].[fechaingreso] AS [fechaingreso], 
+    [vep2].[fechabaja] AS [fechabaja], 
+    [vep2].[pais] AS [pais], 
+    [vep2].[organizacion] AS [organizacion], 
+    [vep2].[correo] AS [correo], 
+    [vep2].[cargo] AS [cargo], 
+    [vep2].[empresa] AS [empresa], 
+    [vep2].[cedula] AS [cedula], 
+    [vep2].[jefe] AS [jefe], 
+    [vep2].[userlevel] AS [userlevel], 
+    [vep2].[idorg] AS [idorg], 
+    [vep2].[primernivel] AS [primernivel], 
+    [vep2].[nivel] AS [nivel], 
+    [vep2].[padre] AS [padre], 
+    [vep2].[segundo_nivel] AS [segundo_nivel], 
+    [vep2].[tercer_nivel] AS [tercer_nivel], 
+    [vep2].[cuarto_nivel] AS [cuarto_nivel], 
+    [vep2].[quinto_nivel] AS [quinto_nivel], 
+    [vep2].[sexto_nivel] AS [sexto_nivel], 
+    [vep2].[Departamento] AS [Departamento], 
+    [vep2].[Municipio] AS [Municipio], 
+    [vep2].[Direccion] AS [Direccion], 
+    [vep2].[Expr1] AS [Expr1], 
+    [vep2].[Nombreubicacion] AS [Nombreubicacion], 
+    [vep2].[datos] AS [datos], 
+    [vep2].[Idhrms] AS [Idhrms], 
+    [vep2].[LVL] AS [LVL], 
+    [vep2].[userlvl] AS [userlvl], 
+    [vep2].[oDEPARTAMENTO] AS [oDEPARTAMENTO], 
+    [vep2].[OGERENCIA] AS [OGERENCIA], 
+    [vep2].[oSUBGERENCIA] AS [oSUBGERENCIA]
+    FROM [dbo].[vep2] AS [vep2]</DefiningQuery>
+          </EntitySet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="SARHModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="ligadetalle">
+          <Key>
+            <PropertyRef Name="iddliga" />
+          </Key>
+          <Property Name="iddliga" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="idliga" Type="Int32" />
+          <Property Name="carnet" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="gerencia" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="cargo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="fecha" Type="DateTime" Precision="0" />
+          <Property Name="estado" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <Property Name="year" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="area" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="tipo" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="nombre" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="usuario" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="telefono" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="sexo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="ligamaster">
+          <Key>
+            <PropertyRef Name="idliga" />
+          </Key>
+          <Property Name="idliga" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="year" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="nombre" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="disciplina" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="estado" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <Property Name="fecha" Type="DateTime" Precision="0" />
+          <Property Name="creador" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="carnet" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="equipo" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="vep2">
+          <Key>
+            <PropertyRef Name="userlevel" />
+            <PropertyRef Name="idorg" />
+          </Key>
+          <Property Name="idhcm" Type="Int32" />
+          <Property Name="carnet" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="carnet2" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="nombre_completo" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="nom_jefe1" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="correo_jefe1" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cargo_jefe1" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="idhcm_jefe1" Type="Int32" />
+          <Property Name="carnet_jefe1" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="o1" Type="Int64" />
+          <Property Name="nom_jefe2" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="correo_jefe2" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cargo_jefe2" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="idhcm_jefe2" Type="Int32" />
+          <Property Name="carnet_jefe2" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="o2" Type="Int64" />
+          <Property Name="nom_jefe3" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="correo_jefe3" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cargo_jefe3" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="idhcm_jefe3" Type="Int32" />
+          <Property Name="carnet_jefe3" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="o3" Type="Int64" />
+          <Property Name="nom_jefe4" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="correo_jefe4" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cargo_jefe4" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="idhcm_jefe4" Type="Int32" />
+          <Property Name="carnet_jefe4" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="o4" Type="Int64" />
+          <Property Name="SUBGERENTECORREO" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="SUBGERENTE" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="GERENTECORREO" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="GERENTE" Type="String" MaxLength="203" FixedLength="false" Unicode="true" />
+          <Property Name="GERENTECARNET" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="fechaingreso" Type="DateTime" Precision="0" />
+          <Property Name="fechabaja" Type="DateTime" Precision="0" />
+          <Property Name="pais" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="organizacion" Type="Int64" />
+          <Property Name="correo" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cargo" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="empresa" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cedula" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="jefe" Type="Int64" />
+          <Property Name="userlevel" Type="Int32" Nullable="false" />
+          <Property Name="idorg" Type="Int64" Nullable="false" />
+          <Property Name="primernivel" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="nivel" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="padre" Type="Int64" />
+          <Property Name="segundo_nivel" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="tercer_nivel" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="cuarto_nivel" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="quinto_nivel" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="sexto_nivel" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Departamento" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Municipio" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="Direccion" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="Expr1" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Nombreubicacion" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="datos" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="Idhrms" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="LVL" Type="Int32" />
+          <Property Name="userlvl" Type="Int32" />
+          <Property Name="oDEPARTAMENTO" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="OGERENCIA" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="oSUBGERENCIA" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityContainer Name="SARHEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="ligadetalle" EntityType="Self.ligadetalle" />
+          <EntitySet Name="ligamaster" EntityType="Self.ligamaster" />
+          <EntitySet Name="vep2" EntityType="Self.vep2" />
+          <FunctionImport Name="actualizarregistro" />
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="SARHModelStoreContainer" CdmEntityContainer="SARHEntities">
+          <EntitySetMapping Name="ligadetalle">
+            <EntityTypeMapping TypeName="SARHModel.ligadetalle">
+              <MappingFragment StoreEntitySet="ligadetalle">
+                <ScalarProperty Name="iddliga" ColumnName="iddliga" />
+                <ScalarProperty Name="idliga" ColumnName="idliga" />
+                <ScalarProperty Name="carnet" ColumnName="carnet" />
+                <ScalarProperty Name="gerencia" ColumnName="gerencia" />
+                <ScalarProperty Name="cargo" ColumnName="cargo" />
+                <ScalarProperty Name="fecha" ColumnName="fecha" />
+                <ScalarProperty Name="estado" ColumnName="estado" />
+                <ScalarProperty Name="year" ColumnName="year" />
+                <ScalarProperty Name="area" ColumnName="area" />
+                <ScalarProperty Name="tipo" ColumnName="tipo" />
+                <ScalarProperty Name="nombre" ColumnName="nombre" />
+                <ScalarProperty Name="usuario" ColumnName="usuario" />
+                <ScalarProperty Name="telefono" ColumnName="telefono" />
+                <ScalarProperty Name="sexo" ColumnName="sexo" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ligamaster">
+            <EntityTypeMapping TypeName="SARHModel.ligamaster">
+              <MappingFragment StoreEntitySet="ligamaster">
+                <ScalarProperty Name="idliga" ColumnName="idliga" />
+                <ScalarProperty Name="year" ColumnName="year" />
+                <ScalarProperty Name="nombre" ColumnName="nombre" />
+                <ScalarProperty Name="disciplina" ColumnName="disciplina" />
+                <ScalarProperty Name="estado" ColumnName="estado" />
+                <ScalarProperty Name="fecha" ColumnName="fecha" />
+                <ScalarProperty Name="creador" ColumnName="creador" />
+                <ScalarProperty Name="carnet" ColumnName="carnet" />
+                <ScalarProperty Name="equipo" ColumnName="equipo" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="vep2">
+            <EntityTypeMapping TypeName="SARHModel.vep2">
+              <MappingFragment StoreEntitySet="vep2">
+                <ScalarProperty Name="idhcm" ColumnName="idhcm" />
+                <ScalarProperty Name="carnet" ColumnName="carnet" />
+                <ScalarProperty Name="carnet2" ColumnName="carnet2" />
+                <ScalarProperty Name="nombre_completo" ColumnName="nombre_completo" />
+                <ScalarProperty Name="nom_jefe1" ColumnName="nom_jefe1" />
+                <ScalarProperty Name="correo_jefe1" ColumnName="correo_jefe1" />
+                <ScalarProperty Name="cargo_jefe1" ColumnName="cargo_jefe1" />
+                <ScalarProperty Name="idhcm_jefe1" ColumnName="idhcm_jefe1" />
+                <ScalarProperty Name="carnet_jefe1" ColumnName="carnet_jefe1" />
+                <ScalarProperty Name="o1" ColumnName="o1" />
+                <ScalarProperty Name="nom_jefe2" ColumnName="nom_jefe2" />
+                <ScalarProperty Name="correo_jefe2" ColumnName="correo_jefe2" />
+                <ScalarProperty Name="cargo_jefe2" ColumnName="cargo_jefe2" />
+                <ScalarProperty Name="idhcm_jefe2" ColumnName="idhcm_jefe2" />
+                <ScalarProperty Name="carnet_jefe2" ColumnName="carnet_jefe2" />
+                <ScalarProperty Name="o2" ColumnName="o2" />
+                <ScalarProperty Name="nom_jefe3" ColumnName="nom_jefe3" />
+                <ScalarProperty Name="correo_jefe3" ColumnName="correo_jefe3" />
+                <ScalarProperty Name="cargo_jefe3" ColumnName="cargo_jefe3" />
+                <ScalarProperty Name="idhcm_jefe3" ColumnName="idhcm_jefe3" />
+                <ScalarProperty Name="carnet_jefe3" ColumnName="carnet_jefe3" />
+                <ScalarProperty Name="o3" ColumnName="o3" />
+                <ScalarProperty Name="nom_jefe4" ColumnName="nom_jefe4" />
+                <ScalarProperty Name="correo_jefe4" ColumnName="correo_jefe4" />
+                <ScalarProperty Name="cargo_jefe4" ColumnName="cargo_jefe4" />
+                <ScalarProperty Name="idhcm_jefe4" ColumnName="idhcm_jefe4" />
+                <ScalarProperty Name="carnet_jefe4" ColumnName="carnet_jefe4" />
+                <ScalarProperty Name="o4" ColumnName="o4" />
+                <ScalarProperty Name="SUBGERENTECORREO" ColumnName="SUBGERENTECORREO" />
+                <ScalarProperty Name="SUBGERENTE" ColumnName="SUBGERENTE" />
+                <ScalarProperty Name="GERENTECORREO" ColumnName="GERENTECORREO" />
+                <ScalarProperty Name="GERENTE" ColumnName="GERENTE" />
+                <ScalarProperty Name="GERENTECARNET" ColumnName="GERENTECARNET" />
+                <ScalarProperty Name="fechaingreso" ColumnName="fechaingreso" />
+                <ScalarProperty Name="fechabaja" ColumnName="fechabaja" />
+                <ScalarProperty Name="pais" ColumnName="pais" />
+                <ScalarProperty Name="organizacion" ColumnName="organizacion" />
+                <ScalarProperty Name="correo" ColumnName="correo" />
+                <ScalarProperty Name="cargo" ColumnName="cargo" />
+                <ScalarProperty Name="empresa" ColumnName="empresa" />
+                <ScalarProperty Name="cedula" ColumnName="cedula" />
+                <ScalarProperty Name="jefe" ColumnName="jefe" />
+                <ScalarProperty Name="userlevel" ColumnName="userlevel" />
+                <ScalarProperty Name="idorg" ColumnName="idorg" />
+                <ScalarProperty Name="primernivel" ColumnName="primernivel" />
+                <ScalarProperty Name="nivel" ColumnName="nivel" />
+                <ScalarProperty Name="padre" ColumnName="padre" />
+                <ScalarProperty Name="segundo_nivel" ColumnName="segundo_nivel" />
+                <ScalarProperty Name="tercer_nivel" ColumnName="tercer_nivel" />
+                <ScalarProperty Name="cuarto_nivel" ColumnName="cuarto_nivel" />
+                <ScalarProperty Name="quinto_nivel" ColumnName="quinto_nivel" />
+                <ScalarProperty Name="sexto_nivel" ColumnName="sexto_nivel" />
+                <ScalarProperty Name="Departamento" ColumnName="Departamento" />
+                <ScalarProperty Name="Municipio" ColumnName="Municipio" />
+                <ScalarProperty Name="Direccion" ColumnName="Direccion" />
+                <ScalarProperty Name="Expr1" ColumnName="Expr1" />
+                <ScalarProperty Name="Nombreubicacion" ColumnName="Nombreubicacion" />
+                <ScalarProperty Name="datos" ColumnName="datos" />
+                <ScalarProperty Name="Idhrms" ColumnName="Idhrms" />
+                <ScalarProperty Name="LVL" ColumnName="LVL" />
+                <ScalarProperty Name="userlvl" ColumnName="userlvl" />
+                <ScalarProperty Name="oDEPARTAMENTO" ColumnName="oDEPARTAMENTO" />
+                <ScalarProperty Name="OGERENCIA" ColumnName="OGERENCIA" />
+                <ScalarProperty Name="oSUBGERENCIA" ColumnName="oSUBGERENCIA" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="actualizarregistro" FunctionName="SARHModel.Store.actualizarregistro" />
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="Ninguno" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

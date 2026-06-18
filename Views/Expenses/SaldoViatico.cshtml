@@ -1,0 +1,277 @@
+﻿@* Views/Viaticos/ReporteViaticosGerencia.cshtml *@
+@{
+    ViewBag.Title = "Reporte Viáticos – Presupuesto por Gerencia";
+ }
+
+<style>
+    :root {
+        --rojo: #e11d48;
+        --negro: #111827;
+        --gris: #6b7280;
+        --gris-borde: #e5e7eb;
+        --gris-claro: #f9fafb;
+        --verde: #34d399;
+        --blanco: #fff;
+    }
+
+    .section-title {
+        font-weight: 700;
+        color: var(--negro);
+    }
+
+    .card-soft {
+        border: 1px solid var(--gris-borde);
+        border-radius: 16px;
+        background: var(--blanco);
+        box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    }
+
+    .badge-periodo {
+        background: var(--negro);
+        color: #fff;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: .72rem;
+    }
+
+    .kpi-grid .k-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .kpi-grid .k-row {
+        display: grid;
+        grid-template-columns: 110px 1fr 1fr 1fr 90px;
+        grid-gap: 10px;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: var(--gris-claro);
+        margin-bottom: 8px;
+    }
+
+    .kpi-grid .k-label {
+        font-size: .8rem;
+        color: var(--gris);
+    }
+
+    .val {
+        font-weight: 700;
+        color: var(--negro);
+        text-align: right;
+    }
+
+    .pill {
+        display: inline-block;
+        border-radius: 14px;
+        padding: 2px 8px;
+        font-size: .72rem;
+        color: #fff;
+        white-space: nowrap;
+    }
+
+    .pill-green {
+        background: var(--verde);
+    }
+
+    .pill-red {
+        background: var(--rojo);
+    }
+
+    .progress-wrap {
+        height: 10px;
+        background: #eee;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 10px;
+        background: linear-gradient(90deg, var(--verde), #22c55e);
+        width: 0%;
+    }
+
+        .progress-bar.over {
+            background: linear-gradient(90deg, var(--rojo), #ef4444);
+        }
+
+    .table thead th {
+        background: var(--negro);
+        color: #fff;
+    }
+
+    .dt-buttons .btn {
+        background: var(--rojo) !important;
+        border: none !important;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <!-- Tarjetas por GERENCIA (cada card muestra periodo actual y próximo) -->
+    <h5 class="section-title mb-3">Presupuesto por Gerencia (Mes actual y siguiente)</h5>
+    <div id="cardsGerencias" class="row"></div>
+
+    <!-- Tabla detalle exportable -->
+    <div class="card card-soft mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0" style="color:var(--rojo)">Detalle por Gerencia y Periodo</h6>
+            <small class="text-muted">Descarga a Excel disponible</small>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tablaPresupuesto" class="table table-bordered table-hover table-sm" width="100%">
+                    <thead>
+                        <tr>
+                             <th>Gerencia</th>
+                            <th>Periodo</th>
+                            <th class="text-right">Presupuestado</th>
+                            <th class="text-right">Ejecutado</th>
+                            <th class="text-right">Disponible</th>
+                            <th class="text-right">% Uso</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+
+    <link href="~/onlinejs/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/onlinejs/buttons.bootstrap4.min.css" rel="stylesheet" />
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/responsive.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+
+    <script>
+  // === Helpers ===
+  function mon(n){ n = +n || 0; return 'C$ ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function pct(n){ n = +n || 0; return n.toFixed(1) + '%'; }
+
+  // === DataTable ===
+  const dt = $('#tablaPresupuesto').DataTable({
+    language:{ url:'@Url.Content("~/Scripts/datatable.es-ES.json")' },
+    responsive:true,
+    dom:'Bfrtip',
+    buttons:[
+      { extend:'excelHtml5', title:'Presupuesto_Gerencia', text:'Exportar a Excel' }
+    ],
+    columns:[
+       { data:'Gerencia' },
+      { data:'Periodo' },
+      { data:'Presupuestado', className:'text-right', render:d=>mon(d) },
+      { data:'Ejecutado',     className:'text-right', render:d=>mon(d) },
+      { data:'Disponible',    className:'text-right', render:d=>mon(d) },
+      { data:'PorcentajeUso', className:'text-right', render:d=>pct(d) },
+      { data:'TienePresupuesto', render:function(d){
+          return d
+            ? '<span class="pill pill-green">Con presupuesto</span>'
+            : '<span class="pill pill-red">Sin presupuesto</span>';
+        }
+      }
+    ],
+    drawCallback:function(){
+      const api=this.api(); let i=1;
+      api.rows({page:'current'}).every(function(){ this.cell(this.index(),0).data(i++); });
+    }
+  });
+
+  // === Render de tarjetas por Gerencia ===
+  function renderCards(data, periodos){
+    const byGer = {};
+    data.forEach(x=>{
+      if(!byGer[x.Gerencia]) byGer[x.Gerencia] = {};
+      byGer[x.Gerencia][x.Periodo] = x;
+    });
+
+    const $wrap = $('#cardsGerencias').empty();
+    Object.keys(byGer).forEach(ger=>{
+      const g = byGer[ger] || {};
+      const p0 = periodos[0], p1 = periodos[1];
+      const r0 = g[p0] || { Presupuestado:0, Ejecutado:0, Disponible:0, PorcentajeUso:0, TienePresupuesto:false };
+      const r1 = g[p1] || { Presupuestado:0, Ejecutado:0, Disponible:0, PorcentajeUso:0, TienePresupuesto:false };
+
+      const bar0Pct = Math.max(0, Math.min(100, +r0.PorcentajeUso || 0));
+      const bar1Pct = Math.max(0, Math.min(100, +r1.PorcentajeUso || 0));
+
+        $wrap.append(`
+  <div class="col-lg-6 mb-4">
+    <div class="card card-soft p-3 h-100">
+      <div class="kpi-grid">
+        <div class="k-head">
+          <div style="font-weight:700;color:var(--negro)">${ger}</div>
+          <!-- (Indicadores globales removidos) -->
+          <div></div>
+        </div>
+
+        <div class="k-row">
+          <div class="k-label">
+            <span class="badge-periodo">${p0}</span>
+            ${r0.TienePresupuesto
+                ? '<span class="pill pill-green" title="Con presupuesto">✓</span>'
+                : '<span class="pill pill-red" title="Sin presupuesto">✕</span>'}
+          </div>
+          <div><small class="k-label">Presupuestado</small><div class="val">${mon(r0.Presupuestado)}</div></div>
+          <div><small class="k-label">Ejecutado</small><div class="val">${mon(r0.Ejecutado)}</div></div>
+          <div><small class="k-label">Disponible</small><div class="val">${mon(r0.Disponible)}</div></div>
+          <div class="text-right"><small class="k-label">% Uso</small><div class="val">${pct(r0.PorcentajeUso)}</div></div>
+        </div>
+        <div class="px-2 mb-2">
+          <div class="progress-wrap"><div class="progress-bar ${bar0Pct > 100 ? 'over' : ''}" style="width:${bar0Pct > 100 ? 100 : bar0Pct}%;"></div></div>
+        </div>
+
+        <div class="k-row">
+          <div class="k-label">
+            <span class="badge-periodo">${p1}</span>
+            ${r1.TienePresupuesto
+                ? '<span class="pill pill-green" title="Con presupuesto">✓</span>'
+                : '<span class="pill pill-red" title="Sin presupuesto">✕</span>'}
+          </div>
+          <div><small class="k-label">Presupuestado</small><div class="val">${mon(r1.Presupuestado)}</div></div>
+          <div><small class="k-label">Ejecutado</small><div class="val">${mon(r1.Ejecutado)}</div></div>
+          <div><small class="k-label">Disponible</small><div class="val">${mon(r1.Disponible)}</div></div>
+          <div class="text-right"><small class="k-label">% Uso</small><div class="val">${pct(r1.PorcentajeUso)}</div></div>
+        </div>
+        <div class="px-2">
+          <div class="progress-wrap"><div class="progress-bar ${bar1Pct > 100 ? 'over' : ''}" style="width:${bar1Pct > 100 ? 100 : bar1Pct}%;"></div></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+`);
+    });
+  }
+
+  // === Carga automática al abrir (toma mes actual y próximo) ===
+        $(function () {
+            $.LoadingOverlay("show")
+    $.ajax({
+      url:'@Url.Action("ObtenerPresupuestoActualProximo","Expenses")',
+      type:'GET',
+   
+      success:function(resp){
+        if(!resp || !resp.ok){ alert(resp && resp.mensaje ? resp.mensaje : 'No se pudo cargar'); return; }
+        dt.clear().rows.add(resp.data).draw();
+        renderCards(resp.data, resp.periodos);
+      },
+      error:()=>alert('Error al cargar los datos.'),
+      complete:()=>$.LoadingOverlay("hide")
+    });
+  });
+    </script>
+}

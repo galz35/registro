@@ -1,0 +1,39 @@
+﻿
+<script>
+    function onButtonClick(s, e) {
+        e.processOnServer = confirm('Seguro que desea borrar el registro?');
+    }
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+      gvIndicatorProduct.SetHeight(height - 150);
+    }
+
+</script>
+<style type="text/css">
+
+    .upperCase * {
+        text-transform: uppercase;
+    }
+</style>
+
+@using (Html.BeginForm())
+{
+
+    @Html.Action("ListPartial", "IndicatorProducts")
+}
+
+
+
+
+
+

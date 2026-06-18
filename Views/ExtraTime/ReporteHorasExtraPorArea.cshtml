@@ -1,0 +1,280 @@
+﻿@* Views/ExtraTime/ReporteHorasExtraPorArea2026.cshtml *@
+@{
+    ViewBag.Title = "Horas Extra por Área (2026)";
+}
+
+<style>
+    .box {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 16px;
+        max-width: 1200px;
+    }
+
+    .rowx {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .field {
+        flex: 1;
+        min-width: 220px;
+    }
+
+    label {
+        font-weight: 600;
+        color: #111827;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+    }
+
+    .btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 0;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    .btn-red {
+        background: #e11d48;
+        color: #fff;
+    }
+
+    .btn-gray {
+        background: #111827;
+        color: #fff;
+    }
+
+    .hint {
+        color: #6b7280;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+
+    .table-wrap {
+        margin-top: 14px;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 980px;
+    }
+
+    th, td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eef2f7;
+        font-size: 13px;
+    }
+
+    th {
+        background: #f9fafb;
+        text-align: left;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .muted {
+        color: #6b7280;
+    }
+</style>
+
+<div class="box">
+    <h3 style="margin:0 0 12px;">Reporte Horas Extra por Área (2026)</h3>
+
+    <div class="rowx">
+        <div class="field">
+            <label>Período</label>
+            <input type="month" id="id" />
+            <div class="hint">1) Seleccioná período y clic en “Cargar”.</div>
+        </div>
+
+        <div class="field" style="max-width:220px;">
+            <button class="btn btn-gray" type="button" id="btnCargar">Cargar</button>
+            <div class="hint" id="lblEstado"></div>
+        </div>
+
+        <div class="field">
+            <label>Área</label>
+            <select id="area" disabled>
+                <option value="">(Todas)</option>
+            </select>
+            <div class="hint">2) Elegí área (o Todas).</div>
+        </div>
+
+        <div class="field">
+            <label>Tipo</label>
+            <select id="viewType" disabled>
+                <option value="DETALLE">DETALLE</option>
+                <option value="CONSOLIDADO">CONSOLIDADO</option>
+            </select>
+            <div class="hint">3) Generá PDF.</div>
+        </div>
+
+        @using (Html.BeginForm("GenerarPdfHorasExtra2026", "ExtraTime", FormMethod.Post, new { id = "frmPdf" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="hidId" />
+            <input type="hidden" name="viewType" id="hidViewType" />
+            <input type="hidden" name="area" id="hidArea" />
+
+            <div class="field" style="max-width:220px;">
+                <button class="btn btn-red" type="submit" id="btnPdf" disabled>Generar PDF</button>
+                <div class="hint muted">Usa el mismo dataset cargado.</div>
+            </div>
+        }
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Gerencia</th>
+                    <th>Carnet</th>
+                    <th>Nombre</th>
+                    <th>Área</th>
+                    <th>Horas</th>
+                    <th>Fecha</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="tbRows">
+                <tr><td colspan="9" class="muted">Seleccione un período y presione “Cargar”.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    var inpPeriodo = document.getElementById('id');
+    var btnCargar = document.getElementById('btnCargar');
+    var lblEstado = document.getElementById('lblEstado');
+
+    var selArea = document.getElementById('area');
+    var selTipo = document.getElementById('viewType');
+    var btnPdf = document.getElementById('btnPdf');
+
+    var hidId = document.getElementById('hidId');
+    var hidViewType = document.getElementById('hidViewType');
+    var hidArea = document.getElementById('hidArea');
+
+    var tb = document.getElementById('tbRows');
+
+    function setEstado(txt) { lblEstado.textContent = txt || ''; }
+
+    function limpiarSelectAreas() {
+        selArea.innerHTML = '<option value="">(Todas)</option>';
+    }
+
+    function pintarTabla(rows) {
+        tb.innerHTML = '';
+        if (!rows || rows.length === 0) {
+            tb.innerHTML = '<tr><td colspan="9" class="muted">No hay datos para ese período.</td></tr>';
+            return;
+        }
+
+        var html = [];
+        for (var i = 0; i < rows.length; i++) {
+            var r = rows[i];
+            html.push('<tr>'
+                + '<td>' + (r.OrganizationName || '') + '</td>'
+                + '<td>' + (r.EmployeeNumber || '') + '</td>'
+                + '<td>' + (r.FullName || '') + '</td>'
+                + '<td>' + (r.Location || '') + '</td>'
+                + '<td>' + (r.TotalHours || 0) + '</td>'
+                + '<td>' + (r.ExecutionDate || '') + '</td>'
+                + '<td>' + (r.StartHour || '') + '</td>'
+                + '<td>' + (r.EndHour || '') + '</td>'
+                + '<td>' + (r.StatusName || '') + '</td>'
+                + '</tr>');
+        }
+        tb.innerHTML = html.join('');
+    }
+
+    function habilitarAcciones(habilitar) {
+        selArea.disabled = !habilitar;
+        selTipo.disabled = !habilitar;
+        btnPdf.disabled = !habilitar;
+    }
+
+    btnCargar.addEventListener('click', function () {
+        var periodo = (inpPeriodo.value || '').trim();
+        if (!periodo) { setEstado('Seleccione un período.'); return; }
+
+        habilitarAcciones(false);
+        limpiarSelectAreas();
+        setEstado('Cargando datos...');
+
+        var url = '@Url.Action("CargarHorasExtraPeriodo2026", "ExtraTime")' + '?id=' + encodeURIComponent(periodo);
+
+        fetch(url, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res || !res.ok) {
+                    setEstado((res && res.msg) ? res.msg : 'Error cargando datos.');
+                    pintarTabla([]);
+                    return;
+                }
+
+                // llena select de áreas desde los MISMOS resultados
+                if (res.areas && res.areas.length) {
+                    for (var i = 0; i < res.areas.length; i++) {
+                        var opt = document.createElement('option');
+                        opt.value = res.areas[i];
+                        opt.textContent = res.areas[i];
+                        selArea.appendChild(opt);
+                    }
+                }
+
+                // tabla
+                pintarTabla(res.rows || []);
+                setEstado('Registros: ' + ((res.rows && res.rows.length) ? res.rows.length : 0));
+
+                // habilita generación
+                habilitarAcciones(true);
+
+                // set hidden base
+                hidId.value = periodo;
+                hidViewType.value = selTipo.value;
+                hidArea.value = selArea.value;
+            })
+            .catch(function () {
+                setEstado('Error de red.');
+                pintarTabla([]);
+            });
+    });
+
+    selArea.addEventListener('change', function () {
+        hidArea.value = selArea.value;
+    });
+
+    selTipo.addEventListener('change', function () {
+        hidViewType.value = selTipo.value;
+    });
+
+    // Al submit, asegura hidden values
+    document.getElementById('frmPdf').addEventListener('submit', function () {
+        hidId.value = (inpPeriodo.value || '').trim();
+        hidViewType.value = selTipo.value;
+        hidArea.value = selArea.value;
+    });
+})();
+</script>

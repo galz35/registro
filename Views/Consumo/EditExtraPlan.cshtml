@@ -1,0 +1,193 @@
+﻿@model Entities.ViewModels.VistaExtraPlan
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+
+<script>
+
+
+    function GuardarExtraPlan(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("GuardarExtraPlan")',
+            type: "POST",
+            data: $('#frmExtraPlan').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditExtraPlan.Hide();
+                            }
+
+                        });
+                } else {
+                    swal("Advertencia!", data.message, "warning");
+                }
+
+
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+    }
+
+    function OnBatchEditEndEditing(s, e) {
+        CalculateSummary(s, e.rowValues, e.visibleIndex, false);
+    }
+    var savedValue;
+    function OnEndCallback(s, e) {
+        if (!savedValue) return;
+        labelSum.SetValue(savedValue);
+
+    }
+    function CalculateSummary(grid, rowValues, visibleIndex, isDeleting) {
+        var originalValue = grid.batchEditApi.GetCellValue(visibleIndex, "KmsRecorrer");
+        var newValue = rowValues[(grid.GetColumnByField("KmsRecorrer").index)].value;
+        var dif = isDeleting ? -newValue : newValue - originalValue;
+        var sum = (parseFloat(labelSum.GetValue()) + dif).toFixed(1);
+        savedValue = sum;
+        labelSum.SetValue(sum);
+    }
+
+    function OnBatchEditRowDeleting(s, e) {
+        CalculateSummary(s, e.rowValues, e.visibleIndex, true);
+    }
+    function OnChangesCanceling(s, e) {
+        if (s.batchEditApi.HasChanges())
+            setTimeout(function () {
+                savedValue = null;
+                s.Refresh();
+            }, 0);
+    }
+
+
+
+
+</script>
+
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+<div id="master">
+    @using (Html.BeginForm("SaveExtraPlan", "Consumo", FormMethod.Post, new { id = "frmExtraPlan" }))
+    {
+        @Html.DevExpress().FormLayout(settings =>
+        {
+   settings.Name = "frmEditExtraPlan";
+   settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+   settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 500;
+   settings.ControlStyle.CssClass = "formLayout";
+
+   settings.Items.AddGroupItem(g =>
+            {
+       g.Caption = "";
+       g.ColCount = 2;
+       g.UseDefaultPaddings = false;
+       g.Paddings.PaddingTop = Unit.Pixel(10);
+       g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+       g.Items.Add(m => m.IdCombustibleExtraPlan, i =>
+       {
+           i.Caption = "Id";
+           i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+
+           });
+       }); g.Items.Add(i =>
+       {
+           i.FieldName = "FechaSolicitud";
+           i.Caption = "Fecha de Solicitud";
+           i.NestedExtension().DateEdit(s =>
+           {
+               s.Properties.NullText = "DD/MM/YYYY";
+               s.Properties.EditFormat = EditFormat.Date;
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.ReadOnly = true;
+
+           });
+       });
+       //g.Items.Add(i =>
+       //{
+       //    i.FieldName = "IdCombustibleProveedor";
+       //    i.Caption = "Proveedor";
+       //    i.NestedExtension().ComboBox(s =>
+       //    {
+       //        s.Properties.TextField = "NombreProveedor";
+       //        s.SelectedIndex = 0;
+       //        s.Properties.ValueField = "IdCombustibleProveedor";
+       //        s.Properties.ValueType = typeof(int);
+       //        s.Properties.DataSource = slnRhonline.Data.CombustibleProveedor.ObtenerProveedoresCombustible();
+       //        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+       //        s.Properties.ValidationSettings.Display = Display.Dynamic;
+       //        s.ShowModelErrors = true;
+       //        s.Width = Unit.Percentage(100);
+       //        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+       //        //s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedProveedorChanged";
+
+       //    });
+       //});
+
+       g.Items.Add(i =>
+       {
+           i.FieldName = "KilometrajeActual";
+           i.Caption = "Km Actual";
+           i.NestedExtension().TextBox(s =>
+           {
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+           });
+       });
+
+
+
+   });
+   }).GetHtml()
+    }
+</div>
+<div id="partial">@{Html.RenderAction("EditDetailExtraPlan");}</div>
+<br />
+
+<br />
+<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings =>
+    {
+       settings.Name = "btnDanger";
+       settings.Width = 164;
+       settings.Text = "Actualizar";
+       settings.RenderMode = ButtonRenderMode.Danger;
+    settings.ClientSideEvents.Click = "GuardarExtraPlan";  //"function(s, e) { top.popImage.Hide(); }";
+
+    }).GetHtml()
+</div>
+

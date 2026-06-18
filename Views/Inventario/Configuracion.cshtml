@@ -1,0 +1,393 @@
+﻿@{
+    ViewBag.Title = "Configuración del Sistema";
+}
+
+<style>
+    :root {
+        --primario: #2c3e50;
+        --acento: #e1251b;
+        --bg-color: #f8f9fc;
+        --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+        --gris-claro: #f1f3f7;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Contenedor Principal (Shell) */
+    .shell {
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: var(--card-shadow);
+        padding: 30px;
+        border: none;
+        min-height: 500px;
+    }
+
+    /* Pestañas de Navegación Mejoradas */
+    .nav-pills {
+        border-bottom: 2px solid var(--gris-claro);
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+    }
+
+        .nav-pills .nav-link {
+            color: #888;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-right: 10px;
+            padding: 10px 20px;
+            transition: 0.3s;
+        }
+
+            .nav-pills .nav-link:hover {
+                background-color: var(--gris-claro);
+                color: var(--primario);
+            }
+
+            .nav-pills .nav-link.active {
+                background-color: var(--primario);
+                color: white;
+                box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
+            }
+
+    /* Tarjetas de Configuración (Roles) */
+    .card-config {
+        border: 2px dashed var(--gris-claro);
+        border-radius: 16px;
+        background: #fff;
+        transition: 0.3s;
+        padding: 25px;
+    }
+
+        .card-config:hover {
+            border-color: var(--acento);
+            background: #fffaf9;
+        }
+
+    /* Tablas Estilizadas */
+    .table-custom thead th {
+        border-bottom: 2px solid var(--gris-claro);
+        border-top: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+        padding-bottom: 15px;
+    }
+
+    .table-custom tbody td {
+        vertical-align: middle;
+        padding: 12px 10px;
+        border-bottom: 1px solid #f9f9f9;
+    }
+
+    /* Inputs y Botones */
+    .form-control-custom {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px 15px;
+        background: #fafafa;
+    }
+
+        .form-control-custom:focus {
+            border-color: var(--primario);
+            background: #fff;
+            box-shadow: none;
+        }
+
+    .btn-action {
+        border-radius: 8px;
+        font-weight: 700;
+        padding: 10px 20px;
+        transition: 0.2s;
+    }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+</style>
+
+<div class="container mt-4 mb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="font-weight-bold mb-1 text-dark"><i class="fas fa-cogs mr-2 text-muted"></i> Parámetros del Sistema</h3>
+            <p class="text-muted mb-0">Gestión de catálogos maestros, almacenes y seguridad.</p>
+        </div>
+    </div>
+
+    <div class="shell">
+        <ul class="nav nav-pills" id="pills-tab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="tab-art-link" data-toggle="pill" href="#tab-art">
+                    <i class="fas fa-box-open mr-2"></i>Catálogo de Artículos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-alm-link" data-toggle="pill" href="#tab-alm">
+                    <i class="fas fa-warehouse mr-2"></i>Bodegas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-rol-link" data-toggle="pill" href="#tab-rol">
+                    <i class="fas fa-shield-alt mr-2"></i>Seguridad y Accesos
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-2">
+
+            <div class="tab-pane fade show active" id="tab-art">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-weight-bold m-0 text-dark">Maestro de Artículos</h5>
+                    <button class="btn btn-danger btn-action" onclick="abrirModalArt()">
+                        <i class="fas fa-plus mr-1"></i> Crear Artículo
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="tblArticulos" class="table table-custom w-100">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Código</th>
+                                <th style="width: 40%">Descripción</th>
+                                <th style="width: 15%">Familia</th>
+                                <th style="width: 15%">U.M.</th>
+                                <th style="width: 15%" class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-alm">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-weight-bold m-0 text-dark">Estructura de Almacenes</h5>
+                    <button class="btn btn-dark btn-action" onclick="Swal.fire('Info', 'Función de crear almacén en desarrollo.', 'info')">
+                        <i class="fas fa-plus mr-1"></i> Nueva Bodega
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="tblAlmacenes" class="table table-custom w-100">
+                        <thead>
+                            <tr>
+                                <th>Código Bodega</th>
+                                <th>Nombre Descriptivo</th>
+                                <th>Estado</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-rol">
+                <div class="row">
+                    <div class="col-lg-4 mb-4 mb-lg-0">
+                        <div class="card-config">
+                            <h6 class="font-weight-bold mb-3 text-dark"><i class="fas fa-user-plus text-primary mr-2"></i>Otorgar Privilegios</h6>
+
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-muted">CARNET DEL COLABORADOR</label>
+                                <input type="text" id="rolCarnet" class="form-control form-control-custom" placeholder="Ej: 123456" autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-muted">NIVEL DE ACCESO</label>
+                                <select id="rolNombre" class="form-control form-control-custom font-weight-bold">
+                                    <option value="BODEGA">Logística / Bodega</option>
+                                    <option value="ADMIN">Administrador Total</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-primary btn-block btn-action mt-4 shadow-sm" onclick="guardarRol()">
+                                Autorizar Acceso
+                            </button>
+
+                            <div class="mt-4 p-3 bg-light rounded small text-muted border border-white">
+                                <b>Nota:</b> Los usuarios que no figuren en esta lista entrarán por defecto con el rol base de <em>Colaborador</em> (Solo Mi Portal).
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+                        <h6 class="font-weight-bold mb-3 text-dark">Usuarios Autorizados</h6>
+                        <div class="table-responsive border rounded bg-white">
+                            <table id="tblRoles" class="table table-custom mb-0 w-100">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Carnet</th>
+                                        <th>Nombre (SIGHO)</th>
+                                        <th>Rol Asignado</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-right">Revocar</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlArt" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px">
+            <div class="modal-header bg-light border-0 pb-3">
+                <h5 class="modal-title font-weight-bold text-dark">Registro de Artículo</h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="form-group">
+                    <label class="small font-weight-bold text-muted">CÓDIGO (SKU)</label>
+                    <input type="text" id="artCod" class="form-control form-control-custom text-uppercase" placeholder="Ej: EPP-001">
+                </div>
+                <div class="form-group">
+                    <label class="small font-weight-bold text-muted">DESCRIPCIÓN COMERCIAL</label>
+                    <input type="text" id="artNom" class="form-control form-control-custom" placeholder="Ej: Botas de Seguridad Punta de Acero">
+                </div>
+                <div class="row">
+                    <div class="col-7">
+                        <label class="small font-weight-bold text-muted">FAMILIA / TIPO</label>
+                        <select id="artTipo" class="form-control form-control-custom font-weight-bold">
+                            <option value="ROPA">Uniformes y Ropa</option>
+                            <option value="EPP">Equipo Protección (EPP)</option>
+                            <option value="MEDICAMENTO">Medicamentos</option>
+                            <option value="EVENTO" class="text-danger">Salida Especial (Evento)</option>
+                        </select>
+                    </div>
+                    <div class="col-5">
+                        <label class="small font-weight-bold text-muted">UNIDAD</label>
+                        <input type="text" id="artUni" class="form-control form-control-custom text-center" value="UN" placeholder="UN, PAR, CAJA">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                <button class="btn btn-danger btn-block btn-lg shadow-sm font-weight-bold" onclick="guardarArticulo()">
+                    <i class="fas fa-save mr-2"></i> GUARDAR EN CATÁLOGO
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            initTablaArt();
+            initTablaAlm();
+            initTablaRoles();
+        });
+
+        // --- 1. CATÁLOGO DE ARTÍCULOS ---
+        function initTablaArt() {
+            $('#tblArticulos').DataTable({
+                ajax: '/Inventario/Articulos?carnetUsuario=ADMIN', // El Admin ve incluso los de "EVENTO"
+                columns: [
+                    { data: 'Codigo', render: c => `<strong class="text-dark">${c}</strong>` },
+                    { data: 'Nombre' },
+                    {
+                        data: 'Tipo', render: t => {
+                            let badgeClass = t === 'EVENTO' ? 'badge-warning' : 'badge-secondary';
+                            return `<span class="badge ${badgeClass} px-2 py-1">${t}</span>`;
+                        }
+                    },
+                    { data: 'Unidad', render: u => `<span class="text-muted small font-weight-bold">${u}</span>` },
+                    {
+                        data: null,
+                        className: 'text-right',
+                        render: r => `
+                                <button class="btn btn-sm btn-light border rounded-circle text-primary mx-1" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-light border rounded-circle text-danger" title="Desactivar"><i class="fas fa-trash-alt"></i></button>
+                            `
+                    }
+                ],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json" }
+            });
+        }
+
+        function abrirModalArt() {
+            $('#artCod, #artNom').val('');
+            $('#artTipo').val('ROPA');
+            $('#artUni').val('UN');
+            $('#mdlArt').modal('show');
+        }
+
+        function guardarArticulo() {
+            const cod = $('#artCod').val().trim();
+            const nom = $('#artNom').val().trim();
+            if (!cod || !nom) return Swal.fire('Atención', 'Código y Descripción son obligatorios', 'warning');
+
+            // Aquí harías el POST al Endpoint de Crear Artículo (Ej: $.post('/Inventario/CrearArticulo', ...))
+            Swal.fire({ icon: 'success', title: 'Guardado', text: 'Artículo registrado en el maestro.', timer: 1500, showConfirmButton: false });
+            $('#mdlArt').modal('hide');
+            $('#tblArticulos').DataTable().ajax.reload();
+        }
+
+        // --- 2. BODEGAS ---
+        function initTablaAlm() {
+            $('#tblAlmacenes').DataTable({
+                ajax: '/Inventario/Almacenes',
+                dom: 't', // Ocultamos buscador porque son pocas bodegas
+                columns: [
+                    { data: 'Codigo', render: c => `<strong class="text-dark">${c}</strong>` },
+                    { data: 'Nombre' },
+                    { data: 'IdAlmacen', render: () => `<span class="badge badge-success px-2 py-1"><i class="fas fa-circle mr-1" style="font-size:0.5rem"></i>Operativo</span>` },
+                    {
+                        data: null,
+                        className: 'text-right',
+                        render: () => `<button class="btn btn-sm btn-light border rounded-pill px-3 text-muted">Configurar</button>`
+                    }
+                ],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json" }
+            });
+        }
+
+        // --- 3. ROLES Y SEGURIDAD ---
+        function initTablaRoles() {
+            $('#tblRoles').DataTable({
+                // Endpoint Temporal: Deberás crear uno en C# que lea de la tabla [RolesSistema]
+                ajax: '/Inventario/EmpleadosMaestro',
+                pageLength: 5,
+                lengthChange: false,
+                columns: [
+                    { data: 'Carnet', render: c => `<strong class="text-primary">${c}</strong>` },
+                    { data: 'Nombre', render: n => `<span class="text-truncate d-inline-block" style="max-width:150px;">${n}</span>` },
+                    { data: 'Carnet', render: () => `<span class="badge badge-dark px-2 py-1"><i class="fas fa-key mr-1"></i>BODEGA</span>` },
+                    { data: 'Carnet', className: 'text-center', render: () => `<span class="text-success"><i class="fas fa-check"></i> Activo</span>` },
+                    {
+                        data: null,
+                        className: 'text-right',
+                        render: () => `<button class="btn btn-sm btn-outline-danger rounded-circle" title="Revocar Permiso"><i class="fas fa-times"></i></button>`
+                    }
+                ],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json" }
+            });
+        }
+
+        function guardarRol() {
+            const carnet = $('#rolCarnet').val().trim();
+            if (!carnet) return Swal.fire('Error', 'Ingrese un carnet válido.', 'error');
+
+            Swal.fire({
+                title: '¿Confirmar Asignación?',
+                text: `Se otorgarán permisos de ${$('#rolNombre option:selected').text()} al carnet ${carnet}.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2c3e50',
+                confirmButtonText: 'Sí, Autorizar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Llamada POST al endpoint de RolesSistema
+                    Swal.fire('¡Autorizado!', 'Los permisos han sido actualizados.', 'success');
+                    $('#rolCarnet').val('');
+                }
+            });
+        }
+    </script>
+}

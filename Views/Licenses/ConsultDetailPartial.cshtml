@@ -1,0 +1,219 @@
+﻿@{
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvConsult";
+        settings.KeyFieldName = "LicenseId";
+        settings.CallbackRouteValues = new { Controller = "Licenses", Action = "ConsultDetailPartial" };
+        settings.Width = Unit.Percentage(100);
+        settings.ControlStyle.Border.BorderWidth = 1;
+
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+
+        settings.Settings.ShowGroupPanel = false;
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.KeyboardSupport = true;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+        settings.SettingsExport.EnableClientSideExportAPI = true;
+        settings.SettingsExport.ExcelExportMode = DevExpress.Export.ExportType.DataAware;
+
+        settings.SettingsExport.FileName = "Detalle de Vacaciones";
+
+        #region Paging
+        settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+
+        #endregion
+        #region filtering
+        settings.SettingsSearchPanel.CustomEditorName = "search";
+      
+        settings.Settings.ShowHeaderFilterButton = false;
+        //settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+        #endregion
+        #region Sorting
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "EmployeeNumber");
+        #endregion
+
+        settings.Toolbars.Add(t =>
+        {
+            t.Enabled = true;
+            t.Position = GridToolbarPosition.Top;
+            t.EnableAdaptivity = true;
+
+
+            t.Items.Add(i =>
+            {
+                i.Command = GridViewToolbarCommand.Custom;
+                i.Text = "";
+                i.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ArrowsPrev16x16gray;
+                i.Name = "back";
+                i.ToolTip = "Regresar pagina anterior";
+
+            });
+
+            t.Items.Add(i =>
+            {
+                i.Text = "Exportar a";
+                i.BeginGroup = true;
+                i.AdaptivePriority = 1;
+                i.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsDownload16x16office2013;
+
+                i.Items.Add(GridViewToolbarCommand.ExportToXls).Text = "Exportar a Excel";
+
+            });
+
+
+            t.Items.Add(i =>
+            {
+                i.BeginGroup = true;
+                i.Alignment = MenuItemAlignment.Right;
+                i.SetTemplateContent(c =>
+                {
+                    Html.DevExpress().ButtonEdit(s =>
+                    {
+                        s.Name = "search";
+                        s.Properties.NullText = "Buscar..";
+                        s.Properties.Buttons
+                            .Add()
+                            .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+
+                    }).Render();
+                });
+            });
+
+        });
+
+
+
+
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "AreaName";
+
+            col.Caption = "Area";
+            col.ColumnType = MVCxGridViewColumnType.Memo;
+            col.Width = 70;
+            col.AdaptivePriority = 1;
+        });
+
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "EmployeeNumber";
+
+            col.Caption = "N° Empleado";
+
+            col.Width = 30;
+            col.AdaptivePriority = 2;
+
+        });
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "FullName";
+
+            col.Caption = "Nombre Completo";
+
+            col.Width = 50;
+            col.AdaptivePriority = 3;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "StartDate";
+
+            col.Caption = "Fecha de Inicio";
+            col.PropertiesEdit.DisplayFormatString = "dd/MM/yyyy";
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.Width = 40;
+            col.AdaptivePriority = 4;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "EndDate";
+
+            col.Caption = "Fecha de Fin";
+            col.PropertiesEdit.DisplayFormatString = "dd/MM/yyyy";
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.Width = 40;
+            col.AdaptivePriority = 5;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "DaysQuantity";
+
+            col.Caption = "Total Dias";
+            col.PropertiesEdit.DisplayFormatString = "#.00";
+
+            col.Width = 30;
+            col.AdaptivePriority = 6;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Type";
+
+            col.Caption = "Motivo";
+            col.ColumnType = MVCxGridViewColumnType.Memo;
+            col.Width = 50;
+            col.AdaptivePriority = 7;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "LicenseStatus";
+
+            col.Caption = "Estado";
+            col.ColumnType = MVCxGridViewColumnType.Memo;
+            col.Width = 50;
+            col.AdaptivePriority = 8;
+        });
+
+
+
+
+        settings.CellEditorInitialize = (s, e) =>
+        {
+            ASPxEdit editor = (ASPxEdit)e.Editor;
+            editor.ValidationSettings.Display = Display.Dynamic;
+        };
+
+
+
+
+        settings.Settings.ShowFooter = true;
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+

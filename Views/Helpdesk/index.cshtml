@@ -1,0 +1,836 @@
+﻿<!-- View: TodosLosCasos.cshtml -->
+
+@{ ViewBag.Title = "Todos los Casos";
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.8/css/highcharts.css" />
+<!-- Estilos personalizados -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" />
+<style>
+    /* Estilos personalizados */
+    /* Estilos personalizados */
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    .card {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        color: #000;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card h6, .h3, .h6 {
+        color: #333333;
+    }
+
+    .comments-section {
+        background-color: #ffffff;
+    }
+
+    .comment {
+        margin-bottom: 20px;
+        display: flex;
+    }
+
+        .comment .user-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+            .comment .user-image img {
+                width: 100%;
+                height: auto;
+            }
+
+        .comment .comment-content {
+            margin-left: 15px;
+            width: 100%;
+        }
+
+            .comment .comment-content h6 {
+                margin-bottom: 5px;
+                color: #ff0000; /* Cambiado de azul a rojo */
+            }
+
+        .comment .reply-button {
+            margin-top: 5px;
+            cursor: pointer;
+            color: #28a745;
+        }
+
+    .badge {
+        font-size: 0.9em;
+    }
+
+    .kpi-card {
+        background-color: #ffffff;
+        color: #000;
+        border-left: 0.25rem solid #ff0000; /* Cambiado de azul a rojo */
+    }
+
+        .kpi-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+            .kpi-card .card-body .icon {
+                font-size: 3em;
+                opacity: 0.7;
+                color: #ff0000; /* Cambiado de azul a rojo */
+            }
+
+    .animated {
+        animation-duration: 1s;
+        animation-fill-mode: both;
+    }
+
+    .fadeInUp {
+        animation-name: fadeInUp;
+    }
+
+    .highcharts-background {
+        fill: #ffffff;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        color: #000;
+    }
+
+    .chart-type-selector {
+        margin-bottom: 15px;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .table thead th {
+        background-color: #e9ecef;
+        color: #000;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <h1 class="h3 mb-4 text-dark text-center animated fadeInUp">@ViewBag.Title</h1>
+
+    <!-- Pestañas Centrales -->
+    <ul class="nav nav-tabs justify-content-center" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="casos-tab" data-toggle="tab" href="#casos" role="tab" aria-controls="casos" aria-selected="true">Casos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="solicitudes-tab" data-toggle="tab" href="#solicitudes" role="tab" aria-controls="solicitudes" aria-selected="false">Solicitudes</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+        <!-- Pestaña Casos -->
+        <div class="tab-pane fade show active" id="casos" role="tabpanel" aria-labelledby="casos-tab">
+            <!-- Contenido de Casos -->
+            <div class="row mt-4">
+                <!-- Gráfico y KPIs -->
+                <div class="col-lg-8">
+                    <div class="row">
+                        <!-- KPIs -->
+                        <div class="col-xl-4 col-lg-4">
+                            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                                <div class="card-body">
+                                    <div>
+                                        <div class="text-uppercase mb-1">Casos Abierto</div>
+                                        <div class="h5 mb-0 font-weight-bold" id="casosAbierto">0</div>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-book-open"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Casos Atendidos -->
+                            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                                <div class="card-body">
+                                    <div>
+                                        <div class="text-uppercase mb-1">Casos Atendidos</div>
+                                        <div class="h5 mb-0 font-weight-bold" id="casosAtendidos">0</div>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-headset"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Casos Cerrados -->
+                            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                                <div class="card-body">
+                                    <div>
+                                        <div class="text-uppercase mb-1">Casos Cerrados</div>
+                                        <div class="h5 mb-0 font-weight-bold" id="casosCerrados">0</div>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Gráfico de Casos por Gerencia -->
+                        <div class="col-xl-8 col-lg-8">
+                            <div class="card shadow mb-4 animated fadeInUp">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold">Casos por Gerencia</h6>
+                                    <button class="btn btn-sm btn-primary" id="expandChartCasos"><i class="fas fa-expand"></i></button>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Selector de tipo de gráfico -->
+                                    <div class="chart-type-selector">
+                                        <label for="chartTypeCasos">Tipo de Gráfico:</label>
+                                        <select id="chartTypeCasos" class="form-control">
+                                            <option value="line">Línea</option>
+                                            <option value="column">Columna</option>
+                                            <option value="area">Área</option>
+                                            <option value="bar">Barra</option>
+                                            <option value="pie">Pastel</option>
+                                        </select>
+                                    </div>
+                                    <div id="graficoCasos" style="height: 300px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comentarios de Usuarios -->
+                <div class="col-lg-4">
+                    <div class="card shadow comments-section animated fadeInUp">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Comentarios de Usuarios</h6>
+                            <button class="btn btn-sm btn-primary" id="viewAllCommentsCasos"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="card-body" id="commentContainerCasos">
+                            <!-- Comentarios se cargarán aquí -->
+                        </div>
+                        <!-- Paginación dentro del card-body -->
+                        <div class="mt-3">
+                            <nav aria-label="Paginación de comentarios">
+                                <ul class="pagination justify-content-center mb-0" id="commentPaginationCasos">
+                                    <!-- Páginas se generarán aquí -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Casos -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card shadow animated fadeInUp">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold">Listado de Casos</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="tablaTodosLosCasos" class="table table-striped table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Acciones</th>
+                                            <th>Usuario</th>
+                                            <th>Título</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Fecha de Creación</th>
+                                            <th>Gerencia</th>
+                                            <th>Área</th>
+                                            <th>Cargo</th>
+                                            <th>Correo</th>
+                                            <th>Teléfono</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para Ver Detalle del Caso -->
+            <div class="modal fade" id="modalVerDetalleCaso" tabindex="-1" role="dialog" aria-labelledby="verDetalleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="verDetalleModalLabel">Detalle del Caso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="detalleCasoContent">
+                            <!-- Aquí se cargará dinámicamente el contenido del detalle del caso -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="modal fade" id="modalVerDetalleCaso" tabindex="-1" role="dialog" aria-labelledby="verDetalleModalLabelCasos" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="verDetalleModalLabelCasos">Detalle del Caso</h5>
+                    <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="detalleCasoContentCasos">
+                    <!-- Aquí se cargará dinámicamente el contenido del detalle del caso -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="chartModalCasos" tabindex="-1" role="dialog" aria-labelledby="chartModalLabelCasos" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="chartModalLabelCasos">Gráfico Ampliado</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="graficoCasosAmpliado" style="height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para Atender Caso -->
+    <div class="modal fade" id="modalAtenderCaso" tabindex="-1" role="dialog" aria-labelledby="atenderCasoModalLabelCasos" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="atenderCasoModalLabelCasos">Atender Caso</h5>
+                    <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAtenderCasoCasos">
+                        <input type="hidden" id="CasoIDCasos" name="CasoID">
+                        <div class="form-group">
+                            <label for="NotasCierreCasos">Notas de Atención</label>
+                            <textarea class="form-control" id="NotasCierreCasos" name="NotasCierre" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnGuardarAtencionCasos" class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver y responder comentarios de Casos -->
+    <div class="modal fade" id="commentModalCasos" tabindex="-1" role="dialog" aria-labelledby="commentModalLabelCasos" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="commentModalLabelCasos">Comentario</h5>
+                    <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="commentContentCasos">
+                    <!-- Contenido del comentario -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para Atender Caso -->
+    <div class="modal fade" id="modalAtenderCaso" tabindex="-1" role="dialog" aria-labelledby="atenderCasoModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="atenderCasoModalLabel">Atender Caso</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAtenderCaso">
+                        <input type="hidden" id="CasoID" name="CasoID">
+                        <div class="form-group">
+                            <label for="NotasCierre">Notas de Atención</label>
+                            <textarea class="form-control" id="NotasCierre" name="NotasCierre" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnGuardarAtencion" class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+
+    @*<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.8/highcharts.js"></script>*@
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+    <script src="~/onlinejs/highcharts.js"></script>
+    <script>
+        var tabla_persona;
+
+            $(document).ready(function () {
+                var casosData = [];
+
+                tabla_persona  =   $('#tablaTodosLosCasos').DataTable({
+        "ajax": {
+                                 "url": "@Url.Action("ObtenerCasosPaginados", "Helpdesk")",
+
+            "type": "GET",
+            "datatype": "json"
+        },
+        "columns": [
+            {
+                "data": "ID",
+                "render": function (data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-cogs"></i> Acciones
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="javascript:void(0);" onclick="verDetalle('${data}')">
+                                    <i class="fas fa-eye"></i> Ver Detalle
+                                </a>
+
+                                ${row.Estado === "Abierto" || row.Estado === "En Proceso" ? `
+                                    <a class="dropdown-item" href="javascript:void(0);" onclick="atenderCaso('${data}')">
+                                        <i class="fas fa-edit"></i> Atender
+                                    </a>
+                                ` : ''}
+                            </div>
+                        </div>`;
+                },
+                "orderable": false,
+                "searchable": false
+            },
+            { "data": "NombreAutor" },
+            { "data": "Titulo" },
+            { "data": "Estado" },
+            { "data": "Prioridad" },
+            {
+                "data": "FechaCreacion",
+                "render": function (data) {
+                    return moment(data).format('DD/MM/YYYY');
+                }
+            },
+            { "data": "GerenciaAutor" },
+            { "data": "AreaResponsable" },
+            { "data": "CargoResponsable" },
+            { "data": "Correo" },
+            { "data": "TelefonoResponsable" }
+        ],  "dom": 'Blfrtip',
+                "lengthMenu": [10, 20, 50, 100],
+                "pageLength": 10,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                "responsive": true,
+                "initComplete": function() {
+                    $('#listTable tbody').on('click', '.dropdown-toggle', function(e) {
+                        e.stopPropagation();
+                        $(this).siblings('.dropdown-menu').toggleClass('show');
+                    });
+                    $(document).on('click', function(e) {
+                        if (!$('.dropdown-toggle').is(e.target) && $('.dropdown-toggle').has(e.target).length === 0 && $('.show').has(e.target).length === 0) {
+                            $('.dropdown-menu').removeClass('show');
+                        }
+                    });
+                }
+    });
+                  function fetchCasosData() {
+               return $.ajax({
+        url: '@Url.Action("ObtenerCasos", "Helpdesk")', // Ajusta el nombre del controlador si es necesario
+        method: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            casosData = data;
+            populateKPIs();
+            renderCommentsCasos();
+            var casosFiltrados = filtrarCasosUltimoMes(casosData);
+            renderChartCasos('graficoCasos', $('#chartTypeCasos').val(), casosFiltrados);
+        },
+        error: function (error) {
+            console.error('Error al obtener datos:', error);
+        }
+    });
+                }
+
+                fetchCasosData();
+            $('[data-fancybox="gallery"]').fancybox({
+                buttons: [
+                    "zoom",
+                    "close"
+                ],
+                loop: false,
+                protect: true
+            });
+            // Inicializar DataTable
+
+            // Abrir modal para ver detalle del caso
+            @*$('#tablaTodosLosCasos').on('click', '.btnVerDetalle', function () {
+                var casoId = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("Details", "Helpdesk")/' + casoId,
+                    type: 'GET',
+                    success: function (response) {
+                        var htmlContent = '<h5>Notas del Soporte</h5>';
+                        htmlContent += '<p>' + (response.NotasCierre ? response.NotasCierre : 'Sin respuesta del soporte') + '</p>';
+                        htmlContent += '<h5>Descripcion:</h5>';
+                        htmlContent += '<p>' + (response.Descripcion ? response.Descripcion : 'Sin descripcion') + '</p>';
+                        htmlContent += '<h5>Archivos Adjuntos</h5>';
+                        if (response.DatosArchivo && response.DatosArchivo.length > 0) {
+                            htmlContent += `
+    <a href="data:image/webp;base64,${response.data}" data-fancybox="gallery">
+        <img src="data:image/webp;base64,${response.data}" alt="${response.NombreArchivo}" style="max-width: 100%; height: auto;">
+    </a><br>
+`;
+                        } else {
+                            htmlContent += '<p>No hay archivos adjuntos.</p>';
+                        }
+                        $('#detalleCasoContent').html(htmlContent);
+                        $('#modalVerDetalleCaso').modal('show');
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'Hubo un problema al cargar el detalle del caso.', 'error');
+                    }
+                });
+            });*@
+                function renderChartCasos(container, chartType, casosFiltrados) {
+                    var gerencias = [...new Set(casosFiltrados.map(caso => caso.GerenciaAutor))];
+
+                    var seriesData = gerencias.map(function (gerencia) {
+                        var data = casosFiltrados.filter(caso => caso.GerenciaAutor === gerencia).map(caso => {
+                            return [new Date(parseInt(caso.FechaCreacion.match(/\d+/)[0])).getTime(), 1];
+                        });
+
+                        return {
+                            name: gerencia,
+                            data: data,
+                            type: chartType
+                        };
+                    });
+
+                    Highcharts.chart(container, {
+                        chart: {
+                            type: chartType,
+                            backgroundColor: '#ffffff'
+                        },
+                        title: {
+                            text: 'Tendencia de Casos Abiertos por Gerencia',
+                            style: {
+                                color: '#000'
+                            }
+                        },
+                        xAxis: {
+                            type: 'datetime',
+                            labels: {
+                                style: {
+                                    color: '#000'
+                                }
+                            }
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Número de Casos',
+                                style: {
+                                    color: '#000'
+                                }
+                            },
+                            labels: {
+                                style: {
+                                    color: '#000'
+                                }
+                            }
+                        },
+                        legend: {
+                            itemStyle: {
+                                color: '#000'
+                            }
+                        },
+                        series: seriesData
+                    });
+                }
+                function filtrarCasosUltimoMes(casosData) {
+                    var ahora = new Date();
+                    var unMesAtras = new Date();
+                    unMesAtras.setMonth(ahora.getMonth() - 1); // Restar un mes
+
+                    return casosData.filter(function (caso) {
+                        var fechaCreacion = new Date(parseInt(caso.FechaCreacion.match(/\d+/)[0]));
+                        return fechaCreacion >= unMesAtras && fechaCreacion <= ahora;
+                    });
+                }
+                $(document).on('click', '.reply-button', function () {
+                    var commentId = $(this).data('id');
+                    var caso = casosData.find(c => c.ID === commentId);
+                    $('#commentContentCasos').html(`
+                    <h6>${caso.NombreAutor}</h6>
+                    <p>${caso.Descripcion}</p>
+                    <form id="formRespuestaCasos">
+                        <div class="form-group">
+                            <label for="respuestaCasos">Tu Respuesta</label>
+                            <textarea class="form-control" id="respuestaCasos" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar Respuesta</button>
+                    </form>`
+                    );
+                    $('#commentModalCasos').modal('show');
+                });
+                // Cambiar el tipo de gráfico de Casos
+                $('#chartTypeCasos').change(function () {
+                    var chartType = $(this).val();
+                    renderChartCasos('graficoCasos', chartType);
+                });
+
+                // Expander el gráfico de Casos
+                $('#expandChartCasos').click(function () {
+                    var chartType = $('#chartTypeCasos').val();
+                    $('#chartModalCasos').modal('show');
+                    setTimeout(function () {
+                        var casosFiltrados = filtrarCasosUltimoMes(casosData);
+
+                        renderChartCasos('graficoCasosAmpliado', chartType, casosFiltrados);
+
+                    }, 500);
+                });
+
+                // Comentarios de Casos
+                var currentPageCasos = 1;
+                var commentsPerPage = 3;
+
+                function renderCommentsCasos() {
+                    // Filtrar solo los casos que no están cerrados
+                    var commentsDataCasos = casosData
+                        .filter(caso => caso.Estado !== "Cerrado")
+                        .map(caso => ({
+                            id: caso.ID,
+                            user: caso.NombreAutor,
+                            area: caso.AreaAutor,
+                            gerencia: caso.GerenciaAutor,
+                            cargo: caso.CargoAutor,
+                            comment: caso.Descripcion,
+                            telefono: caso.TelefonoAutor
+                        }));
+
+                    var start = (currentPageCasos - 1) * commentsPerPage;
+                    var end = start + commentsPerPage;
+                    var paginatedComments = commentsDataCasos.slice(start, end);
+
+                    $('#commentContainerCasos').empty();
+
+                    paginatedComments.forEach(function (comment) {
+                        var commentHtml = `
+     <div class="comment d-flex align-items-start mb-4 p-3 bg-light border rounded shadow-sm">
+    <div class="comment-content w-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="font-weight-bold text-primary mb-0">${comment.user}</h6>
+            <small class="text-muted">Tel: ${comment.telefono ? comment.telefono : 'N/A'}</small>
+        </div>
+        <p class="mb-1 text-muted">${comment.cargo}, ${comment.gerencia} (${comment.area})</p>
+        <p class="text-dark">${comment.comment}</p>
+        <div class="text-right">
+            <span class="reply-button text-success" data-id="${comment.id}" style="cursor:pointer;">
+                <i class="fas fa-reply"></i> Ver y Responder
+            </span>
+        </div>
+    </div>
+</div>
+        `;
+                        $('#commentContainerCasos').append(commentHtml);
+                    });
+
+
+                                renderPaginationCasos(commentsDataCasos.length);
+            }
+                function populateKPIs() {
+
+                    var casosAbierto = casosData.filter(caso => caso.Estado === 'Abierto').length;
+
+                    var casosAtendidos = casosData.filter(caso => caso.Estado === 'Atendido').length;
+                    var casosCerrados = casosData.filter(caso => caso.Estado === 'Cerrado').length;
+
+                    $('#casosAbierto').text(casosAbierto);
+                    $('#casosAtendidos').text(casosAtendidos);
+                    $('#casosCerrados').text(casosCerrados);
+                }
+
+                function renderPaginationCasos(totalComments) {
+                    var totalPages = Math.ceil(totalComments / commentsPerPage);
+                    $('#commentPaginationCasos').empty();
+
+                    for (var i = 1; i <= totalPages; i++) {
+                        var activeClass = (i === currentPageCasos) ? 'active' : '';
+                        var pageItem = `
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="#">${i}</a>
+            </li>
+        `;
+                        $('#commentPaginationCasos').append(pageItem);
+                    }
+                }
+                $(document).on('click', '#commentPaginationCasos .page-link', function (e) {
+                    e.preventDefault();
+                    currentPageCasos = parseInt($(this).text());
+                    renderCommentsCasos();
+                });
+                $(document).on('submit', '#formRespuestaCasos', function (e) {
+                    e.preventDefault();
+                    var respuesta = $('#respuestaCasos').val();
+                    alert('Respuesta enviada: ' + respuesta);
+                    $('#commentModalCasos').modal('hide');
+                });
+                $('#viewAllCommentsCasos').click(function () {
+                    var allComments = casosData.map(function (caso) {
+                        return
+                        ` <div class="comment">
+                            <div class="user-image">
+                                <img src="https://via.placeholder.com/50" alt="Usuario"/>
+                            </div>
+                                <div class="comment-content">
+                                    <h6 class="font-weight-bold">${caso.NombreAutor}</h6>
+                                    <p>${caso.Descripcion}</p>
+                                </div>
+                            </div>
+                           ` ;
+                }).join('');
+
+                            $('#commentContentCasos').html(allComments);
+                            $('#commentModalCasos').modal('show');
+            });
+            // $('#tablaTodosLosCasos').on('click', '.btnAtenderCaso', function () {
+            //    var casoId = $(this).data('id');
+            //    $('#CasoID').val(casoId);
+            //    $('#modalAtenderCaso').modal('show');
+            //});
+
+            // Guardar atención del caso con AJAX
+            $('#btnGuardarAtencion').click(function () {
+                var formData = $('#formAtenderCaso').serialize();
+                $.ajax({
+                    url: '@Url.Action("AtenderCaso", "Helpdesk")',
+                    type: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire('Éxito', response.message, 'success').then(function () {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'Hubo un problema al guardar la atención del caso.', 'error');
+                    }
+                });
+            });
+
+
+
+                 $('#btnGuardarAtencionCasos').click(function () {
+                var formData = $('#formAtenderCasoCasos').serialize();
+                $.ajax({
+                    url: '@Url.Action("AtenderCaso", "Helpdesk")',
+                    type: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Hubo un problema al guardar la atención del caso.');
+                    }
+                });
+                 });
+
+        });
+
+            function verDetalle(casoId) {
+                    var casoId = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("Details", "Helpdesk")/' + casoId,
+                    type: 'GET',
+                    success: function (response) {
+                        var htmlContent = '<h5>Notas del Soporte</h5>';
+                        htmlContent += '<p>' + (response.NotasCierre ? response.NotasCierre : 'Sin respuesta del soporte') + '</p>';
+                        htmlContent += '<h5>Descripcion:</h5>';
+                        htmlContent += '<p>' + (response.Descripcion ? response.Descripcion : 'Sin descripcion') + '</p>';
+                        htmlContent += '<h5>Archivos Adjuntos</h5>';
+                        if (response.DatosArchivo && response.DatosArchivo.length > 0) {
+                            htmlContent += `
+    <a href="data:image/webp;base64,${response.data}" data-fancybox="gallery">
+        <img src="data:image/webp;base64,${response.data}" alt="${response.NombreArchivo}" style="max-width: 100%; height: auto;">
+    </a><br>
+`;
+                        } else {
+                            htmlContent += '<p>No hay archivos adjuntos.</p>';
+                        }
+                        $('#detalleCasoContent').html(htmlContent);
+                        $('#modalVerDetalleCaso').modal('show');
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'Hubo un problema al cargar el detalle del caso.', 'error');
+                    }
+                });
+                }
+
+                // Función para manejar el evento de atender caso
+                function atenderCaso(casoId) {
+                    var casoId = $(this).data('id');
+                    $('#CasoID').val(casoId);
+                    $('#modalAtenderCaso').modal('show');
+                }
+    </script>
+}

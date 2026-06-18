@@ -1,0 +1,220 @@
+﻿@model Entities.MyEntities.Parameters
+@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+    ViewBag.Title = "Reporte de Horas Extras";
+}
+@Html.DevExpress().GetStyleSheets(
+   new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+      new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+<style type="text/css">
+    .buttonsContainer {
+        max-width: 300px;
+        margin: 0 0 0 auto;
+        text-align: right;
+        padding-top: 12px;
+    }
+
+    .submitButton,
+    .cancelButton {
+        margin-bottom: 12px;
+    }
+
+    .cancelButton {
+        margin-left: 8px;
+    }
+
+    .groupCaption {
+        margin-top: -6px;
+    }
+
+    .clearPaddings {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+</style>
+
+
+
+<script type="text/javascript">
+    function OnAreaComboboxInit(s, e) {
+        s.InsertItem(0, 'TODAS LAS AREAS', 0);
+    }
+
+
+</script>
+<br />
+<!DOCTYPE html>
+<html>
+<body>
+    @using (Html.BeginForm("ExtraTimeReport2", "ExtraTime", FormMethod.Post))
+    {
+        @Html.DevExpress().PopupControl(settings =>
+   {
+       settings.Theme = "Mulberry";
+       settings.Name = "PopupControl";
+       settings.HeaderText = "Reporte de horas extras";
+       settings.ShowOnPageLoad = true;
+       settings.CloseAction = CloseAction.CloseButton;
+       settings.CloseOnEscape = true;
+       settings.AllowDragging = false;
+       settings.ShowFooter = true;
+       settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+       settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+       settings.Width = 400;
+       settings.SetFooterTemplateContent(c =>
+       {
+           @Html.DevExpress().FormLayout(formLayoutsettings =>
+           {
+               formLayoutsettings.Name = "footerFormLayout";
+               formLayoutsettings.Width = Unit.Percentage(100);
+               formLayoutsettings.ControlStyle.CssClass = "clearPaddings";
+               formLayoutsettings.Styles.LayoutItem.CssClass = "clearPaddings";
+               formLayoutsettings.Styles.LayoutGroup.CssClass = "clearPaddings";
+               formLayoutsettings.Items.AddGroupItem(g =>
+               {
+                   g.GroupBoxDecoration = GroupBoxDecoration.None;
+                   g.Paddings.Padding = Unit.Pixel(0);
+                   g.Items.Add(i =>
+                   {
+                       i.ShowCaption = DefaultBoolean.False;
+                   }).SetNestedContent(() =>
+                   {
+                       ViewContext.Writer.Write("<div class='buttonsContainer'>");
+                       Html.DevExpress().Button(s =>
+                       {
+                           s.Name = "btnAcept";
+                           s.Width = Unit.Pixel(100);
+                           s.ControlStyle.CssClass = "submitButton";
+                           s.Text = "Aceptar";
+                           s.UseSubmitBehavior = true;
+                       }).Render();
+                       Html.DevExpress().Button(s =>
+                       {
+                           s.Name = "btnCancel";
+                           s.Width = Unit.Pixel(100);
+                           s.ControlStyle.CssClass = "cancelButton";
+                           s.Text = "Cancelar";
+                           s.UseSubmitBehavior = false;
+                           s.ClientSideEvents.Click = "function(s, e){ PopupControl.Hide(); }";
+                       }).Render();
+                       ViewContext.Writer.Write("</div>");
+                   });
+               });
+           }).Render();
+       });
+
+       settings.SetContent(() =>
+       {
+           @Html.DevExpress().FormLayout(formLayoutsettings =>
+           {
+               formLayoutsettings.Name = "detailFormLayout";
+               formLayoutsettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+               formLayoutsettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 576;
+
+               formLayoutsettings.Items.AddGroupItem(g =>
+               {
+                   g.Caption = "Seleccione los parametros";
+                   g.RowSpan = 2;
+                   g.Paddings.Padding = Unit.Pixel(0);
+                   g.Paddings.PaddingTop = Unit.Pixel(10);
+                   g.GroupBoxDecoration = GroupBoxDecoration.HeadingLine;
+                   g.GroupBoxStyle.Caption.Font.Bold = true;
+                   g.GroupBoxStyle.Caption.Font.Size = 10;
+
+
+                   g.Items.Add(m => m.StartDate, i =>
+                   {
+                       i.Caption = "Fecha de Inicio";
+                       i.NestedExtension().DateEdit(de =>
+                       {
+                           de.Width = 200;
+                           de.ShowModelErrors = true;
+                           de.Properties.ValidationSettings.Display = Display.Dynamic;
+                           de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                       });
+                   });
+                   g.Items.Add(m => m.EndDate, i =>
+                   {
+                       i.Caption = "Fecha de Fin";
+                       i.NestedExtension().DateEdit(de =>
+                       {
+                           de.Width = 200;
+                           de.ShowModelErrors = true;
+                           de.Properties.ValidationSettings.Display = Display.Dynamic;
+                           de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+                       });
+                   });
+                   g.Items.Add(m => m.AreaId, i =>
+                   {
+                       i.Caption = "Area";
+                       i.NestedExtension().ComboBox(de =>
+                       {
+                           de.Width = 200;
+                           de.ShowModelErrors = true;
+                           de.Properties.NullText = "SELECCIONE AREA";
+                           de.Properties.ValidationSettings.Display = Display.Dynamic;
+                           de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                           de.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                           de.SelectedIndex = 0;
+                           de.Properties.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                           de.Properties.TextField = "AreaName";
+                           de.Properties.ValueField = "AreaId";
+                           de.Properties.ValueType = typeof(int);
+                           de.Properties.DataSource = slnRhonline.Models.ExtraTime.GetAreas();
+                           de.Properties.ClientSideEvents.Init = "OnAreaComboboxInit";
+
+                       });
+                   });
+
+                   g.Items.Add(m => m.ViewType, i =>
+                   {
+                       i.Caption = "Tipo de Vista";
+                       i.NestedExtension().ComboBox(de =>
+                       {
+                           de.Width = 200; //Unit.Percentage(100);
+                           de.ShowModelErrors = true;
+                           de.Properties.NullText = "SELECCIONE TIPO DE VISTA";
+                           de.Properties.ValidationSettings.Display = Display.Dynamic;
+                           de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                           de.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                           de.SelectedIndex = 0;
+                           de.Properties.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                           de.Properties.ValueType = typeof(string);
+                           de.Properties.Items.Add("CONSOLIDADO");
+                           de.Properties.Items.Add("DETALLE");
+                       });
+                   });
+
+
+               });
+           }).Render();
+       });
+   }).GetHtml()
+    }
+</body>
+</html>

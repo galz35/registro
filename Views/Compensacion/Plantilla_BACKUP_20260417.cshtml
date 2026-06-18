@@ -1,0 +1,412 @@
+﻿@{
+    ViewBag.Title = "Plantilla de Personal y Comisiones";
+}
+<meta charset="utf-8" />
+
+<style>
+    body { background-color: #f8f9fa; }
+    .bg-claro { background-color: #B71C1C !important; color: #fff !important; }
+    .btn-claro { background-color: #B71C1C; color: #fff; border: none; }
+    .btn-claro:hover { background-color: #9A0007; color: #fff; }
+    .card { border-radius: 8px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card-header { border-radius: 8px 8px 0 0 !important; }
+    .table-hover tbody tr:hover { background-color: #ffe6e6 !important; }
+    .btn-rounded { border-radius: 20px; }
+    .dif-bg { background-color: #ffe6e6 !important; border-left: 4px solid #B71C1C; }
+    .input-sync { border: 1px solid #ced4da; box-shadow: none; font-size: 0.85rem; height: 32px; }
+    .input-sync:focus { border-color: #B71C1C; box-shadow: 0 0 0 0.2rem rgba(183, 28, 28, 0.25); }
+    .table-responsive { overflow-x: auto; min-height: 500px; }
+    table { width: 100%; table-layout: auto; }
+    table th, table td { vertical-align: middle !important; }
+    th.col-md-2 { min-width: 150px; }
+    .gerencia-header { background-color: #343a40 !important; color: white !important; font-weight: bold; text-transform: uppercase; font-size: 0.9rem;}
+    
+    .fila-filtros th { padding: 4px 8px !important; background-color: #e9ecef; }
+    .select-filtro { font-size: 0.8rem; width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 2px; }
+</style>
+
+<div class="continer-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 text-dark font-weight-bold" style="color:#B71C1C !important;">
+            <i class="fas fa-users-cog"></i> <span id="lblTituloModulo">Certificacion de Personal y Comisiones</span>
+        </h2>
+        <div>
+            <span id="badgeEstado" class="badge badge-secondary p-2 shadow-sm" style="font-size:14px;">Cargando...</span>
+            <button class="btn btn-claro btn-rounded shadow-sm ml-2" onclick="location.reload();">
+                <i class="fas fa-sync-alt"></i> Recargar
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-muted" id="lblPeriodo"><i class="far fa-calendar-alt"></i> Periodo Actual</h5>
+            <span class="text-secondary"><i class="fas fa-info-circle"></i> Complete su validacion y utilice los filtros de columna para buscar.</span>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-claro py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-list"></i> Listado de Empleados Oficiales</h6>
+            
+            <div id="panelBotonera">
+                <button id="btnGuardar" class="btn btn-warning btn-rounded shadow-sm text-dark font-weight-bold" onclick="guardarBorrador()">
+                    <i class="fas fa-save"></i> Guardar Progreso
+                </button>
+                <button id="btnQuickOk" class="btn btn-primary btn-rounded shadow-sm ml-2" onclick="validarSinCambios()">
+                    <i class="fas fa-magic"></i> Auto-validar sin cambios
+                </button>
+                <button id="btnEnviar" class="btn btn-success btn-rounded shadow-sm text-white font-weight-bold ml-2" onclick="enviarPlantilla()">
+                    <i class="fas fa-paper-plane"></i> Finalizar y Enviar a RRHH
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm mb-0" id="tbComisiones">
+                    <thead class="bg-claro text-white text-center">
+                        <tr>
+                            <th style="min-width: 250px;">Empleado Oficial</th>
+                            <th>Empresa</th>
+                            <th>Departamento</th>
+                            <th class="col-md-2">Cargo / Puesto</th>
+                            <th class="col-md-2">Jefe Inmediato</th>
+                            <th class="col-md-2">Edificio / Ubicacion</th>
+                            <th style="width: 120px;" class="col-comision">Comisiona</th>
+                            <th style="min-width: 200px;">Observaciones</th>
+                        </tr>
+                        <tr class="fila-filtros" id="filaFiltrosUI" style="display:none;">
+                            <th>
+                                <select id="fGerencia" class="select-filtro" onchange="aplicarFiltros()"><option value="">[ Todas las Gerencias ]</option></select>
+                            </th>
+                            <th>
+                                <select id="fEmpresa" class="select-filtro" onchange="aplicarFiltros()"><option value="">[ Todas ]</option></select>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th>
+                                <select id="fJefe" class="select-filtro" onchange="aplicarFiltros()"><option value="">[ Todos los Jefes ]</option></select>
+                            </th>
+                            <th>
+                                <select id="fEdificio" class="select-filtro" onchange="aplicarFiltros()"><option value="">[ Todos ]</option></select>
+                            </th>
+                            <th class="col-comision text-center">
+                                <select id="fComisiona" class="select-filtro" onchange="aplicarFiltros()">
+                                    <option value="">[ Todo ]</option>
+                                    <option value="S">SI</option>
+                                    <option value="N">NO</option>
+                                </select>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbEmpleados">
+                        <tr><td colspan="8" class="text-center p-4">Cargando datos de personal...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    let g_Plantillid = 0;
+    let cambiosPendientes = {};
+    let g_Detalles = [];
+    let g_Tipo = @(ViewBag.TipoPlantilla ?? 1); 
+    
+    let optsCargos = '';
+    let optsUbis = '';
+    let optsJefes = '';
+
+    $(document).ready(function() {
+        // UI Tweak based on type
+        if(g_Tipo == 2) {
+            $('#lblTituloModulo').text('Plantilla de Certificacion de Personal');
+            $('.col-comision').hide();
+        } else {
+            $('#lblTituloModulo').text('Certificacion y Reporte de Comisiones');
+        }
+
+        $.get('@Url.Action("CargarMiPlantilla", "Compensacion")', { tipo: g_Tipo }, function(res) {
+            if(!res.success) { 
+                $('#tbEmpleados').html(`<tr><td colspan="8" class="text-danger p-4 text-center"><strong>Atencion:</strong> ${res.message}</td></tr>`);
+                return; 
+            }
+            
+            g_Plantillid = res.plantilla.PlantilliD;
+            
+            // Name formatter
+            let np = 'Periodo ';
+            if(res.periodo && res.periodo.Mes) {
+                const arr = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                np += arr[res.periodo.Mes - 1] + ' ' + res.periodo.Anio;
+            } else if (res.periodo) {
+                np = res.periodo.NombrePeriodo;
+            } else { np = 'Periodo Actual'; }
+            $('#lblPeriodo').html(`<i class="far fa-calendar-alt"></i> ${np} <sup class="badge badge-light shadow-sm text-muted">Mes en Curso</sup>`);
+            
+            // Options HTML for inputs
+            if(res.cargos) optsCargos = res.cargos.map(x => `<option value="${x}">${x}</option>`).join('');
+            optsCargos += '<option value="__NEW__" class="font-weight-bold text-danger">+ AGREGAR OTRO CARGO...</option>';
+
+            if(res.ubicaciones) optsUbis = res.ubicaciones.map(x => `<option value="${x}">${x}</option>`).join('');
+            if(res.jefes) optsJefes = res.jefes.map(x => `<option value="${x}">${x}</option>`).join('');
+
+            let badge = '';
+            let lockUi = false;
+            
+            if(res.plantilla.Estado === 'Borrador') {
+                badge = '<span class="badge badge-secondary p-2"><i class="fas fa-edit"></i> BORRADOR PENDIENTE</span>';
+            } else if(res.plantilla.Estado === 'Devuelto') {
+                badge = '<span class="badge badge-danger p-2"><i class="fas fa-exclamation-circle"></i> DEVUELTO POR RH</span><br/><small class="text-danger mt-1 d-block"><b>Motivo:</b> ' + res.plantilla.ComentarioDevolucion + '</small>';
+            } else {
+                badge = `<span class="badge badge-info p-2"><i class="fas fa-check-circle"></i> ENVIADO / ${res.plantilla.Estado.toUpperCase()}</span>`;
+                lockUi = true;
+                $('#panelBotonera').hide();
+            }
+            $('#badgeEstado').html(badge);
+
+            g_Detalles = res.detalles;
+            prepararFiltrosUI(g_Detalles);
+            aplicarFiltros(lockUi);
+        });
+    });
+
+    function prepararFiltrosUI(detalles) {
+        let setGerens = new Set(), setEmpresas = new Set(), setJefes = new Set(), setUbis = new Set();
+        
+        detalles.forEach(d => {
+            setGerens.add(d.OGERENCIA_SIGHO || 'Sin Gerencia');
+            setEmpresas.add(d.Empresa_SIGHO || 'N/A');
+            setJefes.add(d.Jefe_SIGHO || 'Sin Jefe');
+            setUbis.add(d.Ubicacion_SIGHO || 'Sin Ubicacion');
+        });
+
+        // Set DDLs
+        let htmlGer = '<option value="">[ Todas las Gerencias ]</option>';
+        [...setGerens].sort().forEach(g => htmlGer += `<option value="${g}">${g}</option>`);
+        $('#fGerencia').html(htmlGer);
+
+        let htmlEmp = '<option value="">[ Todas las Empresas ]</option>';
+        [...setEmpresas].sort().forEach(x => htmlEmp += `<option value="${x}">${x}</option>`);
+        $('#fEmpresa').html(htmlEmp);
+
+        let htmlJefes = '<option value="">[ Todos los Jefes ]</option>';
+        [...setJefes].sort().forEach(x => htmlJefes += `<option value="${x}">${x}</option>`);
+        $('#fJefe').html(htmlJefes);
+
+        let htmlUbis = '<option value="">[ Todas las Edificaciones ]</option>';
+        [...setUbis].sort().forEach(x => htmlUbis += `<option value="${x}">${x}</option>`);
+        $('#fEdificio').html(htmlUbis);
+
+        $('#filaFiltrosUI').show();
+    }
+
+    function aplicarFiltros(fLockUi) {
+        if(!g_Detalles || g_Detalles.length === 0){
+            $('#tbEmpleados').html('<tr><td colspan="8" class="text-center p-4">Sin personal detectado.</td></tr>');
+            return;
+        }
+
+        const isRO = (fLockUi === true) || $('#badgeEstado').text().includes('ENVIADO');
+        
+        // Grab values from filter row
+        const valGer = $('#fGerencia').val();
+        const valEmp = $('#fEmpresa').val();
+        const valJef = $('#fJefe').val();
+        const valUbi = $('#fEdificio').val();
+        const valCom = $('#fComisiona').val();
+
+        // Chin filtering natively
+        let filtrados = g_Detalles.filter(d => {
+            // Gerencia
+            if(valGer && (d.OGERENCIA_SIGHO || 'Sin Gerencia') !== valGer) return false;
+            // Empresa
+            if(valEmp && (d.Empresa_SIGHO || 'N/A') !== valEmp) return false;
+            // Jefe Oficial (Usamos Jefe_SIGHO porque el de reportado podria estar en blanco)
+            if(valJef && (d.Jefe_SIGHO || 'Sin Jefe') !== valJef) return false;
+            // Ubicacion Oficial
+            if(valUbi && (d.Ubicacion_SIGHO || 'Sin Ubicacion') !== valUbi) return false;
+            // Comisiona
+            if(valCom && d.Comisiona !== valCom) return false;
+
+            return true;
+        });
+
+        // Agrupamos el array por Gerencia antes de iterar
+        filtrados.sort((a, b) => {
+            const gA = a.OGERENCIA_SIGHO || 'Z';
+            const gB = b.OGERENCIA_SIGHO || 'Z';
+            if(gA < gB) return -1;
+            if(gA > gB) return 1;
+            return a.NombreCompleto.localeCompare(b.NombreCompleto);
+        });
+
+        if(filtrados.length === 0) {
+            $('#tbEmpleados').html('<tr><td colspan="8" class="text-center p-4 font-italic text-muted">No hay empleados que cumplan este criterio de filtro combinado.</td></tr>');
+            return;
+        }
+
+        let html = '';
+        let currentGerencia = '';
+
+        filtrados.forEach(d => {
+            const gerenciaReal = d.OGERENCIA_SIGHO || 'Sin Gerencia';
+
+            if(gerenciaReal !== currentGerencia) {
+                html += `<tr class="gerencia-fila"><td colspan="8" class="gerencia-header"><i class="fas fa-sitemap"></i> ${gerenciaReal}</td></tr>`;
+                currentGerencia = gerenciaReal;
+            }
+
+            const dis = isRO ? 'disabled' : '';
+            const cSi = d.Comisiona === 'S' ? 'btn-success' : 'btn-outline-secondary';
+            const cNo = d.Comisiona === 'N' ? 'btn-danger' : 'btn-outline-secondary';
+            const valCargo = d.Cargo_Reportado || d.Cargo_SIGHO || '';
+            const valJefeRep = d.Jefe_Reportado || d.Jefe_SIGHO || '';
+            const valUbiRep = d.Ubicacion_Reportada || d.Ubicacion_SIGHO || '';
+
+            // Inject options cleanly, rely on jQuery below to set correct val
+            const selCargo = `<option value="">--SELECCIONE--</option>${optsCargos}`;
+            const selUbi = `<option value="">--SELECCIONE--</option>${optsUbis}`;
+            const selJefe = `<option value="">--SELECCIONE--</option>${optsJefes}`;
+            
+            const rowClass = '';
+            html += `<tr class="${rowClass}" id="tr_${d.DetalleID}">
+                <td class="align-middle border-right">
+                    <strong>${d.NombreCompleto}</strong><br>
+                    <small class="text-muted"><i class="fas fa-id-card"></i> ${d.CarnetEmpleado}</small>
+                </td>
+                <td class="align-middle border-right" style="font-size:0.85rem;"><strong>${d.Empresa_SIGHO || 'N/A'}</strong></td>
+                <td class="align-middle border-right" style="font-size:0.85rem; max-width: 180px;">${d.Departamento_SIGHO || '-'}</td>
+                
+                <td class="align-middle">
+                    <select class="form-control form-control-sm input-sync sync-cargo" id="cbCargo_${d.DetalleID}" data-v="${valCargo}" onchange="procesarCargo(${d.DetalleID}, this.value)" ${dis}>
+                        ${selCargo}
+                    </select>
+                </td>
+                
+                <td class="align-middle">
+                    <select class="form-control form-control-sm input-sync sync-jefe" data-v="${valJefeRep}" onchange="marcar(${d.DetalleID}, 'Jefe_Reportado', this.value)" ${dis}>
+                        ${selJefe}
+                    </select>
+                </td>
+                
+                <td class="align-middle">
+                    <select class="form-control form-control-sm input-sync sync-ubi" data-v="${valUbiRep}" onchange="marcar(${d.DetalleID}, 'Ubicacion_Reportada', this.value)" ${dis}>
+                        ${selUbi}
+                    </select>
+                </td>
+
+                <td class="align-middle col-comision">
+                    <div class="btn-group btn-group-sm w-100 shadow-sm" role="group">
+                        <button type="button" class="btn ${cSi} font-weight-bold" onclick="marcarComision(${d.DetalleID}, 'S', this)" ${dis}>SI</button>
+                        <button type="button" class="btn ${cNo} font-weight-bold" onclick="marcarComision(${d.DetalleID}, 'N', this)" ${dis}>NO</button>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <textarea class="form-control form-control-sm input-sync" rows="2" placeholder="Observaciones..." onchange="marcar(${d.DetalleID}, 'Observacion', this.value)" ${dis}>${d.Observacion || ''}</textarea>
+                </td>
+            </tr>`;
+        });
+        $('#tbEmpleados').html(html);
+
+        // Fuerza seleccion exacta libre de errores string escape
+        $('#tbEmpleados .sync-cargo').each(function() { $(this).val($(this).attr('data-v')); });
+        $('#tbEmpleados .sync-jefe').each(function()  { $(this).val($(this).attr('data-v')); });
+        $('#tbEmpleados .sync-ubi').each(function()   { $(this).val($(this).attr('data-v')); });
+
+        if(g_Tipo == 2) $('.col-comision').hide();
+    }
+
+    function validarSinCambios() {
+        if(!confirm('Esta accion llenara todos los campos con la informacion actual de puestos y sedes de SighoO1. Desea continuar?')) return;
+        
+        g_Detalles.forEach(d => {
+            marcar(d.DetalleID, 'Cargo_Reportado', d.Cargo_SIGHO);
+            marcar(d.DetalleID, 'Ubicacion_Reportada', d.Ubicacion_SIGHO);
+            marcar(d.DetalleID, 'Jefe_Reportado', d.Jefe_SIGHO);
+            // Comisiona se queda como este si el usuario ya lo toci?, o forzar? Mejor forzar a 'S' si ya estaba en 'S'
+            marcar(d.DetalleID, 'Comisiona', d.Comisiona); 
+        });
+        
+        // Re-render para mostrar los cambios visuales
+        aplicarFiltros();
+        alert('Se han auto-completado los datos. No olvide Guardar su progreso.');
+    }
+
+    function procesarCargo(id, val) {
+        if(val === '__NEW__') {
+            const nw = prompt('Escriba el nombre del Nuevo Cargo oficial:');
+            if(nw && nw.trim().length > 0) {
+                const nuevoReal = nw.toUpperCase().trim();
+                $.post('@Url.Action("AgregarCargo", "Compensacion")', { nuevoCargo: nuevoReal }, r => {
+                    optsCargos = optsCargos.replace('<option value="__NEW__"', `<option value="${nuevoReal}">${nuevoReal}</option><option value="__NEW__"`);
+                    $(`#cbCargo_${id}`).html(`<option value="">--SELECCIONE--</option>` + optsCargos);
+                    $(`#cbCargo_${id}`).val(nuevoReal);
+                    marcar(id, 'Cargo_Reportado', nuevoReal);
+                });
+            } else {
+                $(`#cbCargo_${id}`).val(''); 
+            }
+        } else {
+            marcar(id, 'Cargo_Reportado', val);
+        }
+    }
+
+    function marcarComision(id, valor, btn) {
+        marcar(id, 'Comisiona', valor);
+        const group = $(btn).parent();
+        group.find('button').removeClass('btn-success btn-danger').addClass('btn-outline-secondary');
+        if(valor === 'S') $(btn).removeClass('btn-outline-secondary').addClass('btn-success');
+        if(valor === 'N') $(btn).removeClass('btn-outline-secondary').addClass('btn-danger');
+    }
+
+    function marcar(id, prop, valor) {
+        if(!cambiosPendientes[id]) cambiosPendientes[id] = { DetalleID: id };
+        cambiosPendientes[id][prop] = valor;
+        let cId = g_Detalles.find(x => x.DetalleID === id);
+        if(cId) cId[prop] = valor; // sync back to active ram session to prevent filter wipes
+        $(`#tr_${id}`).addClass('dif-bg');
+    }
+
+    function guardarBorrador() {
+        $.ajax({
+            url: '@Url.Action("GuardarBorrador", "Compensacion")', type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(Object.values(cambiosPendientes)),
+            success: res => {
+                if(res.success) {
+                    alert('Cambios guardados con exito.');
+                    cambiosPendientes = {};
+                } else alert(res.message);
+            }
+        });
+    }
+
+    function enviarPlantilla() {
+        if(confirm('Esta seguro de enviar su plantilla a HR? Ya no podra modificarla.')) {
+            const data = Object.values(cambiosPendientes);
+            if(data.length > 0) {
+                 $.ajax({
+                    url: '@Url.Action("GuardarBorrador", "Compensacion")', type: 'POST',
+                    contentType: 'application/json', data: JSON.stringify(data),
+                    success: res => {
+                         $.post('@Url.Action("EnviarPlantilla", "Compensacion")', { plantillid: g_Plantillid }, res2 => {
+                            if(res2.success) location.reload();
+                        });
+                    }
+                });
+            } else {
+                $.post('@Url.Action("EnviarPlantilla", "Compensacion")', { plantillid: g_Plantillid }, res2 => {
+                    if(res2.success) location.reload();
+                });
+            }
+        }
+    }
+</script>
+}
+
+
+

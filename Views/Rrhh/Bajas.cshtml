@@ -1,0 +1,87 @@
+﻿
+@{
+    ViewBag.Title = "Bajas";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+<div class="card shadow-sm mt-2">
+    <div class="card-body p-3">
+        <h6 class="card-title font-weight-bold text-primary">Exportar Bajas</h6>
+        <hr class="mt-1 mb-1" />
+        <div class="form-row align-items-end">
+            @using (Html.BeginForm("Reporte", "Rrhh", FormMethod.Post, new { id = "reporteForm", @class = "form-horizontal col-md-10" }))
+            {
+                <div class="form-row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-text font-weight-bold">Fecha Inicial:</label>
+                        <input name="fechaini" class="form-control" placeholder="dd/mm/yyyy" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-text font-weight-bold">Fecha Final:</label>
+                        <input name="fechafin" class="form-control" placeholder="dd/mm/yyyy" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-block btn-success">
+                            <i class="fas fa-cloud-download-alt"></i> Generar Excel
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+
+    <script src="~/onlinejs/jquery.mask.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script>
+    $(document).ready(function () {
+            // Inicializar jQuery UI Datepicker con formato dd/mm/yy
+            $("input[name=fechaini]").datepicker({
+                dateFormat: "dd/mm/yy"
+            }).datepicker('setDate', new Date());
+
+            $("input[name=fechafin]").datepicker({
+                dateFormat: "dd/mm/yy"
+            }).datepicker('setDate', new Date());
+
+            // Manejo del submit vía AJAX
+            $("#reporteForm").submit(function (event) {
+                event.preventDefault();
+
+                // Mostrar overlay de carga
+                $.LoadingOverlay("show");
+
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    url: '@Url.Action("Reporte", "Rrhh")',
+                    type: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        $.LoadingOverlay("hide");
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Reporte generado',
+                            text: 'El reporte se ha generado correctamente.'
+                        });
+                        // Puedes agregar código adicional para descargar el archivo o redireccionar
+                    },
+                    error: function (xhr, status, error) {
+                        $.LoadingOverlay("hide");
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Hubo un error al generar el reporte: ' + error
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

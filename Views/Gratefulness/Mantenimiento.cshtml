@@ -1,0 +1,389 @@
+﻿@model List<Entities.EmpleadoV2025V>
+@{
+    ViewBag.Title = "Mantenimiento Empleados V2025V";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+@section scripts {
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/xlsx.full.min.js"></script>
+    <script>
+        // Abre modal de nuevo empleado
+        function abrirModalNuevoEmpleado() {
+            $("#formNuevoEmpleado")[0].reset();
+            $("#modalEmpleado").modal("show");
+        }
+
+        // Abre modal de edición de nombre
+        function abrirModalEditarNombre(id_hrms, nombre_actual) {
+            $("#edit_ID_HRMS").val(id_hrms);
+            $("#edit_FULLNAME").val(nombre_actual);
+            $("#modalEditarNombre").modal("show");
+        }
+        const sufijosCorreo = { "CLARONI": "claro.com.ni", "CLAROGT": "claro.com.gt", "CLAROHN": "claro.com.hn", "CLAROCR": "claro.com.cr", "CLAROSV": "claro.com.sv"};
+        // Guardar nuevo empleado (POST)
+    function guardarEmpleadoV2025V() {
+    var dominio = $("#DOMAIN").val().trim().toUpperCase();
+    var correo = $("#EMAIL_ADDRESS").val().trim().toLowerCase();
+
+    // Obtiene sufijo esperado para ese dominio
+    var sufijoEsperado = sufijosCorreo[dominio];
+    if (!sufijoEsperado) {
+        Swal.fire("Error", "Dominio no reconocido.", "error");
+        return;
+    }
+
+    if (!correo.endsWith(sufijoEsperado)) {
+        Swal.fire("Error", `El correo debe terminar con "${sufijoEsperado}" según el dominio.`, "error");
+        return;
+    }
+
+    // Si pasa la validación, sigue el envío
+    var empleado = {
+        DOMAIN: dominio,
+        NOEMPLEADO: $("#NOEMPLEADO").val(),
+        NAMES: $("#NAMES").val(),
+        MIDDLENAMES: $("#MIDDLENAMES").val(),
+        LASTNAMES: $("#LASTNAMES").val(),
+        FULLNAME: $("#FULLNAME").val(),
+        EMAIL_ADDRESS: correo
+    };
+
+    $.LoadingOverlay("show");
+    $.ajax({
+        url: '@Url.Action("AgregarEmpleadoV2025V", "Gratefulness")',
+        type: "POST",
+        data: JSON.stringify(empleado),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+            $.LoadingOverlay("hide");
+
+                Swal.fire("Éxito", response.message, "success").then(function () { location.reload(); });
+
+
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+        }
+    });
+        }
+        $("#DOMAIN").on("change blur keyup", function () {
+            var dominio = $(this).val().trim().toUpperCase();
+            var sufijo = sufijosCorreo[dominio] || "";
+            if (sufijo && !$("#EMAIL_ADDRESS").val().includes(sufijo)) {
+                var user = $("#NOEMPLEADO").val() || "";
+                $("#EMAIL_ADDRESS").val(user + sufijo);
+            }
+        });
+        // Editar solo el FULLNAME (POST)
+        function editarNombreEmpleadoV2025V() {
+            var id_hrms = $("#edit_ID_HRMS").val();
+            var nuevoNombre = $("#edit_FULLNAME").val();
+            $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("EditarNombreEmpleadoV2025V", "Gratefulness")',
+                type: "POST",
+                data: JSON.stringify({ ID_HRMS: id_hrms, FULLNAME: nuevoNombre }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    $.LoadingOverlay("hide");
+
+                        Swal.fire("Éxito", response.message, "success").then(function () { location.reload(); });
+                        $("#modalEditarNombre").modal("hide");
+
+                },
+                error: function () {
+                    $.LoadingOverlay("hide");
+                    Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+                }
+            });
+        }
+
+        $(document).ready(function () {
+             var tabla = $('#tablaEmpleados').DataTable({
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                "responsive": true,
+                "order": [[0, "asc"]],
+                "initComplete": function () {
+                 }
+            });
+
+            // Botón guardar edición nombre
+            $("#btnGuardarEdicionNombre").click(function () {
+                editarNombreEmpleadoV2025V();
+            });
+
+            // Botón guardar nuevo empleado
+            $("#btnGuardarEmpleado").click(function () {
+                guardarEmpleadoV2025V();
+            });
+
+            // Botón nuevo
+            $("#btnNuevo").click(function () {
+                abrirModalNuevoEmpleado();
+            });
+        });
+        let empleadosExcel = [];
+$("#btnCargarExcel").click(() => {
+    $("#inputExcel").val('');
+    $("#resumenExcel").html('');
+    $("#btnProcesarExcel").prop("disabled", true);
+    $("#modalCargaMasiva").modal("show");
+});
+
+$("#inputExcel").change(function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header:1, blankrows:false});
+        empleadosExcel = [];
+        // Se espera la estructura: Dominio | NoEmpleado | Nombres | SegundoNombre | Apellidos | NombreCompleto | Email
+        for(let i=1; i<rows.length; i++) {
+            let r = rows[i];
+            if(!r[0]) continue; // Dominio vacío = fin
+            empleadosExcel.push({
+                DOMAIN: (r[0] || '').toString().toUpperCase(),
+                NOEMPLEADO: r[1] || '',
+                NAMES: r[2] || '',
+                MIDDLENAMES: r[3] || '',
+                LASTNAMES: r[4] || '',
+                FULLNAME: r[5] || '',
+                EMAIL_ADDRESS: (r[6] || '').toString().toLowerCase()
+            });
+        }
+        $("#resumenExcel").html(`Registros leídos: <b>${empleadosExcel.length}</b>`);
+        $("#btnProcesarExcel").prop("disabled", empleadosExcel.length==0);
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+ $("#btnProcesarExcel").click(function () {
+    if(empleadosExcel.length==0) return;
+    $("#btnProcesarExcel").prop("disabled",true);
+    let total = empleadosExcel.length, ok=0, fail=0, idx=0;
+
+    Swal.fire({
+        title: 'Procesando carga masiva...',
+        html: `<b>0</b> de <b>${total}</b> registros<br>OK: <b>0</b> - Error: <b>0</b>`,
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    function procesarUno() {
+        if(idx>=total) {
+            Swal.fire("Carga Masiva Finalizada", `Éxito: ${ok}<br>Error: ${fail}`, "info")
+            .then(()=>{ location.reload(); });
+            return;
+        }
+        let emp = empleadosExcel[idx];
+        $.ajax({
+            url: '@Url.Action("AgregarEmpleadoV2025V", "Gratefulness")',
+            type: "POST",
+            data: JSON.stringify(emp),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json"
+        }).done(resp=>{
+            ok++;
+     
+        }).fail(()=>{ fail++; })
+        .always(()=>{
+            idx++;
+            // Actualiza el html del Swal con el progreso actual
+            Swal.getHtmlContainer().innerHTML = `<b>${idx}</b> de <b>${total}</b> registros<br>OK: <b>${ok}</b> - Error: <b>${fail}</b>`;
+            setTimeout(procesarUno, 200); // puedes ajustar el delay
+        });
+    }
+     procesarUno();
+
+});
+
+    </script>
+}
+
+<div class="container py-4">
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white d-flex align-items-center">
+            <h6 class="m-0 flex-grow-1">Empleados GT,HN,CR,SV</h6>
+            <button class="btn btn-success btn-sm ml-2" id="btnNuevo">
+                <i class="fas fa-plus"></i> Nuevo
+            </button>
+            <button class="btn btn-light btn-sm ml-2" id="btnCargarExcel">
+                <i class="fas fa-file-excel text-success"></i> Carga Masiva
+            </button>
+        </div>
+        <div class="card-body">
+            <table id="tablaEmpleados" class="table table-bordered table-striped table-hover display nowrap" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID HRMS</th>
+                        <th>Dominio</th>
+                        <th>No. Empleado</th>
+                        <th>Nombre completo</th>
+                        <th>Email</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count > 0)
+                    {
+                        int i = 1;
+                        foreach (var e in Model)
+                        {
+                            <tr>
+                                <td>@i</td>
+                                <td>@e.ID_HRMS</td>
+                                <td>@e.DOMAIN</td>
+                                <td>@e.NOEMPLEADO</td>
+                                <td>@e.FULLNAME</td>
+                                <td>@e.EMAIL_ADDRESS</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="abrirModalEditarNombre('@e.ID_HRMS','@e.FULLNAME'.replace('\'','\\\''))">
+                                        Editar Nombre
+                                    </button>
+                                </td>
+                            </tr>
+                            i++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">No hay empleados registrados.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal NUEVO empleado -->
+<div class="modal fade" id="modalEmpleado" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Nuevo Empleado</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form id="formNuevoEmpleado" autocomplete="off">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Dominio</label>
+                            <select id="DOMAIN" class="form-control" required>
+                                <option value="CLARONI">CLARONI</option>
+                                <option value="CLAROGT">CLAROGT</option>
+                                <option value="CLAROHN">CLAROHN</option>
+                                <option value="CLAROCR">CLAROCR</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>No. Empleado</label>
+                            <input type="text" id="NOEMPLEADO" class="form-control" maxlength="50">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nombres</label>
+                            <input type="text" id="NAMES" class="form-control" maxlength="150">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Segundo Nombre</label>
+                            <input type="text" id="MIDDLENAMES" class="form-control" maxlength="80">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Apellidos</label>
+                            <input type="text" id="LASTNAMES" class="form-control" maxlength="161">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="FULLNAME" class="form-control" maxlength="240">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-8">
+                            <label>Email</label>
+                            <input type="email" id="EMAIL_ADDRESS" class="form-control" maxlength="240">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="btnGuardarEmpleado" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Modal edición de nombre -->
+<div class="modal fade" id="modalEditarNombre" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Editar Nombre</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit_ID_HRMS" />
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="edit_FULLNAME" class="form-control" maxlength="240">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnGuardarEdicionNombre" class="btn btn-success">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalCargaMasiva" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Carga Masiva de Empleados</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="file" id="inputExcel" accept=".xlsx,.xls" class="form-control" />
+                <small class="text-danger">Formato: Dominio | NoEmpleado | Nombres | SegundoNombre | Apellidos | NombreCompleto | Email</small>
+                <div id="resumenExcel" class="mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnProcesarExcel" class="btn btn-success" disabled>Procesar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .modal-header.bg-danger, .card-header.bg-danger {
+        background: #b30018 !important;
+    }
+
+    .btn-success {
+        background: #14b64a;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: #40474f;
+        border: none;
+    }
+
+    .table th, .table td {
+        vertical-align: middle !important;
+    }
+</style>

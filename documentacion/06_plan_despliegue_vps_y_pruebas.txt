@@ -1,0 +1,162 @@
+================================================================================
+📄 DOCUMENTO 06: GUÍA DE DESPLIEGUE EN VPS Y PLAN DE PRUEBAS
+================================================================================
+Entorno de Despliegue: Servidor Windows Server / Linux VPS
+Administrador de Procesos: PM2 (Node.js)
+Servidor Web Frontend: IIS (Internet Information Services) o Nginx
+================================================================================
+
+Este documento detalla la configuración del entorno en producción del VPS, la
+arquitectura de red para servir los archivos estáticos de React y la API de NestJS,
+las políticas de permisos de carpetas y el plan de pruebas de estrés para
+concurrencia de stock.
+
+--------------------------------------------------------------------------------
+1. CONFIGURACIÓN DEL VPS Y DEPLOYMENT DE SERVICIOS
+--------------------------------------------------------------------------------
+
+Para garantizar que el sistema funcione sin caídas durante el evento corporativo,
+se configuran los servicios de forma resiliente:
+
+A. Despliegue de la API NestJS (PM2 Service)
+   1. Instalar Node.js (versión 18 o superior) en el VPS.
+   2. Instalar el gestor de procesos PM2 globalmente:
+      `npm install pm2 -g`
+   3. Compilar el backend de NestJS en la carpeta `/backend`:
+      `npm run build`
+   4. Configurar el archivo de variables de entorno `.env` en la raíz del backend:
+      ```
+      PORT=3000
+      DB_HOST=127.0.0.1
+      DB_PORT=1433
+      DB_USERNAME=usuario_sql
+      DB_PASSWORD=contrasena_segura
+      DB_DATABASE=DIA_NINO2013
+      JWT_SECRET=super_secreto_para_firmar_tokens
+      HCM_API_URL=https://fa-exjp-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/11.13.18.05/workers
+      HCM_USERNAME=Claro_RhOnline_WS_SS
+      HCM_PASSWORD=HCM-RH0nl1ne@#3
+      ```
+   5. Iniciar la aplicación NestJS bajo PM2 para mantenerla activa en segundo plano:
+      `pm2 start dist/main.js --name "api-despacho"`
+   6. Configurar el inicio automático de PM2 si el VPS se reinicia:
+      `pm2 startup` y `pm2 save`
+
+B. Despliegue de la Web en React (IIS o Nginx)
+   1. Compilar el frontend de React para producción:
+      `npm run build`
+      Esto generará los archivos optimizados HTML, JS y CSS en la carpeta `/dist`.
+   2. Servidor Web (IIS en Windows Server):
+      - Crear un nuevo Sitio Web en IIS apuntando al directorio físico `/dist` 
+        de React.
+      - Asignarle el puerto público de acceso (ej: 80 o 443).
+      - Configurar un módulo de redirección (URL Rewrite) en IIS para que todas 
+        las rutas de navegación interna de React apunten al `index.html` (evita 
+        errores 404 al recargar pantalla).
+   3. Proxy Inverso para la API:
+      - Configurar una regla de redirección en IIS o Nginx para mapear el prefijo 
+        `/api` de las llamadas de red hacia el puerto local de NestJS (`http://localhost:3000/api`).
+
+C. Permisos de Carpetas Físicas para Fotos WebP
+   - Es indispensable configurar permisos de escritura y lectura en la carpeta 
+     física creada en el VPS para las imágenes:
+     `D:\PROYECTOS_PORTAL\asistencia_uploads\fotos_evidencia\`
+   - En Windows Server: Asignar permisos de Control Total al usuario del grupo
+     `IIS_IUSRS` o al usuario que ejecuta el servicio de PM2 en el VPS.
+   - En Linux: Ejecutar `chmod -R 775 /var/www/asistencia_uploads/` y asignar
+     el propietario al grupo del servidor web.
+
+--------------------------------------------------------------------------------
+2. PLAN DE PRUEBAS DE ESTRÉS DE CONCURRENCIA (PREVENCIÓN DE INCONSISTENCIAS)
+--------------------------------------------------------------------------------
+
+Dado que múltiples despachadores móviles entregarán regalos de forma simultánea,
+debemos probar bajo carga pesada que el stock de juguetes disminuye de forma
+correcta y que no se realicen entregas de regalos sin existencia (stock negativo).
+
+A. Herramienta de Pruebas: k6 (Escrito en JavaScript)
+   Instalar k6 en el entorno de desarrollo y crear el script de prueba de estrés
+   `prueba_concurrencia.js`:
+
+```javascript
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+// Configuración de la prueba: 20 usuarios virtuales concurrentes de golpe
+export let options = {
+    vus: 20,
+    duration: '5s',
+};
+
+// Preparación inicial: Asegurarse de tener un juguete con stock = 5
+// en la tabla tblCatalogoJuguetes (Id: 10) y 20 IDs de hijos disponibles.
+export default function () {
+    const url = 'http://vps_ip:3000/api/v1/dispatch/deliver';
+    
+    // Simular diferentes datos por petición
+    const payload = JSON.stringify({
+        hijoId: 100 + __VU, // IDs de hijos del 101 al 120
+        jugueteId: 10,       // Juguete con stock limitado (ej. 5 piezas)
+        carnetColaborador: `4020${__VU}`,
+        recibidoPor: 'COLABORADOR',
+        usuario: 'test_concurrency_runner'
+    });
+
+    const params = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+
+    const res = http.post(url, payload, params);
+
+    // Verificaciones de comportamiento
+    check(res, {
+        'status is either 201 or 409': (r) => r.status === 201 || r.status === 409,
+    });
+
+    sleep(0.1);
+}
+```
+
+B. Resultado Esperado en Base de Datos tras la prueba de estrés:
+   1. Si el stock del juguete ID 10 era originalmente **5**:
+      - Exactamente 5 peticiones deben retornar código HTTP `201 Created`
+        (exitoso).
+      - Las 15 peticiones restantes deben retornar código HTTP `409 Conflict`
+        (con el mensaje "Stock agotado para el juguete").
+   2. Al consultar la tabla de base de datos en SQL Server:
+      - `SELECT StockActual FROM tblCatalogoJuguetes WHERE Id = 10` debe devolver exactamente **0** (nunca números negativos).
+      - `SELECT COUNT(*) FROM tblEntregasJuguetes WHERE JugueteId = 10 AND Estado = 'DELIVERED'` debe ser exactamente **5**.
+   Esto validará que el bloqueo pesimista en SQL Server está funcionando
+   correctamente.
+
+--------------------------------------------------------------------------------
+3. CHECKLIST DE VERIFICACIÓN MANUAL (PUESTA EN MARCHA)
+--------------------------------------------------------------------------------
+
+Antes de dar por iniciado el evento, el administrador debe realizar las
+siguientes pruebas:
+
+- [ ] Escaneo de Carnet (Móvil): Verificar que al enfocar el código de barras
+      de prueba se obtienen los datos del colaborador en menos de 1.5 segundos.
+- [ ] Validación de Fotos de HCM: Buscar un colaborador activo y confirmar
+      que renderiza su foto oficial. Si no cuenta con ella, comprobar que la app
+      muestra una silueta de usuario genérica sin caerse.
+- [ ] Flujo de Despacho sin Foto: Realizar una entrega indicando que el receptor
+      es el colaborador omitiendo la foto. Confirmar que el registro se guarda.
+- [ ] Flujo de Despacho con Foto: Tomar foto de evidencia. Verificar en la base
+      de datos que se grabó la ruta del archivo, y en la carpeta física del VPS
+      que existe el archivo `.webp` con peso inferior a 100KB.
+- [ ] Hover de Fotos en React: En la web de React, pasar el puntero sobre la
+      columna de evidencia de la tabla de entregas y comprobar que la imagen
+      se muestra instantáneamente.
+- [ ] Prueba de Reversión: Reversar una entrega fallida. Verificar que la
+      tarjeta del hijo vuelve a color gris oscuro (pendiente), la entrega cambia a
+      estado 'REVERTED' en base de datos y el stock del juguete se incrementa
+      en +1.
+- [ ] Prueba de Resiliencia (Offline): Poner el dispositivo móvil en Modo Avión.
+      Registrar un despacho de prueba. Verificar que se guarda en la base de datos 
+      local (SQLite/Hive). Desactivar Modo Avión y comprobar que el registro se 
+      sincroniza automáticamente con el servidor VPS.
+================================================================================

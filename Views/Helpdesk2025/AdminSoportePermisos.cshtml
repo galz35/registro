@@ -1,0 +1,420 @@
+﻿@* Views/Helpdesk2025/AdminSoportePermisos.cshtml *@
+@{
+    ViewBag.Title = "Soporte - Permisos";
+     var soporteInicial = (ViewBag.SoporteID ?? "").ToString();
+}
+
+<style>
+    .cardx {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 12px
+    }
+
+    .hdr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px
+    }
+
+    .ttl {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0
+    }
+
+    .btnx {
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block
+    }
+
+        .btnx.primary {
+            background: #e11d48;
+            color: #fff;
+            border-color: #e11d48
+        }
+
+        .btnx.danger {
+            background: #111827;
+            color: #fff;
+            border-color: #111827
+        }
+
+    .grid2 {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 12px
+    }
+
+    .muted {
+        color: #6b7280;
+        font-size: 12px
+    }
+
+    .fila {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px
+    }
+
+        .fila input[type="text"], .fila input[type="email"] {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 8px
+        }
+
+    .tbl {
+        width: 100%;
+        border-collapse: collapse
+    }
+
+        .tbl th, .tbl td {
+            border-bottom: 1px solid #eef2f7;
+            padding: 8px;
+            font-size: 13px
+        }
+
+        .tbl th {
+            background: #f9fafb;
+            text-align: left
+        }
+
+    .pill {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        padding: 6px 10px
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap
+    }
+
+    .sep {
+        height: 1px;
+        background: #eef2f7;
+        margin: 10px 0
+    }
+</style>
+
+<div class="cardx">
+    <div class="hdr">
+        <h1 class="ttl">Soporte - Permisos</h1>
+        <div class="row-actions">
+            <a class="btnx" href="@Url.Content("~/Helpdesk2025/Soporte")">← Volver</a>
+            <button class="btnx" id="btnRecargar">Recargar</button>
+            <button class="btnx primary" id="btnGuardar">Guardar</button>
+            <button class="btnx danger" id="btnEliminar">Desactivar</button>
+        </div>
+    </div>
+    <div class="muted">Pantalla dedicada para editar Soporte y permisos por Tipo/Subtipo.</div>
+</div>
+
+<div class="grid2">
+    <div class="cardx">
+        <div style="font-weight:700">Datos del soporte</div>
+        <div class="muted">SoporteID es el correo (clave).</div>
+
+        <div class="sep"></div>
+
+        <div class="fila">
+            <input type="email" id="SoporteID" placeholder="SoporteID (correo)" value="@soporteInicial" />
+        </div>
+        <div class="fila">
+            <input type="email" id="Email" placeholder="Email" />
+        </div>
+        <div class="fila">
+            <input type="text" id="Nombre" placeholder="Nombre" />
+        </div>
+        <div class="fila">
+            <input type="text" id="Area" placeholder="Área" />
+        </div>
+
+        <div class="fila" style="justify-content:space-between">
+            <label class="pill"><input type="checkbox" id="Activo" /> Activo</label>
+            <label class="pill"><input type="checkbox" id="EsAdmin" /> Admin</label>
+            <label class="pill"><input type="checkbox" id="EsSuper" /> Super</label>
+        </div>
+
+        <div class="sep"></div>
+        <div class="muted">Tip: puedes entrar con ?id=correo@dominio para cargar automáticamente.</div>
+    </div>
+
+    <div class="cardx">
+        <div class="hdr">
+            <div>
+                <div style="font-weight:700">Permisos por Tipo / Subtipo</div>
+                <div class="muted">Si Subtipo está vacío, aplica “todo” el Tipo.</div>
+            </div>
+            <div class="row-actions">
+                <button class="btnx" id="btnMarcarTodo">Marcar todo</button>
+                <button class="btnx" id="btnDesmarcarTodo">Desmarcar todo</button>
+            </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <table class="tbl" id="tblPermisos">
+            <thead>
+                <tr>
+                    <th style="width:70px">Permitir</th>
+                    <th style="width:90px">TipoID</th>
+                    <th>Tipo</th>
+                    <th style="width:110px">SubtipoID</th>
+                    <th>Subtipo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="5" class="muted">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+    // =========================
+    // URLs
+    // =========================
+    const urlPermisosCatalogo = '@Url.Content("~/Helpdesk2025/Admin_ObtenerCatalogoPermisos")';
+    const urlSoporteDetalle   = '@Url.Content("~/Helpdesk2025/Admin_ObtenerSoporteDetalle")';
+    const urlGuardarSoporte   = '@Url.Content("~/Helpdesk2025/Admin_GuardarSoporte")';
+    const urlEliminarSoporte  = '@Url.Content("~/Helpdesk2025/Admin_EliminarSoporte")';
+
+    // =========================
+    // Overlay seguro (no revienta si no existe plugin)
+    // =========================
+    function overlay(show, text){
+        if (window.jQuery && $.LoadingOverlay) {
+            if(show) $.LoadingOverlay("show", { image:"", text: text || "Cargando..." });
+            else $.LoadingOverlay("hide");
+        }
+    }
+
+    // =========================
+    // Querystring
+    // =========================
+    function q(name){
+        const u = new URL(window.location.href);
+        return (u.searchParams.get(name) || '').trim();
+    }
+
+    // =========================
+    // Permisos seleccionados
+    // =========================
+    function leerPermisosSeleccionados(){
+        const arr = [];
+        $('#tblPermisos tbody tr').each(function(){
+            const $tr = $(this);
+            if(!$tr.find('input.chkPerm').is(':checked')) return;
+
+            const tipo = parseInt($tr.data('tipo'),10) || 0;
+            const subtipoRaw = $tr.data('subtipo');
+
+            let subtipo = null;
+            if(subtipoRaw !== null && subtipoRaw !== undefined && subtipoRaw !== ""){
+                const n = parseInt(subtipoRaw,10);
+                subtipo = isNaN(n) ? null : n;
+            }
+
+            arr.push({ TipoCasoID: tipo, SubtipoCasoID: subtipo });
+        });
+        return arr;
+    }
+
+    // =========================
+    // Render permisos
+    // =========================
+    function pintarPermisos(rows){
+        const $tb = $('#tblPermisos tbody');
+        $tb.empty();
+
+        if(!rows || !rows.length){
+            $tb.append('<tr><td colspan="5" class="muted">No hay permisos configurables.</td></tr>');
+            return;
+        }
+
+        for (let i=0;i<rows.length;i++){
+            const r = rows[i];
+            const subtipoId = (r.SubtipoCasoID === null || r.SubtipoCasoID === undefined) ? '' : r.SubtipoCasoID;
+            const permitido = !!r.Permitido;
+
+            const tr = `
+            <tr data-tipo="${r.TipoCasoID}" data-subtipo="${subtipoId}">
+                <td><input type="checkbox" class="chkPerm" ${permitido ? 'checked' : ''}></td>
+                <td>${r.TipoCasoID}</td>
+                <td>${(r.TipoCaso || '')}</td>
+                <td>${subtipoId === '' ? '<span class="muted">—</span>' : subtipoId}</td>
+                <td>${(r.SubtipoCaso ? r.SubtipoCaso : '<span class="muted">Todo el tipo</span>')}</td>
+            </tr>`;
+            $tb.append(tr);
+        }
+    }
+
+    // =========================
+    // Cargar catálogo permisos
+    // =========================
+    function cargarCatalogoPermisos(soporteId){
+        return $.get(urlPermisosCatalogo, { soporteId: soporteId || '' })
+            .done(function(r){
+                // si por alguna razón te devolvió HTML, aquí explota con '<'
+                // pero como el controller devuelve JSON, esto ya no debería pasar
+                pintarPermisos(r);
+            })
+            .fail(function(){
+                pintarPermisos([]);
+            });
+    }
+
+    // =========================
+    // Cargar soporte
+    // =========================
+    function cargarSoporte(soporteId){
+        if(!soporteId) return $.Deferred().resolve().promise();
+
+        return $.get(urlSoporteDetalle, { soporteId: soporteId })
+            .done(function(r){
+                if(!r || !r.success || !r.data) return;
+
+                const d = r.data;
+                $('#SoporteID').val(d.SoporteID || '');
+                $('#Email').val(d.Email || '');
+                $('#Nombre').val(d.Nombre || '');
+                $('#Area').val(d.Area || '');
+                $('#Activo').prop('checked', !!d.Activo);
+                $('#EsAdmin').prop('checked', !!d.EsAdmin);
+                $('#EsSuper').prop('checked', !!d.EsSuper);
+            });
+    }
+
+    // =========================
+    // Recargar todo
+    // =========================
+    function recargarTodo(){
+        const soporteId = (q('id') || $('#SoporteID').val() || '').trim();
+
+        overlay(true, "Cargando...");
+
+        $.when(
+            cargarSoporte(soporteId),
+            cargarCatalogoPermisos(soporteId)
+        ).always(function(){
+            overlay(false);
+        });
+    }
+
+    // =========================
+    // Acciones
+    // =========================
+    $('#btnRecargar').on('click', recargarTodo);
+
+    $('#btnMarcarTodo').on('click', function(){
+        $('#tblPermisos tbody input.chkPerm').prop('checked', true);
+    });
+
+    $('#btnDesmarcarTodo').on('click', function(){
+        $('#tblPermisos tbody input.chkPerm').prop('checked', false);
+    });
+
+    $('#btnGuardar').on('click', function(){
+        const req = {
+            SoporteID: ($('#SoporteID').val() || '').trim(),
+            Email: ($('#Email').val() || '').trim(),
+            Nombre: ($('#Nombre').val() || '').trim(),
+            Area: ($('#Area').val() || '').trim(),
+            Activo: $('#Activo').is(':checked'),
+            EsAdmin: $('#EsAdmin').is(':checked'),
+            EsSuper: $('#EsSuper').is(':checked'),
+            Permisos: leerPermisosSeleccionados()
+        };
+
+        if (!req.SoporteID || !req.Email || !req.Nombre) {
+            Swal.fire('Atención', 'SoporteID, Email y Nombre son obligatorios.', 'warning');
+            return;
+        }
+
+        overlay(true, "Guardando...");
+
+        $.ajax({
+            url: urlGuardarSoporte,
+            type: 'POST',
+            data: JSON.stringify(req),
+            contentType: 'application/json; charset=utf-8'
+        }).done(function(r){
+            overlay(false);
+            if (r && (r.success === true || r.success === 1 || r.success === "1")) {
+                Swal.fire('Éxito', 'Soporte guardado.', 'success');
+                cargarCatalogoPermisos(req.SoporteID);
+            } else {
+                Swal.fire('Error', (r && r.message) || 'No se pudo guardar.', 'error');
+            }
+        }).fail(function(xhr){
+            overlay(false);
+            Swal.fire('Error', 'Fallo de red al guardar.', 'error');
+        });
+    });
+
+    $('#btnEliminar').on('click', function(){
+        const soporteId = ($('#SoporteID').val() || '').trim();
+        if(!soporteId){
+            Swal.fire('Atención', 'SoporteID requerido.', 'warning');
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Desactivar soporte?',
+            text: 'Se desactiva Soporte y sus permisos activos.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar'
+        }).then(function(res){
+            if(!res.isConfirmed) return;
+
+            overlay(true, "Desactivando...");
+
+            $.post(urlEliminarSoporte, { soporteId: soporteId })
+             .done(function(r){
+                overlay(false);
+                if (r && (r.success === true || r.success === 1 || r.success === "1")) {
+                    Swal.fire('OK', 'Soporte desactivado.', 'success');
+                    recargarTodo();
+                } else {
+                    Swal.fire('Error', (r && r.message) || 'No se pudo desactivar.', 'error');
+                }
+             })
+             .fail(function(){
+                overlay(false);
+                Swal.fire('Error', 'Fallo de red.', 'error');
+             });
+        });
+    });
+
+    // =========================
+    // Init
+    // =========================
+    $(function(){
+        // si viene con ?id=correo y el input está vacío, lo deja
+        const id = q('id');
+        if(id && !($('#SoporteID').val() || '').trim()){
+            $('#SoporteID').val(id);
+        }
+        recargarTodo();
+    });
+    </script>
+}

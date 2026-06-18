@@ -1,0 +1,304 @@
+﻿@model Entities.Employees
+
+
+
+<script>
+    function onButtonClick(s, e) {
+        e.processOnServer = confirm('Seguro que desea borrar el registro?');
+    }
+
+
+    function ShowAttachedFile(s, e, url) {
+        var key = s.GetRowKey(e.visibleIndex);
+
+        if (e.buttonID === "btnDetail") {
+            var destUrl = url + "/" + key;
+            popImage.SetContentUrl(destUrl);
+            popImage.Show();
+
+        }
+
+    }
+
+    function OnDaysGotFocus(s, e) {
+
+        var isPartial = IsPartial.GetValue();
+
+        if (isPartial == 1) {
+
+            var startDate = StartDate.GetValue();
+            var endDate = EndDate.GetValue();
+            var daysTotal = endDate - startDate;
+            daysDiff = Math.floor(daysTotal / (1000 * 60 * 60 * 24));
+            daysDiffLast = daysDiff + 1
+
+            DaysQuantity.SetValue(daysDiffLast);
+
+        }
+        else
+        {
+            var startDate = StartDate.GetValue();
+            EndDate.SetValue(startDate);
+        }
+
+
+
+
+    }
+    function OnHoursGotFocus(s, e) {
+
+        var isPartial = IsPartial.GetValue();
+
+        if (isPartial == 2) {
+
+            var startHour = StartHour.GetValue();
+            var endHour = EndHour.GetValue();
+
+            var diff = endHour.valueOf() - startHour.valueOf();
+            var diffInHours = diff / 1000 / 60 / 60;
+            HoursQuantity.SetValue(diffInHours);
+
+        }
+
+    }
+
+    function OnIsPartialChanged(s, e) {
+
+        var isPartial = IsPartial.GetValue();
+        var startDate = StartDate.GetValue();
+        var defaultHour = new Date('01/01/0001 00:00:00');
+        if (isPartial == 1) {
+            StartHour.SetReadOnly(true);
+            EndHour.SetReadOnly(true);
+            HoursQuantity.SetValue(0);
+            StartHour.SetValue(defaultHour)
+            EndHour.SetValue(defaultHour)
+            EndDate.SetReadOnly(false);
+            OnDaysGotFocus()
+        }
+        else {
+            StartHour.SetReadOnly(false);
+            EndHour.SetReadOnly(false);
+            DaysQuantity.SetValue(0);
+            EndDate.SetValue(startDate)
+            EndDate.SetReadOnly(true);
+            StartHour.SetValue(defaultHour)
+            EndHour.SetValue(defaultHour)
+
+        }
+
+    }
+
+    function OnFileUploadComplete(s, e) {
+        clientFileName.SetText(e.callbackData);
+    }
+
+
+    function OnSelectedLicenseTypeIdChanged() {
+
+            TypePermissionId.PerformCallback();
+    }
+    function TypePermissionBeginCallback(s, e) {
+
+            e.customArgs["typeId"] = LicenseTypeId.GetValue();
+            TypePermissionId.SetReadOnly(false);
+    }
+
+
+    function ShowLicenseClick(s, e, url, url1) {
+        var key = s.GetRowKey(e.visibleIndex);
+        //alert("Key Value is " + key);
+
+        var destUrl = null;
+
+        if (e.buttonID == "btnPdfId") {
+            var destUrl = url + "/" + key;
+            //alert("Destination Url is: " + destUrl);
+
+            popImage.SetContentUrl(destUrl);
+            popImage.Show();
+            //window.location.href = destUrl;
+        }
+        else if (e.buttonID =="btnPrintId") {
+            destUrl = url1 + "/" + key;
+            //alert("Destination Url is: " + destUrl);
+            popImage.SetContentUrl(destUrl);
+            popImage.Show();
+        }
+
+    }
+
+
+    function OnBatchEditRowValidating(s, e) {
+        if (gvLicensesRegisterDetail.IsEditing() == true && gvLicensesRegisterDetail.IsNewRowEditing() == false) {
+            var statusId = LicenseStatus.GetValue();
+            var isPartial = IsPartial.GetValue();
+            // var isNewUser = gvLicensesRegisterDetail.LicenseStatus.GetValue() == "GRABADO";
+            if (statusId == "GRABADO") {
+                if (isPartial == 1) {
+
+                    LicenseTypeId.SetReadOnly(false);
+                    TypePermissionId.SetReadOnly(false);
+                    IsPartial.SetReadOnly(false);
+                    StartDate.SetReadOnly(false);
+                    EndDate.SetReadOnly(false);
+                    Notes.SetReadOnly(false);
+                    StartHour.SetReadOnly(true);
+                    EndHour.SetReadOnly(true);
+                }
+                else {
+                    LicenseTypeId.SetReadOnly(false);
+                    TypePermissionId.SetReadOnly(false);
+                    IsPartial.SetReadOnly(false);
+                    StartDate.SetReadOnly(false);
+                    EndDate.SetReadOnly(true);
+                    Notes.SetReadOnly(false);
+                    StartHour.SetReadOnly(false);
+                    EndHour.SetReadOnly(false);
+                }
+
+            }
+            else {
+              LicenseTypeId.SetReadOnly(true);
+
+
+                TypePermissionId.SetReadOnly(true);
+                IsPartial.SetReadOnly(true);
+                StartDate.SetReadOnly(true);
+                EndDate.SetReadOnly(true);
+                StartHour.SetReadOnly(true);
+                EndHour.SetReadOnly(true);
+                DaysQuantity.SetReadOnly(true);
+                HoursQuantity.SetReadOnly(true);
+                Notes.SetReadOnly(true);
+            }
+
+        }
+
+        //if (s.cpCallbackResult) {
+        //    pc.Show();
+        //}
+    }
+
+    function Guardarlicencia(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("UpdateLicense")',
+            type: "POST",
+            data: $('#frmlicencia').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                $.LoadingOverlay("hide");
+                if (data.status != "Error") {
+
+
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditAppointment.Hide();
+                            }
+
+                        });
+                } else {
+                    swal({
+                        title: "Advertencia!",
+                        text: data.message,
+                        icon: "warning",
+                        button: "Aceptar",
+                    })
+                    //swal("ERROR!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+                }
+
+
+            },
+
+            beforeSend: function () {
+                $.LoadingOverlay("show");
+            },
+            error: function (error) {
+                $.LoadingOverlay("hide");
+                swal("Error!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+            }
+        });
+    }
+
+
+
+</script>
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Esquela de vacacion";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 800;
+    settingsPopup.Height = 600;
+
+
+
+}).GetHtml()
+
+
+
+
+
+@*@{
+    var imgSrc = "";
+    if (Model.Picture != null)
+    {
+        var base64 = Convert.ToBase64String(Model.Picture);
+        imgSrc = String.Format("data:image/jpg;base64,{0}", base64);
+    }
+    else
+    {
+        imgSrc = Url.Content("~/Content/Images/Persons.png");
+    }
+}*@
+
+<div class="col-12 content" style="margin-top: -10px; background-color: white; padding:0;">
+    <div class="col-3 divContent" style="background-color:transparent;">
+     @*   <img src="@imgSrc" style="padding:15px 20px 0px 0px; width:80px; height:100px; float:left;border-radius:10px" />*@
+    </div>
+    <div class="col-9 divContent">
+        <h2 class="form-h2">
+
+
+            @Html.DisplayFor(model => model.Names) -@Html.DisplayFor(model => model.EmployeeNumber)<br />
+        </h2>
+        <h4>
+            @Html.DisplayFor(model => model.Departamento)- @Html.DisplayFor(model => model.Nombreubicacion)<br />
+        </h4>
+    </div>
+</div>
+
+
+@using (Html.BeginForm())
+{
+    @Html.Action("RegisterDetailPartial", "Licenses", new { personId = Model.Idhrms })
+}
+
+
+
+

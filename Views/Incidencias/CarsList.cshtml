@@ -1,0 +1,23 @@
+﻿
+@{
+    ViewBag.Title = "Lista de Unidades";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<script type="text/javascript">
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvCars.SetHeight(height - 150);
+    }
+</script>
+@Html.Action("CarsListPartial")
+

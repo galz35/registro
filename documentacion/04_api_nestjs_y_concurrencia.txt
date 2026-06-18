@@ -1,0 +1,287 @@
+================================================================================
+📄 DOCUMENTO 04: ESPECIFICACIÓN DE LA API (NESTJS) Y CONTROL DE CONCURRENCIA
+================================================================================
+Backend Framework: NestJS (Node.js) con TypeScript
+ORM / Database Access: TypeORM o Knex.js con controlador MSSQL
+================================================================================
+
+Este documento detalla la estructura interna del backend de NestJS, la lógica 
+de control de concurrencia mediante bloqueos de base de datos a nivel de fila,
+las clases de validación de transferencia de datos (DTOs) y el consumo seguro 
+de la API de Oracle HCM Cloud.
+
+--------------------------------------------------------------------------------
+1. ESTRUCTURA DEL PROYECTO DE BACKEND (NESTJS)
+--------------------------------------------------------------------------------
+
+El backend se organizará en submódulos especializados de la siguiente forma:
+
+/asistencia/backend
+  ├── src/
+  │    ├── config/                  # Configuraciones de BD y variables de entorno
+  │    │    └── database.config.ts
+  │    ├── auth/                    # Control de JWT y login del despachador
+  │    │    ├── auth.controller.ts
+  │    │    ├── auth.service.ts
+  │    │    └── jwt.strategy.ts
+  │    ├── attendance/              # Control de asistencia física al evento
+  │    │    ├── attendance.controller.ts
+  │    │    ├── attendance.service.ts
+  │    │    └── entities/
+  │    ├── catalog/                 # CRUD del catálogo de juguetes y stock
+  │    │    ├── catalog.controller.ts
+  │    │    ├── catalog.service.ts
+  │    │    └── entities/
+  │    ├── dispatch/                # Lógica transaccional de entregas y reversiones
+  │    │    ├── dispatch.controller.ts
+  │    │    ├── dispatch.service.ts
+  │    │    └── entities/
+  │    ├── integration/             # Módulo de integración Oracle HCM (Fotos)
+  │    │    ├── hcm.service.ts
+  │    │    └── hcm.controller.ts
+  │    ├── main.ts
+  │    └── app.module.ts
+  ├── .env                          # Contraseñas y endpoints parametrizados
+  ├── tsconfig.json
+  └── package.json
+
+--------------------------------------------------------------------------------
+2. CLASES DE TRANSFERENCIA DE DATOS (DTOS) CON VALIDACIÓN ACTIVA
+--------------------------------------------------------------------------------
+
+Para proteger los endpoints de datos maliciosos, NestJS utiliza `class-validator`
+y `class-transformer` a nivel global:
+
+A. DTO para Registrar Asistencia (RegisterAttendanceDto)
+```typescript
+// En: src/attendance/dto/register-attendance.dto.ts
+import { IsNotEmpty, IsString, IsInt } from 'class-validator';
+
+export class RegisterAttendanceDto {
+  @IsNotEmpty({ message: 'El carnet del colaborador es obligatorio' })
+  @IsString({ message: 'El carnet debe ser un texto válido' })
+  readonly carnet: string;
+
+  @IsNotEmpty({ message: 'El ID del evento es obligatorio' })
+  @IsInt({ message: 'El ID del evento debe ser un número entero' })
+  readonly eventId: number;
+}
+```
+
+B. DTO para Registrar la Entrega (DeliverToyDto)
+```typescript
+// En: src/dispatch/dto/deliver-toy.dto.ts
+import { IsNotEmpty, IsInt, IsString, IsEnum, IsOptional, ValidateIf } from 'class-validator';
+
+export enum RecibidoPorEnum {
+  COLABORADOR = 'COLABORADOR',
+  CONYUGE = 'CONYUGE',
+  TERCERO = 'TERCERO'
+}
+
+export class DeliverToyDto {
+  @IsNotEmpty()
+  @IsInt()
+  readonly hijoId: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  readonly jugueteId: number;
+
+  @IsNotEmpty()
+  @IsString()
+  readonly carnetColaborador: string;
+
+  @IsNotEmpty()
+  @IsEnum(RecibidoPorEnum, { message: 'El receptor debe ser COLABORADOR, CONYUGE o TERCERO' })
+  readonly recibidoPor: RecibidoPorEnum;
+
+  // El nombre del receptor es obligatorio únicamente si se selecciona 'TERCERO'
+  @ValidateIf(o => o.recibidoPor === RecibidoPorEnum.TERCERO)
+  @IsNotEmpty({ message: 'Debe ingresar el nombre de la persona que retira el juguete' })
+  @IsString()
+  readonly nombreReceptor?: string;
+}
+```
+
+C. DTO para Reversar Entrega (RevertDeliveryDto)
+```typescript
+// En: src/dispatch/dto/revert-delivery.dto.ts
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+
+export class RevertDeliveryDto {
+  @IsNotEmpty({ message: 'El motivo de la reversión es obligatorio' })
+  @IsString()
+  @MinLength(10, { message: 'El motivo debe ser más detallado (mínimo 10 caracteres)' })
+  readonly motivo: string;
+}
+```
+
+--------------------------------------------------------------------------------
+3. CONTROL DE CONCURRENCIA DE STOCK DE JUGUETES (ACID)
+--------------------------------------------------------------------------------
+Para garantizar que dos despachadores no entreguen el mismo juguete si el stock 
+físico de esa categoría está en 1 (lo que provocaría stock negativo e 
+inconsistencia), NestJS aplicará una transacción con bloqueo pesimista en SQL Server:
+
+```typescript
+// En: src/dispatch/dispatch.service.ts
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Connection } from 'typeorm';
+import { tblCatalogoJuguetes } from '../catalog/entities/catalogo.entity';
+import { tblEntregasJuguetes } from './entities/entrega.entity';
+
+@Injectable()
+export class DispatchService {
+  constructor(private readonly connection: Connection) {}
+
+  async registrarEntrega(dto: DeliverToyDto, usuarioDespacho: string, fotoUrl?: string) {
+    // Iniciamos una transacción ACID gestionada por TypeORM
+    return await this.connection.transaction(async (manager) => {
+      
+      // 1. Obtener el juguete del catálogo con bloqueo de escritura selectivo
+      // Esto genera un SELECT ... WITH (UPDLOCK, ROWLOCK) en SQL Server
+      const juguete = await manager.createQueryBuilder(tblCatalogoJuguetes, 'j')
+        .setLock('pessimistic_write')
+        .where('j.id = :id AND j.activo = 1', { id: dto.jugueteId })
+        .getOne();
+
+      if (!juguete) {
+        throw new NotFoundException('El juguete seleccionado no está disponible en el catálogo.');
+      }
+
+      // 2. Validar Stock Disponible
+      if (juguete.stockActual <= 0) {
+        throw new ConflictException(`Inventario insuficiente para el juguete: ${juguete.nombreJuguete}. Stock: 0`);
+      }
+
+      // 3. Validar si el niño ya cuenta con un juguete entregado activamente
+      const entregaExistente = await manager.findOne(tblEntregasJuguetes, {
+        where: { hijoId: dto.hijoId, estado: 'DELIVERED' }
+      });
+
+      if (entregaExistente) {
+        throw new ConflictException('Este niño ya tiene una entrega registrada y activa.');
+      }
+
+      // 4. Registrar la Entrega en la base de datos
+      const nuevaEntrega = manager.create(tblEntregasJuguetes, {
+        hijoId: dto.hijoId,
+        jugueteId: dto.jugueteId,
+        carnetColaborador: dto.carnetColaborador,
+        estado: 'DELIVERED',
+        recibidoPor: dto.recibidoPor,
+        nombreReceptor: dto.nombreReceptor || null,
+        fotoEvidenciaUrl: fotoUrl || null,
+        usuarioDespacho: usuarioDespacho
+      });
+      await manager.save(nuevaEntrega);
+
+      // 5. Decrementar el Stock Actual del catálogo
+      juguete.stockActual -= 1;
+      await manager.save(juguete);
+
+      return {
+        success: true,
+        entregaId: nuevaEntrega.id,
+        stockRestante: juguete.stockActual
+      };
+    });
+  }
+}
+```
+
+--------------------------------------------------------------------------------
+4. MANEJO EXCEPCIONAL DE ERRORES DE BASE DE DATOS (SQL SERVER EXCEPTION FILTER)
+--------------------------------------------------------------------------------
+Maneja de forma transparente los bloqueos de transacción (deadlocks) o caídas
+de red en SQL Server, evitando que la app móvil de Flutter reciba respuestas 500:
+
+```typescript
+// En: src/config/sql-exception.filter.ts
+import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
+import { Response } from 'express';
+
+@Catch(QueryFailedError)
+export class SqlExceptionFilter implements ExceptionFilter {
+  catch(exception: QueryFailedError, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    
+    const message = exception.message;
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let customMessage = 'Error interno en el servidor de base de datos.';
+
+    // Códigos de error específicos de SQL Server (MSSQL)
+    if (message.includes('1205')) { // Deadlock victim
+      status = HttpStatus.CONFLICT;
+      customMessage = 'El servidor está procesando muchas peticiones de stock. Por favor, reintente en un segundo.';
+    } else if (message.includes('547')) { // Foreign Key constraint violation
+      status = HttpStatus.BAD_REQUEST;
+      customMessage = 'Error de integridad referencial. Los datos no coinciden con los registros del censo.';
+    } else if (message.includes('2627') || message.includes('2601')) { // Unique constraint / Primary Key violation
+      status = HttpStatus.CONFLICT;
+      customMessage = 'El registro de entrega ya existe en el sistema.';
+    }
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      message: customMessage,
+      error: exception.name
+    });
+  }
+}
+```
+
+--------------------------------------------------------------------------------
+5. INTEGRACIÓN CON ORACLE HCM CLOUD (FOTOS DE COLABORADORES)
+--------------------------------------------------------------------------------
+El backend en NestJS se conectará al servicio web rest de Oracle HCM de forma
+segura utilizando variables de entorno guardadas en el archivo `.env` del VPS.
+
+```typescript
+// En: src/integration/hcm.service.ts
+import { Injectable, HttpService } from '@nestjs/common';
+
+@Injectable()
+export class HcmService {
+  constructor(private readonly httpService: HttpService) {}
+
+  async obtenerFotoEmpleado(carnet: string): Promise<string | null> {
+    const url = `${process.env.HCM_API_URL}?onlyData=true&expand=photos&q=PersonNumber='${carnet.trim()}'`;
+    
+    const username = process.env.HCM_USERNAME;
+    const password = process.env.HCM_PASSWORD;
+    const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+
+    try {
+      const response = await this.httpService.get(url, {
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json'
+        },
+        timeout: 4000 // 4 segundos de límite de espera
+      }).toPromise();
+
+      const data = response.data;
+      if (!data.items || data.items.length === 0) return null;
+
+      const photos = data.items[0].photos;
+      if (!photos || photos.length === 0) return null;
+
+      const fotoPrimaria = photos.find(p => p.PrimaryFlag === true) || photos[0];
+      const base64Photo = fotoPrimaria.Photo;
+
+      if (!base64Photo) return null;
+
+      return `data:image/jpeg;base64,${base64Photo}`;
+    } catch (error) {
+      console.error(`Error al conectar con Oracle HCM para carnet ${carnet}:`, error.message);
+      return null;
+    }
+  }
+}
+```
+================================================================================

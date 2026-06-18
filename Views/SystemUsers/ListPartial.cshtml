@@ -1,0 +1,266 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingUser(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.SystemUsers();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvUserList";
+        settings.KeyFieldName = "UserId";
+        settings.CallbackRouteValues = new { Controller = "SystemUsers", Action = "ListPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "SystemUsers", Action = "AddSystemUser" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "SystemUsers", Action = "EditSystemUser" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "SystemUsers", Action = "DeleteSystemUser" };
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+        settings.Width = Unit.Percentage(100);
+
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.Settings.ShowFooter = true;
+        settings.KeyboardSupport = true;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+        #region Configuracion del popup
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de usuario";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        #endregion
+
+
+        #region Paging
+        settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+        #endregion
+        #region filtering
+        settings.Settings.ShowFilterRow = true;
+
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.SettingsPopup.HeaderFilter.Height = 200;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+        #endregion
+        #region Sorting
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "UserName");
+        #endregion
+        #region Personalizacion de Botones del GridView
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.SettingsText.ConfirmDelete = "Seguro quiere borrar el registro?";
+        settings.CommandColumn.ShowDeleteButton = true;
+
+
+        GridViewCommandColumnCustomButton btnAddProfile = new GridViewCommandColumnCustomButton();
+        btnAddProfile.ID = "btnAddProfileId";
+        btnAddProfile.Text = "";
+        btnAddProfile.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsAdd16x16; ;
+        settings.CommandColumn.CustomButtons.Add(btnAddProfile);
+        settings.ClientSideEvents.CustomButtonClick =
+                  string.Format("function(s, e) {{ ShowProfileUser(s, e, '{0}'); }}",
+                  Url.Action("List", "ProfileUsers"));
+
+        settings.SettingsCommandButton.DeleteButton.Image.Url = Url.Content("~/Content/Icons/trash.png");
+
+
+        settings.CommandColumn.Width = Unit.Percentage(30);
+        #endregion
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "UserName";
+            col.Caption = "Usuario";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 1;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "FirstName";
+            col.AdaptivePriority = 2;
+            col.Caption = "Primer Nombre";
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+            col.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+            col.Width = Unit.Percentage(100);
+
+
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "LastName";
+            col.AdaptivePriority = 3;
+            col.Caption = "Apellidos";
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+            col.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+            col.Width = Unit.Percentage(100);
+
+
+        });
+
+
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+
+                flSettings.Name = "FormLayoutUser";
+                flSettings.Width = Unit.Percentage(100);
+
+
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+
+                flSettings.ColCount = 2;
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "UserName";
+                    i.Caption = "Usuario";
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.ShowModelErrors = true;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.MaxLength = 100;
+                        s.Properties.NullText = "username@claro.com.ni";
+
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "FirstName";
+                    i.Caption = "Primer Nombre";
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ControlStyle.CssClass = "upperCase";
+                        s.Properties.MaxLength = 100;
+
+                    });
+                });
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "LastName";
+                    i.Caption = "Apellidos";
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ControlStyle.CssClass = "upperCase";
+                        s.Properties.MaxLength = 100;
+
+                    });
+                });
+
+                //flSettings.Items.Add(i =>
+                //{
+                //    i.FieldName = "Status";
+                //    i.Caption = "Estado";
+                //    i.NestedExtension().RadioButtonList(s =>
+                //    {
+
+                //        s.Properties.RepeatDirection = RepeatDirection.Horizontal;
+                //        s.Properties.Items.Add("Activo", 1);
+                //        s.Properties.Items.Add("Inactivo", -1);
+                //        s.ControlStyle.Border.BorderStyle = BorderStyle.None;
+                //        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                //        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                //        s.ShowModelErrors = true;
+                //        s.Width = Unit.Percentage(100);
+                //        s.Properties.ClientSideEvents.SelectedIndexChanged = "OnIsPartialChanged";
+
+
+                //    });
+                //});
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvUserList.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvUserList.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["User"] ?? GetEditingUser(c.Grid))
+            .Render();
+        });
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()

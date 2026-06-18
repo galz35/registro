@@ -1,0 +1,114 @@
+﻿@using System.Drawing;
+@*@Html.DevExpress().Button(settings =>
+{
+    settings.Name = "btExport3";
+    settings.Text = "";
+    settings.RouteValues = new { Controller = "Expenses", Action = "ExportChart" };
+    settings.Images.Image.IconID = IconID.ActionsDownload16x16office2013;
+    settings.ToolTip = "Exportar a pdf";
+}).GetHtml()*@
+
+@{
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvEtTopTen";
+        settings.CallbackRouteValues = new { Controller = "ExtraTime", Action = "DashboardExtraTimeTopTenPartial" };
+
+        settings.Styles.Header.ForeColor = Color.Red;
+        settings.Styles.Header.BackColor = Color.LightGray;
+        settings.Styles.Header.Font.Size = 10;
+        settings.Styles.Header.Font.Bold = true;
+        settings.Settings.ShowTitlePanel = true;
+        settings.SettingsText.Title = "Top 10 Horas Extras";
+        settings.Styles.TitlePanel.Font.Bold = true;
+        settings.Styles.TitlePanel.Font.Size = 12;
+        settings.Styles.TitlePanel.Font.Name = "Tahoma";
+        settings.Styles.TitlePanel.ForeColor = Color.SteelBlue ;
+
+
+
+
+        settings.SettingsEditing.Mode = GridViewEditingMode.EditFormAndDisplayRow;
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.Width = Unit.Pixel(500);
+        settings.Height = Unit.Pixel(330);
+
+
+
+        settings.KeyFieldName = "Idhrms";
+
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 250;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+ 
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Font.Size = 8;
+        settings.ControlStyle.ForeColor = System.Drawing.ColorTranslator.FromHtml("#8B0000");
+
+
+        #region Paging
+        settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+        #endregion
+        #region filtering
+        settings.Settings.ShowFilterRow = true;
+
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.SettingsPopup.HeaderFilter.Height = 200;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+        #endregion
+        #region Sorting
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "FullName");
+        #endregion
+
+
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "FullName";
+
+            col.Caption = "Nombre";
+
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 1;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "TotalHours";
+
+            col.Caption = "Total Horas";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 2;
+            col.PropertiesEdit.DisplayFormatString = "#.00";
+        });
+
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+

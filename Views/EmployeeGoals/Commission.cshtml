@@ -1,0 +1,122 @@
+﻿
+@{
+    ViewBag.Title = "Plantilla de Comisiones";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<head>
+
+    <meta name="viewport" content="width=device-width,  user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+
+
+</head>
+
+<script type="text/javascript">
+
+    function OnManagementValueChanged(s, e) {
+      
+        var management = ManagementId.GetValue();
+          $.ajax({
+              url: '@Url.Action("CommissionRosterPartial")',
+              //contentType: 'application/json; charset=utf-8',
+              type: 'GET',
+              //dataType: 'json',
+              cache: false,
+              data: { managementId: management }
+                }).done(function(result) {
+                    $('#tree').html(result);
+                });
+    }
+
+    function OnPeriodValueChanged(s, e) {
+      
+        var period = PeriodId.GetValue();
+          $.ajax({
+              url: '@Url.Action("ChangePeriod")',
+              //contentType: 'application/json; charset=utf-8',
+              type: 'GET',
+              //dataType: 'json',
+              cache: false,
+              data: { periodId: period}
+                }).done(function(result) {
+                       // $('#pivot').html(result);
+                });
+    }
+
+    function Reload(s, e) {
+  
+        var area = treeList.GetFocusedNodeKey();
+        var period = PeriodId.GetValue();
+          $.ajax({
+              url: '@Url.Action("PivotPartial")',
+              //contentType: 'application/json; charset=utf-8',
+              type: 'GET',
+              //dataType: 'json',
+              cache: false,
+              data: { areaId: area, periodId: period}
+                }).done(function(result) {
+                        $('#pivot').html(result);
+                });
+    }
+
+    function NodeChanged(s, e) {
+        var nodeKey = s.GetFocusedNodeKey();
+        s.GetNodeValues(nodeKey, "OrganizationId");
+        var period = PeriodId.GetValue();
+          $.ajax({
+              url: '@Url.Action("PivotPartial")',
+              //contentType: 'application/json; charset=utf-8',
+              type: 'GET',
+              //dataType: 'json',
+              cache: false,
+              data: { areaId: nodeKey, periodId: period}
+                }).done(function(result) {
+                        $('#pivot').html(result);
+                });
+    }
+
+   
+
+    function onCustomButtonClick(s, e) {
+
+       
+        var destUrl = "/EmployeeGoals/Edit";
+        popImage.SetContentUrl(destUrl);
+            popImage.Show();
+
+
+    }
+
+    
+
+ 
+</script>
+
+@Html.Partial("PeriodListPartial")
+<div id="tree" style="width: 400px; height: 500px;float:left;  ">
+    
+    @Html.Partial("CommissionRosterPartial")
+ 
+</div>
+
+<div id="pivot"   style="width: 700px; float:right"  >
+    @Html.Partial("PivotPartial")
+</div>
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Edicion de metas";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.PopupAnimationType = AnimationType.Fade;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 700;
+    settingsPopup.Height = 500;
+    settingsPopup.ClientSideEvents.CloseUp = "Reload";
+
+
+
+}).GetHtml()
+

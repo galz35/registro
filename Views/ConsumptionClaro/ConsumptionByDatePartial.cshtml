@@ -1,0 +1,34 @@
+﻿@using slnRhonline.Reports
+@Html.DevExpress().GetStyleSheets(
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().GetScripts(
+
+    new Script { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().DocumentViewer(settings =>
+{
+    settings.Name = "DocumentViewer";
+    settings.CallbackRouteValues = new
+    {
+        Controller = "ConsumptionClaro",
+        Action = "ConsumptionByDatePartial"
+    };
+    settings.ExportRouteValues = new
+    {
+      Controller = "ConsumptionClaro",
+    Action = "ConsumptionByDateExport"
+    };
+    settings.Report = new ConsumptionByDate()
+    {
+        DataSource = Model,
+
+    };
+}).GetHtml()
+
+
+
+

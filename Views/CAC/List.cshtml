@@ -1,0 +1,144 @@
+﻿<!--<!--<!--<!-- List<slnRhonline.RHOnlineWCF.CacUsuario>
+
+@{
+    ViewBag.Title = "Lista de Agradecimientos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+<link href="~/Styles/toastr.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js"></script>
+<link href="~/Content/plugin/sweetalert2/sweetalert.css" rel="stylesheet" />
+
+<style>
+    .card {
+        margin-left: 15px;
+        margin-right: 15px;
+        margin-top: 1px;
+    }
+
+    .bg-primary {
+        background-color: silver !important;
+    }
+
+    .text-primary {
+        color: black !important;
+    }
+
+    .text-white {
+        color: black !important;
+    }
+</style>
+
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-primary">
+        <h6 class="m-0 font-weight-bold text-white">Punto CAC</h6>
+    </div>
+    <div class="card-body">
+
+        <div class="col-12">
+
+            <div class="form-row">
+                <div class="form-group col-lg-3 col-md-4 mb-1">
+                    <label for="inputEmail4">Fecha Entrada:</label>
+                    <input type="date" class="form-control" id="txtfechaentrada">
+                </div>
+                <div class="form-group col-lg-3 col-md-4 mb-1">
+                    <label for="inputPassword4">Para:</label>
+                    <span id="msjr1"></span>
+
+
+                    <input type="text" class="form-control" placeholder="Colaborador" list="list" id="txtcolaborador">
+                    <datalist id="list">
+                        @foreach (var item in Model)
+                        {
+                            <option  value=@item.CORREO >@item.NOMBRECOMPLETO</option>
+                        }
+
+                    </datalist>
+                    <span id="msjr2"></span>
+                </div>
+
+                <div class="form-group col-lg-3 col-md-4 mb-2">
+                    <label  for="inputEmail4">Destinatario:</label>
+                    <input disabled="disabled"  type="text" class="form-control" id="txtdestinatario" value=" ">
+                    <span id="msjr3"></span>
+                </div>
+                <div class="form-group col-lg-3 col-md-3 mb-2">
+                    <label for="inputEmail4">Tipo de reconocimiento:</label>
+                    <input type="text" class="form-control" placeholder="Tipo de razon" list="list-razon" id="txtrazon">
+                    <datalist id="list-razon">
+                        <option>Innovacion</option>
+                        <option>Felicitaciones por parte de cliente</option>
+                        <option>Escuchas activas extraordinarias</option>
+                        <option>Trabajo en equipo</option>
+                        <option>F&R</option>
+                        <option>Personal Extraordinario</option>
+                        <option>Otros esfuerzos sobresalientes</option>
+                    </datalist>
+                    <span id="msjr4"></span>
+                </div>
+            </div>
+            <div class="form-row">
+
+                <div class="form-group col-lg-3 col-md-4  mb-2">
+                    <label for="inputEmail4">Punto:</label>
+                    <input type="text" class="form-control" id="txtpunto" value=" ">
+                    <span id="msjr5"></span>
+                </div>
+
+                <div class="form-group col-lg-3 col-md-3 mb-2">
+                    <label for="inputEmail4">Formato:</label>
+                    <input type="text" class="form-control" placeholder="Formato de la tarjeta" list="list-formato" id="txtformato">
+                    <datalist id="list-formato">
+                        <option>Formato 1</option>
+                        <option>Formato 2</option>
+
+                    </datalist>
+                    <span id="msjr6"></span>
+                </div>
+                <div class="form-group col-lg-3 col-md-3 mb-2">
+
+                    <div class="custom-file">
+                        <label for="inputEmail4">Archivo:</label>
+                        <input class="form-control-file" type="file" id="filelibro" onchange="readURL(this);">
+
+                    </div>
+                </div>
+                <div class="form-group  col-md-12 mb-2">
+                    <label for="exampleFormControlTextarea1">Observación:</label>
+                    <textarea class="form-control" id="txtobservacion" rows="3"></textarea>
+                    <span id="msjr7"></span>
+                </div>--><!----><!---->-->
+
+                <!---->--><!--@*<div class="form-group col-md-6 mb-2">
+            <img src="~/Imagenes/Hotel.JPG" class="img-thumbnail" />
+
+        </div>
+        <div class="form-group col-md-6 mb-2">
+            <img src="~/Imagenes/Hotel.JPG" class="img-thumbnail" />
+
+        </div>*@-->-->
+
+                <!--<div class="col-6 col-12 text-center">
+                    <button id="btnregistrar" class="btn btn-success w-25">Registrar</button>
+                    <button class="btn btn-danger w-25 ml-4" disabled id="btncancelarregistro">Limpiar</button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+ 
+
+<script src="~/Scripts/Viewscript/CacPunto.js"></script>
+
+<script src="~/Scripts/sweetalert.min.js"></script>
+<script src="~/Scripts/jquery-ui.js"></script>
+<script src="~/Scripts/app/global.js"></script>
+<script src="~/Scripts/app/validar.js"></script>
+<script src="~/Scripts/jquery-3.3.1.min.js"></script>    
+<script src="~/Scripts/js/toastr.js"></script>-->

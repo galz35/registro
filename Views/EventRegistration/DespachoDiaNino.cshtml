@@ -1,0 +1,980 @@
+@{
+    ViewBag.Title = "DespachoDiaNino";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .theme-primary-color {
+        color: #da121a;
+    }
+
+    .bg-primary-gradient {
+        background: linear-gradient(135deg, #da121a 0%, #1e1e1e 100%);
+        color: white;
+    }
+
+    .card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-section {
+        background-color: white;
+        padding: 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 16px;
+        border-radius: 12px;
+        color: white;
+    }
+
+    .stat-delivered {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* Verde opcional para entregado */
+    }
+
+    .stat-pending {
+        background: linear-gradient(135deg, #9ca3af 0%, #4b5563 100%); /* Gris para pendiente */
+    }
+
+    .stat-total {
+        background: linear-gradient(135deg, #374151 0%, #111827 100%); /* Negro/Gris Oscuro corporativo */
+    }
+
+    .hijo-card {
+        border-left: 6px solid #d1d5db;
+        margin-bottom: 16px;
+    }
+
+    .hijo-card.entregado {
+        border-left-color: #10b981;
+        background-color: #ecfdf5;
+    }
+
+    .hijo-card.pendiente {
+        border-left-color: #9ca3af;
+        background-color: #f9fafb;
+    }
+
+    .badge-genero-f {
+        background-color: #fee2e2;
+        color: #da121a;
+        border: 1px solid #fca5a5;
+    }
+
+    .badge-genero-m {
+        background-color: #e5e7eb;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
+    }
+
+    .progress-bar.bg-warning {
+        background-color: #4b5563 !important;
+    }
+
+    .progress-bar.bg-success {
+        background-color: #10b981 !important;
+    }
+
+    .progress-bar.bg-danger {
+        background-color: #da121a !important;
+    }
+
+    #photoPreview {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #e5e7eb;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-toggle-entrega {
+        font-weight: 600;
+        border-radius: 20px;
+        padding: 6px 20px;
+        transition: all 0.2s;
+    }
+
+    .btn-toggle-entrega.entregar {
+        background-color: #10b981;
+        color: white;
+        border: none;
+    }
+
+    .btn-toggle-entrega.entregar:hover {
+        background-color: #059669;
+    }
+
+    .btn-toggle-entrega.reversar {
+        background-color: #ef4444;
+        color: white;
+        border: none;
+    }
+
+    .btn-toggle-entrega.reversar:hover {
+        background-color: #dc2626;
+    }
+
+    .img-juguete-tabla {
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+        border-radius: 4px;
+        background-color: #f3f4f6;
+        border: 1px solid #e5e7eb;
+    }
+
+    .img-juguete-card {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 8px;
+        background-color: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Encabezado del Evento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary-gradient p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <a href="@Url.Action("EventoLiga", "EventRegistration", new { eventId = 193 })" class="btn btn-outline-light btn-sm font-weight-bold" style="border-radius: 20px; padding: 6px 16px;">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver al Registro de Asistencia
+                    </a>
+                    <h2 class="font-weight-bold m-0"><i class="fas fa-gift mr-2"></i> Despacho de Juguetes - Día del Niño</h2>
+                    <div class="d-none d-md-block" style="width: 200px;"></div> <!-- Balancear el diseño -->
+                </div>
+                <p class="m-0 mt-2 text-center opacity-75">Sistema Independiente de Control de Entregas y Control de Inventario</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores de Inventario / Avance en Tiempo Real -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="stat-card stat-total shadow">
+                <h6 class="text-uppercase font-weight-bold">Total Niños Censados</h6>
+                <h2 id="txtTotalCenso" class="font-weight-bold m-0">-</h2>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stat-card stat-delivered shadow">
+                <h6 class="text-uppercase font-weight-bold">Juguetes Entregados</h6>
+                <h2 id="txtTotalEntregados" class="font-weight-bold m-0">-</h2>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stat-card stat-pending shadow">
+                <h6 class="text-uppercase font-weight-bold">Juguetes Pendientes</h6>
+                <h2 id="txtTotalPendientes" class="font-weight-bold m-0">-</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Búsqueda y Detalle de Colaborador -->
+    <div class="row">
+        <!-- Panel de Búsqueda -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow h-100 search-section">
+                <h4 class="font-weight-bold mb-4 theme-primary-color"><i class="fas fa-search mr-2"></i> Buscar Colaborador</h4>
+                
+                <div class="input-group mb-4">
+                    <input type="text" id="txtCarnet" class="form-control form-control-lg" placeholder="Ingrese Carnet de Colaborador..." autocomplete="off">
+                    <div class="input-group-append">
+                        <button class="btn text-white bg-primary-gradient px-4" type="button" id="btnBuscar" style="border: none;">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Detalle del Colaborador Encontrado -->
+                <div id="colaboradorInfo" style="display: none;">
+                    <hr>
+                    <div class="d-flex align-items-center mb-4">
+                        <img id="photoPreview" src="~/images/avatar.png" alt="Foto Colaborador" class="mr-3">
+                        <div>
+                            <h5 id="lblNombreColaborador" class="font-weight-bold m-0">-</h5>
+                            <span class="badge badge-secondary" id="lblCarnetColaborador">Carnet: -</span>
+                        </div>
+                    </div>
+                    <p><strong>Gerencia:</strong> <span id="lblGerenciaColaborador">-</span></p>
+                    <p><strong>Ubicación:</strong> <span id="lblUbicacionColaborador">-</span></p>
+                </div>
+                
+                <div id="noColaborador" class="text-center py-4 text-muted">
+                    <i class="fas fa-user-friends fa-3x mb-3 text-light"></i>
+                    <p class="m-0">Ingrese un número de carnet válido para listar sus hijos registrados.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listado de Hijos y Entrega -->
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow h-100 p-4">
+                <h4 class="font-weight-bold mb-4 theme-primary-color"><i class="fas fa-child mr-2"></i> Hijos del Colaborador y Entrega</h4>
+                <div id="hijosContainer">
+                    <div class="text-center py-5 text-muted" id="hijosPlaceholder">
+                        <i class="fas fa-box-open fa-3x mb-3 text-light"></i>
+                        <p class="m-0">Busque un colaborador para desplegar los juguetes correspondientes a sus hijos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Inventario General -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+                    <h4 class="font-weight-bold m-0 text-dark"><i class="fas fa-chart-pie mr-2"></i> Avance General por Categoría de Juguete</h4>
+                    <div>
+                        <button class="btn btn-outline-dark font-weight-bold btn-sm" id="btnGestionarCatalogo" style="border-radius: 20px; padding: 6px 16px;">
+                            <i class="fas fa-cogs mr-1"></i> Gestionar Catálogo
+                        </button>
+                        <a href="@Url.Action("DescargarReporteDespachoPDF", "EventRegistration")" class="btn btn-danger font-weight-bold btn-sm ml-2" target="_blank" style="background-color: #da121a; border-color: #da121a; border-radius: 20px; padding: 6px 16px;">
+                            <i class="fas fa-file-pdf mr-1"></i> Descargar Reporte PDF
+                        </a>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="tblResumenStock">
+                        <thead class="bg-primary-gradient">
+                            <tr>
+                                <th>Categoría (Rango Edad)</th>
+                                <th>Género</th>
+                                <th>Entregados</th>
+                                <th>Pendientes</th>
+                                <th>Total Programado</th>
+                                <th>Progreso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Llenado dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCatalogo" tabindex="-1" role="dialog" aria-labelledby="modalCatalogoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
+            <!-- Encabezado del Modal -->
+            <div class="modal-header bg-primary-gradient text-white p-4">
+                <h5 class="modal-title font-weight-bold" id="modalCatalogoLabel">
+                    <i class="fas fa-cogs mr-2"></i> Catálogo de Juguetes
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8; outline: none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            <!-- Cuerpo del Modal -->
+            <div class="modal-body p-4" style="background-color: #f8f9fa;">
+                <!-- VISTA 1: Listado del Catálogo -->
+                <div id="divListaCatalogo">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="font-weight-bold text-secondary m-0">Juguetes Registrados en el Sistema</h6>
+                        <button type="button" class="btn btn-danger font-weight-bold btn-sm" id="btnNuevoJuguete" style="background-color: #da121a; border-color: #da121a; border-radius: 20px;">
+                            <i class="fas fa-plus mr-1"></i> Agregar Juguete
+                        </button>
+                    </div>
+                    
+                    <!-- Contenedor con scroll para la tabla -->
+                    <div style="max-height: 550px; overflow-y: auto; border-radius: 8px;" class="border bg-white shadow-sm">
+                        <table class="table table-hover table-striped mb-0" id="tblCatalogoCRUD">
+                            <thead class="bg-dark text-white" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="width: 70px;">Foto</th>
+                                    <th>Categoría</th>
+                                    <th>Género</th>
+                                    <th>Juguete</th>
+                                    <th style="width: 80px;">Inicial</th>
+                                    <th style="width: 80px;">Actual</th>
+                                    <th style="width: 140px;" class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VISTA 2: Formulario (Oculto por defecto) -->
+                <div id="divFormJuguete" style="display: none;">
+                    <h5 class="font-weight-bold text-dark mb-4" id="formJugueteTitulo">Nuevo Juguete</h5>
+                    <form id="frmJuguete" autocomplete="off">
+                        <input type="hidden" id="txtIdJuguete" value="0">
+                        
+                        <div class="row">
+                            <!-- Categoría -->
+                            <div class="col-md-6 form-group">
+                                <label for="ddlCategoriaJuguete" class="font-weight-bold text-secondary">Categoría (Rango de Edad)</label>
+                                <select class="form-control" id="ddlCategoriaJuguete" required>
+                                    <option value="">Seleccione Categoría...</option>
+                                    <option value="ENTRE 0-1">ENTRE 0-1</option>
+                                    <option value="ENTRE 01.1-2">ENTRE 01.1-2</option>
+                                    <option value="ENTRE 02.1-3">ENTRE 02.1-3</option>
+                                    <option value="ENTRE 03.1-4">ENTRE 03.1-4</option>
+                                    <option value="ENTRE 04.1-5">ENTRE 04.1-5</option>
+                                    <option value="ENTRE 05.1-6">ENTRE 05.1-6</option>
+                                    <option value="ENTRE 06.1-7">ENTRE 06.1-7</option>
+                                    <option value="ENTRE 07.1-8">ENTRE 07.1-8</option>
+                                    <option value="ENTRE 08.1-9">ENTRE 08.1-9</option>
+                                    <option value="ENTRE 09.1-10">ENTRE 09.1-10</option>
+                                    <option value="ENTRE 10.1-11">ENTRE 10.1-11</option>
+                                    <option value="ENTRE 11.1-11.99">ENTRE 11.1-11.99</option>
+                                </select>
+                            </div>
+
+                            <!-- Género -->
+                            <div class="col-md-6 form-group">
+                                <label for="ddlGeneroJuguete" class="font-weight-bold text-secondary">Género</label>
+                                <select class="form-control" id="ddlGeneroJuguete" required>
+                                    <option value="">Seleccione Género...</option>
+                                    <option value="M">MASCULINO (M)</option>
+                                    <option value="F">FEMENINO (F)</option>
+                                    <option value="TODOS">UNISEX (TODOS)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Nombre del Juguete -->
+                        <div class="form-group">
+                            <label for="txtNombreJuguete" class="font-weight-bold text-secondary">Nombre / Descripción del Juguete</label>
+                            <input type="text" class="form-control" id="txtNombreJuguete" placeholder="Ej. Muñeca de felpa, Carrito de plástico..." maxlength="250" required>
+                        </div>
+
+                        <div class="row">
+                            <!-- Stock Inicial -->
+                            <div class="col-md-6 form-group">
+                                <label for="txtStockInicial" class="font-weight-bold text-secondary">Stock Inicial</label>
+                                <input type="number" class="form-control" id="txtStockInicial" min="0" value="100" required>
+                            </div>
+
+                            <!-- Stock Actual -->
+                            <div class="col-md-6 form-group">
+                                <label for="txtStockActual" class="font-weight-bold text-secondary">Stock Actual (Disponible)</label>
+                                <input type="number" class="form-control" id="txtStockActual" min="0" value="100" required>
+                            </div>
+                        </div>
+
+                        <!-- Foto del Juguete -->
+                        <div class="row mt-3">
+                            <div class="col-md-8 form-group">
+                                <label for="fileFotoJuguete" class="font-weight-bold text-secondary">Foto del Juguete (Opcional)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="fileFotoJuguete" accept="image/*">
+                                    <label class="custom-file-label" for="fileFotoJuguete" data-browse="Buscar">Seleccionar imagen...</label>
+                                </div>
+                                <small class="form-text text-muted">Formatos recomendados: JPG, PNG, WEBP. Tamaño máximo 2MB.</small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <label class="font-weight-bold text-secondary d-block">Previsualización</label>
+                                <img id="imgPreviewJuguete" src="" alt="Vista previa" class="img-thumbnail" style="max-height: 120px; min-height: 120px; width: 120px; object-fit: contain; display: none;">
+                                <div id="divNoPreviewJuguete" class="border rounded d-flex align-items-center justify-content-center bg-light text-muted" style="height: 120px; width: 120px; margin: 0 auto;">
+                                    <i class="fas fa-image fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Formulario -->
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" class="btn btn-secondary mr-2" id="btnCancelarForm" style="border-radius: 20px; padding: 6px 20px;">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn text-white bg-primary-gradient" style="border-radius: 20px; padding: 6px 20px; border: none;">
+                                <i class="fas fa-save mr-1"></i> Guardar Juguete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Función defensiva para normalizar las claves de las propiedades JSON sin importar su casing
+            function normalizarObjeto(obj) {
+                if (!obj) return obj;
+                var res = {};
+                for (var key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        var val = obj[key];
+                        var keyLower = key.toLowerCase();
+                        if (keyLower === 'id') res.Id = val;
+                        else if (keyLower === 'carnetcolaborador') res.CarnetColaborador = val;
+                        else if (keyLower === 'nombrecolaborador') res.NombreColaborador = val;
+                        else if (keyLower === 'nombrehijo') res.NombreHijo = val;
+                        else if (keyLower === 'edadhijo') res.EdadHijo = val;
+                        else if (keyLower === 'generohijo') res.GeneroHijo = val;
+                        else if (keyLower === 'categoria') res.Categoria = val;
+                        else if (keyLower === 'gerenciacolaborador') res.GerenciaColaborador = val;
+                        else if (keyLower === 'ubicacioncolaborador') res.UbicacionColaborador = val;
+                        else if (keyLower === 'entregado') res.Entregado = val;
+                        else if (keyLower === 'fechaentrega') res.FechaEntrega = val;
+                        else if (keyLower === 'usuariodespacho') res.UsuarioDespacho = val;
+                        else if (keyLower === 'regalosugerido') res.RegaloSugerido = val;
+                        else if (keyLower === 'entregados') res.Entregados = val;
+                        else if (keyLower === 'pendientes') res.Pendientes = val;
+                        else if (keyLower === 'total') res.Total = val;
+                        else res[key] = val;
+                    }
+                }
+                return res;
+            }
+
+            // Cargar resumen general inicial
+            actualizarResumenGlobal();
+
+            // Detectar carnet por parámetro en la URL y buscar automáticamente
+            var urlParams = new URLSearchParams(window.location.search);
+            var carnetParam = urlParams.get('carnet');
+            if (carnetParam) {
+                $('#txtCarnet').val(carnetParam.trim());
+                buscarColaborador();
+            }
+
+            // Gestión de Catálogo CRUD
+            $('#btnGestionarCatalogo').click(function () {
+                $('#modalCatalogo').modal('show');
+                mostrarListaCatalogo();
+                cargarCatalogoCRUD();
+            });
+
+            $('#btnNuevoJuguete').click(function () {
+                resetFormJuguete();
+                $('#formJugueteTitulo').text('Agregar Nuevo Juguete');
+                mostrarFormCatalogo();
+            });
+
+            $('#btnCancelarForm').click(function () {
+                mostrarListaCatalogo();
+            });
+
+            function mostrarListaCatalogo() {
+                $('#divFormJuguete').hide();
+                $('#divListaCatalogo').show();
+            }
+
+            function mostrarFormCatalogo() {
+                $('#divListaCatalogo').hide();
+                $('#divFormJuguete').show();
+            }
+
+            function resetFormJuguete() {
+                $('#txtIdJuguete').val('0');
+                $('#ddlCategoriaJuguete').val('');
+                $('#ddlGeneroJuguete').val('');
+                $('#txtNombreJuguete').val('');
+                $('#txtStockInicial').val('100');
+                $('#txtStockActual').val('100');
+                $('#fileFotoJuguete').val('');
+                $('.custom-file-label').html('Seleccionar imagen...');
+                $('#imgPreviewJuguete').attr('src', '').hide();
+                $('#divNoPreviewJuguete').show();
+            }
+
+            function cargarCatalogoCRUD() {
+                $('#tblCatalogoCRUD tbody').html('<tr><td colspan="7" class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando catálogo...</td></tr>');
+                $.ajax({
+                    url: "@Url.Action("ObtenerCatalogoCompleto", "EventRegistration")",
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            var tbody = $('#tblCatalogoCRUD tbody');
+                            tbody.empty();
+                            if (response.data.length === 0) {
+                                tbody.append('<tr><td colspan="7" class="text-center py-4 text-muted">No hay juguetes registrados en el catálogo.</td></tr>');
+                                return;
+                            }
+                            response.data.forEach(function (juguete) {
+                                // Normalización defensiva local
+                                var item = {
+                                    Id: juguete.Id || juguete.id,
+                                    Categoria: juguete.Categoria || juguete.categoria,
+                                    Genero: juguete.Genero || juguete.genero,
+                                    NombreJuguete: juguete.NombreJuguete || juguete.nombreJuguete,
+                                    StockInicial: juguete.StockInicial !== undefined ? juguete.StockInicial : juguete.stockInicial,
+                                    StockActual: juguete.StockActual !== undefined ? juguete.StockActual : juguete.stockActual,
+                                    FotoBase64: juguete.FotoBase64 || juguete.fotoBase64
+                                };
+
+                                var generoBadge = '';
+                                if (item.Genero === 'F') {
+                                    generoBadge = '<span class="badge" style="background-color: #fee2e2; color: #da121a; border: 1px solid #fca5a5;">Femenino</span>';
+                                } else if (item.Genero === 'M') {
+                                    generoBadge = '<span class="badge" style="background-color: #e5e7eb; color: #1f2937; border: 1px solid #d1d5db;">Masculino</span>';
+                                } else {
+                                    generoBadge = '<span class="badge badge-dark">Unisex</span>';
+                                }
+
+                                var fotoHtml = item.FotoBase64 
+                                    ? `<img src="${item.FotoBase64}" class="img-juguete-tabla" alt="Juguete">` 
+                                    : `<div class="img-juguete-tabla d-flex align-items-center justify-content-center text-muted"><i class="fas fa-box"></i></div>`;
+
+                                var row = `
+                                    <tr>
+                                        <td class="text-center py-1">${fotoHtml}</td>
+                                        <td><strong>${item.Categoria}</strong></td>
+                                        <td>${generoBadge}</td>
+                                        <td>${item.NombreJuguete}</td>
+                                        <td>${item.StockInicial}</td>
+                                        <td>${item.StockActual}</td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary mr-1 btn-edit-juguete" 
+                                                    data-id="${item.Id}" 
+                                                    data-categoria="${item.Categoria}" 
+                                                    data-genero="${item.Genero}" 
+                                                    data-nombre="${item.NombreJuguete}" 
+                                                    data-stockini="${item.StockInicial}" 
+                                                    data-stockact="${item.StockActual}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-juguete" data-id="${item.Id}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                                tbody.append(row);
+                            });
+
+                            // Enlazar eventos de botones Editar y Eliminar
+                            $('.btn-edit-juguete').click(function () {
+                                var id = $(this).data('id');
+                                var cat = $(this).data('categoria');
+                                var gen = $(this).data('genero');
+                                var nom = $(this).data('nombre');
+                                var sini = $(this).data('stockini');
+                                var sact = $(this).data('stockact');
+                                var foto = $(this).closest('tr').find('img').attr('src') || '';
+
+                                $('#txtIdJuguete').val(id);
+                                $('#ddlCategoriaJuguete').val(cat);
+                                $('#ddlGeneroJuguete').val(gen);
+                                $('#txtNombreJuguete').val(nom);
+                                $('#txtStockInicial').val(sini);
+                                $('#txtStockActual').val(sact);
+                                
+                                $('#fileFotoJuguete').val('');
+                                $('.custom-file-label').html('Seleccionar imagen...');
+                                
+                                if (foto) {
+                                    $('#imgPreviewJuguete').attr('src', foto).show();
+                                    $('#divNoPreviewJuguete').hide();
+                                } else {
+                                    $('#imgPreviewJuguete').attr('src', '').hide();
+                                    $('#divNoPreviewJuguete').show();
+                                }
+
+                                $('#formJugueteTitulo').text('Editar Juguete');
+                                mostrarFormCatalogo();
+                            });
+
+                            $('.btn-delete-juguete').click(function () {
+                                var id = $(this).data('id');
+                                Swal.fire({
+                                    title: '¿Eliminar juguete?',
+                                    text: 'Esta acción no se puede deshacer y el juguete se eliminará del catálogo.',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Sí, eliminar',
+                                    cancelButtonText: 'Cancelar',
+                                    confirmButtonColor: '#da121a'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        $.LoadingOverlay("show");
+                                        $.ajax({
+                                            url: "@Url.Action("EliminarJugueteCatalogo", "EventRegistration")",
+                                            method: 'POST',
+                                            data: { id: id },
+                                            success: function (res) {
+                                                $.LoadingOverlay("hide");
+                                                if (res.success) {
+                                                    Swal.fire('Eliminado', res.message, 'success');
+                                                    cargarCatalogoCRUD();
+                                                    actualizarResumenGlobal();
+                                                    // Refrescar listado si hay colaborador cargado
+                                                    var activeCarnet = $('#txtCarnet').val().trim();
+                                                    if (activeCarnet !== "") {
+                                                        buscarColaborador();
+                                                    }
+                                                } else {
+                                                    Swal.fire('Error', res.message, 'error');
+                                                }
+                                            },
+                                            error: function () {
+                                                $.LoadingOverlay("hide");
+                                                Swal.fire('Error', 'No se pudo eliminar el juguete.', 'error');
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                        } else {
+                            $('#tblCatalogoCRUD tbody').html('<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar datos.</td></tr>');
+                        }
+                    },
+                    error: function () {
+                        $('#tblCatalogoCRUD tbody').html('<tr><td colspan="6" class="text-center text-danger py-4">Error de conexión.</td></tr>');
+                    }
+                });
+            }
+
+            // Previsualización y conversión de foto a Base64
+            $('#fileFotoJuguete').change(function () {
+                var file = this.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        Swal.fire('Error', 'La imagen es demasiado grande. El tamaño máximo es 2MB.', 'error');
+                        $(this).val('');
+                        $('.custom-file-label').html('Seleccionar imagen...');
+                        return;
+                    }
+
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imgPreviewJuguete').attr('src', e.target.result).show();
+                        $('#divNoPreviewJuguete').hide();
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    var fileName = file.name;
+                    $(this).next('.custom-file-label').html(fileName);
+                } else {
+                    $('#imgPreviewJuguete').attr('src', '').hide();
+                    $('#divNoPreviewJuguete').show();
+                    $(this).next('.custom-file-label').html('Seleccionar imagen...');
+                }
+            });
+
+            // Enviar Formulario de Juguete (Crear/Editar)
+            $('#frmJuguete').submit(function (e) {
+                e.preventDefault();
+
+                var fotoBase64 = $('#imgPreviewJuguete').is(':visible') ? $('#imgPreviewJuguete').attr('src') : '';
+
+                var data = {
+                    id: parseInt($('#txtIdJuguete').val()),
+                    categoria: $('#ddlCategoriaJuguete').val(),
+                    genero: $('#ddlGeneroJuguete').val(),
+                    nombreJuguete: $('#txtNombreJuguete').val().trim(),
+                    stockInicial: parseInt($('#txtStockInicial').val()),
+                    stockActual: parseInt($('#txtStockActual').val()),
+                    fotoBase64: fotoBase64
+                };
+
+                $.LoadingOverlay("show");
+                $.ajax({
+                    url: "@Url.Action("GuardarJugueteCatalogo", "EventRegistration")",
+                    method: 'POST',
+                    data: data,
+                    success: function (res) {
+                        $.LoadingOverlay("hide");
+                        if (res.success) {
+                            Swal.fire('Guardado', res.message, 'success');
+                            mostrarListaCatalogo();
+                            cargarCatalogoCRUD();
+                            actualizarResumenGlobal();
+                            // Refrescar listado si hay colaborador cargado
+                            var activeCarnet = $('#txtCarnet').val().trim();
+                            if (activeCarnet !== "") {
+                                buscarColaborador();
+                            }
+                        } else {
+                            Swal.fire('Advertencia', res.message, 'warning');
+                        }
+                    },
+                    error: function () {
+                        $.LoadingOverlay("hide");
+                        Swal.fire('Error', 'No se pudo guardar la información del juguete.', 'error');
+                    }
+                });
+            });
+
+            // Buscar colaborador al hacer clic o presionar Enter
+            $('#btnBuscar').click(function () {
+                buscarColaborador();
+            });
+
+            $('#txtCarnet').keypress(function (e) {
+                if (e.which == 13) {
+                    buscarColaborador();
+                }
+            });
+
+            function buscarColaborador() {
+                var carnet = $('#txtCarnet').val().trim();
+                if (carnet === "") {
+                    Swal.fire('Atención', 'Por favor, ingrese un número de carnet.', 'warning');
+                    return;
+                }
+
+                $.LoadingOverlay("show");
+
+                // 1. Obtener la lista de hijos censados para este carnet
+                $.ajax({
+                    url: "@Url.Action("GetHijosParaDespacho", "EventRegistration")",
+                    method: 'GET',
+                    data: { carnet: carnet },
+                    dataType: 'json',
+                    success: function (response) {
+                        $.LoadingOverlay("hide");
+                        if (response.success && response.data.length > 0) {
+                            // Normalizar
+                            response.data = response.data.map(normalizarObjeto);
+                            $('#noColaborador').hide();
+                            $('#colaboradorInfo').show();
+                            
+                            // Llenar información de colaborador del primer hijo en lista
+                            var primerRegistro = response.data[0];
+                            $('#lblNombreColaborador').text(primerRegistro.NombreColaborador);
+                            $('#lblCarnetColaborador').text("Carnet: " + primerRegistro.CarnetColaborador);
+                            $('#lblGerenciaColaborador').text(primerRegistro.GerenciaColaborador || "No Especificado");
+                            $('#lblUbicacionColaborador').text(primerRegistro.UbicacionColaborador || "No Especificado");
+
+                            // Cargar Foto del Colaborador
+                            obtenerFotoColaborador(primerRegistro.CarnetColaborador);
+
+                            // Renderizar los hijos en pantalla
+                            renderHijos(response.data);
+                        } else {
+                            limpiarPantallaColaborador();
+                            Swal.fire('No Encontrado', 'No se encontraron registros de hijos inscritos para este carnet en el censo oficial.', 'info');
+                        }
+                    },
+                    error: function () {
+                        $.LoadingOverlay("hide");
+                        Swal.fire('Error', 'No se pudo consultar la información en base de datos.', 'error');
+                    }
+                });
+            }
+
+            function obtenerFotoColaborador(carnet) {
+                $.ajax({
+                    url: "@Url.Action("GetEmployeePhoto", "EventRegistration")",
+                    method: 'GET',
+                    data: { carnet: carnet },
+                    success: function (photoResponse) {
+                        if (photoResponse.success && photoResponse.imageDataURL) {
+                            $('#photoPreview').attr('src', photoResponse.imageDataURL).show();
+                        } else {
+                            $('#photoPreview').attr('src', '/RHOnline/images/avatar.png');
+                        }
+                    },
+                    error: function () {
+                        $('#photoPreview').attr('src', '/RHOnline/images/avatar.png');
+                    }
+                });
+            }
+
+            function renderHijos(hijos) {
+                var container = $('#hijosContainer');
+                container.empty();
+
+                hijos.forEach(function (hijo) {
+                    var generoTxt = hijo.GeneroHijo === 'F' ? 'Femenino' : 'Masculino';
+                    var generoBadgeClass = hijo.GeneroHijo === 'F' ? 'badge-genero-f' : 'badge-genero-m';
+                    var generoIcon = hijo.GeneroHijo === 'F' ? 'fa-venus' : 'fa-mars';
+                    
+                    var estadoClass = hijo.Entregado ? 'entregado' : 'pendiente';
+                    var textEstado = hijo.Entregado ? 'ENTREGADO' : 'PENDIENTE';
+                    var badgeEstadoClass = hijo.Entregado ? 'badge-success' : 'badge-warning';
+
+                    // Tomar el regalo sugerido directamente del censo cruzado en BD
+                    var regaloSugerido = hijo.RegaloSugerido || "Juguete por definir";
+
+                    // Foto del juguete
+                    var regaloFoto = hijo.RegaloFotoBase64 || hijo.regaloFotoBase64;
+                    var fotoJugueteHtml = regaloFoto
+                        ? `<img src="${regaloFoto}" class="img-juguete-card mr-3" alt="Foto del juguete">`
+                        : `<div class="img-juguete-card mr-3 d-flex align-items-center justify-content-center text-muted" style="min-width: 80px;"><i class="fas fa-box fa-2x"></i></div>`;
+
+                    var html = `
+                        <div class="card hijo-card ${estadoClass} p-3 shadow-sm" id="hijo-card-${hijo.Id}">
+                            <div class="d-flex align-items-start align-items-md-center justify-content-between flex-wrap">
+                                <div class="d-flex align-items-center flex-wrap flex-md-nowrap">
+                                    ${fotoJugueteHtml}
+                                    <div>
+                                        <h5 class="font-weight-bold mb-1">${hijo.NombreHijo}</h5>
+                                        <div class="mb-2">
+                                            <span class="badge ${generoBadgeClass} mr-2">
+                                                <i class="fas ${generoIcon} mr-1"></i> ${generoTxt}
+                                            </span>
+                                            <span class="badge badge-info mr-2">
+                                                Edad: ${hijo.EdadHijo} años
+                                            </span>
+                                            <span class="badge badge-dark">
+                                                Rango: ${hijo.Categoria}
+                                            </span>
+                                        </div>
+                                        <p class="m-0 text-secondary">
+                                            <i class="fas fa-gift text-primary mr-1"></i> 
+                                            <strong>Regalo Asignado:</strong> <span class="text-dark font-weight-bold">${regaloSugerido}</span>
+                                        </p>
+                                        ${hijo.Entregado ? `<small class="text-success d-block mt-1"><i class="fas fa-check-circle"></i> Entregado el ${formatFecha(hijo.FechaEntrega)}</small>` : ''}
+                                    </div>
+                                </div>
+                                <div class="mt-2 mt-md-0 ml-auto ml-md-3">
+                                    <button class="btn btn-toggle-entrega ${hijo.Entregado ? 'reversar' : 'entregar'}" 
+                                             onclick="cambiarEstadoEntrega(${hijo.Id}, ${!hijo.Entregado})">
+                                        <i class="fas ${hijo.Entregado ? 'fa-undo' : 'fa-check'} mr-1"></i> 
+                                        ${hijo.Entregado ? 'Reversar' : 'Entregar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.append(html);
+                });
+            }
+
+            // Hacer la función global para que el onclick del HTML la pueda llamar
+            window.cambiarEstadoEntrega = function (id, nuevoEstado) {
+                var titulo = nuevoEstado ? '¿Registrar entrega?' : '¿Reversar entrega?';
+                var texto = nuevoEstado ? 'Se registrará el juguete como entregado.' : 'Se volverá a marcar el juguete como pendiente de entrega.';
+                
+                Swal.fire({
+                    title: titulo,
+                    text: texto,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, continuar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: nuevoEstado ? '#10b981' : '#ef4444'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.LoadingOverlay("show");
+                        $.ajax({
+                            url: "@Url.Action("RegistrarEntregaJuguete", "EventRegistration")",
+                            method: 'POST',
+                            data: { id: id, entregado: nuevoEstado },
+                            success: function (response) {
+                                $.LoadingOverlay("hide");
+                                if (response.success) {
+                                    Swal.fire('Éxito', response.message, 'success');
+                                    // Recargar datos del colaborador actual para refrescar la lista de sus hijos
+                                    buscarColaborador();
+                                    // Actualizar las estadísticas globales
+                                    actualizarResumenGlobal();
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            },
+                            error: function () {
+                                $.LoadingOverlay("hide");
+                                Swal.fire('Error', 'No se pudo actualizar el estado de entrega.', 'error');
+                            }
+                        });
+                    }
+                });
+            }
+
+            function actualizarResumenGlobal() {
+                $.ajax({
+                    url: "@Url.Action("ObtenerResumenInventario", "EventRegistration")",
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success && response.data.length > 0) {
+                            // Normalizar
+                            response.data = response.data.map(normalizarObjeto);
+                            var totalCenso = 0;
+                            var totalEntregados = 0;
+                            var totalPendientes = 0;
+
+                            var tbody = $('#tblResumenStock tbody');
+                            tbody.empty();
+
+                            response.data.forEach(function (item) {
+                                totalCenso += item.Total;
+                                totalEntregados += item.Entregados;
+                                totalPendientes += item.Pendientes;
+
+                                var porcentaje = ((item.Entregados / item.Total) * 100).toFixed(0);
+                                var barColor = 'bg-warning';
+                                if (porcentaje >= 75) barColor = 'bg-success';
+                                else if (porcentaje <= 25) barColor = 'bg-danger';
+
+                                var row = `
+                                    <tr>
+                                        <td><strong>${item.Categoria}</strong></td>
+                                        <td>${item.GeneroHijo === 'F' ? '<span class="badge" style="background-color: #fee2e2; color: #da121a; border: 1px solid #fca5a5;">Femenino</span>' : '<span class="badge" style="background-color: #e5e7eb; color: #1f2937; border: 1px solid #d1d5db;">Masculino</span>'}</td>
+                                        <td class="text-success font-weight-bold">${item.Entregados}</td>
+                                        <td class="text-warning font-weight-bold">${item.Pendientes}</td>
+                                        <td class="font-weight-bold">${item.Total}</td>
+                                        <td>
+                                            <div class="progress" style="height: 18px;">
+                                                <div class="progress-bar ${barColor}" role="progressbar" style="width: ${porcentaje}%;" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100">
+                                                    ${porcentaje}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                                tbody.append(row);
+                            });
+
+                            // Actualizar indicadores superiores
+                            $('#txtTotalCenso').text(totalCenso);
+                            $('#txtTotalEntregados').text(totalEntregados);
+                            $('#txtTotalPendientes').text(totalPendientes);
+                        }
+                    }
+                });
+            }
+
+            function limpiarPantallaColaborador() {
+                $('#colaboradorInfo').hide();
+                $('#noColaborador').show();
+                $('#hijosContainer').html(`
+                    <div class="text-center py-5 text-muted" id="hijosPlaceholder">
+                        <i class="fas fa-box-open fa-3x mb-3 text-light"></i>
+                        <p class="m-0">Busque un colaborador para desplegar los juguetes correspondientes a sus hijos.</p>
+                    </div>
+                `);
+            }
+
+            function formatFecha(fechaString) {
+                if (!fechaString) return "";
+                var date = new Date(parseInt(fechaString.replace(/\/Date\((-?\d+)\)\//, '$1')));
+                var dia = date.getDate().toString().padStart(2, '0');
+                var mes = (date.getMonth() + 1).toString().padStart(2, '0');
+                var anio = date.getFullYear();
+                var hora = date.getHours().toString().padStart(2, '0');
+                var minuto = date.getMinutes().toString().padStart(2, '0');
+                return `${dia}/${mes}/${anio} ${hora}:${minuto}`;
+            }
+        });
+    </script>
+}

@@ -1,0 +1,62 @@
+﻿@{
+    ViewBag.Title = "Subir rendición";
+}
+
+
+<script type="text/javascript">
+</script>
+
+@using (Html.BeginForm("UploadControlUpload", "Expenses", FormMethod.Post))
+{
+
+    @Html.DevExpress().Label(settings =>
+{
+    settings.Name = "lblSelect";
+    settings.Text = "Seleccione o arrastre un archivo ";
+    settings.ControlStyle.Font.Size = System.Web.UI.WebControls.FontUnit.Point(8);
+}).GetHtml()
+    <br />
+    <br />
+
+    @Html.DevExpress().UploadControl(settings =>
+{
+    settings.Name = "UploadControl";
+    settings.CallbackRouteValues = new { Controller = "Expenses", Action = "UploadControlUpload" };
+
+    settings.AdvancedModeSettings.EnableDragAndDrop = true;
+
+
+    settings.ShowUploadButton = true;
+    settings.ShowProgressPanel = true;
+
+    settings.AutoStartUpload = true;
+
+
+    settings.ValidationSettings.Assign(slnRhonline.Controllers.HomeControllerUploadControlSettings.UploadValidationSettings);
+}).GetHtml()
+
+    <br />
+
+    <br />
+
+    @Html.DevExpress().Label(settings =>
+{
+    settings.Name = "lblAllowebMimeType";
+    settings.Text = "Permitir extensiones: " + string.Join(", ", slnRhonline.Validations.MyUploadControlValidationSettings.Settings.AllowedFileExtensions);
+    settings.ControlStyle.Font.Size = System.Web.UI.WebControls.FontUnit.Point(8);
+}).GetHtml()
+
+    <br />
+
+    <br />
+
+    @Html.DevExpress().Label(settings =>
+{
+    settings.Name = "lblMaxFileSize";
+    settings.Text = "Tamaño máximo permitido de archivo: " + slnRhonline.Validations.MyUploadControlValidationSettings.Settings.MaxFileSize / 1048576 + "Mb";
+    settings.ControlStyle.Font.Size = System.Web.UI.WebControls.FontUnit.Point(8);
+}).GetHtml()
+
+    <br />
+    <br />
+}

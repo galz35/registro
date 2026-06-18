@@ -1,0 +1,348 @@
+﻿@model Entities.Events
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+@Html.DevExpress().GetStyleSheets(
+        new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" },
+
+        new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+           new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+    )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+<style type="text/css">
+    .buttonsContainer {
+        max-width: 300px;
+        margin: 0 0 0 auto;
+        text-align: right;
+        padding-top: 12px;
+    }
+
+    .submitButton,
+    .cancelButton {
+        margin-bottom: 12px;
+    }
+
+    .cancelButton {
+        margin-left: 8px;
+    }
+
+    .groupCaption {
+        margin-top: -6px;
+    }
+
+    .clearPaddings {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+<script>
+    function ValidateData(s,e) {
+        var eventName = EventName.GetValue();
+        var emailCoordinator = CoordinatorEmail.GetValue();
+        var description = Description.GetValue();
+        if (eventName == null) {
+
+            swal({
+                title: "Error!",
+                text: "El nombre del evento es requerido",
+                icon: "error",
+                button: "Aceptar",
+            })
+                .then((willSaved) => {
+                    if (willSaved) {
+
+                    }
+                });
+
+
+            return false;
+        }
+
+        if (emailCoordinator == null) {
+            top.popImage.Hide();
+                //PopupControl.Hide();
+                swal({
+                    title: "Error!",
+                    text: "El email del coordinador es requerido",
+                    icon: "error",
+                    button: "Aceptar",
+                })
+                    .then((willSaved) => {
+                        if (willSaved) {
+                            top.popImage.Show();
+                            //PopupControl.Show();
+                        }
+                    });
+
+
+                return false;
+            }
+            if (description == null) {
+                top.popImage.Hide();
+                //PopupControl.Hide();
+                swal({
+                    title: "Error!",
+                    text: "La descripcion es requerida",
+                    icon: "error",
+                    button: "Aceptar",
+                })
+                    .then((willSaved) => {
+                        if (willSaved) {
+                            top.popImage.Show();
+                            //PopupControl.Show();
+                        }
+                    });
+
+
+                return false;
+            }
+
+            SaveEvent();
+
+
+    }
+
+
+    function SaveEvent(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("SaveEvent")',
+            type: "POST",
+            data: $('#eventGrid').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                 if (data.status != "Error") {
+                     swal({
+                         title: "Exito!",
+                         text: data.message,
+                         icon: "success",
+                         button: "Aceptar",
+                     })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                                 top.popImage.Hide();
+
+
+                             }
+
+                         });
+                } else {
+                    swal("ERROR!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+                }
+
+
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+    }
+
+
+
+</script>
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+}
+
+<div id="eG">
+    @using (Html.BeginForm("SaveEvent", "Events", FormMethod.Post, new { id = "eventGrid" }))
+    {
+        @Html.DevExpress().FormLayout(settings =>
+        {
+       settings.Name = "frmEventEdit";
+       settings.Width = Unit.Percentage(100);
+
+
+       settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+       settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 550;
+
+       settings.ColumnCount = 2;
+
+       settings.Items.Add(m => m.EventId, i =>
+       {
+           i.Caption = "Id";
+           i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+
+           });
+       });
+
+       settings.Items.Add(m => m.EventName, i =>
+            {
+           i.Caption = "Evento";
+
+           i.NestedExtension().TextBox(s =>
+                {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.ControlStyle.CssClass = "memo";
+
+           });
+       });
+
+       settings.Items.Add(m => m.CoordinatorEmail, i =>
+       {
+           i.Caption = "Correo Coordinador";
+
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+
+           });
+       });
+
+       settings.Items.Add(m => m.EventDate, i =>
+       {
+           i.Caption = "Fecha de Evento";
+
+           i.NestedExtension().DateEdit(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               //s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedIndicatorChanged";
+               //s.Properties.ClientSideEvents.BeginCallback = "OnIndicatorBeginCallback";
+               //s.Properties.ClientSideEvents.Init = "OnInitInidicator";
+
+           });
+       });
+
+       settings.Items.Add(m => m.RegistrationClosing, i =>
+       {
+           i.Caption = "Fecha de cierre";
+
+           i.NestedExtension().DateEdit(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               //s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedIndicatorChanged";
+               //s.Properties.ClientSideEvents.BeginCallback = "OnIndicatorBeginCallback";
+               //s.Properties.ClientSideEvents.Init = "OnInitInidicator";
+
+           });
+       });
+
+       settings.Items.Add(m => m.EventEmployeesMax, i =>
+       {
+           i.Caption = "Maximo Participantes";
+
+           i.NestedExtension().SpinEdit(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.Properties.DisplayFormatString = "#.00";
+
+           });
+       });
+       settings.Items.Add(m => m.EventCompanionsMax, i =>
+       {
+           i.Caption = "MaximoAcompañantes";
+
+           i.NestedExtension().SpinEdit(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.Properties.DisplayFormatString = "#.00";
+
+           });
+       });
+
+       settings.Items.Add(m => m.Description, i =>
+       {
+           i.Caption = "Descripcion";
+
+           i.NestedExtension().Memo(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.ControlStyle.CssClass = "memo";
+               s.Width = Unit.Percentage(275);
+               s.Properties.Rows = 7;
+
+           });
+       });
+
+       settings.Items.AddEmptyItem();
+       settings.Items.AddEmptyItem();
+       settings.Items.Add(i =>
+       {
+           i.ShowCaption = DefaultBoolean.False;
+       }).SetNestedContent(() =>
+       {
+           ViewContext.Writer.Write("<div style='float:right'>");
+           Html.DevExpress().Button(btnSettings =>
+           {
+               btnSettings.Name = "btnUpdate";
+               btnSettings.Text = "Actualizar";
+               btnSettings.ClientSideEvents.Click = "ValidateData";
+           }).Render();
+           Html.DevExpress().Button(btnSettings =>
+           {
+               btnSettings.Name = "btnCancel";
+               btnSettings.Text = "Cancelar";
+               btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+               btnSettings.ClientSideEvents.Click = "function(s, e){ gvLicensesRegisterDetail.CancelEdit(); }";
+           }).Render();
+           ViewContext.Writer.Write("</div>");
+       });
+
+   }).GetHtml()
+    }
+</div>

@@ -1,0 +1,379 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Inicio de Sesión</title>
+
+    <link href="~/css/tipoletra.css" rel="stylesheet" />
+    <link href="~/Styles/coreui.css" rel="stylesheet" />
+    <link href="~/css/sweetalert2.css" rel="stylesheet" />
+    <style>
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #prevBtn, #nextBtn {
+            width: 100px;
+        }
+
+        #prevBtn {
+            display: none;
+        }
+
+        .carousel-caption {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+            .carousel-caption h5,
+            .carousel-caption p {
+                color: #fff;
+            }
+    </style>
+
+</head>
+<body>
+    <div class="login-container">
+        <div class="cod-container">
+            <div class="form-header">
+                <h1>RH<span> Online</span></h1>
+            </div>
+
+            <div class="form-content">
+                <form id="frmLogin" method="post" action="#" class="cod-form">
+                    <div class="form-title">
+                        <h3>Iniciar Sesión</h3>
+                    </div>
+                    <div class="input-group">
+                        <select class="select" id="sPais" name="Domain">
+                            <option value="CLARONI">Nicaragua</option>
+                            <option value="CLAROCR">Costa Rica</option>
+                            <option value="CLAROGT">Guatemala</option>
+                            <option value="CLAROHN">Honduras</option>
+                            <option value="TELECOM1">El Salvador</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="label" for="usuario">Digite el usuario del correo</label>
+                        <input type="text" class="form-input" placeholder="correo@claro.com.ni" name="usuario" id="usuario">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="label" for="pass">Digite la contraseña</label>
+                        <input type="password" class="form-input" name="pass" id="pass" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="custom-control custom-checkbox small">
+                            <input type="checkbox" class="custom-control-input" id="customCheck" name="rememberMe">
+                            <label class="custom-control-label" for="customCheck">Recordarme</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="button" id="btnAceptarInicio" class="form-input" value="Iniciar Sesión" onclick="IniciarSesion()">
+                    </div>
+
+                    <div class="input-group" id="codigoLoginContainer" style="display:none;">
+                        <label class="label" for="codigoLogin">Código de Login</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" class="form-input" style="flex:1;" placeholder="Ingrese el código de 6 dígitos" id="codigoLogin" name="codigoLogin" maxlength="6">
+                            <button type="button" class="btn btn-secondary" id="btnGenerarCodigo" style="min-width:120px;">Generar código</button>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="divBtnCodigo" style="display:none;">
+                        <input type="button" id="btnIniciarSesionCodigo" class="form-input" value="Iniciar Sesión con Código">
+                    </div>
+                    <div class="link-sigho">
+                        <a href="https://login-exjp-saasfaprod1.fa.ocs.oraclecloud.com/" target="_blank">¿Necesitas ingresar vacaciones? Visita SIGHO</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="right-image-overlay">
+    </div>
+    <div class="modal fade" id="helpDeskModal" tabindex="-1" role="dialog" aria-labelledby="helpDeskModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title w-100 text-center" id="helpDeskModalLabel">¡Nueva Funcionalidad: Help Desk!</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="helpDeskCarousel" class="carousel slide" data-ride="carousel" data-interval="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img class="d-block w-100" src="~/Content/Images/FormatoReconociminento1.jpg" alt="Paso 1">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>Paso 1: Accede al Help Desk</h5>
+                                    <p>Ahora puedes acceder al Help Desk desde el menú principal.</p>
+                                </div>
+                            </div>
+                            <div class="carousel-item">
+                                <img class="d-block w-100" src="~/Content/Images/FormatoReconociminento2.jpg" alt="Paso 2">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>Paso 2: Registra un Caso</h5>
+                                    <p>Completa el formulario para registrar tu caso fácilmente.</p>
+                                </div>
+                            </div>
+                            <div class="carousel-item">
+                                <img class="d-block w-100" src="~/Content/Images/Fondo_bk.jpg" alt="Paso 3">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>Paso 3: Haz Seguimiento</h5>
+                                    <p>Haz seguimiento a tus casos y recibe notificaciones.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="prevBtn" class="btn btn-secondary">Anterior</button>
+                    <button type="button" id="nextBtn" class="btn btn-primary">Siguiente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/Scripts/js/toastr.js"></script>
+    <script src="~/js/sweetalert2.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+
+    <script>
+        // Mostrar u ocultar el campo de código según país seleccionado
+        $(function () {
+            $('#sPais').on('change', function () {
+                if ($(this).val() !== 'CLARONI') {
+                    $('#codigoLoginContainer').show();
+                    $('#divBtnCodigo').show();
+                } else {
+                    $('#codigoLoginContainer').hide();
+                    $('#divBtnCodigo').hide();
+                }
+            });
+        });
+
+         $('#btnGenerarCodigo').on('click', function () {
+        var correo = $('#usuario').val().trim();
+        var pais = $('#sPais').val();
+        if (!correo || pais === 'CLARONI') {
+            toastr.error('Ingrese correo y seleccione país exterior');
+            return;
+        }
+        $.LoadingOverlay("show");
+        $.ajax({
+            url: '@Url.Action("GenerarCodigoLogin", "Login")',
+            type: "POST",
+            data: { correo: correo, pais: pais },
+            success: function (response) {
+                $.LoadingOverlay("hide");
+                if (response.status) {
+                    Swal.fire({ icon: 'success', title: 'Código enviado', text: response.message });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: response.message });
+                }
+            },
+            error: function () {
+                $.LoadingOverlay("hide");
+                toastr.error('Error al generar código');
+            }
+        });
+    });
+
+    // Login con código AJAX
+    $('#btnIniciarSesionCodigo').on('click', function () {
+        var correo = $('#usuario').val().trim();
+        var pais = $('#sPais').val();
+        var codigo = $('#codigoLogin').val().trim();
+        if (!correo || !codigo || pais === 'CLARONI') {
+            toastr.error('Complete todos los campos');
+            return;
+        }
+        $.LoadingOverlay("show");
+        $.ajax({
+            url: '@Url.Action("LoginCodigo", "Login")',
+            type: "POST",
+            data: { correo: correo, pais: pais, codigo: codigo },
+            success: function (response) {
+                $.LoadingOverlay("hide");
+                if (response.status) {
+                    window.location.href = '@Url.Action("Index", "Home")';
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: response.message });
+                }
+            },
+            error: function () {
+                $.LoadingOverlay("hide");
+                toastr.error('Error al validar código');
+            }
+        });
+    });
+
+        $(document).ready(function () {
+            // Aquí va todo tu JS original, puedes volver a pegar si lo necesitas
+            // ...
+        });
+
+        document.getElementById('usuario').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                IniciarSesion();
+            }
+        });
+
+        document.getElementById('pass').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                IniciarSesion();
+            }
+        });
+
+        function saltar(e, id) {
+            (e.keyCode) ? k = e.keyCode : k = e.which;
+            if (k == 13) {
+                if (id == "btnAceptarCambiar") {
+                    CambiarContrasena();
+                } else if (id == "btnAceptarInicio") {
+                    IniciarSesion();
+                } else {
+                    document.getElementById(id).focus();
+                }
+            }
+        }
+
+        function IniciarSesion2() {
+            var rememberMe = $('#customCheck').is(':checked');
+            $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("IniciarSesion2", "Login")',
+                type: 'POST',
+                data: { rememberMe: rememberMe },
+                success: function (response) {
+                    if (response.status === true) {
+                        Swal.fire({
+                            title: 'RHOnline',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                var url = '@Url.Action("Index", "Home")';
+                                window.location.href = url;
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'RHOnline',
+                            text: response.message || 'Error en la autenticación',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    var errorMessage = xhr.responseText || 'Error desconocido';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'RHOnline',
+                        text: errorMessage,
+                        confirmButtonText: 'Aceptar'
+                    });
+                },
+                complete: function () {
+                    $.LoadingOverlay("hide");
+                }
+            });
+        }
+
+        function IniciarSesion() {
+            var usuario = $('#usuario').val();
+            var contrasena = $('#pass').val();
+            var pais = $('select[id=sPais]').val();
+            var rememberMe = $('#customCheck').is(':checked');
+
+            if ((usuario == '') || (contrasena == '') || (pais == '')) {
+                toastr.error("Todos los campos son requeridos");
+                return; // Es buena práctica agregar un return aquí para detener la ejecución
+            }
+
+            $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("IniciarSesion", "Login")',
+                type: "POST",
+                data: {
+                    domain: pais,
+                    userName: usuario,
+                    password: contrasena,
+                    rememberMe: rememberMe
+                },
+                success: function (response) {
+                    $.LoadingOverlay("hide");
+                    if (response.status === true) {
+                        Swal.fire({
+                            title: 'RHOnline',
+                            text: response.message,
+                        });
+                        var url = '@Url.Action("Index", "Home")';
+                        window.location.href = url;
+                    } else if (response.message == 'Usuario o contraseña incorrecta.' || response.message == 'Usuario o contraseña incorrecta' || response.message.includes('de red es incorrecto')) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'RHOnline',
+                            text: response.message || 'Error en la autenticación',
+                        });
+                    } else {
+                        // AQUÍ ESTÁ EL CAMBIO PRINCIPAL (TRY-CATCH)
+                        try {
+                            let parsedResponse = JSON.parse(response.message);
+                            if (parsedResponse.mensaje) {
+                                let formattedHtml = `
+                                    <p><strong>Nombre Completo:</strong> ${parsedResponse.nombre_completo}</p>
+                                    <p><strong>Número de Código:</strong> ${parsedResponse.numero_de_codigo}</p>
+                                    <p><strong>Contraseña Expira:</strong> ${parsedResponse.contrasena_expira}</p>
+                                    <p><strong>Cuenta Activa:</strong> ${parsedResponse.cuenta_activa}</p>
+                                    <p>${parsedResponse.mensaje}</p>
+                                `;
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'RHOnline',
+                                    html: formattedHtml,
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'RHOnline',
+                                    text: 'Error en la autenticación',
+                                });
+                            }
+                        } catch (e) {
+                            // Si el parseo falla, mostramos el texto tal cual
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'RHOnline',
+                                text: response.message || 'Error en la autenticación',
+                            });
+                        }
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    $.LoadingOverlay("hide");
+                    var errorMessage = xhr.responseText || 'Error desconocido';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'RHOnline',
+                        text: errorMessage,
+                    });
+                },
+                complete: function () {
+                }
+            });
+        }
+    </script>
+</body>
+</html>

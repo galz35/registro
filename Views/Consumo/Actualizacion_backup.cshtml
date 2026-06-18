@@ -1,0 +1,1781 @@
+﻿@{
+    ViewBag.Title = "Actualizacion de datos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+@{
+
+
+    Entities.Employees emp = (Entities.Employees)Session["User"];
+    //string imgPic = employee.Picture == null ? "~/Content/Icons/Add.png" : String.Format("data:image/jpg;base64", Convert.ToBase64String(employee.Picture));
+
+    <style>
+        .is-invalid {
+            border: 2px solid #dc3545 !important;
+            background-color: #f8d7da;
+        }
+    </style>
+}
+@section scripts {
+    <!-- Librerías -->
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/onlinejs/Compressor.js"></script>
+    <script>
+        // Variables globales
+        var tabla_persona;
+        var imagenes = {};         // Almacena imágenes de inspección
+        var parteActual = null;    // Parte actual de la inspección a actualizar
+        var imagenTemporal = null; // Imagen temporal cargada
+        const listaEdificios = [
+            { depto: "MANAGUA", building: "NI TELERED MAN. GERENCIA DE VENTAS" },
+            { depto: "MANAGUA", building: "NI TELERED MAN. GERENCIA FINANCIERA" },
+            { depto: "MANAGUA", building: "NI TELERED MAN. GERENCIA GENERAL" },
+            { depto: "MANAGUA", building: "NI TELERED MAN. GERENCIA REGULACION Y CORRESPONSAL" },
+            { depto: "MANAGUA", building: "NI TELERED MAN. GERENCIA TECNICA" },
+            { depto: "MANAGUA", building: "ICS" },
+            { depto: "MANAGUA", building: "ENITEL 14 DE SEPTIEMBRE" },
+            { depto: "MANAGUA", building: "ENITEL ALTAMIRA" },
+            { depto: "MANAGUA", building: "ENITEL CETEL" },
+            { depto: "MANAGUA", building: "ENITEL LAS COLINAS" },
+            { depto: "MANAGUA", building: "ENITEL LAS PALMAS" },
+            { depto: "MANAGUA", building: "ENITEL LAS PIEDRECITAS" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA ENITEL" },
+            { depto: "MANAGUA", building: "ENITEL TICOMO" },
+            { depto: "MANAGUA", building: "ENITEL BELLO HORIZONTE" },
+            { depto: "MANAGUA", building: "ENITEL LA SABANA" },
+            { depto: "MANAGUA", building: "ENITEL AEROPUERTO" },
+            { depto: "MANAGUA", building: "ENITEL TIPITAPA" },
+            { depto: "MANAGUA", building: "ENITEL MONSEÑOR LEZCANO" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA ESPAÑA" },
+            { depto: "MANAGUA", building: "ENITEL METROCENTRO" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA INTER" },
+            { depto: "MANAGUA", building: "ENITEL GALERIA SANTO DOMINGO" },
+            { depto: "MANAGUA", building: "ENITEL MULTICENTRO LAS AMERICAS" },
+            { depto: "MANAGUA", building: "ENITEL CARRETERA NORTE" },
+            { depto: "MANAGUA", building: "ENITEL VERACRUZ/P.OFINOVA" },
+            { depto: "MANAGUA", building: "ENITEL LOS ROBLES" },
+            { depto: "MANAGUA", building: "ENITEL XOLOTLAN" },
+            { depto: "MANAGUA", building: "ENITEL CIUDAD JARDIN" },
+            { depto: "MANAGUA", building: "ENITEL EL CORTIJO" },
+            { depto: "MANAGUA", building: "ENITEL PETROPOLIS" },
+            { depto: "MANAGUA", building: "ENITEL SERVIGO" },
+            { depto: "MANAGUA", building: "ENITEL LAS PIEDRECITA" },
+            { depto: "MANAGUA", building: "ENITEL CIUDAD SANDINO" },
+            { depto: "MANAGUA", building: "ENITEL EL ZUMEN" },
+            { depto: "MANAGUA", building: "ENITEL ROBERTO HUEMBES" },
+            { depto: "MANAGUA", building: "ENITEL PATIO CABLE" },
+            { depto: "MANAGUA", building: "ENITEL EL CRUCERO" },
+            { depto: "MANAGUA", building: "ENITEL CASA PROTOCOLO(STO.DGO MGA)" },
+            { depto: "MANAGUA", building: "ENITEL CRISTIAN PEREZ" },
+            { depto: "MANAGUA", building: "ENITEL VILLA FONTANA" },
+            { depto: "MANAGUA", building: "SERVID RRHH" },
+            { depto: "MANAGUA", building: "ENITEL CARRETERA MASAYA ALMACEN" },
+            { depto: "MANAGUA", building: "ESTESA EDIFICIO CENTRAL" },
+            { depto: "MANAGUA", building: "ESTESA BASE II" },
+            { depto: "MANAGUA", building: "ENITEL SABANA GRANDE" },
+            { depto: "MANAGUA", building: "ENITEL ESTACION TERRENA" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA FAMILIAR" },
+            { depto: "MANAGUA", building: "ENITEL CARRETERA NORTE 2" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA LA LIGA" },
+            { depto: "MANAGUA", building: "ENITEL MULTICENTRO LAS BRISAS" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA CENTROAMERICA" },
+            { depto: "MANAGUA", building: "ENITEL OFIBODEGAS SAN JOSE" },
+            { depto: "MANAGUA", building: "ENITEL METROCENTRO 2" },
+            { depto: "MANAGUA", building: "ENITEL OFINOVA" },
+            { depto: "MANAGUA", building: "ENITEL CENTRO COMERCIAL" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA MAYOR" },
+            { depto: "MANAGUA", building: "ENITEL CARR.MASAYA /COBIRSA" },
+            { depto: "MANAGUA", building: "SITES" },
+            { depto: "MANAGUA", building: "SITES EDIFICIO CAR II" },
+            { depto: "MANAGUA", building: "ENITEL PLAZA REAL" },
+            { depto: "MASAYA", building: "ENITEL MASAYA MOVIL" },
+            { depto: "MASAYA", building: "ENITEL TISMA" },
+            { depto: "MASAYA", building: "ENITEL NIQUINOHOMO" },
+            { depto: "MASAYA", building: "ENITEL MASATEPE" },
+            { depto: "MASAYA", building: "ENITEL MASAYA" },
+            { depto: "MASAYA", building: "ENITEL CATARINA" },
+            { depto: "LEON", building: "ENITEL EL SAUCE" },
+            { depto: "LEON", building: "ENITEL LA PAZ CENTRO" },
+            { depto: "LEON", building: "ENITEL LEON" },
+            { depto: "LEON", building: "ENITEL MALPAISILLO" },
+            { depto: "LEON", building: "ENITEL NAGAROTE" },
+            { depto: "LEON", building: "ENITEL PONELOYA" },
+            { depto: "LEON", building: "ENITEL POSADA DEL SOL" },
+            { depto: "LEON", building: "ENITEL PUERTO SANDINO" },
+            { depto: "LEON", building: "ENITEL SAN JUAN" },
+            { depto: "LEON", building: "ENITEL TELICA" },
+            { depto: "LEON", building: "ENITEL ACHUAPA" },
+            { depto: "LEON", building: "ENITEL PASEO REAL" },
+            { depto: "GRANADA", building: "ENITEL DIRIOMO" },
+            { depto: "GRANADA", building: "ENITEL GRANADA" },
+            { depto: "GRANADA", building: "ENITEL NANDAIME" },
+            { depto: "CARAZO", building: "ENITEL SAN MARCOS" },
+            { depto: "CARAZO", building: "ENITEL SANTA TERESA" },
+            { depto: "CARAZO", building: "ENITEL CARAZO" },
+            { depto: "CARAZO", building: "ENITEL DIRIAMBA" },
+            { depto: "CARAZO", building: "ENITEL DOLORES" },
+            { depto: "CARAZO", building: "ENITEL JINOTEPE" },
+            { depto: "CARAZO", building: "ENITEL LA CONCEPCION" },
+            { depto: "CARAZO", building: "ENITEL LA CONQUISTA" },
+            { depto: "ESTELI", building: "ENITEL LA TRINIDAD" },
+            { depto: "ESTELI", building: "ENITEL PUEBLO NUEVO" },
+            { depto: "ESTELI", building: "ENITEL ESTELI" },
+            { depto: "ESTELI", building: "ENITEL CONDEGA" },
+            { depto: "ESTELI", building: "ENITEL ESTELI 2" },
+            { depto: "ESTELI", building: "ENITEL ESTELI / BODEGA TECNICA" },
+            { depto: "ESTELI", building: "ENITEL ESTELI / BODEGA MOVIL" },
+            { depto: "ESTELI", building: "ENITEL MULTICENTRO ESTELI" },
+            { depto: "RIVAS", building: "ENITEL SAN JUAN DEL SUR" },
+            { depto: "RIVAS", building: "ENITEL SAPOA" },
+            { depto: "RIVAS", building: "ENITEL SAN JORGE" },
+            { depto: "RIVAS", building: "ENITEL RIVAS" },
+            { depto: "RIVAS", building: "ENITEL TOLA" },
+            { depto: "RIVAS", building: "ENITEL ALTAGRACIA" },
+            { depto: "RIVAS", building: "ENITEL BELEN" },
+            { depto: "RIVAS", building: "ENITEL POTOSI" },
+            { depto: "RIVAS", building: "ENITEL MOYOGALPA" },
+            { depto: "CHINANDEGA", building: "ENITEL CORINTO" },
+            { depto: "CHINANDEGA", building: "ENITEL CHICHIGALPA" },
+            { depto: "CHINANDEGA", building: "ENITEL CHINANDEGA" },
+            { depto: "CHINANDEGA", building: "ENITEL EL VIEJO" },
+            { depto: "CHINANDEGA", building: "ENITEL SOMOTILLO" },
+            { depto: "CHINANDEGA", building: "ENITEL CHINANDEGA 2" },
+            { depto: "CHINANDEGA", building: "ENITEL CHINANDEGA 3" },
+            { depto: "CHONTALES", building: "ENITEL SNT. DOMINGO" },
+            { depto: "CHONTALES", building: "ENITEL SANTO TOMAS" },
+            { depto: "CHONTALES", building: "ENITEL SANTO DOMINGO" },
+            { depto: "CHONTALES", building: "ENITEL SAN PEDRO DE LOVAGO" },
+            { depto: "CHONTALES", building: "ENITEL EL CORAL" },
+            { depto: "CHONTALES", building: "ENITEL JUIGALPA" },
+            { depto: "CHONTALES", building: "ENITEL CUAPA" },
+            { depto: "CHONTALES", building: "ENITEL ACOYAPA" },
+            { depto: "CHONTALES", building: "ENITEL MUELLE DE LOS BUEYES" },
+            { depto: "CHONTALES", building: "ENITEL MUHAN" },
+            { depto: "CHONTALES", building: "ENITEL NUEVA GUINEA" },
+            { depto: "CHONTALES", building: "ENITEL EL RAMA" },
+            { depto: "CHONTALES", building: "ENITEL LA LIBERTAD" },
+            { depto: "CHONTALES", building: "ENITEL LA GATEADA" },
+            { depto: "MADRIZ", building: "ENITEL MADRIZ" },
+            { depto: "MADRIZ", building: "ENITEL PALACAGUINA" },
+            { depto: "MADRIZ", building: "ENITEL EL ESPINO" },
+            { depto: "MADRIZ", building: "ENITEL SAN JUAN DE RIO COCO" },
+            { depto: "MADRIZ", building: "ENITEL SOMOTO" },
+            { depto: "MATAGALPA", building: "ENITEL SOLINGALPA" },
+            { depto: "MATAGALPA", building: "ENITEL SEBACO" },
+            { depto: "MATAGALPA", building: "ENITEL SAN ISIDRO" },
+            { depto: "MATAGALPA", building: "ENITEL MATAGALPA 2" },
+            { depto: "MATAGALPA", building: "ENITEL ESQUIPULA" },
+            { depto: "MATAGALPA", building: "ENITEL DARIO" },
+            { depto: "MATAGALPA", building: "ENITEL RIO BLANCO" },
+            { depto: "MATAGALPA", building: "ENITEL MUY MUY" },
+            { depto: "MATAGALPA", building: "ENITEL MATAGALPA" },
+            { depto: "MATAGALPA", building: "ENITEL MATIGUAS" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL NUEVA SEGOVIA" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL OCOTAL" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL QUILALI" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL EL JICARO" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL JALAPA" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL SAN FERNANDO" },
+            { depto: "NUEVA SEGOVIA", building: "ENITEL SUSUCAYAN" },
+            { depto: "BOACO", building: "ENITEL TEUSTEPE" },
+            { depto: "BOACO", building: "ENITEL SAN JOSE DE LOS REMATES" },
+            { depto: "BOACO", building: "ENITEL SANTA LUCIA" },
+            { depto: "BOACO", building: "ENITEL BOACO" },
+            { depto: "BOACO", building: "ENITEL CAMOAPA" },
+            { depto: "JINOTEGA", building: "ENITEL JINOTEGA" },
+            { depto: "JINOTEGA", building: "ENITEL SAN RAFAEL DEL NORTE" },
+            { depto: "JINOTEGA", building: "ENITEL YALI" },
+            { depto: "RAAN", building: "ENITEL SIUNA" },
+            { depto: "RAAN", building: "ENITEL ROSITA" },
+            { depto: "RAAN", building: "ENITEL WASPAN" },
+            { depto: "RAAN", building: "ENITEL BILWI" },
+            { depto: "RAAN", building: "ENITEL BONANZAS" },
+            { depto: "RAAN", building: "ENITEL PUERTO CABEZAS" },
+            { depto: "RAAN", building: "ENITEL SIUINA 2" },
+            { depto: "RAAN", building: "ENITEL SIUNA 2" },
+            { depto: "RAAS", building: "ENITEL LA ISLITA" },
+            { depto: "RAAS", building: "ENITEL LAGUNA DE PERLAS" },
+            { depto: "RAAS", building: "ENITEL BLUEFIELDS" },
+            { depto: "RAAS", building: "ENITEL KUKRA HILL" },
+            { depto: "RAAS", building: "ENITEL EL BLUFF" },
+            { depto: "RAAS", building: "ENITEL CORN ISLANDS" },
+            { depto: "RIO SAN JUAN", building: "ENITEL RIO SAN JUAN" },
+            { depto: "RIO SAN JUAN", building: "ENITEL SAN CARLOS" },
+            { depto: "RIO SAN JUAN", building: "ENITEL SAN MIGUELITO" }
+        ];
+
+        const departamentosUnicos = [...new Set(listaEdificios.map(item => item.depto))];
+        var idInspeccionGlobal = null;
+        departamentosUnicos.forEach(depto => {
+            $("#listaDepartamentos").append(`<option value="${depto}">`);
+        });
+        // Inicialización del DataTable cuando el documento está listo
+        $(document).ready(function () {
+            $.LoadingOverlay("show");
+            tabla_persona = $('#listTable').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("getunidaddatos", "Consumo")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+                    {
+                        "data": "IdUnidad",
+                        "render": function (data, type, row) {
+                            if (row.PeriodoInspeccion == 2) {
+                                if (row.Validar && row.Validar.trim().toLowerCase() === "pendiente") {
+                                    return `
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i> Solicitudes
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="abrirPopupVisualizacion('${data}')">
+                            <i class="fas fa-eye"></i> Ver Inspección
+                        </a>
+     <a class="dropdown-item" href="javascript:void(0)" onclick="abrirPopupEdicion('${data}')">
+                                    <i class="fas fa-edit"></i> Editar Inspección
+                                </a>
+                    </div>
+                </div>
+            `;
+                                } else {
+                                    return `
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i> Solicitudes
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="abrirPopupVisualizacion('${data}')">
+                            <i class="fas fa-eye"></i> Ver Inspección
+                        </a>
+
+                    </div>
+                </div>
+            `;
+}
+
+                            } else {
+                                return `
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i> Solicitudes
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="abrirPopupActualizacion('${data}')">
+                            <i class="fas fa-edit"></i> Actualización de datos
+                        </a>
+                    </div>
+                </div>
+            `;
+                            }
+                        },
+                        "orderable": true,
+                        "searchable": true,
+                        "width": "150px"
+                    }
+,
+                    { "data": "IdUnidad" },
+                    { "data": "vh" },
+                    { "data": "vh2" },
+
+                    { "data": "NombreEmpleado" },
+                    { "data": "carnet" },
+                    { "data": "NombreArea" },
+
+                    { "data": "Gerencia" },
+
+                    {
+                        "data": "PeriodoInspeccion",
+                        "title": "Inspección",
+                        "orderable": true,
+                        "searchable": true,
+                        "render": function (data, type, row) {
+                            if (data == 2) {
+                                if (row.Validar && row.Validar.trim().toLowerCase() === "pendiente") {
+                                    return "Pendiente Validar";
+                                }
+                                return "Validado";
+                            }
+                            return "Sin registro de inspección";
+                        }
+                    }
+                ],
+                "dom": 'Blfrtip',
+                "lengthMenu": [10, 20, 50, 100],
+                "pageLength": 10,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                responsive: true,
+                initComplete: function () {
+                    // Manejo de dropdowns en DataTable
+                    $('#listTable tbody').on('click', '.dropdown-toggle', function (e) {
+                        e.stopPropagation();
+                        $(this).siblings('.dropdown-menu').toggleClass('show');
+                    });
+                    $(document).on('click', function (e) {
+                        if (!$('.dropdown-toggle').is(e.target) &&
+                            $('.dropdown-toggle').has(e.target).length === 0 &&
+                            $('.show').has(e.target).length === 0) {
+                            $('.dropdown-menu').removeClass('show');
+                        }
+                    });
+                }
+            });
+            $.LoadingOverlay("hide");
+
+            departamentosUnicos.forEach(depto => {
+                $("#departamento").append(new Option(depto, depto));
+            });
+
+            // Al cambiar el departamento, filtrar y llenar el combo de "Edificio"
+            $("#departamento").on("change", function () {
+                const deptoSeleccionado = $(this).val();
+                // Vaciar la datalist de edificios para evitar acumulación de opciones previas
+                $("#listaEdificios").empty();
+
+                if (deptoSeleccionado) {
+                    // Filtrar la lista de edificios para el departamento seleccionado
+                    const edificiosFiltrados = listaEdificios.filter(item => item.depto === deptoSeleccionado);
+                    edificiosFiltrados.forEach(item => {
+                        $("#listaEdificios").append(`<option value="${item.building}">`);
+                    });
+                }
+            });
+        });
+
+        /*===============================================
+        =            Funciones de POPUP                =
+        ===============================================*/
+        function abrirPopup(modo, idVehiculo) {
+            // Reiniciar formulario, previews y variables globales
+            $("#idVehiculo").val(idVehiculo);
+            $("#formInspeccion")[0].reset();
+            $("#vistaLicenciaFrontal").html("<span class='text-muted'>Sin vista previa</span>");
+            $("#vistaLicenciaPosterior").html("<span class='text-muted'>Sin vista previa</span>");
+            $("#fotosGrid div[id^='preview-']").html("<span class='text-muted'>Sin foto</span>");
+            $("#conductoresContainer").empty();
+            $("#conductoresHidden").val("");
+            $("#conductoresInput").val("");
+            imagenes = {};
+
+            if (modo === "editar") {
+                // Habilitar todos los campos y mostrar el botón Guardar
+                $("#formInspeccion").find("input, select, textarea").prop("disabled", false);
+                $("#btnGuardarInspeccion").show();
+                $(".modal-title").text("Actualización de Datos");
+            } else if (modo === "visualizar") {
+                // Deshabilitar todos los campos y ocultar el botón Guardar
+                $("#formInspeccion").find("input, select, textarea").prop("disabled", true);
+                $("#btnGuardarInspeccion").hide();
+                $(".modal-title").text("Visualización de Inspección");
+            }
+
+            $("#actualizacionModal").modal("show").on("shown.bs.modal", function () {
+                $("#ReceivePersonIdDisplay").focus();
+            });
+        }
+
+        // Función para abrir el popup en modo edición (registro)
+        function abrirPopupActualizacion(idVehiculo) {
+        //    abrirPopup("editar", idVehiculo);
+            $("#idVehiculo").val(idVehiculo);
+            $("#formInspeccion")[0].reset();
+            $("#vistaLicenciaFrontal").html("<span class='text-muted'>Sin vista previa</span>");
+            $("#vistaLicenciaPosterior").html("<span class='text-muted'>Sin vista previa</span>");
+            $("#fotosGrid div[id^='preview-']").html("<span class='text-muted'>Sin foto</span>");
+            $("#conductoresContainer").empty();
+            $("#conductoresHidden").val("");
+            $("#conductoresInput").val("");
+            imagenes = {};
+
+            // Habilitar controles y mostrar botón Guardar
+            $("#formInspeccion").find("input, select, textarea").prop("disabled", false);
+            $("#btnGuardarInspeccion").show();
+            $(".modal-title").text("Actualización de Datos");
+
+            $("#actualizacionModal").modal("show").on("shown.bs.modal", function () {
+                $("#ReceivePersonIdDisplay").focus();
+            });
+        }
+        // Función para abrir el modal en modo edición (carga datos existentes en el formulario)
+       function cargarFotosExtrasPorParte(idInspeccion) {
+  const fotos = [];
+  // tomar licencias ya cargadas
+  const f1 = $("#viewLicenciaFrontal img").attr("src");
+  const f2 = $("#viewLicenciaPosterior img").attr("src");
+  fotos.push({ label: "Licencia Frontal", src: f1 });
+  fotos.push({ label: "Licencia Posterior", src: f2 });
+
+  const partes = ["Frontal", "Tablero", "LateralIzquierdo", "LateralDerecho", "Trasero"];
+  let idx = 0;
+
+  function next() {
+    if (idx >= partes.length) {
+      // renderizar carrusel
+      const $ind = $("#carouselIndicators").empty();
+      const $inn = $("#carouselInner").empty();
+      fotos.forEach((f, i) => {
+        $ind.append(`<li data-target="#photoCarousel" data-slide-to="${i}"${i===0?" class='active'":""}></li>`);
+        $inn.append(`
+          <div class="carousel-item${i===0?" active":""}">
+            <img src="${f.src||''}" alt="${f.label}" class="d-block w-100"/>
+            <div class="carousel-caption d-none d-md-block"><h5>${f.label}</h5></div>
+          </div>`);
+      });
+      $.LoadingOverlay("hide");
+      $("#visualizacionModal").modal("show");
+      return;
+    }
+    const parte = partes[idx++];
+    $.ajax({
+      url: '@Url.Action("ObtenerFotoPorParte2025", "Consumo")',
+      type: "GET",
+      data: { idInspeccion, parte },
+      dataType: "json",
+      success: function (r) {
+        fotos.push({ label: parte, src: r.success ? r.base64 : null });
+      },
+      complete: next
+    });
+  }
+
+  next();
+}
+
+// Función que recoge los datos actualizados y los envía al servidor
+        function abrirPopupVisualizacion(idVehiculo) {
+  $.LoadingOverlay("show");
+  $.get('@Url.Action("ObtenerInspeccionDatos2025","Consumo")',{idVehiculo},function(r){
+    if(!r.success){$.LoadingOverlay("hide");return Swal.fire("Error",r.message,"error");}
+      const d = r.data;
+      idInspeccionGlobal = d.IdInspeccion;
+
+    // datos rápidos
+    $("#viewAsignadaA").text(d.AsignadaA);
+    $("#viewPlantelAsignado").text(d.Edificio);
+    $("#viewDomicilio").text(d.Domicilio);
+    $("#viewTelefono").text(d.Telefono);
+    $("#viewPrueba").text(d.PruebaManejo?"Sí":"No");
+    $("#viewKilometraje").text(d.Kilometraje);
+    // conductores chips
+    const $chips=$("#viewConductores").empty();
+    if(d.ConductoresDetalle.length){
+      d.ConductoresDetalle.forEach(c=> $chips.append(`<span class="chip">${c.NOMBRE_COMPLETO} - ${c.CARNET}</span>`));
+    }else{$chips.html("<span class='text-muted'>Sin conductores</span>");}
+    // Licencias
+    $.get('@Url.Action("ObtenerLicenciaImagenes2025","Consumo")',{idInspeccion:d.IdInspeccion},lic=>{
+      $("#viewLicenciaFrontal").html(lic.success&&lic.frontal?`<img src="${lic.frontal}">`:"<span class='text-muted'>Sin foto</span>");
+      $("#viewLicenciaPosterior").html(lic.success&&lic.posterior?`<img src="${lic.posterior}">`:"<span class='text-muted'>Sin foto</span>");
+      cargarFotosExtrasPorPartew(d.IdInspeccion); // continúa con 5 fotos
+    },"json");
+  },"json").fail(()=>{ $.LoadingOverlay("hide"); Swal.fire("Error","Error al cargar datos.","error"); });
+}
+
+function cargarFotosExtrasPorPartew(idInspeccion){
+  const partes=["Frontal","Tablero","LateralIzquierdo","LateralDerecho","Trasero"];
+  let html=""; let index=0;
+  const next=()=>{
+    if(index>=partes.length){
+        $("#viewExtraFotos").html(html);
+        $("#viewExtraFotos img, #viewLicenciaFrontal img, #viewLicenciaPosterior img").addClass("zoomable-img").off("click").on("click", function () {
+            $("#imagenAmpliada").attr("src", $(this).attr("src"));
+            $("#modalImagenGrande").modal("show");
+        });
+      $.LoadingOverlay("hide"); $("#visualizacionModal").modal("show"); return;
+    }
+    const parte=partes[index++];
+    $.get('@Url.Action("ObtenerFotoPorParte2025","Consumo")',{idInspeccion,parte},res=>{
+      html+=`
+        <div class="col-sm-6 col-md-4 mb-3">
+          <div class="card h-100 shadow-sm">
+            <div class="card-header py-1 text-center">${parte}</div>
+            <div class="card-body p-1 d-flex align-items-center justify-content-center">
+              ${res.success && res.base64 ? `<img src="${res.base64}" class="img-fluid">` : "<span class='text-muted'>Sin foto</span>"}
+            </div>
+          </div>
+        </div>`;
+    },"json").always(next);
+  };
+  next();
+}
+
+
+ function abrirPopupEdicion(idVehiculo) {
+    $.LoadingOverlay("show");
+
+    $.ajax({
+        url: '@Url.Action("ObtenerInspeccionDatos2025", "Consumo")',
+        type: "GET",
+        data: { idVehiculo: idVehiculo },
+        dataType: "json",
+        success: function (response) {
+            if (response.success) {
+                const data = response.data;
+                $("#idVehiculo").val(data.IdVehiculo);
+                $("#kilometraje").val(data.Kilometraje);
+                $("#ReceivePersonIdDisplay").val(data.AsignadaA);
+                $("#domicilio").val(data.Domicilio);
+                $("#telefono").val(data.Telefono);
+                $("#departamento").val(data.Departamento).trigger("change");
+                $("#edificio").val(data.Edificio);
+
+                $("#conductoresContainer").empty();
+                $("#conductoresHidden").val("");
+                if (data.ConductoresDetalle && data.ConductoresDetalle.length > 0) {
+                    data.ConductoresDetalle.forEach(function (item) {
+                        agregarConductor(item.CEDULA, item.NOMBRE_COMPLETO);
+                    });
+                }
+
+                $(".modal-title").text("Edición de Datos");
+                $("#btnGuardarInspeccion").off("click").on("click", function () {
+                    editarRegistro(data.IdInspeccion);
+                });
+
+                // Control de carga: 1 para licencia + 5 partes = 6 cargas
+                const partes = ["Frontal", "Tablero", "LateralIzquierdo", "LateralDerecho", "Trasero"];
+                let totalCargas = 1 + partes.length;
+                let cargasCompletadas = 0;
+
+                function verificarFinCarga() {
+                    cargasCompletadas++;
+                    if (cargasCompletadas === totalCargas) {
+                        $.LoadingOverlay("hide");
+                        $("#actualizacionModal").modal("show");
+                    }
+                }
+
+                // 1. Licencias
+                $.ajax({
+                    url: '@Url.Action("ObtenerLicenciaImagenes2025", "Consumo")',
+                    type: "GET",
+                    data: { idInspeccion: data.IdInspeccion },
+                    dataType: "json",
+                    success: function (resLic) {
+                        if (resLic.success) {
+                            if (resLic.frontal)
+                                $("#vistaLicenciaFrontal").html("<img src='" + resLic.frontal + "' class='img-fluid' style='object-fit:cover; width:100%; height:100%;' />");
+                            if (resLic.posterior)
+                                $("#vistaLicenciaPosterior").html("<img src='" + resLic.posterior + "' class='img-fluid' style='object-fit:cover; width:100%; height:100%;' />");
+
+                            imagenes["LicenciaFrontal"] = resLic.frontal;
+                            imagenes["LicenciaPosterior"] = resLic.posterior;
+                        }
+                    },
+                    complete: verificarFinCarga
+                });
+
+                // 2. Fotos por parte
+                partes.forEach(function (parte) {
+                    $.ajax({
+                        url: '@Url.Action("ObtenerFotoPorParte2025", "Consumo")',
+                        type: "GET",
+                        data: { idInspeccion: data.IdInspeccion, parte: parte },
+                        dataType: "json",
+                        success: function (res) {
+                            var idPreview = "preview-" + parte.replace(/\s/g, "");
+                            if (res.success && res.base64) {
+                                $("#" + idPreview).html("<img src='" + res.base64 + "' style='width:100%; height:100%; object-fit:cover;' />");
+                                imagenes[parte] = res.base64;
+                            } else {
+                                $("#" + idPreview).html("<span class='text-muted'>Sin foto</span>");
+                                imagenes[parte] = null;
+                            }
+                        },
+                        complete: verificarFinCarga
+                    });
+                });
+            } else {
+                $.LoadingOverlay("hide");
+                Swal.fire("Error", response.message, "error");
+            }
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            Swal.fire("Error", "Error al cargar datos.", "error");
+        }
+    });
+}
+        function abrirPopupEdicion2025(idVehiculo) {
+    $.LoadingOverlay("show");
+
+    // 1. Obtener solo los datos
+    $.ajax({
+        url: '@Url.Action("ObtenerFotosInspeccion2025", "Consumo")',
+        type: "GET",
+        data: { idVehiculo: idVehiculo },
+        dataType: "json",
+        success: function (response) {
+            if (response.success) {
+                const data = response.data;
+
+                $("#idVehiculo").val(data.IdVehiculo);
+                $("#kilometraje").val(data.Kilometraje);
+                $("#ReceivePersonIdDisplay").val(data.AsignadaA);
+                $("#domicilio").val(data.Domicilio);
+                $("#telefono").val(data.Telefono);
+                $("#departamento").val(data.Departamento).trigger("change");
+                $("#edificio").val(data.Edificio);
+
+                // Cargar conductores
+                $("#conductoresContainer").empty();
+                $("#conductoresHidden").val("");
+                if (data.ConductoresDetalle && data.ConductoresDetalle.length > 0) {
+                    data.ConductoresDetalle.forEach(function (item) {
+                        agregarConductor(item.CEDULA, item.NOMBRE_COMPLETO);
+                    });
+                }
+
+                // Configurar botón
+                $(".modal-title").text("Edición de Datos");
+                $("#btnGuardarInspeccion").off("click").on("click", function () {
+                    editarRegistro(data.IdInspeccion);
+                });
+
+                // 2. Obtener fotos de licencia
+                $.ajax({
+                    url: '@Url.Action("ObtenerFotosInspeccion2025", "Consumo")',
+                    type: "GET",
+                    data: { idInspeccion: data.IdInspeccion },
+                    dataType: "json",
+                    success: function (resLic) {
+                        if (resLic.success) {
+                            if (resLic.frontal)
+                                $("#vistaLicenciaFrontal").html("<img src='" + resLic.frontal + "' class='img-fluid' style='object-fit:cover; width:100%; height:100%;' />");
+                            if (resLic.posterior)
+                                $("#vistaLicenciaPosterior").html("<img src='" + resLic.posterior + "' class='img-fluid' style='object-fit:cover; width:100%; height:100%;' />");
+                        }
+                    }
+                });
+
+                // 3. Obtener fotos por parte
+                $.ajax({
+                    url: '@Url.Action("ObtenerFotosInspeccion2025", "Consumo")',
+                    type: "GET",
+                    data: { idInspeccion: data.IdInspeccion },
+                    dataType: "json",
+                    success: function (resFotos) {
+                        if (resFotos.success) {
+                            for (var parte in resFotos.fotos) {
+                                var idPreview = "preview-" + parte.replace(/\s/g, "");
+                                $("#" + idPreview).html("<img src='" + resFotos.fotos[parte] + "' style='width:100%; height:100%; object-fit:cover;' />");
+                                imagenes[parte] = resFotos.fotos[parte];
+                            }
+                        }
+                    },
+                    complete: function () {
+                        $.LoadingOverlay("hide");
+                        $("#actualizacionModal").modal("show");
+                    }
+                });
+
+            } else {
+                $.LoadingOverlay("hide");
+                Swal.fire("Error", response.message, "error");
+            }
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            Swal.fire("Error", "Error al cargar los datos.", "error");
+        }
+    });
+}
+
+         $("#inputLicenciaFrontal").change(function (e) {
+            if (e.target.files && e.target.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    $("#vistaLicenciaFrontal").html("<img src='" + evt.target.result + "' class='img-fluid' style='object-fit:cover; width:100%; height:100%;' />");
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+        $("#inputLicenciaPosterior").change(function (e) {
+            if (e.target.files && e.target.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    $("#vistaLicenciaPosterior").html("<img src='" + evt.target.result + "' class='img-fluid' style='object-fit:cover; width:100%; height:100%;' />");
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        /*=====  End of Funciones de POPUP  ======*/
+        $("#btnValidar").click(function () {
+            var idInspeccion = idInspeccionGlobal;
+    if (!idInspeccion) {
+        Swal.fire("Error", "No se encontró el ID de la inspección.", "error");
+        return;
+    }
+    $.LoadingOverlay("show");
+    $.ajax({
+        url: '@Url.Action("ValidarInspeccion", "Consumo")',
+        type: "POST",
+        data: { idInspeccion: idInspeccion },
+        success: function(response) {
+            $.LoadingOverlay("hide");
+            if(response.success) {
+                Swal.fire("Éxito", response.message, "success");
+                // Actualiza la DataTable si es necesario
+                tabla_persona.ajax.reload();
+                // Cierra el modal de visualización
+                $("#visualizacionModal").modal("hide");
+            } else {
+                Swal.fire("Error", response.message, "error");
+            }
+        },
+        error: function() {
+            $.LoadingOverlay("hide");
+            Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+        }
+    });
+});
+      $("#btnValidardenegarInspeccion").click(function() {
+  // Asigna el valor que necesites a idInspeccionGlobal
+  // Por ejemplo, si en tu form tenés un input hidden con #idVehiculo = idInspeccion:
+   // o un input #idInspeccion si lo tuvieras
+
+  // Limpio el texto anterior
+  $("#motivoDenegacion").val("");
+          $('#visualizacionModal').modal('hide');
+
+          // Abres el modalDenegarInspeccion:
+   // Muestro el modal
+  $("#modalDenegarInspeccion").modal("show");
+});
+
+// Cuando confirman en el modal:
+$("#btnConfirmarDenegar").click(function(){
+  var comentario = $("#motivoDenegacion").val().trim();
+  if(!comentario) {
+    // Podés usar Toastr, alert normal, o un mini modal
+    alert("Debe ingresar un comentario para denegar la inspección.");
+    return;
+  }
+
+  // Llamada AJAX
+  $.LoadingOverlay("show");
+  $.ajax({
+    url: '@Url.Action("DenegarInspeccion", "Consumo")',
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    data: JSON.stringify({
+      idInspeccion: idInspeccionGlobal,
+      comentario: comentario
+    }),
+    success: function(response){
+      $.LoadingOverlay("hide");
+      $("#modalDenegarInspeccion").modal("hide");
+      if(response.success){
+        Swal.fire("Éxito", response.message, "success");
+        // Podés usar Toastr si preferís, o recargar la tabla
+        tabla_persona.ajax.reload();
+      } else {
+        Swal.fire("Error", response.message, "error");
+      }
+    },
+    error: function(){
+      $.LoadingOverlay("hide");
+      $("#modalDenegarInspeccion").modal("hide");
+      Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+    }
+  });
+});
+        /*====================================================
+        =            Manejo de imágenes de inspección       =
+        ====================================================*/
+        // Al hacer clic en un contenedor de foto se abre un input file oculto
+        $("#fotosGrid div[data-parte]").click(function () {
+            parteActual = $(this).data("parte");
+            var input = $("<input type='file' accept='image/*' style='display:none;' />");
+            $("body").append(input);
+
+            input.change(function (e) {
+                if (e.target.files && e.target.files[0]) {
+                    // Mostrar overlay apenas el user selecciona archivo
+                    $.LoadingOverlay("show", {
+                        text: "Cargando imagen..." // Mensaje opcional
+                    });
+
+                    var reader = new FileReader();
+                    reader.onload = function (evt) {
+                        // Quitar overlay cuando termine de cargar
+                        $.LoadingOverlay("hide");
+
+                        imagenTemporal = evt.target.result;
+                        $("#preview-" + parteActual.replace(/\s/g, ""))
+                            .html("<img src='" + imagenTemporal + "' style='width:100%; height:100%; object-fit:cover;' />");
+                        // Asignar al objeto 'imagenes'
+                        imagenes[parteActual] = imagenTemporal;
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+                // Remover input temporal
+                input.remove();
+            });
+
+            input.click();
+        });
+
+
+        // Cargar la foto de licencia y mostrar vista previa
+        $("#inputLicencia").change(function (e) {
+            if (e.target.files && e.target.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    $("#vistaLicencia").html("<img src='" + evt.target.result + "' style='width:100%; height:100%; object-fit:cover;' />");
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+        /*=====  End of Manejo de imágenes  ======*/
+
+
+        /*====================================================
+        =            Funciones para Conductores              =
+        ====================================================*/
+
+        // Asignar el valor seleccionado del datalist para "Quien tiene asignada"
+        function OnSelectedReceivePersonChanged() {
+            var input = $("#ReceivePersonIdDisplay");
+            var selectedText = input.val().trim().toLowerCase();
+
+            var match = $("#ReceivePersonList option").filter(function () {
+                return $(this).val().trim().toLowerCase() === selectedText;
+            }).first();
+
+            if (match.length > 0) {
+                var cedula = match.data("value"); // obtenés la cédula desde data-value
+                $("#ReceivePersonIdHidden").val(cedula);
+                input.removeClass("is-invalid").removeAttr("title");
+            } else {
+                $("#ReceivePersonIdHidden").val("");
+                input.val("").addClass("is-invalid")
+                    .attr("title", "Seleccione una opción válida de la lista")
+                    .tooltip({ trigger: "manual" }).tooltip("show");
+
+                setTimeout(function () {
+                    input.tooltip("hide");
+                }, 2500);
+            }
+        }
+
+
+
+
+        // Agregar conductor desde el input con datalist
+        function agregarConductorFromDatalist() {
+            var input = $("#conductoresInput");
+            var selectedText = input.val().trim().toLowerCase();
+
+            var match = $("#ConductoresList option").filter(function () {
+                return $(this).val().trim().toLowerCase() === selectedText;
+            }).first();
+
+            if (match.length > 0) {
+                var cedula = match.data("value");
+                if (cedula && !existeConductor(cedula)) {
+                    agregarConductor(cedula, match.val()); // muestra nombre + carnet
+                }
+            } else {
+                // Si no hay coincidencia, marcar en rojo y mostrar tooltip
+                input.addClass("is-invalid")
+                    .attr("title", "Seleccione un conductor válido").tooltip({ trigger: "manual" }).tooltip("show");
+
+                setTimeout(() => input.tooltip("hide").removeClass("is-invalid"), 2500);
+            }
+
+            input.val("");
+        }
+
+        // Verificar si el conductor ya fue agregado
+        function existeConductor(value) {
+            var exists = false;
+            $("#conductoresContainer span").each(function () {
+                if ($(this).data("value") === value) {
+                    exists = true;
+                    return false;
+                }
+            });
+            return exists;
+        }
+
+        // Agregar chip de conductor en el contenedor
+        function agregarConductor(value, label) {
+            var chip = $('<span class="badge badge-info mr-1 mb-1" style="cursor:pointer;">' + label + ' <i class="fas fa-times"></i></span>');
+            chip.data("value", value);
+            chip.click(function () {
+                $(this).remove();
+                actualizarConductoresHidden();
+            });
+            $("#conductoresContainer").append(chip);
+            actualizarConductoresHidden();
+        }
+
+        // Actualizar el campo hidden de conductores con los valores seleccionados
+        function actualizarConductoresHidden() {
+            var arr = [];
+            $("#conductoresContainer span").each(function () {
+                arr.push($(this).data("value"));
+            });
+            $("#conductoresHidden").val(arr.join(","));
+        }
+        /*=====  End of Funciones para Conductores  ======*/
+
+
+
+        /*====================================================
+        =            Guardado de la inspección             =
+        ====================================================*/
+
+        @*function editarRegistro(idInspeccion) {
+    // Obtener las imágenes extras (variable global 'imagenes') y conductores (guardados en el input hidden)
+     var conductoresArr = $("#conductoresHidden").val().split(",").filter(v => v !== "");
+    var inspeccionData = {
+        IdInspeccion: idInspeccion,
+        IdVehiculo: $("#idVehiculo").val().trim(),
+        Kilometraje: $("#kilometraje").val().trim(),
+        AsignadaA: $("#ReceivePersonIdDisplay").val().trim(),
+        Domicilio: $("#domicilio").val().trim(),
+        Telefono: $("#telefono").val().trim(),
+        Departamento: $("#departamento").val().trim(),
+        Edificio: $("#edificio").val().trim(),
+        FotoLicenciaFrontalBase64: $("#vistaLicenciaFrontal img").attr("src") || "",
+        FotoLicenciaPosteriorBase64: $("#vistaLicenciaPosterior img").attr("src") || "",
+        Imagenes: imagenes,  // variable global con las fotos adicionales
+        Conductores: conductoresArr
+    };
+            $.LoadingOverlay("show");
+
+    $.ajax({
+        url: '@Url.Action("ActualizarDatos", "Consumo")',  // NUEVO METODO
+        type: "POST",
+        data: JSON.stringify(inspeccionData),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+            $.LoadingOverlay("hide");
+
+            if (response.success) {
+                Swal.fire("Éxito", response.message, "success");
+                // Cerrar modal, recargar tabla, etc.
+            } else {
+                Swal.fire("Error", response.message, "error");
+            }
+        },
+        error: function (xhr, status, error) {
+            $.LoadingOverlay("hide");
+
+             Swal.fire("Error", "Error al editar el registro.", "error");
+        }
+    });
+}*@
+
+ async function editarRegistro(idInspeccion) {
+    var conductoresArr = $("#conductoresHidden").val().split(",").filter(v => v !== "");
+    var fotoLicenciaFrontal = $("#vistaLicenciaFrontal img").attr("src") || "";
+    var fotoLicenciaPosterior = $("#vistaLicenciaPosterior img").attr("src") || "";
+
+    // Validar que ninguna imagen pese más de 1 MB (1000000 bytes)
+    if (!validateImageSize(fotoLicenciaFrontal, 1000000)) {
+        Swal.fire("Validación", "La foto de Licencia Frontal pesa más de 1 MB. Por favor cámbiela.", "warning");
+        return;
+    }
+    if (!validateImageSize(fotoLicenciaPosterior, 1000000)) {
+        Swal.fire("Validación", "La foto de Licencia Posterior pesa más de 1 MB. Por favor cámbiela.", "warning");
+        return;
+    }
+
+    // Validar imágenes extras
+    if (typeof imagenes === "object" && imagenes !== null) {
+        for (var key in imagenes) {
+            if (imagenes.hasOwnProperty(key)) {
+                if (!validateImageSize(imagenes[key], 1000000)) {
+                    Swal.fire("Validación", "La imagen extra '" + key + "' pesa más de 1 MB. Por favor cámbiela.", "warning");
+                    return;
+                }
+            }
+        }
+    }
+        var imagenes = {
+         Frontal: $("#preview-Frontal img").attr("src"),
+         Tablero: $("#preview-Tablero img").attr("src"),
+         LateralIzquierdo: $("#preview-LateralIzquierdo img").attr("src"),
+         LateralDerecho: $("#preview-LateralDerecho img").attr("src"),
+         Trasero: $("#preview-Trasero img").attr("src")
+     };
+       $.ajax({
+        url: '@Url.Action("GuardarFotoLicenciaFrontal", "Consumo")',
+        type: "POST",
+        data: { req: fotoLicenciaFrontal },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoLicenciaPosterior", "Consumo")',
+        type: "POST",
+        data: { req: fotoLicenciaPosterior },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoFrontal", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.Frontal },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoTablero", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.Tablero },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoLateralIzquierdo", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.LateralIzquierdo },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoLateralDerecho", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.LateralDerecho },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarImagenTrasero", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.Trasero },
+        async: false
+    });
+
+
+    var inspeccionData = {
+        IdVehiculo: $("#idVehiculo").val().trim(),
+        Kilometraje: $("#kilometraje").val().trim(),
+        ReceivePersonId: $("#ReceivePersonIdHidden").val().trim(),
+        AsignadaA: $("#ReceivePersonIdDisplay").val().trim(),
+        Conductores: conductoresArr,
+        NombreCompleto: "",
+        Domicilio: $("#domicilio").val().trim(),
+        Telefono: $("#telefono").val().trim(),
+        Departamento: $("#departamento").val().trim(),
+        Edificio: $("#edificio").val().trim(),
+
+        PruebaManejo: $("#pruebaManejo").is(":checked"),
+        Estado: "Activo",
+         IdInspeccion: idInspeccion
+    };
+
+    $.LoadingOverlay("show");
+    var $btn = $("#btnGuardarInspeccion");
+    $btn.prop("disabled", true);
+    $.ajax({
+        url: '@Url.Action("ActualizarDatos2025", "Consumo")',
+        type: "POST",
+        data: JSON.stringify(inspeccionData),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(response) {
+            $.LoadingOverlay("hide");
+            if(response.success) {
+                Swal.fire("Éxito", response.message, "success");
+                $("#actualizacionModal").modal("hide");
+                tabla_persona.ajax.reload();
+            } else {
+                Swal.fire("Error", response.message, "error");
+            }
+            $btn.prop("disabled", false);
+        },
+        error: function(xhr, status, error) {
+            $.LoadingOverlay("hide");
+            console.error("Error en la petición:", status, error, xhr.responseText);
+            Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+            $btn.prop("disabled", false);
+        }
+    });
+}
+
+
+        // Función para convertir un base64 a Blob
+function base64ToBlob(base64, mime) {
+    var byteString = atob(base64.split(',')[1]);
+    var ab = new ArrayBuffer(byteString.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ia], { type: mime });
+}
+        function validateImageSize(base64Image, threshold) {
+            if (!base64Image.startsWith("data:image")) return true;
+            var mime = base64Image.substring(5, base64Image.indexOf(";"));
+            var blob = base64ToBlob(base64Image, mime);
+            return blob.size <= threshold;
+        }
+// Función que comprime la imagen si su tamaño (Blob) supera 800KB
+        function validateImageSize2(base64Str, maxSize = 1000000) {
+            let stringLength = base64Str.length - 'data:image/png;base64,'.length;
+            let sizeInBytes = 4 * Math.ceil(stringLength / 3) * 0.5624896334383812; // Estimación
+            return sizeInBytes <= maxSize;
+        }
+
+ // Botón Guardar Inspección con compresión de imágenes si son grandes
+ $("#btnGuardarInspeccion").click(function () {
+    var idVehiculo = $("#idVehiculo").val().trim();
+    var kilometraje = $("#kilometraje").val().trim();
+    var receivePersonId = $("#ReceivePersonIdHidden").val().trim();
+    var asignadaA = $("#ReceivePersonIdDisplay").val().trim();
+    var domicilio = $("#domicilio").val().trim();
+    var telefono = $("#telefono").val().trim();
+    var departamento = $("#departamento").val().trim();
+    var edificio = $("#edificio").val().trim();
+
+    var fotoLicenciaFrontal = $("#vistaLicenciaFrontal img").attr("src") || "";
+    var fotoLicenciaPosterior = $("#vistaLicenciaPosterior img").attr("src") || "";
+
+    // Validaciones básicas
+    if (!idVehiculo) {
+        Swal.fire("Validación", "El campo IdVehiculo es obligatorio.", "warning");
+        return;
+    }
+    if (!kilometraje) {
+        Swal.fire("Validación", "El campo Kilometraje es obligatorio.", "warning");
+        return;
+    }
+    if (!receivePersonId || !asignadaA) {
+        Swal.fire("Validación", "El campo 'Quien tiene asignada' es obligatorio.", "warning");
+        return;
+    }
+    if (!domicilio) {
+        Swal.fire("Validación", "El campo Domicilio es obligatorio.", "warning");
+        return;
+    }
+    if (!telefono) {
+        Swal.fire("Validación", "El campo Teléfono es obligatorio.", "warning");
+        return;
+    }
+    var regexTelefono = /^[578][0-9]{7}$/;
+    if (!regexTelefono.test(telefono)) {
+        Swal.fire("Validación", "El número de teléfono es inválido.", "warning");
+        return;
+    }
+    if (!departamento) {
+        Swal.fire("Validación", "Seleccione un Departamento.", "warning");
+        return;
+    }
+    if (!edificio) {
+        Swal.fire("Validación", "Seleccione un Edificio.", "warning");
+        return;
+    }
+    if (!fotoLicenciaFrontal || fotoLicenciaFrontal.trim() === "" || fotoLicenciaFrontal.indexOf("data:image") !== 0) {
+        Swal.fire("Validación", "La foto de Licencia Frontal es obligatoria.", "warning");
+        return;
+    }
+    if (!fotoLicenciaPosterior || fotoLicenciaPosterior.trim() === "" || fotoLicenciaPosterior.indexOf("data:image") !== 0) {
+        Swal.fire("Validación", "La foto de Licencia Posterior es obligatoria.", "warning");
+        return;
+    }
+
+    // Validar contenedores de inspección
+    var inspeccionContenedores = ["#preview-Frontal", "#preview-Tablero", "#preview-LateralIzquierdo", "#preview-LateralDerecho", "#preview-Trasero"];
+    for (var i = 0; i < inspeccionContenedores.length; i++) {
+        var $img = $(inspeccionContenedores[i] + " img");
+        if ($img.length === 0 || !$img.attr("src") || $img.attr("src").trim() === "" || $img.attr("src").indexOf("data:image") !== 0) {
+            Swal.fire("Validación", "El campo " + $(inspeccionContenedores[i]).prev("p").text() + " es obligatorio.", "warning");
+            return;
+        }
+    }
+
+    var conductoresArr = $("#conductoresHidden").val().split(",").filter(function (v) { return v !== ""; });
+
+      // Validar que ninguna imagen pese más de 1 MB (1000000 bytes, ajústalo si quieres 1.2 MB)
+     if (!validateImageSize(fotoLicenciaFrontal, 1000000)) {
+         Swal.fire("Validación", "La foto de Licencia Frontal pesa más de 1 MB. Por favor cámbiela.", "warning");
+         return;
+     }
+     if (!validateImageSize(fotoLicenciaPosterior, 1000000)) {
+         Swal.fire("Validación", "La foto de Licencia Posterior pesa más de 1 MB. Por favor cámbiela.", "warning");
+         return;
+     }
+     for (var key in imagenes) {
+         if (imagenes.hasOwnProperty(key)) {
+             if (!validateImageSize(imagenes[key], 1000000)) {
+                 Swal.fire("Validación", "La imagen extra '" + key + "' pesa más de 1 MB. Por favor cámbiela.", "warning");
+                 return;
+             }
+         }
+     }
+
+     var imagenes = {
+         Frontal: $("#preview-Frontal img").attr("src"),
+         Tablero: $("#preview-Tablero img").attr("src"),
+         LateralIzquierdo: $("#preview-LateralIzquierdo img").attr("src"),
+         LateralDerecho: $("#preview-LateralDerecho img").attr("src"),
+         Trasero: $("#preview-Trasero img").attr("src")
+     };
+       $.ajax({
+        url: '@Url.Action("GuardarFotoLicenciaFrontal", "Consumo")',
+        type: "POST",
+        data: { req: fotoLicenciaFrontal },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoLicenciaPosterior", "Consumo")',
+        type: "POST",
+        data: { req: fotoLicenciaPosterior },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoFrontal", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.Frontal },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoTablero", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.Tablero },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoLateralIzquierdo", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.LateralIzquierdo },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarFotoLateralDerecho", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.LateralDerecho },
+        async: false
+    });
+
+    $.ajax({
+        url: '@Url.Action("GuardarImagenTrasero", "Consumo")',
+        type: "POST",
+        data: { req: imagenes.Trasero },
+        async: false
+    });
+
+
+
+    // 🔧 Construir el objeto después de comprimir
+     var inspeccionData = {
+         IdVehiculo: idVehiculo,
+         Kilometraje: kilometraje,
+         ReceivePersonId: receivePersonId,
+         AsignadaA: asignadaA,
+         Conductores: conductoresArr,
+         NombreCompleto: "",
+         Domicilio: domicilio,
+         Telefono: telefono,
+         Departamento: departamento,
+         Edificio: edificio,
+         PruebaManejo: $("#pruebaManejo").is(":checked"),
+         Estado: "Activo"
+     };
+
+    $.LoadingOverlay("show");
+    var $btn = $(this);
+    $btn.prop("disabled", true);
+
+    $.ajax({
+        url: '@Url.Action("ActualizarDatos2025", "Consumo")',
+        type: "POST",
+        data: JSON.stringify(inspeccionData),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(response) {
+            $.LoadingOverlay("hide");
+            if (response.success) {
+                Swal.fire("Éxito", response.message, "success");
+                $("#actualizacionModal").modal("hide");
+                tabla_persona.ajax.reload();
+            } else {
+                Swal.fire("Error", response.message, "error");
+            }
+            $btn.prop("disabled", false);
+        },
+        error: function(xhr, status, error) {
+            $.LoadingOverlay("hide");
+            console.error("Error en la petición:", status, error, xhr.responseText);
+            Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+            $btn.prop("disabled", false);
+        }
+    });
+});
+
+
+ @*$("#btnGuardarInspeccion").click(function () {
+    var idVehiculo = $("#idVehiculo").val().trim();
+    var kilometraje = $("#kilometraje").val().trim();
+    var receivePersonId = $("#ReceivePersonIdHidden").val().trim();
+    var asignadaA = $("#ReceivePersonIdDisplay").val().trim();
+    var domicilio = $("#domicilio").val().trim();
+    var telefono = $("#telefono").val().trim();
+    var departamento = $("#departamento").val().trim();
+    var edificio = $("#edificio").val().trim();
+
+    // Extraer las imágenes de los contenedores (asumiendo que se cargaron mediante un <img>)
+    var fotoLicenciaFrontal = $("#vistaLicenciaFrontal img").attr("src") || "";
+    var fotoLicenciaPosterior = $("#vistaLicenciaPosterior img").attr("src") || "";
+
+    // Validar campos obligatorios básicos
+    if (!idVehiculo) {
+        Swal.fire("Validación", "El campo IdVehiculo es obligatorio.", "warning");
+        return;
+    }
+    if (!kilometraje) {
+        Swal.fire("Validación", "El campo Kilometraje es obligatorio.", "warning");
+        return;
+    }
+    if (!receivePersonId || !asignadaA) {
+        Swal.fire("Validación", "El campo 'Quien tiene asignada' es obligatorio.", "warning");
+        return;
+    }
+    if (!domicilio) {
+        Swal.fire("Validación", "El campo Domicilio es obligatorio.", "warning");
+        return;
+    }
+    if (!telefono) {
+        Swal.fire("Validación", "El campo Teléfono es obligatorio.", "warning");
+        return;
+     } var regexTelefono = /^[578][0-9]{7}$/;
+     if (!regexTelefono.test(telefono)) {
+         Swal.fire("Validación", "El numero de telefono invalido", "warning");
+         return;
+     }
+    if (!departamento) {
+        Swal.fire("Validación", "Seleccione un Departamento.", "warning");
+        return;
+    }
+    if (!edificio) {
+        Swal.fire("Validación", "Seleccione un Edificio.", "warning");
+        return;
+    }
+
+    // Validar que la foto de licencia frontal se haya cargado
+    if (!fotoLicenciaFrontal || fotoLicenciaFrontal.trim() === "" || fotoLicenciaFrontal.indexOf("data:image") !== 0) {
+        Swal.fire("Validación", "La foto de Licencia Frontal es obligatoria.", "warning");
+        return;
+    }
+    // Validar que la foto de licencia posterior se haya cargado
+    if (!fotoLicenciaPosterior || fotoLicenciaPosterior.trim() === "" || fotoLicenciaPosterior.indexOf("data:image") !== 0) {
+        Swal.fire("Validación", "La foto de Licencia Posterior es obligatoria.", "warning");
+        return;
+    }
+
+    // Validar las fotos de inspección (todos los contenedores deben tener una imagen)
+    var inspeccionContenedores = ["#preview-Frontal", "#preview-Tablero", "#preview-LateralIzquierdo", "#preview-LateralDerecho", "#preview-Trasero"];
+    for (var i = 0; i < inspeccionContenedores.length; i++) {
+        if ($(inspeccionContenedores[i] + " img").length === 0 ||
+            !$(inspeccionContenedores[i] + " img").attr("src") ||
+            $(inspeccionContenedores[i] + " img").attr("src").trim() === "" ||
+            $(inspeccionContenedores[i] + " img").attr("src").indexOf("data:image") !== 0) {
+            Swal.fire("Validación", "El campo " + $(inspeccionContenedores[i]).prev("p").text() + " es obligatorio.", "warning");
+            return;
+        }
+    }
+
+    // Convertir el campo hidden de conductores a array
+    var conductoresArr = $("#conductoresHidden").val().split(",").filter(function (v) {
+        return v !== "";
+    });
+
+    // Construir el objeto JSON a enviar
+    var inspeccionData = {
+        IdVehiculo: idVehiculo,
+        Kilometraje: kilometraje,
+        ReceivePersonId: receivePersonId,
+        AsignadaA: asignadaA,
+        Conductores: conductoresArr,
+        NombreCompleto: "", // No se utiliza para conductores múltiples
+        Domicilio: domicilio,
+        Telefono: telefono,
+        FotoLicenciaFrontalBase64: fotoLicenciaFrontal,
+        FotoLicenciaPosteriorBase64: fotoLicenciaPosterior,
+        PruebaManejo: $("#pruebaManejo").is(":checked"),
+        Estado: "Activo",
+        Imagenes: imagenes, // Suponiendo que 'imagenes' es un objeto definido con las fotos de inspección adicionales\n
+        Departamento: departamento,
+        Edificio: edificio
+    };
+
+    $.LoadingOverlay("show");
+    var $btn = $(this);
+    $btn.prop("disabled", true);
+    $.ajax({
+        url: '@Url.Action("ActualizarDatos", "Consumo")',
+        type: "POST",
+        data: JSON.stringify(inspeccionData),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+            $.LoadingOverlay("hide");
+            if (response.success) {
+                Swal.fire("Éxito", response.message, "success");
+                $("#actualizacionModal").modal("hide");
+                tabla_persona.ajax.reload();
+            } else {
+                Swal.fire("Error", response.message, "error");
+            }
+            $btn.prop("disabled", false);
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+            $btn.prop("disabled", false);
+        }
+    });
+});*@
+// Variable global si necesitas el id de inspección (opcional)
+var idInspeccionGlobal = null;
+
+
+        /*=====  End of Guardado de la inspección  ======*/
+    </script>
+}
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Lista de Unidades</h6>
+                </div>
+                <div class="card-body p-3">
+                    <table id="listTable" class="table table-striped table-bordered table-hover display responsive nowrap" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th>Unidad</th>
+                                <th>Modelo</th>
+                                <th>Tipo</th>
+
+                                <th>Nombre Empleado</th>
+                                <th>Carnet</th>
+                                <th>Nombre Área</th>
+                                <th>Gerencia</th>
+                                <th>Datos</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="actualizacionModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Actualización de Datos</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Campo oculto para el Id del vehículo -->
+                <input type="hidden" id="idVehiculo" value="" />
+                <form id="formInspeccion">
+                    <!-- 1. Quien tiene asignada y Conductores -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="ReceivePersonIdDisplay">Quien tiene asignada</label>
+                            <input list="ReceivePersonList" class="form-control" id="ReceivePersonIdDisplay"
+                                   placeholder="Buscar responsable..." onblur="OnSelectedReceivePersonChanged()" autocomplete="off">
+                            <datalist id="ReceivePersonList">
+                                @foreach (var employee in slnRhonline.Data.Employee.GetAllEmployees2())
+                                {
+                                    <option data-value="@employee.CEDULA" value="@employee.NOMBRE_COMPLETO">@employee.NOMBRE_COMPLETO</option>
+                                }
+                            </datalist>
+                            <input type="hidden" id="ReceivePersonIdHidden" name="ReceivePersonId">
+
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="conductoresInput">Conductores</label>
+                            <input list="ConductoresList" class="form-control" id="conductoresInput" placeholder="Buscar conductor..." onblur="agregarConductorFromDatalist()" autocomplete="off">
+                            <datalist id="ConductoresList">
+                                @foreach (var employee in slnRhonline.Data.Employee.GetAllEmployees2())
+                                {
+                                    <option value="@employee.NOMBRE_COMPLETO @employee.CARNET" data-value="@employee.CEDULA"></option>
+                                }
+                            </datalist>
+                            <div id="conductoresContainer" style="margin-top:5px;"></div>
+                            <input type="hidden" id="conductoresHidden" name="Conductores">
+                        </div>
+                    </div>
+                    <!-- 2. Departamento y Edificio -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="departamento">Departamento</label>
+                            <input type="text" id="departamento" list="listaDepartamentos" class="form-control" autocomplete="off" placeholder="Seleccione Departamento">
+                            <datalist id="listaDepartamentos">
+                                <!-- Se llenará dinámicamente -->
+                            </datalist>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="edificio">Edificio</label>
+                            <input type="text" id="edificio" list="listaEdificios" class="form-control" autocomplete="off" placeholder="Seleccione Edificio">
+                            <datalist id="listaEdificios">
+                                <!-- Se llenará dinámicamente según el departamento seleccionado -->
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <!-- 3. Domicilio y Teléfono -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Lugar de estacionamiento</label>
+                            <input type="text" autocomplete="off" id="domicilio" class="form-control" placeholder="Domicilio">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="telefono">Teléfono</label>
+                            <input type="text" autocomplete="off"
+                                   id="telefono"
+                                   class="form-control"
+                                   placeholder="Teléfono"
+                                   required
+                                   maxlength="8"
+                                   pattern="^[578][0-9]{7}$"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        </div>
+                    </div>
+                    <!-- 4. Kilometraje y Prueba de Manejo -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="kilometraje">Kilometraje</label>
+                            <input type="number" id="kilometraje" autocomplete="off" class="form-control" placeholder="Kilometraje" min="0" oninput="if(this.value.length>8){this.value = this.value.slice(0,8);}">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Prueba de Manejo</label>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="pruebaManejo">
+                                <label class="custom-control-label" for="pruebaManejo">Confirmar si realizó prueba de manejo</label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 5. Fotos de Licencia -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Foto Licencia Frontal</label>
+                            <input type="file" id="inputLicenciaFrontal" class="form-control-file" accept="image/*">
+                            <div id="vistaLicenciaFrontal" class="mt-2 border" style="height: 200px; display:flex; align-items:center; justify-content:center;">
+                                <span class="text-muted">Sin vista previa</span>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Foto Licencia Posterior</label>
+                            <input type="file" id="inputLicenciaPosterior" class="form-control-file" accept="image/*">
+                            <div id="vistaLicenciaPosterior" class="mt-2 border" style="height: 200px; display:flex; align-items:center; justify-content:center;">
+                                <span class="text-muted">Sin vista previa</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 6. Fotos de Inspección -->
+                    <div class="form-group">
+                        <label>Fotos de Inspección</label>
+                        <div id="fotosGrid" class="row">
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Frontal</p>
+                                <div id="preview-Frontal" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Frontal">
+                                    <span class="text-muted">Sin foto</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Tablero</p>
+                                <div id="preview-Tablero" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Tablero">
+                                    <span class="text-muted">Sin foto</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Lateral Izquierdo</p>
+                                <div id="preview-LateralIzquierdo" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Lateral Izquierdo">
+                                    <span class="text-muted">Sin foto</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Lateral Derecho</p>
+                                <div id="preview-LateralDerecho" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Lateral Derecho">
+                                    <span class="text-muted">Sin foto</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Trasero</p>
+                                <div id="preview-Trasero" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Trasero">
+                                    <span class="text-muted">Sin foto</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="btnGuardarInspeccion" type="button" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal para denegar inspección -->
+<div id="visualizacionModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content border-0 shadow-lg">
+
+            <!-- CABECERA -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-car-side mr-2"></i>Visualización de Inspección
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <!-- CUERPO -->
+            <div class="modal-body">
+
+                <!-- Datos rápidos -->
+                <div class="row small mb-3">
+                    <div class="col-6 col-md-3"><strong>Asignada a:</strong><br><span id="viewAsignadaA"></span></div>
+                    <div class="col-6 col-md-3"><strong>Plantel:</strong><br><span id="viewPlantelAsignado"></span></div>
+                    <div class="col-6 col-md-3"><strong>Estac.:</strong><br><span id="viewDomicilio"></span></div>
+                    <div class="col-6 col-md-3"><strong>Teléfono:</strong><br><span id="viewTelefono"></span></div>
+                    <div class="col-6 col-md-3"><strong>Prueba manejo:</strong><br><span id="viewPrueba"></span></div>
+                    <div class="col-6 col-md-3"><strong>Kilometraje:</strong><br><span id="viewKilometraje"></span></div>
+                </div>
+
+                <!-- Conductores en chips -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2"><i class="fas fa-users mr-1"></i>Conductores</h6>
+                    <div id="viewConductores" class="d-flex flex-wrap border rounded p-2" style="min-height:42px;">
+                        <!-- chips -->
+                    </div>
+                </div>
+
+                <!-- Licencias (siempre visibles) -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header py-1 bg-info text-white text-center">Licencia Frontal</div>
+                            <div id="viewLicenciaFrontal" class="h-100 d-flex align-items-center justify-content-center p-2">
+                                <span class="text-muted">Sin foto</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header py-1 bg-info text-white text-center">Licencia Posterior</div>
+                            <div id="viewLicenciaPosterior" class="h-100 d-flex align-items-center justify-content-center p-2">
+                                <span class="text-muted">Sin foto</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fotos vehículo (grid 5) -->
+                <h6 class="text-muted mb-2"><i class="fas fa-camera mr-1"></i>Fotos del Vehículo</h6>
+                <div class="row" id="viewExtraFotos"></div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                @if (emp.GERENCIA.Contains("SUBGERENCIA DE RECURSOS HUMANOS") || emp.SUBGERENCIA.Contains("SUBGERENCIA DE RECURSOS HUMANOS"))
+                {
+                    <button id="btnValidar" class="btn btn-success"><i class="fas fa-check mr-1"></i>Aprobar</button>
+                    <button id="btnValidardenegarInspeccion" class="btn btn-danger"><i class="fas fa-times mr-1"></i>Denegar</button>
+                }
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times-circle mr-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="modalDenegarInspeccion" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-times"></i> Denegar Inspección
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="motivoDenegacion" class="font-weight-bold">Motivo de Denegación:</label>
+                <textarea id="motivoDenegacion" class="form-control" rows="4"
+                          placeholder="Escriba el comentario o motivo..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="btnConfirmarDenegar" class="btn btn-danger">
+                    <i class="fas fa-ban"></i> Denegar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .zoomable-img {
+        transition: transform .3s ease;
+        cursor: zoom-in;
+    }
+
+        .zoomable-img:hover {
+            transform: scale(3); /* antes era 1.2 */
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }
+
+    #viewLicenciaFrontal img, #viewLicenciaPosterior img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+    }
+
+    #viewExtraFotos img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+    }
+
+    .chip {
+        background: #007bff;
+        color: #fff;
+        border-radius: 50rem;
+        padding: 2px 10px;
+        margin: 2px;
+        font-size: .75rem;
+    }
+</style>
+
+

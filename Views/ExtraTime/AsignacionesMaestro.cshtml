@@ -1,0 +1,277 @@
+﻿@{ 
+    ViewBag.Title = "Asignaciones Maestro Horas Extras"; 
+    Layout = "~/Views/Shared/_mainLayout.cshtml"; 
+}
+
+<style>
+    .card-custom { border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.1); border-radius: 8px; }
+    .table th { background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%) !important; color: #fff !important; font-size: 0.8rem; }
+    .table td { font-size: 0.8rem; }
+    .badge-estado { font-size: 90%; color: #fff; padding: 4px 8px; border-radius: 4px; }
+    .btn-custom { background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%); color: #fff; }
+    .btn-custom:hover { opacity: 0.9; transform: scale(1.02); color: #fff; }
+    .row-selected { background-color: #fce4e4 !important; }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Maestro de Asignaciones y Consumo (Horas Extras)</h1>
+    </div>
+
+    <!-- Filtro de Periodo -->
+    <div class="card card-custom mb-4 p-3">
+        <div class="row align-items-end">
+            <div class="col-md-3">
+                <label class="font-weight-bold text-secondary">Periodo:</label>
+                <select id="cmbPeriodos" class="form-control">
+                    @{
+                        var currentDate = DateTime.Now;
+                        for (int i = -1; i <= 2; i++)
+                        {
+                            var date = currentDate.AddMonths(-i);
+                            var value = date.ToString("yyyy-MM");
+                            var text = date.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES")).ToUpper();
+                            <option value="@value" @(i == 0 ? "selected" : "")>@text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-custom btn-block" onclick="cargarAsignacionesPorPeriodo()">
+                    <i class="fas fa-search mr-1"></i> Consultar
+                </button>
+            </div>
+            <div class="col-md-6 text-right">
+                <!-- Acciones adicionales como el boton "Nuevo" de bbiNuevo -->
+                <button class="btn btn-outline-danger">
+                    <i class="fas fa-plus mr-1"></i> Nueva Asignación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid: Gerencias (AsignacionesPorPeriodos) -->
+    <div class="card card-custom mb-4">
+        <div class="card-header bg-white font-weight-bold text-danger">
+            <i class="fas fa-sitemap mr-1"></i> Asignaciones por Gerencia
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="gridGerencia" class="table table-bordered table-striped table-hover w-100">
+                    <thead>
+                        <tr>
+                            <!-- Columnas dinámicas según el endpoint. Pongo las comunes -->
+                            <th>ID_GERENCIA</th>
+                            <th>GERENCIA</th>
+                            <th>PRESUPUESTO_ASIGNADO</th>
+                            <th>CONSUMIDO</th>
+                            <th>DISPONIBLE</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Grid: Asignacion Detalle -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-custom h-100">
+                <div class="card-header bg-white font-weight-bold text-info">
+                    <i class="fas fa-list-alt mr-1"></i> Detalle de Asignación
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="gridAsignacion" class="table table-bordered table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>FECHA_ASIGNACION</th>
+                                    <th>MONTO</th>
+                                    <th>USUARIO_ASIGNO</th>
+                                    <th>ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid: Detalle Consumo -->
+        <div class="col-lg-6 mb-4">
+            <div class="card card-custom h-100">
+                <div class="card-header bg-white font-weight-bold text-success">
+                    <i class="fas fa-chart-pie mr-1"></i> Detalle de Consumo
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="gridConsumo" class="table table-bordered table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>EMPLEADO</th>
+                                    <th>NOMBRE</th>
+                                    <th>HORAS</th>
+                                    <th>MONTO_CONSUMIDO</th>
+                                    <th>ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/sweetalert2.10.js"></script>
+
+    <script>
+        var dtGerencia, dtAsignacion, dtConsumo;
+        var urlBaseHE = '@Url.Content("~/ExtraTime/")';
+
+        $(document).ready(function () {
+            initTables();
+            cargarAsignacionesPorPeriodo();
+            
+            $('#cmbPeriodos').on('change', function () {
+                cargarAsignacionesPorPeriodo();
+            });
+        });
+
+        function initTables() {
+            // Inicializar vacío, columnas se ajustarán si los JSON traen keys diferentes.
+            dtGerencia = $('#gridGerencia').DataTable({
+                language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                pageLength: 5,
+                lengthMenu: [5, 10, 25],
+                select: true
+            });
+
+            dtAsignacion = $('#gridAsignacion').DataTable({
+                language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                pageLength: 5,
+                lengthMenu: [5, 10, 25]
+            });
+
+            dtConsumo = $('#gridConsumo').DataTable({
+                language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                pageLength: 5,
+                lengthMenu: [5, 10, 25]
+            });
+
+            // Evento Click en fila de Gerencia
+            $('#gridGerencia tbody').on('click', 'tr', function () {
+                if ($(this).hasClass('row-selected')) return; // Ya está seleccionada
+
+                dtGerencia.$('tr.row-selected').removeClass('row-selected');
+                $(this).addClass('row-selected');
+
+                var data = dtGerencia.row(this).data();
+                if (data) {
+                    // El key "ID_GERENCIA" o equivalente debe venir en la API.
+                    var idGerencia = data.ID_GERENCIA || data.Id_Gerencia || data.id_gerencia;
+                    if (idGerencia) {
+                        cargarDetallesGerencia(idGerencia);
+                    }
+                }
+            });
+        }
+
+        function cargarAsignacionesPorPeriodo() {
+            var periodo = $('#cmbPeriodos').val();
+            
+            Swal.fire({ title: 'Cargando Maestro...', didOpen: () => Swal.showLoading() });
+
+            $.get(urlBaseHE + 'HE_AsignacionesPorPeriodos', { periodo: periodo })
+                .done(function (resp) {
+                    Swal.close();
+                    // Limpiar detalles
+                    dtAsignacion.clear().draw();
+                    dtConsumo.clear().draw();
+
+                    // Destruir tabla actual para rearmar columnas dinámicas si la API cambia
+                    dtGerencia.destroy();
+                    $('#gridGerencia').empty(); // vaciar header y body
+
+                    var data = [];
+                    if (Array.isArray(resp)) data = resp;
+                    else if (resp && resp.data) data = resp.data;
+
+                    if (data.length > 0) {
+                        var columns = Object.keys(data[0]).map(function (k) { return { title: k, data: k }; });
+                        dtGerencia = $('#gridGerencia').DataTable({
+                            data: data,
+                            columns: columns,
+                            language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                            pageLength: 5
+                        });
+                    } else {
+                        // Si está vacío, crear con columnas default
+                        dtGerencia = $('#gridGerencia').DataTable({
+                            data: [],
+                            columns: [
+                                { title: "ID_GERENCIA", data: "ID_GERENCIA" },
+                                { title: "GERENCIA", data: "GERENCIA" }
+                            ],
+                            language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                            pageLength: 5
+                        });
+                    }
+                })
+                .fail(function () {
+                    Swal.fire('Error', 'No se pudo cargar la información.', 'error');
+                });
+        }
+
+        function cargarDetallesGerencia(idGerencia) {
+            var periodo = $('#cmbPeriodos').val();
+            
+            // Cargar Asignacion Detalle
+            $.get(urlBaseHE + 'HE_AsignacionDetalleGerencia', { periodo: periodo, gerencia: idGerencia })
+                .done(function (resp) {
+                    reconstruirTabla('#gridAsignacion', dtAsignacion, resp, function(newDt) { dtAsignacion = newDt; });
+                });
+
+            // Cargar Consumo Gerencia
+            $.get(urlBaseHE + 'HE_DetalleConsumoGerencia', { periodo: periodo, gerencia: idGerencia })
+                .done(function (resp) {
+                    reconstruirTabla('#gridConsumo', dtConsumo, resp, function(newDt) { dtConsumo = newDt; });
+                });
+        }
+
+        // Función genérica para renderizar dinámicamente las DataTables según los JSON
+        function reconstruirTabla(selector, dtInstance, resp, callback) {
+            dtInstance.destroy();
+            $(selector).empty();
+
+            var data = [];
+            if (Array.isArray(resp)) data = resp;
+            else if (resp && resp.data) data = resp.data;
+
+            var newDt;
+            if (data.length > 0) {
+                var columns = Object.keys(data[0]).map(function (k) { return { title: k, data: k, defaultContent: "" }; });
+                newDt = $(selector).DataTable({
+                    data: data,
+                    columns: columns,
+                    language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                    pageLength: 5
+                });
+            } else {
+                newDt = $(selector).DataTable({
+                    data: [],
+                    columns: [{ title: "Sin datos", data: null, defaultContent: "" }],
+                    language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                    pageLength: 5
+                });
+            }
+            callback(newDt);
+        }
+    </script>
+}

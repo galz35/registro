@@ -1,0 +1,319 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingExtraTime(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.ExtraTime();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvExtraTime";
+        settings.KeyFieldName = "Id";
+        settings.CallbackRouteValues = new { Controller = "ExtraTime", Action = "EmployeeDetailPartial", personId = Url.RequestContext.RouteData.Values["PersonId"] };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "ExtraTime", Action = "AddExtraTime" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "ExtraTime", Action = "EditExtraTime" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "ExtraTime", Action = "DeleteExtraTime" };
+
+
+        #region Configuracion del popup
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de horas extras";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        #endregion
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.Width = Unit.Percentage(100);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+
+        settings.EnableRowsCache = false;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+
+
+        #region Personalizacion de Botones del GridView
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.SettingsText.ConfirmDelete = "Seguro quiere borrar el registro?";
+        settings.CommandColumn.ShowDeleteButton = true;
+
+        settings.SettingsCommandButton.DeleteButton.Image.Url = Url.Content("~/Content/Icons/trash.png");
+
+
+
+        GridViewCommandColumnCustomButton btnPdf = new GridViewCommandColumnCustomButton();
+        btnPdf.ID = "btnPdfId";
+        btnPdf.Text = "";
+        btnPdf.Image.Url = "~/Content/Icons/Acrobat.png";
+        settings.CommandColumn.CustomButtons.Add(btnPdf);
+        settings.ClientSideEvents.CustomButtonClick =
+                 string.Format("function(s, e) {{ ShowSupportClick(s, e, '{0}'); }}", Url.Action("LoadSupport", "ExtraTime"));
+        //string.Format("function(s, e) {{ CustomButtonClick(s, e, '{0}'); }}", Url.Action("About", "Home"));
+        settings.CommandColumn.Width = 20;
+        #endregion
+
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "ExecutionDate";
+            col.Caption = "Fecha";
+            col.Width = 30;
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.AdaptivePriority = 1;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "HourStart";
+            col.Caption = "Hora Inicio";
+            col.ColumnType = MVCxGridViewColumnType.TimeEdit ;
+            col.PropertiesEdit.DisplayFormatString = "hh:mm tt";
+            col.AdaptivePriority = 2;
+            col.Width = 30;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "HourEnd";
+            col.Caption = "Hora Fin";
+            col.ColumnType = MVCxGridViewColumnType.TimeEdit;
+            col.PropertiesEdit.DisplayFormatString = "hh:mm tt";
+            col.AdaptivePriority = 3;
+            col.Width = 30;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Hours";
+            col.Caption = "Total";
+            col.AdaptivePriority = 4;
+            col.Width = 60;
+
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Notes";
+            col.Caption = "Observaciones";
+            col.Width = 20;
+            col.AdaptivePriority = 5;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Service";
+            col.Caption = "Orden de Servicio";
+            col.Width = 20;
+            col.AdaptivePriority = 6;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Status";
+            col.Caption = "Estado";
+            col.Width = 20;
+            col.AdaptivePriority = 7;
+        });
+
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+                //Html.Hidden("LicenseStatus");
+                flSettings.Name = "frmEditExtraTime";
+                flSettings.Width = Unit.Percentage(100);
+                flSettings.SettingsItemCaptions.Location = LayoutItemCaptionLocation.Top;
+
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+
+                flSettings.ColCount = 2;
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "ExecutionDate";
+                    i.Caption = "Fecha";
+                    i.NestedExtension().DateEdit(s =>
+                    {
+                        s.Properties.NullText = "DD/MM/YYYY";
+                        s.Properties.EditFormatString = "dd/MM/yyyy";
+                        s.Properties.DisplayFormatString = "dd/MM/yyyy";
+                        s.Properties.EditFormat = EditFormat.Date;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.MinDate = Convert.ToDateTime(ViewData["PeriodStarDate"]);
+                        s.Properties.MaxDate = Convert.ToDateTime(ViewData["PeriodEndDate"]);
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "ReasonId";
+                    i.Caption = "Motivo";
+                    i.NestedExtension().ComboBox(s =>
+                    {
+                        s.SelectedIndex = 1;
+                        s.Properties.TextField = "ReasonName";
+                        s.Properties.ValueField = "ReasonId";
+                        s.Properties.ValueType = typeof(int);
+                        s.Properties.DataSource = slnRhonline.Models.Reasons.GetReasons();
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+
+
+                    });
+                });
+
+
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "HourStart";
+                    i.Caption = "Hora de Inicio";
+                    i.NestedExtension().TimeEdit(s =>
+                    {
+                        s.Properties.NullText = "hh:mm tt";
+                        s.Properties.EditFormat = EditFormat.Custom;
+                        s.Properties.EditFormatString = "hh:mm tt";
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "HourEnd";
+                    i.Caption = "Hora de Fin";
+                    i.NestedExtension().TimeEdit(s =>
+                    {
+                        s.Properties.NullText = "hh:mm tt";
+                        s.Properties.EditFormat = EditFormat.Custom;
+                        s.Properties.EditFormatString = "hh:mm tt";
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "Service";
+                    i.Caption = "Orden de Servicio";
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "Notes";
+                    i.Caption = "Descripción Actividad a realizar";
+                    i.NestedExtension().Memo(s =>
+                    {
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Height = 80;
+                        s.ControlStyle.CssClass = "memo";
+                        s.Properties.MaxLength = 800;
+
+                    });
+                });
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.Caption = "Subir soporte";
+                    i.SetNestedContent(() =>
+                    {
+                        Html.DevExpress().Label(lbSettings =>
+                        {
+                            lbSettings.Name = "Nombre de archivo";
+
+                            lbSettings.Properties.ClientInstanceName = "clientFileName";
+                        }).Render();
+                        Html.RenderPartial("UploadSupport");
+                    });
+                });
+
+                flSettings.Items.AddEmptyItem();
+
+
+
+
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvExtraTime.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvExtraTime.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["ExtraTime"] ?? GetEditingExtraTime(c.Grid))
+            .Render();
+        });
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()

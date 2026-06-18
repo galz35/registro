@@ -1,0 +1,214 @@
+﻿@model List<Entities.Events>
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript(); 
+}
+
+    @Html.DevExpress().GridView(settings => {
+    settings.Name = "gvEvent";
+    settings.KeyFieldName = "EventId";
+    settings.CallbackRouteValues = new { Controller = "Events", Action = "EventListPartial" };
+    settings.Width = Unit.Percentage(100);
+    settings.Settings.ShowGroupPanel = false;
+     settings.SettingsBehavior.AllowSelectByRowClick = true;
+    settings.ControlStyle.Border.BorderWidth = 1;
+    settings.Settings.ShowFooter = true;
+    settings.KeyboardSupport = true;
+
+    settings.EnableRowsCache = false;
+
+    settings.ClientSideEvents.Init = "OnInit";
+    settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+    settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+    settings.SettingsBehavior.AllowEllipsisInText = true;
+
+    #region Paging
+    settings.SettingsPager.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+    settings.SettingsPager.PageSize = 10;
+    #endregion
+    #region filtering
+    settings.SettingsSearchPanel.CustomEditorName = "search";
+    settings.Settings.ShowHeaderFilterButton = true;
+    settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+    settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+    settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+    #endregion
+    #region Sorting
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "EventName");
+    #endregion
+
+    settings.Toolbars.Add(t =>
+    {
+        t.Enabled = true;
+        t.ItemAlign = GridToolbarItemAlign.Right;
+        t.Items.Add(i =>
+        {
+            i.Text = "Exportar a";
+            i.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsDownload16x16office2013;
+            i.BeginGroup = true;
+            i.Items.Add(GridViewToolbarCommand.ExportToPdf).Text = "Exportar a PDF";
+            i.Items.Add(GridViewToolbarCommand.ExportToDocx).Text = "Exportar a Word";
+            i.Items.Add(GridViewToolbarCommand.ExportToXls).Text = "Exportar a Excel";
+
+        });
+        t.Items.Add(i =>
+        {
+            i.BeginGroup = true;
+            i.SetTemplateContent(c =>
+            {
+                Html.DevExpress().ButtonEdit(s =>
+                {
+                    s.Name = "search";
+                    s.Properties.NullText = "Buscar..";
+                    s.Properties.Buttons
+                        .Add()
+                        .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+                }).Render();
+            });
+        });
+
+    });
+
+    settings.Columns.Add(c =>
+    {
+        c.Caption = "#";
+        c.SetDataItemTemplateContent(tc =>
+        {
+            ViewContext.Writer.Write(
+             @Html.DevExpress().Button(p =>
+             {
+                 p.Name = "btnEditEvent" + tc.KeyValue;
+                 p.Text = "";
+                 p.Width = 5;
+                 p.EnableTheming = false;
+
+                 p.Images.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+                 p.ImagePosition = ImagePosition.Left;
+                 p.ToolTip = "Editar registro";
+               
+                 p.ClientSideEvents.Click = string.Format("function(s,e) {{ShowEditForm(s.name,'{0}'); }}", Url.Action("ExternalEditFormEdit", "Events", new { eventId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+
+             }).GetHtml()
+ );
+
+            ViewContext.Writer.Write(
+
+         @Html.DevExpress().Button(p =>
+         {
+             p.Name = "btnDeleteEvent" + tc.KeyValue;
+             p.Text = "";
+             p.Width = 5;
+             p.EnableTheming = false;
+             p.Images.Image.Url = Url.Content("~/Content/Icons/trash.png");
+             p.ImagePosition = ImagePosition.Left;
+             p.ToolTip = "Eliminar registro";
+             //p.RouteValues = new { Controller = "Expenses", Action = "DeleteExpense", expenseId = DataBinder.Eval(tc.DataItem, "ExpenseId") };
+             //p.ClientSideEvents.Click = "onButtonClick";
+         }).GetHtml()
+         );
+
+
+
+
+        });
+
+        c.SetHeaderTemplateContent(tc =>
+        {
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "Nuevo";
+                p.Text = "";
+                p.Width = Unit.Percentage(5); ;
+                p.EnableTheming = false;
+                p.Images.Image.Url = Url.Content("~/Content/Icons/Add.png");
+                p.ImagePosition = ImagePosition.Right;
+                p.ClientSideEvents.Click = string.Format("function(s,e) {{ShowEditForm(s.name,'{0}'); }}", Url.Action("ExternalEditFormEdit", "Events", new { eventId = -1}));
+                p.ToolTip = "Agregar nuevo registro";
+            }).GetHtml();
+
+
+        });
+        c.Settings.AllowDragDrop = DefaultBoolean.False;
+        c.Settings.AllowSort = DefaultBoolean.False;
+        c.Width =Unit.Percentage(30);
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EventName";
+        col.Caption = "Nombre de Evento";
+        col.Width =  Unit.Percentage(100);
+        col.AdaptivePriority = 1;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EventDate";
+        col.Caption = "Fecha Evento";
+        col.ColumnType = MVCxGridViewColumnType.DateEdit;
+        col.AdaptivePriority = 2;
+        col.Width = Unit.Percentage(100);
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "RegistrationClosing";
+        col.Caption = "Fecha de Cierre";
+        col.ColumnType = MVCxGridViewColumnType.DateEdit;
+        col.AdaptivePriority = 3;
+        col.Width =  Unit.Percentage(100);
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EventEmployeesMax";
+        col.Caption = "Total Evento";
+        col.Width = Unit.Percentage(100);
+        col.AdaptivePriority = 4;
+       
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EventCompanionsMax";
+        col.Caption = "Total Acompañantes";
+        col.Width = Unit.Percentage(100);
+        col.AdaptivePriority = 5;
+      
+
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "StatusName";
+        col.Caption = "Estado";
+        col.Width = Unit.Percentage(100);
+        col.AdaptivePriority = 6;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+
+
+    settings.ClientLayout = (s, e) => {
+        if(e.LayoutMode == ClientLayoutMode.Loading) {
+            if(Session["GridState"] != null)
+                e.LayoutData = (string)Session["GridState"];
+        }
+        else
+            Session["GridState"] = e.LayoutData;
+    };
+
+   
+}).Bind(Model).GetHtml()

@@ -1,0 +1,559 @@
+﻿
+@{
+    ViewBag.Title = "empleadobaja";
+}
+@{
+    var estilodev = false;
+}
+<style>
+    /* Estilos para el resumen */
+    .tabs-container {
+        border: 1px solid #dcdcdc;
+        border-radius: 5px;
+        background-color: #f9f9f9; /* Gris muy claro */
+    }
+
+    .tabs-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        background-color: #e6e6e6; /* Gris suave */
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .tab-item {
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #333; /* Letras negras */
+        border-right: 1px solid #dcdcdc;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center; /* Centrar el texto */
+    }
+
+        .tab-item:last-child {
+            border-right: none;
+        }
+
+        .tab-item.active {
+            background-color: #ffffff; /* Blanco */
+            color: #000; /* Letras negras */
+            border-bottom: 2px solid #ff0000; /* Línea azul para indicar la pestaña activa */
+        }
+
+    .tabs-content {
+        padding: 20px;
+    }
+
+    .tab-content-item {
+        display: none;
+    }
+
+        .tab-content-item.active {
+            display: block;
+        }
+
+    .tabla-respuestas {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+
+        .tabla-respuestas th, .tabla-respuestas td {
+            border: 1px solid #dcdcdc;
+            padding: 8px;
+            color: #333; /* Letras negras */
+        }
+
+        .tabla-respuestas th {
+            background-color: #e6e6e6; /* Gris suave */
+            text-align: left;
+        }
+
+        .tabla-respuestas td {
+            background-color: #fff; /* Blanco */
+        }
+
+        .tabla-respuestas tr:nth-child(even) {
+            background-color: #f9f9f9; /* Alternar colores en filas */
+        }
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5; /* Fondo general en gris claro */
+        color: #333; /* Letras negras */
+    }
+
+    .tab-item:hover {
+        background-color: #dcdcdc; /* Gris claro al pasar el cursor */
+    }
+
+    .promedio-respuestas {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333; /* Letras negras */
+    }
+    .modal-fullwidth {
+        max-width: 95%; /* Ajusta este valor según tus necesidades */
+        margin: 1.75rem auto; /* Centrar el modal vertical y horizontalmente */
+    }
+  
+    .conclusion-ia {
+        padding: 15px;
+        background-color: #e8f5e9; /* Verde muy claro */
+        border-left: 5px solid #4caf50; /* Línea verde */
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+        .conclusion-ia strong {
+            color: #ff0000; /* Azul para resaltar títulos */
+        }
+        .conclusion-ia ol {
+            margin-left: 20px; /* Indentar la lista */
+        }
+    .btn-info:hover {
+        color: #000;
+        background-color: #f23131 !important;
+        border-color: #f22525 !important;
+    }
+</style>
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary" style="color: #800 !important;">Lista de empleados de baja</h6>
+                </div>
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <table id="employeeTable2" style="width:100%" class="table table-bordered table-hover display responsive nowrap">
+                            <thead>
+                                <tr>
+                                    <th>Acciones</th>
+                                    <th>No Empleado</th>
+                                    <th>Nombre del Empleado</th>
+                                    <th>Fecha Baja</th>
+                                    <th>Gerencia</th>
+                                    <th>Telefono</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalResumen" tabindex="-1" role="dialog" aria-labelledby="modalResumenLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullwidth" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalResumenLabel">Resumen de Respuestas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Contenedor para las respuestas -->
+                <div id="content-resumen"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // DataTable for employeeTable2
+            $.LoadingOverlay("show");
+            var tabla_persona = $('#employeeTable2').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("EmployeesListjsonBaja", "Evaluacion")",
+                    "type": "GET",
+                    "datatype": "json",
+                    "data": function (d) {
+                        // Puedes agregar parámetros adicionales si es necesario
+                    }
+                },
+                "columns": [
+                     {
+                        "data": null, // Usamos null porque vamos a renderizar contenido personalizado
+                        "render": function (data, type, row) {
+                            if (row.EvaluacionID !== 0) {
+                                // Si EvaluacionID es diferente de 0, mostrar botón "Ver"
+                                return "<button class='btn btn-info btn-sm' onclick='obtenerRespuestasYMostrarResumen(" + row.EvaluacionID + ")'><i class='fas fa-eye'></i> Ver</button>";
+                            } else {
+                                // Si EvaluacionID es 0, mostrar enlace "Seleccione"
+                                var url = '@Url.Action("Encuestabaja", "Evaluacion", new { idEmpleado = "__idEmpleado__" })';
+                                url = url.replace("__idEmpleado__", row.idhcm); // Reemplaza '__idEmpleado__' con el valor real de 'idhcm'
+                                return "<a href='" + url + "' class='btn btn-primary btn-sm'><i class='fas fa-pen'></i> Seleccione</a>";
+                            }
+                        },
+                        "orderable": false,
+                        "searchable": false
+                    },
+                    { "data": "carnet" },  // No de empleado
+                    { "data": "nombre_completo" },  // Nombre completo
+                    {
+                        "data": "fechabaja",
+                        "render": function (data) {
+                            return moment(data).format('DD/MM/YYYY');
+                        }
+                    },
+                    { "data": "OGERENCIA" },  // Ubicación,
+                    { "data": "Estado" },
+
+                ],
+                "dom": 'Blfrtip', // Incluye el componente de selección de registros por página
+                "lengthMenu": [10, 20, 50, 100], // Opciones de selección de registros por página
+                "pageLength": 10, // Número de registros por página por defecto
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+
+                "responsive": true, "paging": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+        
+                
+            });
+            $.LoadingOverlay("hide");
+        });
+           function obtenerRespuestasYMostrarResumen(evaluacionID) {
+               $.ajax({
+                url: '@Url.Action("ObtenerRespuestas", "Evaluacion")',
+                type: 'GET',
+                data: { evaluacion_id: evaluacionID },
+                success: function(response) {
+                    if (response.success) {
+                        const respuestas = response.data;
+                        // Llama a la función para mostrar las respuestas
+                        mostrarRespuestasPorTab5(respuestas);
+                        // Abre el modal de resumen
+                        $('#modalResumen').modal('show');
+                    } else {
+                        alert('Error al obtener las respuestas: ' + response.message);
+                    }
+                },
+                error: function(error) {
+                    alert('Error en la comunicación con el servidor.');
+                }
+            });
+        }
+
+        function mostrarRespuestasPorTab5(respuestas) {
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenContainer.innerHTML = '';  // Limpiar el contenedor antes de agregar contenido nuevo.
+
+            // Agrupar las respuestas por FormularioID y recolectar las conclusiones de IA
+            const respuestasAgrupadas = respuestas.reduce((acc, curr) => {
+                const formulario = curr.FormularioID;  // Usamos el FormularioID para identificar cada formulario.
+                if (!acc[formulario]) {
+                    acc[formulario] = {
+                        respuestas: [],
+                        ia: curr.IA // Asumimos que 'IA' es la misma para todas las respuestas del mismo FormularioID
+                    };
+                }
+                acc[formulario].respuestas.push(curr);
+                return acc;
+            }, {});
+
+            // Extraer una única conclusión de IA
+            // Suponiendo que todas las respuestas tienen la misma conclusión de IA,
+            // tomamos la primera no vacía.
+            let conclusionIA = '';
+            for (let key in respuestasAgrupadas) {
+                if (respuestasAgrupadas[key].ia && respuestasAgrupadas[key].ia.trim() !== '') {
+                    conclusionIA = respuestasAgrupadas[key].ia;
+                    break;
+                }
+            }
+
+            // Crear el contenedor de pestañas
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'tabs-container';
+
+            const tabsList = document.createElement('ul');
+            tabsList.className = 'tabs-list';
+
+            const tabsContent = document.createElement('div');
+            tabsContent.className = 'tabs-content';
+
+            let firstTab = true;
+
+            // Recorrer las respuestas agrupadas por FormularioID
+            Object.keys(respuestasAgrupadas).forEach((FormularioID, index) => {
+                const nombreFormulario = respuestasAgrupadas[FormularioID].respuestas[0].Titulo || `Formulario ${index + 1}`;
+
+                // Crear el elemento de la pestaña
+                const tabItem = document.createElement('li');
+                tabItem.className = 'tab-item' + (firstTab ? ' active' : '');
+                tabItem.innerText = nombreFormulario;
+                tabItem.dataset.tab = `tab-${index}`;
+                tabsList.appendChild(tabItem);
+
+                // Crear el contenido de la pestaña
+                const tabContentItem = document.createElement('div');
+                tabContentItem.className = 'tab-content-item' + (firstTab ? ' active' : '');
+                tabContentItem.id = `tab-${index}`;
+
+                // Crear una tabla para mostrar las respuestas
+                const table = document.createElement('table');
+                table.className = 'tabla-respuestas table table-bordered table-hover';
+
+                // Crear el encabezado de la tabla
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+
+                const thPregunta = document.createElement('th');
+                thPregunta.innerText = 'Pregunta';
+                headerRow.appendChild(thPregunta);
+
+                const thRespuesta = document.createElement('th');
+                thRespuesta.innerText = 'Respuesta';
+                headerRow.appendChild(thRespuesta);
+
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+
+                respuestasAgrupadas[FormularioID].respuestas.forEach(respuesta => {
+                    const row = document.createElement('tr');
+
+                    const cellPregunta = document.createElement('td');
+                    cellPregunta.innerText = respuesta.TextoPregunta;
+                    row.appendChild(cellPregunta);
+
+                    const cellRespuesta = document.createElement('td');
+                    cellRespuesta.innerText = respuesta.TextoRespuesta || respuesta.Respuesta;
+                    row.appendChild(cellRespuesta);
+
+                    tbody.appendChild(row);
+                });
+
+                table.appendChild(tbody);
+                tabContentItem.appendChild(table);
+
+                tabsContent.appendChild(tabContentItem);
+
+                firstTab = false;
+            });
+
+            // Crear pestaña adicional para Conclusiones de IA si existe una conclusión
+            if (conclusionIA && conclusionIA.trim() !== '') {
+                const iaTabIndex = Object.keys(respuestasAgrupadas).length;
+                const iaTabItem = document.createElement('li');
+                iaTabItem.className = 'tab-item';
+                iaTabItem.innerText = 'Conclusiones IA';
+                iaTabItem.dataset.tab = `tab-ia`;
+                tabsList.appendChild(iaTabItem);
+
+                const iaTabContent = document.createElement('div');
+                iaTabContent.className = 'tab-content-item';
+                iaTabContent.id = `tab-ia`;
+
+                // Procesar la conclusión de IA
+                // Suponiendo que la estructura es:
+                // "**Conclusión breve:** [Texto]. **Recomendaciones clave:** [Texto]"
+                const iaParts = conclusionIA.split('**Recomendaciones clave:**');
+
+                let conclusionBreve = '';
+                let recomendacionesClave = '';
+
+                if (iaParts.length === 2) {
+                    // Procesar Conclusión Breve
+                    const brevePart = iaParts[0].replace('**Conclusión breve:**', '').trim();
+                    conclusionBreve = brevePart;
+
+                    // Procesar Recomendaciones Clave
+                    const recomendacionesPart = iaParts[1].trim();
+                    // Dividir las recomendaciones en una lista
+                    // Asumimos que las recomendaciones están numeradas como "1. ... 2. ..."
+                    recomendacionesClave = recomendacionesPart.split(/(?:\d+\.\s)/).filter(item => item.trim() !== '');
+                } else {
+                    // Si la estructura no es la esperada, mostrar todo el texto
+                    conclusionBreve = conclusionIA;
+                }
+
+                // Crear elementos HTML para mostrar la conclusión breve y las recomendaciones
+                const conclusionDiv = document.createElement('div');
+                conclusionDiv.className = 'conclusion-ia mt-3';
+
+                // Agregar Conclusión Breve
+                if (conclusionBreve !== '') {
+                    const breveParagraph = document.createElement('p');
+                    breveParagraph.innerHTML = `<strong>Conclusión breve:</strong> ${conclusionBreve}`;
+                    conclusionDiv.appendChild(breveParagraph);
+                }
+
+                // Agregar Recomendaciones Clave como lista numerada
+                if (recomendacionesClave.length > 0) {
+                    const recomendacionesHeader = document.createElement('p');
+                    recomendacionesHeader.innerHTML = `<strong>Recomendaciones clave:</strong>`;
+                    conclusionDiv.appendChild(recomendacionesHeader);
+
+                    const recomendacionesList = document.createElement('ol');
+                    recomendacionesClave.forEach(recomendacion => {
+                        const listItem = document.createElement('li');
+                        listItem.innerText = recomendacion.trim();
+                        recomendacionesList.appendChild(listItem);
+                    });
+                    conclusionDiv.appendChild(recomendacionesList);
+                }
+
+                iaTabContent.appendChild(conclusionDiv);
+                tabsContent.appendChild(iaTabContent);
+            }
+
+            tabsContainer.appendChild(tabsList);
+            tabsContainer.appendChild(tabsContent);
+            resumenContainer.appendChild(tabsContainer);
+
+            // Agregar evento para cambiar entre pestañas
+            const tabItems = tabsList.querySelectorAll('.tab-item');
+            tabItems.forEach(tab => {
+                tab.addEventListener('click', function () {
+                    // Remover la clase 'active' de todas las pestañas y contenidos
+                    tabItems.forEach(t => t.classList.remove('active'));
+                    const contentItems = tabsContent.querySelectorAll('.tab-content-item');
+                    contentItems.forEach(c => c.classList.remove('active'));
+
+                    // Agregar la clase 'active' a la pestaña y contenido seleccionado
+                    this.classList.add('active');
+                    const activeContent = tabsContent.querySelector(`#${this.dataset.tab}`);
+                    activeContent.classList.add('active');
+                });
+            });
+        }
+
+        function mostrarRespuestasPorTab4(respuestas) {
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenContainer.innerHTML = '';  // Limpiar el contenedor antes de agregar contenido nuevo.
+
+            // Agrupar las respuestas por TabID
+            const respuestasAgrupadas = respuestas.reduce((acc, curr) => {
+                const tab = curr.FormularioID;  // Usamos el TabID para identificar cada formulario.
+                if (!acc[tab]) {
+                    acc[tab] = [];  // Inicializamos un array vacío si no existe.
+                }
+                acc[tab].push(curr);
+                return acc;
+            }, {});
+
+            // Crear el contenedor de pestañas
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'tabs-container';
+
+            const tabsList = document.createElement('ul');
+            tabsList.className = 'tabs-list';
+
+            const tabsContent = document.createElement('div');
+            tabsContent.className = 'tabs-content';
+
+            let firstTab = true;
+
+            // Recorrer las respuestas agrupadas por TabID
+            Object.keys(respuestasAgrupadas).forEach((FormularioID, index) => {
+                const nombreFormulario = respuestasAgrupadas[FormularioID][0].Titulo;
+                 // Crear el elemento de la pestaña
+                const tabItem = document.createElement('li');
+                tabItem.className = 'tab-item' + (firstTab ? ' active' : '');
+                tabItem.innerText = nombreFormulario;
+                tabItem.dataset.tab = `tab-${index}`;
+                tabsList.appendChild(tabItem);
+
+                // Crear el contenido de la pestaña
+                const tabContentItem = document.createElement('div');
+                tabContentItem.className = 'tab-content-item' + (firstTab ? ' active' : '');
+                tabContentItem.id = `tab-${index}`;
+
+                // Crear una tabla para mostrar las respuestas
+                const table = document.createElement('table');
+                table.className = 'tabla-respuestas';
+
+                // Crear el encabezado de la tabla
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+
+                const thPregunta = document.createElement('th');
+                thPregunta.innerText = 'Pregunta';
+                headerRow.appendChild(thPregunta);
+
+                const thRespuesta = document.createElement('th');
+                thRespuesta.innerText = 'Respuesta';
+                headerRow.appendChild(thRespuesta);
+
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+
+                respuestasAgrupadas[FormularioID].forEach(respuesta => {
+                    const row = document.createElement('tr');
+
+                    const cellPregunta = document.createElement('td');
+                    cellPregunta.innerText = respuesta.TextoPregunta;
+                    row.appendChild(cellPregunta);
+
+                    const cellRespuesta = document.createElement('td');
+                    cellRespuesta.innerText = respuesta.TextoRespuesta || respuesta.Respuesta;
+                    row.appendChild(cellRespuesta);
+
+                    tbody.appendChild(row);
+                });
+
+                table.appendChild(tbody);
+                tabContentItem.appendChild(table);
+                tabsContent.appendChild(tabContentItem);
+
+                firstTab = false;
+            });
+
+            tabsContainer.appendChild(tabsList);
+            tabsContainer.appendChild(tabsContent);
+            resumenContainer.appendChild(tabsContainer);
+
+            // Agregar evento para cambiar entre pestañas
+            const tabItems = tabsList.querySelectorAll('.tab-item');
+            tabItems.forEach(tab => {
+                tab.addEventListener('click', function () {
+                    // Remover la clase 'active' de todas las pestañas y contenidos
+                    tabItems.forEach(t => t.classList.remove('active'));
+                    const contentItems = tabsContent.querySelectorAll('.tab-content-item');
+                    contentItems.forEach(c => c.classList.remove('active'));
+
+                    // Agregar la clase 'active' a la pestaña y contenido seleccionado
+                    this.classList.add('active');
+                    const activeContent = tabsContent.querySelector(`#${this.dataset.tab}`);
+                    activeContent.classList.add('active');
+                });
+            });
+        }
+    </script>
+}

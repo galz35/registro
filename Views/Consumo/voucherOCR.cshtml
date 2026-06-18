@@ -1,0 +1,885 @@
+﻿@*@model List<Entities.ConsumptionClaro>*@
+
+@{
+
+    ViewBag.Title = "Lista de Consumo";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@section scripts {
+
+
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+        function previewImage(event) {
+            const imagePreview = document.getElementById('imagePreview');
+            imagePreview.src = URL.createObjectURL(event.target.files[0]);
+            imagePreview.style.display = 'block';
+        }
+        function previewImages(event) {
+            const files = event.target.files; // Obtiene los archivos seleccionados
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+            imagePreviewContainer.innerHTML = ''; // Limpia las previsualizaciones anteriores
+
+            if (files) {
+                // Itera sobre cada archivo seleccionado
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+
+                    // Crea un elemento de imagen para previsualizar el archivo
+                    const imagePreview = document.createElement('img');
+                    imagePreview.src = URL.createObjectURL(file); // Genera una URL para la previsualización
+                    imagePreview.style.display = 'block';
+                    imagePreview.style.maxWidth = '150px'; // Tamaño máximo de la previsualización
+                    imagePreview.style.height = 'auto';
+                    imagePreview.style.border = '1px solid #ddd';
+                    imagePreview.style.borderRadius = '5px';
+                    imagePreview.style.padding = '5px';
+                    imagePreview.style.margin = '5px';
+
+                    // Añade la imagen al contenedor de previsualización
+                    imagePreviewContainer.appendChild(imagePreview);
+                }
+            }
+        }
+
+           function viewVoucherDetail(id) {
+    $.ajax({
+        url: '@Url.Action("GetVoucherDetail", "Consumo")', // Acción del controlador para obtener detalles
+        type: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                // Construir contenido HTML para mostrar los detalles
+                var htmlContent = '<ul>' +
+
+                    '<li>' + response.data.Descripcion + '</li>' +
+                    '</ul>';
+                Swal.fire({
+                    title: 'texto extraido de la imagen sin procesar',
+                    html: htmlContent,
+                    icon: 'info',
+                    confirmButtonText: 'Cerrar'
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function() {
+            Swal.fire('Error', 'Error al obtener el detalle del voucher.', 'error');
+        }
+    });
+             }
+             function viewVoucherDetail2(id) {
+    $.ajax({
+        url: '@Url.Action("GetVoucherDetail2", "Consumo")',
+        type: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                var data = response.data;
+                var htmlContent = '<ul>' +
+                    '<li><strong>Unidad:</strong> ' + data.Unidad + '</li>' +
+                    '<li><strong>Fecha:</strong> ' + data.Fecha + '</li>' +
+                    '<li><strong>Voucher:</strong> ' + data.Referencia + '</li>' +
+                    '<li><strong>Litros:</strong> ' + data.Litro + '</li>' +
+                    '<li><strong>Odometro:</strong> ' + data.Odometro + '</li>' +
+                    '</ul>';
+                Swal.fire({
+                    title: 'Imagen procesada',
+                    html: htmlContent,
+                    icon: 'info',
+                    confirmButtonText: 'Cerrar'
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function() {
+            Swal.fire('Error', 'Error al obtener el detalle del voucher.', 'error');
+        }
+    });
+}
+
+        var tabla_persona;
+         $(document).ready(function () {
+            function parseCustomDate(dateString) {
+                if (!dateString || dateString === '0001-01-01T00:00:00') {
+                    return 'N/A';
+                }
+
+                // Regex para detectar el formato /Date(ticks)/
+                var dateRegex = /\/Date\((\d+)\)\//;
+                var match = dateString.match(dateRegex);
+                if (match) {
+                    var milliseconds = parseInt(match[1], 10);
+                    var date = moment(milliseconds);
+                    if (!date.isValid()) {
+                        return 'Fecha inválida';
+                    }
+                    return date.locale('es').format('LLL'); // Formato legible en español
+                }
+
+                // Fallback: Intentar parsear como una cadena de fecha estándar
+                var parsedDate = moment(dateString, moment.ISO_8601, true);
+                if (!parsedDate.isValid()) {
+                    return 'Fecha inválida';
+                }
+                return parsedDate.locale('es').format('LLL'); // Formato legible en español
+            }
+         $.LoadingOverlay("show");
+         tabla_persona = $('#listTable').DataTable({
+    "ajax": {
+        "url": "@Url.Action("ErrorVouchersListJson", "Consumo")",
+        "type": "GET",
+        "datatype": "json"
+    },
+              "columns": [{
+        "data": "Id",
+        "render": function (data, type, full, meta) {
+            return `<div class="dropdown">
+                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton_${data}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Acciones
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton_${data}">
+                            <a class="dropdown-item" href="javascript:void(0);" onclick="viewVoucherImage('${data}')">Ver Imagen</a>
+                            <a class="dropdown-item" href="javascript:void(0);" onclick="viewVoucherDetail('${data}')">texto extraido de la imagen sin procesar</a>
+                            <a class="dropdown-item" href="javascript:void(0);" onclick="viewVoucherDetail2('${data}')">Texto procesado</a>
+                        </div>
+                    </div>`;
+        },
+        "orderable": true,
+        "searchable": true,
+        "width": "150px"
+    },
+    { "data": "Estado" },
+    { "data": "Carnet" },
+    { "data": "Unidad" },
+    { "data": "Voucher" },
+    {
+        "data": "FechaRegistro",
+        "render": function (data) {
+            return moment(data).format('DD/MM/YYYY');
+        }
+    }],
+    "dom": 'Blfrtip',
+    "lengthMenu": [10, 20, 50, 100],
+    "pageLength": 10,
+    "language": {
+        "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+    },
+    "responsive": true,
+    "initComplete": function () {
+        $('#listTable tbody').on('click', '.dropdown-toggle', function (e) {
+            e.stopPropagation();
+            $(this).siblings('.dropdown-menu').toggleClass('show');
+        });
+        $(document).on('click', function (e) {
+            if (!$('.dropdown-toggle').is(e.target) && $('.dropdown-toggle').has(e.target).length === 0 && $('.show').has(e.target).length === 0) {
+                $('.dropdown-menu').removeClass('show');
+            }
+        });
+    }
+});
+
+          $.LoadingOverlay("hide");
+
+            $('#voucherFile').on('change', function (event) {
+                const files = event.target.files; // Obtiene los archivos seleccionados
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp']; // Tipos de archivos permitidos
+                const maxSize = 5 * 1024 * 1024; // Tamaño máximo permitido (5MB)
+                const maxFiles = 10; // Límite de archivos que se pueden seleccionar
+
+                // Verifica si el número de archivos excede el límite
+                if (files.length > maxFiles) {
+                    Swal.fire('Error', `No puede seleccionar más de ${maxFiles} archivos.`, 'error');
+                    $(this).val(''); // Limpia la selección de archivos
+                    $('#imagePreviewContainer').empty(); // Limpia las previsualizaciones
+                    return;
+                }
+
+                // Itera sobre cada archivo para validar tipo y tamaño
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (!validTypes.includes(file.type)) {
+                        Swal.fire('Error', `El archivo ${file.name} tiene un tipo no permitido. Solo se permiten archivos JPEG, PNG o WebP.`, 'error');
+                        $(this).val(''); // Limpia la selección de archivos
+                        $('#imagePreviewContainer').empty(); // Limpia las previsualizaciones
+                        return;
+                    }
+                    if (file.size > maxSize) {
+                        Swal.fire('Error', `El archivo ${file.name} excede el tamaño máximo permitido de 5MB.`, 'error');
+                        $(this).val(''); // Limpia la selección de archivos
+                        $('#imagePreviewContainer').empty(); // Limpia las previsualizaciones
+                        return;
+                    }
+                }
+
+                // Si todos los archivos son válidos, muestra las previsualizaciones
+                previewImages(event);
+            });
+
+             function previewImages(event) {
+                 const files = event.target.files;
+                 const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+                 imagePreviewContainer.innerHTML = '';
+                 if (files) {
+                     for (let i = 0; i < files.length; i++) {
+                         const file = files[i];
+                         const imagePreview = document.createElement('img');
+                         imagePreview.src = URL.createObjectURL(file);
+                         imagePreview.style.display = 'block';
+                         imagePreview.style.maxWidth = '150px';
+                         imagePreview.style.height = 'auto';
+                         imagePreview.style.border = '1px solid #ddd';
+                         imagePreview.style.borderRadius = '5px';
+                         imagePreview.style.padding = '5px';
+                         imagePreview.style.margin = '5px';
+                         imagePreviewContainer.appendChild(imagePreview);
+                     }
+                 }
+             }
+            function recargarTabla() {
+                tabla_persona.ajax.reload(null, false); // 'false' mantiene la paginación actual
+            }
+            $('#voucherFile').on('change', function (event) {
+                const files = event.target.files;
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (!validTypes.includes(file.type)) {
+                        Swal.fire('Error', `El archivo ${file.name} tiene un tipo no permitido. Solo se permiten archivos JPEG, PNG o WebP.`, 'error');
+                        $(this).val('');
+                        $('#imagePreviewContainer').empty();
+                        return;
+                    }
+                    if (file.size > maxSize) {
+                        Swal.fire('Error', `El archivo ${file.name} excede el tamaño máximo permitido de 5MB.`, 'error');
+                        $(this).val('');
+                        $('#imagePreviewContainer').empty();
+                        return;
+                    }
+                }
+                previewImages(event);
+            });
+
+
+
+
+         $('#uploadVoucherBtn').click(function () {
+    const files = $('#voucherFile')[0].files; // Obtiene los archivos seleccionados
+
+    // Verifica si hay archivos seleccionados
+    if (!files.length) {
+        Swal.fire('Advertencia', 'No ha seleccionado ningún archivo.', 'warning');
+        return;
+    }
+
+    let resultados = []; // Array para almacenar los resultados de cada archivo
+    let procesados = 0; // Contador de archivos procesados
+
+    // Muestra el overlay de carga y limpia mensajes anteriores
+    $('#loading').show();
+    $('#processingStatus').empty();
+    $.LoadingOverlay("show", {
+        image: "",
+        text: "Procesando imágenes... 0 de " + files.length
+    });
+    $('#uploadVoucherBtn').prop('disabled', true); // Deshabilita el botón para evitar múltiples clics
+
+    // Función recursiva para procesar cada archivo uno por uno
+    function procesarArchivo(index) {
+        // Verifica si todos los archivos han sido procesados
+        if (index >= files.length) {
+            // Oculta el overlay de carga
+            $.LoadingOverlay("hide");
+            $('#loading').hide();
+            // Muestra un resumen de los resultados
+            mostrarResumen(resultados);
+            $('#uploadVoucherBtn').prop('disabled', false); // Habilita el botón nuevamente
+            return;
+        }
+
+        const file = files[index]; // Archivo actual a procesar
+        let formData = new FormData();
+        formData.append('file', file); // Añade el archivo al FormData
+
+        // Añade un mensaje indicando que se está procesando el archivo
+        $('#processingStatus').append(`<li class="list-group-item">Procesando archivo ${index + 1} de ${files.length}: <strong>${file.name}</strong></li>`);
+
+        // Realiza la solicitud AJAX para procesar el archivo
+        $.ajax({
+            url: '@Url.Action("ProcesarVoucher2025", "Consumo")', // URL de la acción del controlador que procesa el archivo
+            type: 'POST',
+            data: formData,
+            contentType: false, // Indica que no se debe establecer el tipo de contenido
+            processData: false, // Indica que no se debe procesar los datos
+            success: function (response) {
+                // Verifica si la respuesta fue exitosa
+                if (response.success) {
+                    // Añade el resultado exitoso al array de resultados
+                    resultados.push({ archivo: file.name, exito: true, mensaje: 'Procesado correctamente', data: response.data });
+                    // Añade un mensaje de éxito en la lista de estado
+                    $('#processingStatus').append(`<li class="list-group-item list-group-item-success">Éxito: ${file.name} fue procesado correctamente.</li>`);
+                } else {
+                    // Añade el resultado con error al array de resultados
+                    resultados.push({ archivo: file.name, exito: false, mensaje: response.data });
+                    // Añade un mensaje de error en la lista de estado
+                    $('#processingStatus').append(`<li class="list-group-item list-group-item-danger">Error: ${file.name} - ${response.data}</li>`);
+                }
+            },
+            error: function () {
+                // Añade un resultado de error al array de resultados en caso de fallo en la solicitud
+                resultados.push({ archivo: file.name, exito: false, mensaje: 'Error al procesar el archivo.' });
+                // Añade un mensaje de error en la lista de estado
+                $('#processingStatus').append(`<li class="list-group-item list-group-item-danger">Error: ${file.name} - Error al procesar el archivo.</li>`);
+            },
+            complete: function () {
+                procesados++; // Incrementa el contador de archivos procesados
+                // Actualiza el texto del overlay para reflejar el progreso actual
+                $.LoadingOverlay("text", "Procesando imágenes... " + procesados + " de " + files.length);
+                // Espera 5 segundos antes de procesar el siguiente archivo
+                setTimeout(function () {
+                    procesarArchivo(index + 1); // Llama a la función para el siguiente archivo
+                }, 5000); // 5000 milisegundos = 5 segundos
+            }
+        });
+    }
+
+    // Inicia el procesamiento con el primer archivo (índice 0)
+    procesarArchivo(0);
+});
+
+            function mostrarResumen(resultados) {
+                // Filtra los resultados exitosos y los que tuvieron errores
+                let exitos = resultados.filter(r => r.exito);
+                let errores = resultados.filter(r => !r.exito);
+
+                let resumenHtml = '<h3>Resumen de la carga</h3>';
+
+                // Añade una sección para los archivos procesados correctamente
+                if (exitos.length) {
+                    resumenHtml += '<h4>Archivos procesados correctamente:</h4><ul>';
+                    exitos.forEach(r => {
+                        resumenHtml += `<li>${r.archivo}</li>`;
+                    });
+                    resumenHtml += '</ul>';
+                }
+
+                // Añade una sección para los archivos que tuvieron errores
+                if (errores.length) {
+                    resumenHtml += '<h4>Archivos con errores:</h4><ul>';
+                    errores.forEach(r => {
+                        resumenHtml += `<li>${r.archivo}: ${r.mensaje}</li>`;
+                    });
+                    resumenHtml += '</ul>';
+                }
+
+                // Muestra el resumen utilizando SweetAlert2
+                Swal.fire({
+                    title: 'Resultados de la carga',
+                    html: resumenHtml,
+                    icon: 'info',
+                    width: '600px',
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    // Después de cerrar el resumen, limpia el formulario y actualiza la interfaz
+                    $('#voucherFile').val(''); // Limpia la selección de archivos
+                    $('#imagePreviewContainer').empty(); // Limpia las previsualizaciones de imágenes
+                    $('#processingStatus').empty(); // Limpia la lista de estados
+                    $('#voucherModal').modal('hide'); // Cierra el modal
+                    // Recarga la tabla de datos para reflejar los cambios (asegúrate de tener definida la variable 'tabla_persona')
+                    recargarTabla();
+                });
+            }         // Ejemplo de evento que carga y muestra el PopupControl (vincúlalo a un botón u otro elemento)
+
+      });
+        function VerDetalleEstados2() {
+            // Abre el popup para subir voucher
+            $('#voucherModal').modal('show');
+        }
+             function cargarYMostrarPopup() {
+     popEditarConsumo.Show();
+        }
+         function EditarConsumo(dato) {
+             var key = dato;
+    $.ajax({
+
+        url: '@Url.Action("EditarConsumoPorUnidad")',
+        type: "GET",
+        data: { idCombustibleConsumo: key },
+        contentType: "application/json; charset=utf-8",
+        dataType: "Json",
+        traditional: true,
+        beforeSend: function () {//We add this before send to disable the button once we submit it so that we prevent the multiple click
+            $.LoadingOverlay("show");
+        },
+        success: function (result) {
+            $.LoadingOverlay("hide");
+            if (result.status != "Error") {
+                var jsonDate = result.data.FechaRegistro;
+                var normalDate = new Date(parseInt(jsonDate.replace("/Date(", "").replace(")/")));
+                IdCombustibleConsumoClaro.SetValue(key);
+                IdVoucher.SetValue(result.data.IdVoucher);
+                FechaRegistro.SetValue(normalDate);
+                IdUnidad.SetValue(result.data.IdUnidad);
+                CantidadLitros.SetValue(result.data.CantidadLitros);
+                ValorCordobas.SetValue(result.data.ValorCordobas);
+                IdDepartamento.SetValue(result.data.IdDepartamento);
+                OdometroInicial.SetValue(result.data.OdometroInicial);
+                IdTipoCombustible.SetValue(result.data.IdTipoCombustible);
+                Estacion.SetValue(result.data.Estacion);
+                Municipio.SetValue(result.data.Municipio);
+                //Habilitar Controles
+                HabilitarControles();
+                //Mostrar popup
+                popEditarConsumo.Show();
+            } else {
+                swal.fire("Advertencia!", result.data, "warning");
+            }
+       },
+        error: function (result) {
+            $.LoadingOverlay("hide");
+            swal.fire("Error", "Ha ocurrido un error en la transaccion", "error");
+        }
+    });
+}
+    function HabilitarControles() {
+        IdVoucher.SetReadOnly(false);
+        FechaRegistro.SetReadOnly(false);
+        IdUnidad.SetReadOnly(false);
+        CantidadLitros.SetReadOnly(false);
+        ValorCordobas.SetReadOnly(false);
+        IdDepartamento.SetReadOnly(false);
+        Municipio.SetReadOnly(false);
+        OdometroInicial.SetReadOnly(false);
+        IdTipoCombustible.SetReadOnly(false);
+        Estacion.SetReadOnly(false);
+
+        btnAceptar.SetEnabled(true);
+        btnCancelar.SetEnabled(true);
+    }
+    function InhabilitarControles() {
+        IdVoucher.SetReadOnly(true);
+        FechaRegistro.SetReadOnly(true);
+        IdUnidad.SetReadOnly(true);
+        CantidadLitros.SetReadOnly(true);
+        ValorCordobas.SetReadOnly(true);
+        IdDepartamento.SetReadOnly(true);
+        Municipio.SetReadOnly(true);
+        OdometroInicial.SetReadOnly(true);
+        IdTipoCombustible.SetReadOnly(true);
+        Estacion.SetReadOnly(true);
+
+        btnAceptar.SetEnabled(false);
+        btnCancelar.SetEnabled(false);
+    }
+function GuardarConsumo2( ) {
+
+
+    $.ajax({
+        url: '@Url.Action("GuardarConsumoPorUnidad")',
+        type: "POST",
+        data: $('#frmEditConsumo').serialize(),
+        dataType: "json",
+        traditional: true,
+        cache: false, beforeSend: function () {//We add this before send to disable the button once we submit it so that we prevent the multiple click
+            $.LoadingOverlay("show");
+        },
+        //contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            $.LoadingOverlay("hide");
+            if (data.status != "Error") {
+                popEditarConsumo.Hide();
+                swal({
+                    title: "Exito!",
+                    text: data.message,
+                    icon: "success",
+                    confirmButtonText: "Aceptar",
+                })
+                    .then((willSaved) => {
+                        if (willSaved) {
+                            tabla_persona.ajax.reload();
+                        }
+
+                    });
+            }
+            else {
+                x.style.display = "none";
+                swal({
+                    title: "Advertencia!",
+                    text: data.message,
+                    icon: "warning",
+                    confirmButtonText: "Aceptar",
+                })
+                    .then((willSaved) => {
+                        if (willSaved) {
+                            x.style.display = "block";
+
+                        }
+
+                    });
+            }
+
+
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            swal.fire("Error!", "Ocurrió un error en la transaccion, por favor verifique los datos o consulte con el administrador de la plataforma.", "error");
+        }
+    });
+}
+     function CargarConsumo(s, e) {
+
+        $.ajax({
+            url: '@Url.Action("VouchersListPartial")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //data: { idUnidad: keyUnidad },
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#ListPartial').html(result);
+        });
+    }
+
+function AnularConsumo(datos) {
+     var key = datos;
+
+    $.ajax({
+        url: '@Url.Action("AnularConsumo")',
+        type: "POST",
+        data: { idCombustibleConsumoClaro: key },
+        dataType: "json",
+        traditional: true,
+        cache: false,
+        beforeSend: function () {//We add this before send to disable the button once we submit it so that we prevent the multiple click
+            $.LoadingOverlay("show");
+        },
+        success: function (data) {
+            if (data.status != "Error") {
+                $.LoadingOverlay("hide");
+                swal({
+                    title: "Exito!",
+                    text: data.message,
+                    icon: "success",
+                    confirmButtonText: "Aceptar",
+                })
+                    .then((willSaved) => {
+                        if (willSaved) {
+                            tabla_persona.ajax.reload();
+
+                        }
+
+                    });
+            } else {
+                swal.fire("ERROR!", data.message, "error");
+            }
+
+
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            swal.fire("Error!", "Ocurrió un error en la transaccion, por favor verifique los datos o consulte con el administrador de la plataforma.", "error");
+        }
+    });
+
+}
+       function viewVoucherImage(id) {
+    // Realiza una solicitud AJAX para obtener la imagen del voucher
+    $.ajax({
+        url: '@Url.Action("GetVoucherImage", "Consumo")', // Acción del controlador que retorna la imagen
+        type: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function (response) {
+            if (response.success) {
+                // Muestra la imagen en un modal usando SweetAlert2
+                Swal.fire({
+                    title: 'Imagen del Voucher',
+                    imageUrl: response.image, // Imagen en formato base64
+                    imageAlt: 'Voucher Image',
+                    confirmButtonText: 'Cerrar'
+                });
+            } else {
+                // Muestra un error si la imagen no se obtuvo correctamente
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function () {
+            Swal.fire('Error', 'Error al obtener la imagen.', 'error');
+        }
+    });
+}
+
+     function Reload(s, e) {
+         tabla_persona.ajax.reload();
+    }
+
+    </script>
+}
+<style type="text/css">
+
+    .buttonsContainer {
+        max-width: 300px;
+        margin: 0 0 0 auto;
+        text-align: right;
+        padding-top: 12px;
+    }
+
+    .submitButton {
+        margin-bottom: 12px;
+        background: steelblue;
+        color: white;
+    }
+
+    .cancelButton {
+        margin-bottom: 12px;
+        margin-left: 8px;
+    }
+
+
+    .groupCaption {
+        margin-top: -6px;
+    }
+
+    .clearPaddings {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    /*.button * {
+            float:right;
+        }*/
+    #imagePreviewContainer img {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s; /* Animación al pasar el cursor */
+    }
+
+        #imagePreviewContainer img:hover {
+            transform: scale(1.05); /* Aumentar el tamaño al pasar el cursor */
+        }
+
+    /* Estilo para los mensajes de estado */
+    #processingStatus .list-group-item {
+        display: flex;
+        align-items: center;
+    }
+
+        #processingStatus .list-group-item i {
+            margin-right: 10px;
+        }
+
+    /* Estilo para mejorar la apariencia del overlay */
+    .loadingoverlay-text {
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+
+    .breadcrumb-container {
+        margin: 20px 0;
+    }
+
+    .breadcrumb {
+        background-color: transparent; /* No background for breadcrumb */
+        margin-bottom: 0; /* Remove bottom margin */
+        display: flex;
+        align-items: center;
+    }
+
+    .breadcrumb-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+
+        .breadcrumb-item a {
+            color: blue;
+            text-decoration: none;
+        }
+
+    .breadcrumb-box {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+        .breadcrumb-box:hover {
+            background-color: #e2e6ea;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    .breadcrumb-item.active .breadcrumb-box {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .breadcrumb-item.active .breadcrumb-box:hover {
+            background-color: #5a6268;
+        }
+
+    .breadcrumb-box i {
+        margin-right: 5px; /* Space between icon and text */
+    }
+</style>
+@{
+    string url = Url.Action("CarsList", "Consumo");
+    string url2 = Url.Action("Index", "Home");
+}
+<div class="breadcrumb-container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@url2">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-home"></i> Home
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item ">
+                <a href="@url">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-users"></i> Lista unidad
+                    </span>
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                <a href="javascript:void(0);" onclick="location.reload();">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-burn"></i> Lista consumor
+                    </span>
+                </a>
+            </li>
+        </ol>
+    </nav>
+</div><div class="alert alert-info text-center" role="alert">
+    <strong>Atención:</strong> Se procesa la imagen a texto y se registra el voucher. No se aceptan vouchers doblado, rayados o de baja calidad,. Servicio 7am-11pm. El proceso demora 5-10 seg por imagen (según la cola). Por favor, sea paciente y refresque la página para ver los cambios.
+</div>
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="m-0 font-weight-bold text-primary" style="color: #800 !important;">Lista</h5>
+
+                        <div class="d-flex ms-auto">
+                            <!-- Contenedor para los botones alineados a la izquierda -->
+
+                            <a href="#" id="mostrarPopupBtn" onclick="VerDetalleEstados2()" class="btn btn-primary btn-icon-split">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-plus"></i>
+                                </span>
+                                <span class="text">Registrar voucher</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="card-body p-3">
+
+                    <table id="listTable" style="width:100%"
+                           class="table table-striped  table-bordered table-hover display responsive nowrap">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th>Estado</th>
+                                <th>Carnet</th>
+                                <th>Unidad</th>
+                                <th>Voucher</th>
+                                <th>Fecha Registro</th>
+
+
+
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="voucherModal" tabindex="-1" role="dialog" aria-labelledby="voucherModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <!-- Cabecera del Modal -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="voucherModalLabel"><i class="fas fa-file-alt mr-2"></i> Escanear Vouchers</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- Cuerpo del Modal -->
+            <div class="modal-body">
+                <!-- Formulario para seleccionar archivos -->
+                <form id="voucherForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="voucherFile">Seleccione imágenes de vouchers:</label>
+                        <!-- Input para seleccionar múltiples archivos de imagen -->
+                        <input type="file" class="form-control-file" id="voucherFile" name="files" multiple onchange="previewImages(event)">
+                        <!-- Advertencia sobre los requisitos de las imágenes -->
+                        <h6 class="text-warning mt-2">
+                            Advertencia: Use solo vouchers donde el texto sea claro y legible. Evite fondos con letras adicionales o elementos como papel, teclado o cualquier texto que no sea del voucher.
+                        </h6>
+                    </div>
+                </form>
+
+                <!-- Contenedor para previsualizar las imágenes seleccionadas -->
+                <div class="text-center my-3">
+                    <div id="imagePreviewContainer" class="d-flex flex-wrap justify-content-center"></div>
+                </div>
+
+                <!-- Contenedor para mostrar el estado del procesamiento -->
+                <div id="loading" style="display:none;" class="text-left">
+                    <h5>Estado del Procesamiento:</h5>
+                    <ul id="processingStatus" class="list-group">
+                        <!-- Los mensajes de estado se añadirán aquí dinámicamente -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Pie del Modal -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+                <button type="button" class="btn btn-primary" id="uploadVoucherBtn">
+                    <i class="fas fa-upload"></i> Subir y Procesar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ 

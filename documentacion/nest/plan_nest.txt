@@ -1,0 +1,318 @@
+================================================================================
+📋 PLAN NESTJS: API OPTIMIZADA PARA SINGLE-PAGE + VALIDACIÓN TIEMPO REAL
+================================================================================
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\nest\plan_nest.txt
+Stack: NestJS 10 | TypeORM | SQL Server | Sharp | Multer | JWT | Axios
+================================================================================
+
+PRINCIPIO CLAVE: El backend debe soportar la filosofía "1 sola página" del 
+frontend. Esto significa endpoints que devuelvan datos COMPLETOS en 1 sola 
+llamada, y endpoints de validación rápida para el tiempo real.
+
+================================================================================
+FASE 1: CREACIÓN DEL PROYECTO Y CONEXIÓN SQL SERVER
+================================================================================
+Tiempo: 3-4 horas
+
+--- 1.1 Inicializar proyecto ---
+Directorio: d:\PROYECTOS_PORTAL\asistencia\backend
+Comando: npx -y @nestjs/cli new backend (seleccionar npm)
+
+--- 1.2 Dependencias ---
+npm install @nestjs/config @nestjs/typeorm typeorm mssql
+npm install @nestjs/jwt @nestjs/passport passport passport-jwt
+npm install class-validator class-transformer
+npm install sharp uuid
+npm install @nestjs/axios axios
+npm install xlsx multer
+npm install --save-dev @types/multer @types/sharp @types/uuid @types/passport-jwt
+
+--- 1.3 Archivo .env ---
+PORT=3000
+DB_HOST=127.0.0.1
+DB_PORT=1433
+DB_USERNAME=sa
+DB_PASSWORD=<contraseña_segura>
+DB_DATABASE=DIA_NINO2013
+JWT_SECRET=claro_despacho_jwt_secret_2026
+JWT_EXPIRATION=8h
+HCM_API_URL=https://fa-exjp-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/11.13.18.05/workers
+HCM_USERNAME=Claro_RhOnline_WS_SS
+HCM_PASSWORD=HCM-RH0nl1ne@#3
+UPLOAD_PATH=D:\\PROYECTOS_PORTAL\\asistencia_uploads
+
+--- 1.4 app.module.ts ---
+Importar: ConfigModule (global), TypeOrmModule.forRootAsync con mssql,
+AuthModule, AttendanceModule, CatalogModule, DispatchModule, HcmModule.
+
+--- 1.5 main.ts ---
+- CORS habilitado
+- ValidationPipe global (whitelist, forbidNonWhitelisted, transform)
+- SqlExceptionFilter global
+- ServeStaticModule para /uploads → carpeta de fotos WebP
+- Escuchar en puerto 3000
+Criterio: npm run start:dev arranca y conecta a SQL Server sin errores.
+
+================================================================================
+FASE 2: MÓDULOS (GENERAR CON CLI)
+================================================================================
+Tiempo: 1 hora
+
+nest g module auth && nest g controller auth && nest g service auth
+nest g module attendance && nest g controller attendance && nest g service attendance
+nest g module catalog && nest g controller catalog && nest g service catalog
+nest g module dispatch && nest g controller dispatch && nest g service dispatch
+nest g module integration && nest g service integration/hcm && nest g controller integration/hcm
+
+================================================================================
+FASE 3: ENTIDADES TYPEORM (MAPEO EXACTO DE sql.txt)
+================================================================================
+Tiempo: 3-4 horas
+
+--- 3.1 Colaborador ---
+Archivo: src/attendance/entities/colaborador.entity.ts
+Tabla: tblColaboradores
+Campos: Carnet (PK varchar 50), Nombre, Gerencia, Ubicacion, Activo
+Relación: @OneToMany → Hijo[], @OneToMany → Asistencia[]
+
+--- 3.2 Hijo ---
+Archivo: src/attendance/entities/hijo.entity.ts
+Tabla: tblHijos
+Campos: Id (PK auto), CarnetColaborador (FK), NombreHijo, EdadHijo, GeneroHijo, Categoria
+Relación: @ManyToOne → Colaborador
+
+--- 3.3 CatalogoJuguete ---
+Archivo: src/catalog/entities/catalogo.entity.ts
+Tabla: tblCatalogoJuguetes
+Campos: Id (PK auto), Categoria, Genero, NombreJuguete, StockInicial, StockActual, FotoUrl, Activo
+CHECK: Genero IN ('M','F','TODOS'), StockActual >= 0
+
+--- 3.4 Asistencia ---
+Archivo: src/attendance/entities/asistencia.entity.ts
+Tabla: tblAsistenciaEventos
+Campos: Id (PK auto), CarnetColaborador (FK), EventId, FechaRegistro, RegistradoPor
+
+--- 3.5 Entrega ---
+Archivo: src/dispatch/entities/entrega.entity.ts
+Tabla: tblEntregasJuguetes
+Campos: Id, HijoId (FK), JugueteId (FK), CarnetColaborador (FK), Estado, 
+RecibidoPor, NombreReceptor, FotoEvidenciaUrl, FechaEntrega, UsuarioDespacho,
+FechaReversion, UsuarioReversion, MotivoReversion
+Relaciones: @ManyToOne → Hijo, CatalogoJuguete, Colaborador
+
+Criterio: Entidades cargan sin errores con synchronize: false.
+
+================================================================================
+FASE 4: DTOs CON VALIDACIÓN
+================================================================================
+Tiempo: 2 horas
+
+--- 4.1 LoginDto ---
+carnet: @IsNotEmpty @IsString
+password: @IsNotEmpty @IsString
+
+--- 4.2 RegisterAttendanceDto ---
+carnet: @IsNotEmpty @IsString
+eventId: @IsNotEmpty @IsInt
+
+--- 4.3 DeliverToyDto ---
+hijoId: @IsNotEmpty @IsInt
+jugueteId: @IsNotEmpty @IsInt
+carnetColaborador: @IsNotEmpty @IsString
+recibidoPor: @IsNotEmpty @IsEnum(RecibidoPorEnum) — COLABORADOR/CONYUGE/TERCERO
+nombreReceptor: @ValidateIf(o => o.recibidoPor === 'TERCERO') @IsNotEmpty @MinLength(3)
+
+--- 4.4 RevertDeliveryDto ---
+motivo: @IsNotEmpty @IsString @MinLength(10)
+
+--- 4.5 CreateJugueteDto ---
+categoria, genero, nombreJuguete, stockInicial: @IsNotEmpty
+Foto: viene como multipart, no en el DTO
+
+--- 4.6 UpdateJugueteDto ---
+Campos opcionales con @IsOptional
+
+================================================================================
+FASE 5: SERVICIOS DE NEGOCIO
+================================================================================
+Tiempo: 8-10 horas (FASE MÁS CRÍTICA)
+
+--- 5.1 AuthService ---
+- validateUser(carnet, password): consulta BD
+- login(user): firma JWT con { carnet, nombre, rol }
+- JwtStrategy: extrae payload del token
+
+--- 5.2 AttendanceService ---
+
+  A. getColaboradorFull(carnet): *** ENDPOINT ESTRELLA ***
+  Este es el endpoint que alimenta tanto el Drawer de React como la Ficha
+  de Flutter. Retorna TODO en 1 sola llamada:
+  
+  Respuesta:
+  {
+    colaborador: { carnet, nombre, gerencia, ubicacion },
+    asistio: true/false,
+    fechaAsistencia: "2026-06-18T10:32:00",
+    fotoHcmBase64: "data:image/jpeg;base64,...",
+    hijos: [
+      {
+        id: 1,
+        nombreHijo: "Sofía Pérez",
+        edadHijo: 4.0,
+        generoHijo: "F",
+        categoria: "ENTRE 03.1-4",
+        estadoEntrega: "DELIVERED" | null | "REVERTED",
+        entregaId: 15,           // null si no hay entrega
+        fechaEntrega: "10:35",   // null si pendiente
+        recibidoPor: "COLABORADOR",
+        fotoEvidenciaUrl: "/uploads/foto.webp",
+        jugueteSugerido: {
+          id: 8,
+          nombreJuguete: "Muñeca Barbie",
+          stockActual: 12,
+          fotoUrl: "/uploads/juguetes/barbie.webp"
+        },
+        juguetesAlternativos: [  // Si el sugerido se agotó
+          { id: 9, nombre: "Muñeca LOL", stock: 5 }
+        ]
+      },
+      ...
+    ]
+  }
+  
+  Lógica interna:
+  1. Buscar colaborador por carnet
+  2. Buscar asistencia del colaborador para el evento activo
+  3. Buscar hijos del colaborador
+  4. Para cada hijo:
+     a. Buscar entrega activa (DELIVERED) si existe
+     b. Buscar juguete sugerido por categoría + género (con fallback 'TODOS')
+     c. Si stock del sugerido = 0, incluir lista de alternativos
+  5. Consultar foto HCM (con timeout 4s, si falla retorna null)
+  
+  B. registrarAsistencia(dto, usuario):
+  - Inserta en tblAsistenciaEventos
+  - Retorna el registro creado
+  
+  C. importarCensoDesdeExcel(buffer):
+  - Lee el archivo Excel con librería xlsx
+  - Extrae filas y las procesa en transacción
+  - Inserta en tblColaboradores (sin duplicados) y tblHijos
+  - Retorna conteo de registros importados
+  
+  D. getCensoPaginado(filtros):
+  - Consulta combinada de colaboradores + conteo de hijos + estado global
+  - Soporta: búsqueda por texto, filtro por estado, paginación
+  - Retorna datos para la tabla principal del Centro de Mando
+
+  E. getSummary():
+  - Retorna KPIs: totalNinos, entregados, pendientes, asistidos, stockCritico[]
+
+--- 5.3 CatalogService ---
+  - getAll(): juguetes activos
+  - getSummary(): vista vw_ResumenInventario
+  - create(dto, file?): si hay foto → sharp → WebP 80% → disco → guarda ruta
+  - update(id, dto, file?)
+  - deactivate(id): soft-delete (Activo = false)
+
+--- 5.4 DispatchService --- *** LÓGICA TRANSACCIONAL CRÍTICA ***
+
+  A. validateDelivery(hijoId, jugueteId):
+  Endpoint de validación rápida (PRE-entrega) para tiempo real.
+  NO modifica datos, solo verifica:
+  {
+    stockDisponible: true/false,
+    stockActual: 12,
+    hijoYaEntregado: false,
+    colaboradorAsistio: true,
+    esValido: true   // true solo si las 3 validaciones pasan
+  }
+  
+  B. registrarEntrega(dto, usuario, fotoFile?):
+  Transacción ACID con bloqueo pesimista:
+  1. SELECT juguete WITH (UPDLOCK, ROWLOCK)
+  2. Validar stock > 0
+  3. Validar hijo sin entrega activa
+  4. Si hay foto: sharp → WebP → disco → obtener ruta
+  5. INSERT en tblEntregasJuguetes
+  6. UPDATE stock -= 1 en tblCatalogoJuguetes
+  7. Retorna { success, entregaId, stockRestante }
+  
+  C. reversarEntrega(entregaId, usuario, motivo):
+  Transacción ACID:
+  1. SELECT entrega WITH (UPDLOCK, ROWLOCK)
+  2. Validar estado = 'DELIVERED'
+  3. UPDATE estado = 'REVERTED' + auditoría
+  4. UPDATE stock += 1
+  5. Retorna { success, stockRestante }
+  
+  D. getAuditoria(filtros):
+  - Consulta vista vw_BitacoraEntregas
+  - Filtros: estado, búsqueda, paginación
+
+--- 5.5 HcmService ---
+  - obtenerFotoEmpleado(carnet): proxy seguro a Oracle HCM
+  - Credenciales en .env (nunca expuestas al frontend)
+  - Timeout 4s, si falla retorna null sin romper flujo
+  - Retorna data:image/jpeg;base64,...
+
+================================================================================
+FASE 6: CONTROLADORES (ENDPOINTS)
+================================================================================
+Tiempo: 4-5 horas
+
+--- 6.1 AuthController ---
+POST /api/v1/auth/login → JWT
+
+--- 6.2 AttendanceController ---
+GET  /api/v1/attendance/collaborator/:carnet/full → Ficha COMPLETA (endpoint estrella)
+POST /api/v1/attendance → Registrar asistencia
+POST /api/v1/attendance/import → Importar Excel (multipart)
+GET  /api/v1/attendance/census → Tabla paginada con filtros
+GET  /api/v1/attendance/summary → KPIs para header
+
+--- 6.3 CatalogController ---
+GET   /api/v1/catalog → Listado juguetes
+GET   /api/v1/catalog/summary → Resumen inventario
+POST  /api/v1/catalog → Crear (multipart con foto)
+PUT   /api/v1/catalog/:id → Editar
+PATCH /api/v1/catalog/:id/deactivate → Soft-delete
+
+--- 6.4 DispatchController ---
+GET  /api/v1/dispatch/validate/:hijoId/:jugueteId → Validación pre-entrega
+POST /api/v1/dispatch/deliver → Entrega (multipart con foto)
+POST /api/v1/dispatch/revert/:id → Reversión
+GET  /api/v1/dispatch/audit → Bitácora
+
+--- 6.5 HcmController ---
+GET /api/v1/hcm/photo/:carnet → Proxy foto Oracle
+
+--- 6.6 ReportsController ---
+GET /api/v1/reports/pdf → PDF blob
+GET /api/v1/reports/excel → Excel blob
+
+================================================================================
+FASE 7: FILTRO DE EXCEPCIONES SQL SERVER
+================================================================================
+Tiempo: 1-2 horas
+
+Archivo: src/config/sql-exception.filter.ts
+- Error 1205 (Deadlock) → HTTP 409
+- Error 547 (FK violation) → HTTP 400
+- Error 2627/2601 (Unique violation) → HTTP 409
+Criterio: Errores SQL se traducen a mensajes amigables para el frontend.
+
+================================================================================
+FASE 8: COMPILACIÓN Y DESPLIEGUE PM2
+================================================================================
+Tiempo: 2 horas
+
+1. npm run build → /dist
+2. Copiar /dist + .env + package.json al VPS
+3. npm install --production
+4. mkdir D:\PROYECTOS_PORTAL\asistencia_uploads\fotos_evidencia
+5. mkdir D:\PROYECTOS_PORTAL\asistencia_uploads\fotos_juguetes
+6. pm2 start dist/main.js --name "api-despacho"
+7. pm2 startup && pm2 save
+8. Proxy inverso IIS: /api → localhost:3000/api
+================================================================================

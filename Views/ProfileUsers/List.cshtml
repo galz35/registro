@@ -1,0 +1,74 @@
+﻿@model Entities.SystemUsers
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+<script>
+    function onButtonClick(s, e) {
+        e.processOnServer = confirm('Seguro que desea borrar el registro?');
+    }
+
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvProfileUser.SetHeight(height - 10);
+    }
+
+    function ActivateProfileUser(s, e, url) {
+        var key = s.GetRowKey(e.visibleIndex);
+
+
+        var destUrl = null;
+
+        if (e.buttonID == "btnActivateId") {
+            var destUrl = url + "/" + key;
+            alert("Destination Url is: " + destUrl);
+            popImage.SetContentUrl(destUrl);
+            popImage.Show();
+        }
+
+
+    }
+
+  
+    function OnCustomButtonClick(s, e) {
+        if (e.buttonID == "btnActivateId") {
+            var key = s.GetRowKey(e.visibleIndex);
+            alert("Destination Url is: " + key);
+            var destUrl = "/ProfileUsers/ActivateProfileUser/" + key;
+            popImage.SetContentUrl(destUrl);
+            popImage.Show();
+            s.StartEditRow(key);
+        }
+    }
+
+</script>
+
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Lista de perfiles";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 500;
+    settingsPopup.Height = 400;
+
+
+
+}).GetHtml()
+@using (Html.BeginForm())
+{
+    @Html.Action("ListPartial", "ProfileUsers", new { userId = Model.UserId })
+
+    //{ Html.RenderAction("List"); }
+}

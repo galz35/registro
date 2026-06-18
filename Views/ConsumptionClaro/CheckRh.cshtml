@@ -1,0 +1,208 @@
+﻿@model List<Entities.ViewModels.ConsumptionView>
+@{
+    ViewBag.Title = "Revision de RRHH";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@Html.DevExpress().GetStyleSheets(
+      new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" })
+
+<script type="text/javascript">
+    var selectedIDs;
+    function onBeginCallback(s, e) {
+        // Pasamos los ids seleccionados al boton de autorizar
+        e.customArgs["selectedIDs"] = selectedIDs;
+        if (selectedIDs != "")
+            gvCheckRh.PerformCallback;
+    }
+
+    function onSelectionChanged(s, e) {
+        s.GetSelectedFieldValues("IdCombustibleConsumoClaro", GetSelectedFieldValuesCallback);
+    }
+
+    function GetSelectedFieldValuesCallback(values) {
+        // Captura todas las llaves seleccionadas
+        selectedIDs = values.join(',');
+    }
+
+    function onAuthorizeButtonClick(s, e) {
+        $("#selectedIdsAP").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function onDeniedButtonClick(s, e) {
+        $("#selectedIdsDN").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvCheckRh.SetHeight(height - 180);
+    }
+
+
+    function onToolbarItemClick(s, e) {
+
+        if (e.item.name == "Authorize") {
+             $.ajax({
+             url: '@Url.Action("AuthorizeRh")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+             success: function (data) {
+                 if (data.status != "Error") {
+                     swal({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             button: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                                 LoadRhPartial();
+                       
+                             }
+
+                         });
+                 } else {
+                     swal({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         button: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+            
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+
+        }
+
+      
+        if (e.item.name == "Denied") {
+             $.ajax({
+             url: '@Url.Action("DeniedRh")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            
+             success: function (data) {
+                 if (data.status != "Error") {
+                     swal({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             button: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                      
+                                 LoadRhPartial();
+                             }
+
+                         });
+                 } else {
+                     swal({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         button: "Aceptar",
+                     })
+                
+                 }
+
+
+             },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+         if (e.item.name == "Refresh") {
+             $.ajax({
+             url: '@Url.Action("CheckRhPartial")',
+             type: "GET",
+             data: { },
+            //dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+
+                $('#authorizePartial').html(data);
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+    }
+
+    function LoadRhPartial(s, e) {
+        $.ajax({
+            url: '@Url.Action("CheckRhPartial","ConsumptionClaro")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#authorizePartial').html(result);
+        });
+    }
+</script>
+
+
+
+
+
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="3" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+
+}
+
+<div id="authorizePartial">
+
+    @Html.Partial("CheckRhPartial", Model);
+</div>
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Esquela de voucher";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 800;
+    settingsPopup.Height = 600;
+    //settingsPopup.Modal = true;
+
+
+}).GetHtml()

@@ -1,0 +1,288 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingIndicatorProduct(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.IndicatorProducts();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvIndicatorProduct";
+        settings.KeyFieldName = "IndicatorProductId";
+        settings.CallbackRouteValues = new { Controller = "IndicatorProducts", Action = "ListPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "IndicatorProducts", Action = "AddIndicatorProduct" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "IndicatorProducts", Action = "EditIndicatorProduct" };
+
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+        settings.Width = Unit.Percentage(100);
+
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.SettingsExport.EnableClientSideExportAPI = true;
+        settings.SettingsExport.ExcelExportMode = DevExpress.Export.ExportType.DataAware;
+
+
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.Settings.ShowFooter = true;
+        settings.KeyboardSupport = true;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+        #region Configuracion del popup
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 500;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de indicador de producto";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        #endregion
+
+
+        #region Paging
+        settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+        #endregion
+        #region filtering
+        settings.SettingsSearchPanel.CustomEditorName = "search";
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+        #endregion
+        #region Sorting
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "IndicatorId");
+        #endregion
+        #region Personalizacion de Botones del GridView
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+        //settings.SettingsBehavior.ConfirmDelete = true;
+        //settings.SettingsText.ConfirmDelete = "Seguro quiere borrar el registro?";
+        //settings.CommandColumn.ShowDeleteButton = true;
+        //settings.SettingsCommandButton.DeleteButton.Image.Url = Url.Content("~/Content/Icons/trash.png");
+
+
+
+        settings.CommandColumn.Width = Unit.Percentage(30);
+        #endregion
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "IndicatorId";
+            col.Caption = "Indicador";
+            col.AdaptivePriority = 1;
+            col.Width = Unit.Percentage(100);
+            col.ColumnType = MVCxGridViewColumnType.ComboBox;
+            var comboBoxProperties = col.PropertiesEdit as ComboBoxProperties;
+            comboBoxProperties.DataSource = slnRhonline.Data.Indicator.GetIndicatorsByManagement();
+            comboBoxProperties.TextField = "IndicatorDescription";
+            comboBoxProperties.ValueField = "IndicatorId";
+            comboBoxProperties.ValueType = typeof(string);
+            comboBoxProperties.DropDownStyle = DropDownStyle.DropDownList;
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "ProductId";
+            col.Caption = "Producto";
+            col.AdaptivePriority = 2;
+            col.Width = Unit.Percentage(100);
+            col.ColumnType = MVCxGridViewColumnType.ComboBox;
+            var comboBoxProperties = col.PropertiesEdit as ComboBoxProperties;
+            comboBoxProperties.DataSource = slnRhonline.Data.Product.GetAllProducts();
+            comboBoxProperties.TextField = "ProductDescription";
+            comboBoxProperties.ValueField = "ProductId";
+            comboBoxProperties.ValueType = typeof(string);
+            comboBoxProperties.DropDownStyle = DropDownStyle.DropDownList;
+
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Weight";
+            col.Caption = "Peso";
+            col.AdaptivePriority = 3;
+            col.Width = Unit.Percentage(100);
+        });
+
+        settings.Toolbars.Add(t =>
+        {
+            t.Enabled = true;
+            t.ItemAlign = GridToolbarItemAlign.Right;
+            t.Items.Add(i =>
+            {
+                i.Text = "Exportar a";
+                i.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsDownload16x16office2013;
+                i.BeginGroup = true;
+                i.Items.Add(GridViewToolbarCommand.ExportToPdf).Text = "Exportar a PDF";
+                i.Items.Add(GridViewToolbarCommand.ExportToDocx).Text = "Exportar a Word";
+                i.Items.Add(GridViewToolbarCommand.ExportToXls).Text = "Exportar a Excel";
+
+            });
+            t.Items.Add(i =>
+            {
+                i.BeginGroup = true;
+                i.SetTemplateContent(c =>
+                {
+                    Html.DevExpress().ButtonEdit(s =>
+                    {
+                        s.Name = "search";
+                        s.Properties.NullText = "Buscar..";
+                        s.Properties.Buttons
+                            .Add()
+                            .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+                    }).Render();
+                });
+            });
+
+        });
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+
+                flSettings.Name = "FormLayoutUser";
+                flSettings.Width = Unit.Percentage(100);
+
+
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 500;
+
+
+                flSettings.ColCount = 1;
+
+                //flSettings.Items.Add(i =>
+                //{
+                //    i.FieldName = "IndicatorId";
+                //    i.Caption = "Indicador";
+                //    i.NestedExtension().ComboBox(s =>
+                //    {
+                //        s.Properties.TextField = "IndicatorDescription";
+                //        s.Properties.ValueField = "IndicatorId";
+                //        s.Properties.ValueType = typeof(string);
+                //        s.Properties.DataSource = slnRhonline.Data.Indicator.GetAllIndicators();
+                //        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                //        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                //        s.ShowModelErrors = true;
+                //        s.Width = Unit.Percentage(100);
+                //        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                //        //s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedLicenseTypeIdChanged";
+                //        //s.ReadOnly = true;
+                //        //s.Enabled = false;
+
+                //    });
+                //});
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "ProductId";
+                    i.Caption = "Producto";
+                    i.NestedExtension().ComboBox(s =>
+                    {
+                        s.Properties.TextField = "ProductDescription";
+                        s.Properties.ValueField = "ProductId";
+                        s.Properties.ValueType = typeof(string);
+                        s.Properties.DataSource = slnRhonline.Data.Product.GetAllProducts();
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                        //s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedLicenseTypeIdChanged";
+                        //s.ReadOnly = true;
+                        //s.Enabled = false;
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "Weight";
+                    i.Caption = "Peso";
+                    i.NestedExtension().TextBox(s =>
+                    {
+
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.Text;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.DisplayFormatString = "#.00";
+
+
+                    });
+                });
+
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvIndicatorProduct.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvIndicatorProduct.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["IndicatorProduct"] ?? GetEditingIndicatorProduct(c.Grid))
+            .Render();
+        });
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+

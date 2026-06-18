@@ -1,0 +1,147 @@
+﻿
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.LegalBeneficiaries>(settings =>
+    {
+        settings.Name = "gvLegalBeneficiary";
+        settings.KeyFieldName = "LegalBeneficiaryId";
+        settings.CallbackRouteValues = new { Controller = "Employees", Action = "LegalBeneficiariesPartial" };
+
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Employees", Action = "AddLegalBeneficiary" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Employees", Action = "EditLegalBeneficiary" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Employees", Action = "DeleteLegalBeneficiary" };
+
+
+
+//Configuracion basica del grid
+settings.Width = Unit.Percentage(100);
+        settings.Height = Unit.Percentage(500);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+//settings.SettingsBehavior.AllowSelectByRowClick = true;
+settings.ControlStyle.Border.BorderWidth = 0;
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+//Configuracion del grid para hacerlo responsive
+settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 120;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+//Configuracion del popup
+
+settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de datos del beneficiario";
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+
+
+
+#region Personalizacion de botones
+//Configuracion de botones de accion
+settings.CommandColumn.Visible = true;
+        settings.CommandColumn.Width = 70;
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.CommandColumn.ShowDeleteButton = true;
+        settings.CommandColumn.ShowEditButton = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+        settings.SettingsCommandButton.NewButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsAdd16x16;
+        settings.SettingsCommandButton.EditButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditEdit16x16;
+        settings.SettingsCommandButton.UpdateButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsApply16x16;
+        settings.SettingsCommandButton.DeleteButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditDelete16x16;
+        settings.SettingsCommandButton.CancelButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsCancel16x16;
+#endregion
+
+//Configuracion de Columnas
+
+settings.Columns.Add(m => m.LegalBeneficiaryId, column =>
+        {
+            column.Caption = "Id";
+            column.Visible = false;
+
+        });
+
+        settings.Columns.Add(m => m.ContactPersonId, column =>
+        {
+            column.Caption = "Beneficicario";
+            column.AdaptivePriority = 1;
+            column.EditorProperties().ComboBox(p =>
+            {
+
+                p.TextField = "FullName";
+                p.ValueField = "ContactPersonId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.Employees.GetAllEmployeeFamily();
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.Width = Unit.Percentage(100);
+                p.DropDownStyle = DropDownStyle.DropDownList;
+
+
+            });
+        });
+
+
+        settings.Columns.Add(m => m.Percentage, column =>
+        {
+            column.Caption = "Porcentaje";
+            column.AdaptivePriority = 2;
+            column.Width = Unit.Percentage(20);
+            column.EditorProperties().SpinEdit(p =>
+            {
+
+                p.DisplayFormatInEditMode = true;
+                p.MinValue = 0;
+                p.MaxValue = 100;
+                p.SpinButtons.ShowLargeIncrementButtons = true;
+                p.Width = Unit.Percentage(100);
+            });
+        });
+        settings.Columns.Add(m => m.TutorName, column =>
+        {
+            column.Caption = "Tutor";
+            column.Width = Unit.Percentage(30);
+            column.AdaptivePriority = 3;
+        });
+
+
+
+
+
+
+
+
+
+
+//settings.PreRender = (sender, e) =>
+//{
+//    ((MVCxGridView)sender).StartEdit(4);
+//};
+settings.CellEditorInitialize = (s, e) =>
+        {
+            ((ASPxEdit)e.Editor).ValidationSettings.Display = Display.Dynamic;
+        };
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+
+
+

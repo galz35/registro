@@ -1,0 +1,213 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "GridView";
+        settings.KeyFieldName = "ExpenseId";
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Auto;
+        settings.Settings.VerticalScrollableHeight = 100;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 500;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+        settings.CallbackRouteValues = new { Controller = "Expenses", Action = "RegisterDetailPartial", personId = Url.RequestContext.RouteData.Values["PersonId"] };
+       
+
+
+        settings.Columns.Add(c =>
+        {
+            c.Caption = "#";
+            c.SetDataItemTemplateContent(tc =>
+            {
+            ViewContext.Writer.Write(
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "btnEdit" + tc.KeyValue;
+                p.Text = "";
+                p.Width = 20;
+                p.EnableTheming = false;
+
+                p.Images.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+                p.ImagePosition = ImagePosition.Left;
+                p.ToolTip = "Editar registro";
+                //p.RouteValues = new { Controller = "Expenses", Action = "EditExpense", expenseId = DataBinder.Eval(tc.DataItem, "ExpenseId") };
+                p.ClientSideEvents.Click = string.Format("function(s,e) {{EditExpense(s.name,'{0}'); }}", Url.Action("EditExpense", "Expenses", new { expenseId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+            }).GetHtml()
+);
+
+            ViewContext.Writer.Write(
+
+        @Html.DevExpress().Button(p =>
+        {
+            p.Name = "btnDelete" + tc.KeyValue;
+            p.Text = "";
+            p.Width = 20;
+            p.EnableTheming = false;
+            p.Images.Image.Url = Url.Content("~/Content/Icons/trash.png");
+            p.ImagePosition = ImagePosition.Left;
+            p.ToolTip = "Eliminar registro";
+            //p.RouteValues = new { Controller = "Expenses", Action = "DeleteExpense", expenseId = DataBinder.Eval(tc.DataItem, "ExpenseId") };
+            //p.ClientSideEvents.Click = "onButtonClick";
+            p.ClientSideEvents.Click = string.Format("function(s,e) {{DeleteExpense(s.name,'{0}'); }}", Url.Action("DeleteExpense", "Expenses", new { expenseId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+        }).GetHtml()
+        );
+            ViewContext.Writer.Write(
+
+       @Html.DevExpress().Button(p =>
+       {
+           p.Name = "btnYield" + tc.KeyValue;
+           p.Text = "";
+           p.Width = 20;
+           p.EnableTheming = false;
+           p.Images.Image.Url = Url.Content("~/Content/Icons/upload.png");
+           //p.Images.Image.IconID = IconID.ActionsApply32x32gray;
+           p.ImagePosition = ImagePosition.Left;
+           p.ToolTip = "Rendir Viatico";
+          // p.RouteValues = new { Controller = "Expenses", Action = "YieldExpense", expenseId = DataBinder.Eval(tc.DataItem, "ExpenseId") };
+           p.ClientSideEvents.Click = string.Format("function(s,e) {{YieldExpense(s.name,'{0}'); }}", Url.Action("YieldExpense", "Expenses", new { expenseId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+       }).GetHtml()
+       );
+                ViewContext.Writer.Write(
+
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "btnViewYield" + tc.KeyValue;
+                p.Text = "";
+                p.Width = 20;
+                p.EnableTheming = false;
+                p.Images.Image.Url = Url.Content("~/Content/Icons/Acrobat.png");
+                p.ImagePosition = ImagePosition.Left;
+                p.ToolTip = "Ver Rendicion";
+ 
+
+                p.ClientSideEvents.Click = string.Format("function(s,e) {{ShowDetailPopup(s.name,'{0}'); }}", Url.Action("LoadYield", "Expenses", new { expenseId = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+            }).GetHtml()
+           );
+
+
+        });
+
+        c.SetHeaderTemplateContent(tc =>
+        {
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "Nuevo";
+                p.Text = "";
+                p.Width = 20;
+                p.EnableTheming = false;
+                p.Images.Image.Url = Url.Content("~/Content/Icons/Add.png");
+                p.ImagePosition = ImagePosition.Right;
+                p.RouteValues = new { Controller = "Expenses", Action = "AddExpense" };
+                p.ToolTip = "Agregar nuevo registro";
+            }).GetHtml();
+
+
+        });
+        c.Settings.AllowDragDrop = DefaultBoolean.False;
+        c.Settings.AllowSort = DefaultBoolean.False;
+        c.Width = 40;
+    });
+
+
+
+    // Configuración del Grid
+    // ----------------------------------------------------------------------------------------------------------------
+    settings.Width = Unit.Percentage(100);
+    settings.SettingsPager.Visible = true;
+    settings.Settings.ShowGroupPanel = false;
+    settings.Settings.ShowFilterRow = false;
+    settings.SettingsBehavior.AllowSelectByRowClick = true;
+    settings.ControlStyle.Border.BorderWidth = 1;
+
+
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "EmployeeNumber";
+        col.Caption = "No.Empleado";
+        col.Width = 40;
+        col.AdaptivePriority = 1;
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "FullName";
+
+        col.Caption = "Empleado";
+        col.Width = 60;
+        col.AdaptivePriority = 2;
+
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "ExpenseDate";
+
+        col.Caption = "Fecha de Viatico";
+
+        col.PropertiesEdit.DisplayFormatString = "dd/MM/yyyy";
+        col.Width = 40;
+        col.AdaptivePriority = 3;
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "ClassName";
+
+        col.Caption = "Clase";
+        col.Width = 60;
+        col.AdaptivePriority = 4;
+    });
+
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "TotalAmount";
+        col.PropertiesEdit.DisplayFormatString = "c";
+        col.Caption = "Monto";
+
+        col.Width = 60;
+        col.AdaptivePriority = 5;
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "ExpenseStatus";
+        col.Caption = "Estado";
+        col.Width = 60;
+        col.AdaptivePriority = 6;
+    });
+
+
+
+    settings.CellEditorInitialize = (s, e) =>
+    {
+        ASPxEdit editor = (ASPxEdit)e.Editor;
+        editor.ValidationSettings.Display = Display.Dynamic;
+    };
+
+
+
+    //Sub Totales
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalAmount");
+    settings.Settings.ShowFooter = true;
+
+    });
+
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+
+@grid.Bind(Model).GetHtml()
+
+

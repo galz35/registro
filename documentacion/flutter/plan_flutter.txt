@@ -1,0 +1,392 @@
+================================================================================
+📋 PLAN FLUTTER: 2 PANTALLAS + BOTTOM SHEETS
+================================================================================
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\flutter\plan_flutter.txt
+Stack: Flutter 3.x | Dart | BLoC | Hive | mobile_scanner | Dio
+Colores: Rojo #DA291C | Blanco | Gris | Negro | Verde (éxito) | SIN AZUL
+================================================================================
+
+SOLO 2 PANTALLAS:
+  Pantalla 1: Escáner (cámara activa)
+  Pantalla 2: Ficha del Colaborador (todo aquí con bottom sheets)
+
+Los 5 módulos en móvil:
+  ASISTENCIA → Botón en la Ficha
+  DESPACHO   → Bottom sheet desde la tarjeta del hijo
+  EVIDENCIA  → Cámara integrada en el bottom sheet de despacho
+  INVENTARIO → Stock visible en cada tarjeta de hijo (tiempo real)
+  REPORTE    → Historial del día (bottom sheet desde el escáner)
+
+================================================================================
+FASE 1: CREAR PROYECTO + DEPENDENCIAS
+================================================================================
+Tiempo: 3-4 horas
+
+--- 1.1 Crear proyecto ---
+Directorio: d:\PROYECTOS_PORTAL\asistencia\mobile
+Comando: flutter create --org com.claro.despacho --project-name claro_despacho .
+
+--- 1.2 pubspec.yaml ---
+dependencies:
+  mobile_scanner: ^5.1.1       # Escaneo de código de barras
+  camera: ^0.10.5+9            # Cámara para fotos
+  image_picker: ^1.1.2         # Selector de imagen
+  flutter_image_compress: ^2.3.0  # Compresión WebP
+  hive: ^2.2.3                 # Base datos local offline
+  hive_flutter: ^1.1.0
+  flutter_bloc: ^8.1.6         # Estado
+  equatable: ^2.0.5
+  get_it: ^7.7.0               # Inyección
+  dio: ^5.4.3+1                # HTTP
+  connectivity_plus: ^6.0.5    # Detector de red
+  vibration: ^2.0.0            # Vibración
+  path_provider: ^2.1.4
+  intl: ^0.19.0
+  uuid: ^4.4.2
+dev_dependencies:
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.12
+
+Comando: flutter pub get
+
+--- 1.3 Permisos nativos ---
+Android (AndroidManifest.xml):
+  CAMERA, INTERNET, ACCESS_NETWORK_STATE, VIBRATE
+  minSdkVersion 21
+iOS (Info.plist):
+  NSCameraUsageDescription
+
+--- 1.4 Estructura de carpetas ---
+lib/
+  main.dart
+  core/
+    theme/
+      colors.dart          # Constantes de color (rojo, gris, verde, naranja)
+      theme.dart           # ThemeData con Outfit/Inter, botones 56px
+    network/
+      api.dart             # Cliente Dio (base URL, token, timeout)
+      connectivity.dart    # Monitor de red
+    database/
+      local_db.dart        # Hive: cache censo + cola offline
+    utils/
+      compressor.dart      # Foto → WebP 80% 1024px
+    di/
+      injection.dart       # GetIt setup
+  models/
+    colaborador.dart       # Modelo + fromJson
+    hijo.dart              # Modelo + estados
+    juguete.dart           # Modelo
+    delivery_request.dart  # Request body
+  bloc/
+    scan/                  # BLoC del escáner
+    dispatch/              # BLoC del despacho
+    sync/                  # BLoC de sincronización offline
+  screens/
+    scan_screen.dart       # PANTALLA 1: Escáner
+    detail_screen.dart     # PANTALLA 2: Ficha completa
+  widgets/
+    child_card.dart        # Tarjeta de hijo (estados por color)
+    scanner_overlay.dart   # Overlay visual del escáner
+    slide_confirm.dart     # Deslizador de confirmación
+    offline_banner.dart    # Banner naranja "Sin Red"
+    delivery_sheet.dart    # Bottom sheet de entrega
+    revert_dialog.dart     # Dialog de reversión
+    history_sheet.dart     # Bottom sheet historial del día
+
+================================================================================
+FASE 2: COLORES Y TEMA
+================================================================================
+Tiempo: 2 horas
+
+--- 2.1 colors.dart ---
+class AppColors {
+  // Corporativos
+  static const claroRed = Color(0xFFDA291C);
+  static const claroRedDark = Color(0xFFB51F15);
+  static const white = Color(0xFFFFFFFF);
+  static const black = Color(0xFF121212);
+  
+  // Grises
+  static const grey50 = Color(0xFFF8FAFC);
+  static const grey100 = Color(0xFFF1F5F9);
+  static const grey200 = Color(0xFFE2E8F0);
+  static const grey500 = Color(0xFF64748B);
+  static const grey800 = Color(0xFF1E293B);
+  
+  // Estados (SIN AZUL)
+  static const green = Color(0xFF166534);       # Entregado
+  static const greenBg = Color(0xFFDCFCE7);
+  static const orange = Color(0xFFEA580C);      # Reversado / Alerta
+  static const orangeBg = Color(0xFFFFF7ED);
+  static const pendingGrey = Color(0xFF374151);  # Pendiente
+  static const pendingGreyBg = Color(0xFFF3F4F6);
+}
+
+--- 2.2 theme.dart ---
+- fontFamily: 'Inter'
+- Títulos: 'Outfit'
+- Botones: 56px alto mínimo, rojo Claro, bordes redondeados 30px
+- AppBar: fondo blanco, texto gris oscuro
+- SIN ningún tono azul en todo el tema
+
+================================================================================
+FASE 3: MODELOS + RED + OFFLINE
+================================================================================
+Tiempo: 4 horas
+
+--- 3.1 Modelo Colaborador ---
+Campos: carnet, nombre, gerencia, ubicacion, asistio, fechaAsistencia,
+fotoHcmBase64, hijos (List<Hijo>)
+fromJson(): parsea la respuesta del endpoint /full
+
+--- 3.2 Modelo Hijo ---
+Campos: id, nombreHijo, edadHijo, generoHijo, categoria, estadoEntrega,
+entregaId, fechaEntrega, recibidoPor, fotoEvidenciaUrl,
+jugueteSugerido (Juguete), juguetesAlternativos (List<Juguete>)
+Getters:
+  bool get pendiente => estadoEntrega == null || estadoEntrega == 'REVERTED'
+  bool get entregado => estadoEntrega == 'DELIVERED'
+
+--- 3.3 Cliente Dio (api.dart) ---
+baseUrl: http://VPS_IP:3000/api/v1
+Timeout: connect 10s, receive 15s
+Token: se inyecta tras login
+Métodos:
+  getColaboradorFull(carnet) → endpoint estrella
+  registrarAsistencia(carnet, eventId)
+  registrarEntrega(FormData) → multipart con foto
+  reversarEntrega(entregaId, motivo)
+  validateDelivery(hijoId, jugueteId) → validación rápida
+
+--- 3.4 Hive (local_db.dart) ---
+Boxes:
+  'censo_cache' → censo completo descargado al inicio del día
+  'pending_deliveries' → entregas hechas sin red (cola offline)
+Métodos:
+  cacheCenso(data) → guarda todo el censo
+  buscarOffline(carnet) → busca en cache local
+  guardarEntregaPendiente(data) → agrega a la cola
+  getEntregasPendientes() → lee la cola
+  limpiarSincronizadas() → limpia lo ya enviado
+
+--- 3.5 Compresión (compressor.dart) ---
+Toma foto JPEG → redimensiona a 1024px max → convierte a WebP 80%
+Resultado: foto de ~4MB baja a ~200KB
+Usa: FlutterImageCompress
+
+--- 3.6 Monitor de red (connectivity.dart) ---
+Escucha cambios de conectividad.
+Sin red → muestra banner naranja
+Con red → dispara sincronización automática
+
+================================================================================
+FASE 4: BLOCS (ESTADO)
+================================================================================
+Tiempo: 4 horas
+
+--- 4.1 ScanBloc ---
+Eventos: ScanCarnet(carnet)
+Estados: Initial | Loading | Success(Colaborador) | Error(mensaje)
+Lógica:
+  1. Recibe carnet
+  2. Con red → llama API /collaborator/:carnet/full
+  3. Sin red → busca en Hive cache
+  4. Emite Success con datos completos
+
+--- 4.2 DispatchBloc ---
+Eventos: SubmitDelivery(request) | RevertDelivery(id, motivo) | TakePhoto
+Estados: Idle | Loading | Success(mensaje) | Error(mensaje)
+Lógica de entrega:
+  Con red → POST /dispatch/deliver con FormData
+  Sin red → guardar en Hive cola offline
+  Éxito → vibración 200ms
+
+--- 4.3 SyncBloc ---
+Escucha connectivity.
+Al detectar red:
+  1. Lee cola de Hive
+  2. Envía cada entrega pendiente
+  3. Si alguna falla → la marca como error
+  4. Limpia las exitosas
+  5. Snackbar "✓ X entregas sincronizadas"
+
+================================================================================
+FASE 5: PANTALLA 1 — ESCÁNER
+================================================================================
+Tiempo: 4 horas
+
+--- 5.1 scan_screen.dart ---
+Layout:
+  - AppBar: "Claro Despacho" + botón teclado [⌨️] + botón historial [📋]
+  - Cuerpo: MobileScanner a pantalla completa
+  - Overlay: scanner_overlay.dart (fondo oscuro + cuadro rojo + láser rojo)
+  - Texto inferior: "Acerque el carnet"
+
+Al escanear código:
+  1. Vibra 10ms
+  2. Pausa la cámara
+  3. Emite ScanCarnet al BLoC
+  4. Navega a detail_screen con los datos
+
+Botón teclado:
+  Abre bottom sheet con input numérico grande (font 32px, autofoco)
+  Al escribir 7 dígitos → busca automático
+  Botón "Buscar" rojo de 56px
+
+Botón historial:
+  Abre history_sheet.dart (bottom sheet con lista de entregas del día)
+
+--- 5.2 scanner_overlay.dart ---
+CustomPainter:
+  - Fondo negro 65% opacidad
+  - Cuadro central 280x280 transparente
+  - Esquinas con líneas rojas (#DA291C) de 25px
+  - Línea láser roja pulsante (animación)
+
+--- 5.3 history_sheet.dart ---
+Bottom sheet con lista de entregas hechas hoy.
+Cada fila: Colaborador | Hijo | Juguete | Hora | Estado
+Colores: Verde (entregado) | Naranja (reversado)
+
+================================================================================
+FASE 6: PANTALLA 2 — FICHA + BOTTOM SHEETS
+================================================================================
+Tiempo: 6 horas
+
+--- 6.1 detail_screen.dart ---
+Layout:
+  A. Header:
+    - Foto HCM redonda con borde rojo (o avatar genérico si no hay)
+    - Nombre, carnet, gerencia, ubicación
+    - ASISTENCIA: Badge verde "Asistió 10:32" o botón rojo [Registrar Asistencia]
+  B. Sección Hijos:
+    - Texto: "Hijos (2 de 3 entregados)"
+    - Lista de ChildCard por cada hijo
+  C. Sección Evidencia:
+    - Si hay foto: thumbnail con botón expandir
+    - Si no: botón [📸 Tomar Foto para Todos]
+    - 1 foto por familia (cubre todos los hijos)
+
+Registrar Asistencia:
+  Al pulsar → POST /attendance → Badge cambia a verde → habilita despacho
+  Si ya asistió → badge verde, despacho habilitado desde el inicio
+
+--- 6.2 child_card.dart ---
+Tarjeta por cada hijo. Colores según estado:
+
+  PENDIENTE (no hay entrega o fue reversada):
+    Fondo: gris claro (#F3F4F6)
+    Borde izquierdo: gris oscuro (#374151)
+    Info: nombre, edad, género, categoría
+    Juguete sugerido + stock actual
+    Botón: [🎁 Entregar] → abre delivery_sheet
+
+  ENTREGADO:
+    Fondo: verde claro (#DCFCE7)
+    Borde izquierdo: verde (#166534)
+    Info: nombre, edad + hora de entrega + quién recibió
+    Botones: [📷 Ver Foto] [↺ Reversar] → abre revert_dialog
+
+  REVERSADO:
+    Fondo: naranja claro (#FFF7ED)
+    Borde izquierdo: naranja (#EA580C)
+    Info: nombre + "Reversado" + motivo
+    Botón: [🎁 Re-entregar] → abre delivery_sheet
+
+Stock en la tarjeta:
+  Si stock > 10: texto verde "Stock: 25"
+  Si stock 1-10: texto naranja "Stock: 3 ⚠️"
+  Si stock = 0: texto rojo "AGOTADO" + muestra alternativas
+
+--- 6.3 delivery_sheet.dart ---
+Bottom sheet que se abre desde el botón [Entregar] de la tarjeta.
+MÓDULOS: DESPACHO + INVENTARIO + EVIDENCIA en 1 solo lugar.
+
+Contenido:
+  A. Info del hijo: nombre, edad, categoría
+  B. Juguete:
+    - Muestra el sugerido con stock
+    - Si stock = 0: lista de alternativas seleccionables
+    - Validación: re-consulta stock al abrir (GET /dispatch/validate)
+  C. Receptor:
+    - 3 chips: [Colaborador] [Cónyuge] [Tercero]
+    - Si Tercero: input nombre (mínimo 3 caracteres)
+  D. Foto (opcional):
+    - Botón [📸 Tomar Foto]
+    - Preview de la foto tomada + botón eliminar
+    - Compresión WebP automática en segundo plano
+    - Botón "Omitir Foto" visible
+  E. Validación en tiempo real:
+    - ✅ Stock OK (o 🔴 Agotado)
+    - ✅ Sin entrega previa (o 🔴 Ya entregado)
+    - ✅ Asistencia registrada (o 🔴 Sin asistencia)
+  F. Confirmación:
+    - SlideToConfirm: deslizar de izquierda a derecha
+    - Track gris → al completar cambia a verde
+    - Vibración 200ms al confirmar
+  G. Tras confirmar:
+    - Bottom sheet se cierra
+    - Tarjeta del hijo cambia de gris a verde instantáneamente
+    - Snackbar: "✅ Hot Wheels entregado a Lucas"
+
+--- 6.4 revert_dialog.dart ---
+Dialog que se abre desde [Reversar] en la tarjeta entregada.
+Contenido:
+  - "¿Reversar entrega de [Hijo] → [Juguete]?"
+  - Input motivo (obligatorio, mínimo 10 caracteres)
+  - Botones: [Cancelar] [Confirmar]
+Tras confirmar:
+  - Tarjeta cambia de verde a gris oscuro
+  - Stock +1 en la BD
+  - Snackbar: "↺ Reversado"
+
+--- 6.5 slide_confirm.dart ---
+Widget deslizador:
+  - Track: fondo gris (#E2E8F0), bordes redondeados 30px
+  - Thumb: círculo rojo (#DA291C), 56px diámetro, icono flecha
+  - Texto: "Desliza para confirmar →"
+  - Al llegar al 85%: confirmación exitosa
+  - Si suelta antes: regresa al inicio suavemente
+  - Al confirmar: track cambia a verde, vibración
+
+--- 6.6 offline_banner.dart ---
+Barra fija naranja en la parte superior:
+  "⚠ Sin Red · Datos Guardados"
+Se muestra/oculta según estado de conectividad.
+
+================================================================================
+FASE 7: AUTO-SINCRONIZACIÓN OFFLINE
+================================================================================
+Tiempo: 3 horas
+
+Flujo:
+  1. Sin red → entregas se guardan en Hive
+  2. El banner naranja aparece
+  3. El despachador sigue trabajando normal
+  4. Al detectar red:
+    a. Snackbar "Sincronizando X entregas..."
+    b. Envía cada entrega con su foto
+    c. Si falla alguna → la marca como error local
+    d. Limpia las exitosas
+    e. Snackbar verde "✓ Sincronizado"
+  5. Banner desaparece
+
+================================================================================
+FASE 8: COMPILAR Y DISTRIBUIR
+================================================================================
+Tiempo: 2 horas
+
+Android: flutter build apk --release
+iOS: flutter build ipa --release (requiere Mac + Xcode)
+
+Checklist final:
+  [ ] Cero azul en toda la app
+  [ ] Botones >= 56px
+  [ ] Escaneo vibra al detectar
+  [ ] Fotos comprimen a WebP antes de enviar
+  [ ] Offline guarda y sincroniza
+  [ ] Deslizador previene toques accidentales
+  [ ] Tarjetas usan Verde/Gris/Naranja correctamente
+  [ ] Stock se muestra en tiempo real en cada tarjeta
+  [ ] Historial del día accesible desde el escáner
+================================================================================

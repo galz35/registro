@@ -1,0 +1,297 @@
+================================================================================
+📄 DOCUMENTO: SISTEMA DE DISEÑO VISUAL Y ESTILOS CSS (CORPORATIVO CLARO)
+================================================================================
+Archivo: css.txt
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\css.txt
+Lineamientos: 
+- Colores Corporativos Claro: Rojo (#DA291C) y Blanco (#FFFFFF).
+- Colores Neutros Aceptables: Negro (#000000) y escala de Grises.
+- RESTRICCIÓN: Queda estrictamente prohibido el uso del color AZUL.
+- VERDE: Reservado únicamente para badges de éxito de entrega (quinta opción).
+================================================================================
+
+Este documento contiene la especificación completa de la hoja de estilos y del
+sistema de diseño visual para la aplicación web en React y la app móvil en
+Flutter.
+
+--------------------------------------------------------------------------------
+1. VARIABLES DE ESTILO GLOBAL (CSS CUSTOM PROPERTIES)
+--------------------------------------------------------------------------------
+Añadir este código en el archivo de estilos global (`index.css` / `styles.css`):
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Fuentes */
+  --font-title: 'Outfit', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+
+  /* Colores Primarios Corporativos */
+  --claro-red: hsl(358, 83%, 48%);       /* Rojo Claro: #DA291C */
+  --claro-red-hover: hsl(358, 83%, 40%); /* Rojo Claro Oscurecido */
+  --claro-red-light: hsl(358, 83%, 95%); /* Rojo claro para alertas/fondos suaves */
+  
+  --white: hsl(0, 0%, 100%);             /* Blanco puro */
+  --black: hsl(0, 0%, 0%);               /* Negro puro */
+
+  /* Colores de Estado (Cumpliendo restricciones) */
+  --success-green: hsl(142, 72%, 29%);   /* Verde Esmeralda (Entregado - 5ta opción) */
+  --success-green-bg: hsl(142, 72%, 95%);
+  --alert-orange: hsl(28, 90%, 48%);     /* Naranja (Sin usar Azul para avisos) */
+  --alert-orange-bg: hsl(28, 90%, 96%);
+
+  /* Escala de Grises - Tema Claro (Móvil / Web Light) */
+  --grey-50: hsl(210, 40%, 98%);         /* Fondo General */
+  --grey-100: hsl(210, 40%, 95%);        /* Contenedores secundarios */
+  --grey-200: hsl(210, 40%, 90%);        /* Bordes y líneas de división */
+  --grey-300: hsl(210, 20%, 80%);
+  --grey-500: hsl(210, 10%, 55%);        /* Textos secundarios */
+  --grey-800: hsl(210, 10%, 20%);        /* Textos principales */
+  --grey-900: hsl(210, 10%, 12%);
+}
+
+/* Modo Noche (Web Admin Dashboard) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grey-50: hsl(0, 0%, 4%);           /* Fondo Negro / Carbón Profundo */
+    --grey-100: hsl(0, 0%, 8%);          /* Tarjetas y Contenedores */
+    --grey-200: hsl(0, 0%, 15%);         /* Bordes de tarjetas */
+    --grey-300: hsl(0, 0%, 25%);
+    --grey-500: hsl(0, 0%, 60%);         /* Texto secundario */
+    --grey-800: hsl(0, 0%, 90%);         /* Texto principal */
+    --grey-900: hsl(0, 0%, 98%);
+    
+    --claro-red-light: hsl(358, 83%, 12%);
+    --success-green-bg: hsl(142, 72%, 10%);
+    --alert-orange-bg: hsl(28, 90%, 10%);
+  }
+}
+```
+
+--------------------------------------------------------------------------------
+2. CONFIGURACIÓN DE TAILWIND CSS (React Frontend)
+--------------------------------------------------------------------------------
+Ajustar el archivo `tailwind.config.js` para inhabilitar paletas azules y
+sobreescribir con el sistema de color corporativo de Claro:
+
+```javascript
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: 'class', // O 'media' para detección automática
+  theme: {
+    extend: {
+      fontFamily: {
+        title: ['var(--font-title)', 'sans-serif'],
+        body: ['var(--font-body)', 'sans-serif'],
+      },
+      colors: {
+        claro: {
+          red: {
+            DEFAULT: '#DA291C',
+            hover: '#B51F15',
+            light: 'rgba(218, 41, 28, 0.1)',
+          },
+          white: '#FFFFFF',
+          black: '#121212',
+          grey: {
+            50: '#F8FAFC',
+            100: '#F1F5F9',
+            200: '#E2E8F0',
+            500: '#64748B',
+            800: '#1E293B',
+            900: '#0F172A',
+          }
+        },
+        // Reutilización para estados (Sin Azul)
+        success: '#10B981', // Verde
+        alert: '#F97316',   // Naranja
+      }
+    },
+  },
+  plugins: [],
+}
+```
+
+--------------------------------------------------------------------------------
+3. ESTILOS DE COMPONENTES WEB Y MÓVILES (HOJA DE ESTILOS CSS)
+--------------------------------------------------------------------------------
+
+A. Contenedores y Tarjetas Premium (Glassmorphism Oscuro)
+```css
+/* Tarjeta principal para Dashboard e Inventarios */
+.card-claro {
+  background-color: var(--grey-100);
+  border: 1px solid var(--grey-200);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.card-claro:hover {
+  border-color: var(--claro-red);
+  transform: translateY(-2px);
+}
+```
+
+B. Botones Corporativos (Rojo y Blanco de Alto Impacto)
+```css
+/* Botón Principal (Rojo Claro) */
+.btn-claro-primary {
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 14px;
+  background-color: var(--claro-red);
+  color: var(--white);
+  border: none;
+  border-radius: 30px;
+  padding: 12px 24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 14px 0 rgba(218, 41, 28, 0.3);
+}
+
+.btn-claro-primary:hover:not(:disabled) {
+  background-color: var(--claro-red-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(218, 41, 28, 0.4);
+}
+
+.btn-claro-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-claro-primary:disabled {
+  background-color: var(--grey-300);
+  color: var(--grey-500);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Botón Secundario (Blanco / Contorno Gris) */
+.btn-claro-secondary {
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 14px;
+  background-color: transparent;
+  color: var(--grey-800);
+  border: 2px solid var(--grey-200);
+  border-radius: 30px;
+  padding: 10px 22px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-claro-secondary:hover {
+  background-color: var(--grey-100);
+  border-color: var(--grey-500);
+}
+```
+
+C. Tabla de Censo y Reportes (Sin Azul)
+```css
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--grey-200);
+}
+
+.claro-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.claro-table th {
+  background-color: var(--grey-100);
+  color: var(--grey-800);
+  font-family: var(--font-title);
+  font-weight: 600;
+  padding: 16px;
+  border-bottom: 2px solid var(--grey-200);
+}
+
+.claro-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--grey-200);
+  color: var(--grey-800);
+  font-size: 14px;
+  background-color: var(--grey-50);
+}
+
+.claro-table tbody tr:hover td {
+  background-color: var(--grey-100);
+  transition: background-color 0.15s ease;
+}
+```
+
+D. Etiquetas de Estado (Badges - Prohibición de Azul)
+```css
+/* Estado: Entregado (Verde) */
+.badge-delivered {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--success-green-bg);
+  color: var(--success-green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Estado: Pendiente (Gris/Negro - Reemplaza Azul) */
+.badge-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--grey-200);
+  color: var(--grey-800);
+  border: 1px solid var(--grey-300);
+}
+
+/* Estado: Reversado (Naranja / Alerta) */
+.badge-reverted {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--alert-orange-bg);
+  color: var(--alert-orange);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+```
+
+--------------------------------------------------------------------------------
+4. DISEÑO DE ELEMENTOS TÁCTILES MÓVILES (Flutter / CSS-inspired)
+--------------------------------------------------------------------------------
+- **Efecto de Toque Primario**: Al pulsar botones en el celular, el color de 
+  fondo realiza una transición hacia `var(--claro-red-hover)` y se acompaña de 
+  una haptic feedback corta (vibración de 10ms).
+- **Slide-to-Confirm Color Track**: El canal del deslizador táctil utiliza un 
+  fondo gris neutro `var(--grey-200)`. El tirador (thumb) es de color 
+  `var(--claro-red)` y cambia a verde esmeralda `var(--success-green)` al 
+  alcanzar el 100% del deslizamiento en señal de éxito.
+- **Sin distracciones**: No se utilizan degradados multicolores ni tonalidades 
+  azules en fondos, barras de navegación ni bordes activos. Todo mantiene una 
+  línea sobria en Negro, Gris y Blanco con acentos en Rojo corporativo Claro.
+================================================================================

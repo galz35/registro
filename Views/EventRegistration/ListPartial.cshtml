@@ -1,0 +1,408 @@
+﻿@model List<Entities.EventRegistrationDetail>
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+}
+
+<!-- Tabla de Detalles de Acompañantes -->
+<div class="container-fluid">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>Detalles de Acompañantes</h4>
+        <button class="btn btn-success" data-toggle="modal" data-target="#addCompanionModal" id="addCompanionBtn">
+            <i class="fas fa-user-plus"></i> Agregar Acompañante
+        </button>
+    </div>
+    <table id="companionDetailTable" class="table table-bordered table-hover display nowrap" style="width:100%">
+        <thead>
+            <tr>
+                <th>Acciones</th>
+                <th>#</th>
+                <th>Nombre del Acompañante</th>
+                <th>Documento de Identidad</th>
+                <!-- Agrega más columnas si es necesario -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var detalle in Model)
+            {
+                <tr>
+                    <td>
+                        <button class="btn btn-primary btn-sm editCompanionBtn" data-id="@detalle.EventRegistrationDetailId">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-danger btn-sm deleteCompanionBtn" data-id="@detalle.EventRegistrationDetailId">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                    <td>@detalle.EventRegistrationDetailId</td>
+                    <td>@detalle.CompanionName</td>
+                    <td>@detalle.DocumentId</td>
+                    <!-- Agrega más columnas si es necesario -->
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para Agregar/Editar Detalle de Acompañante -->
+<div class="modal fade" id="addCompanionModal" tabindex="-1" role="dialog" aria-labelledby="addCompanionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <form id="companionForm">
+            @Html.AntiForgeryToken()
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Acompañante</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Campos del Formulario -->
+                    <input type="hidden" id="EventRegistrationDetailId" name="EventRegistrationDetailId" value="-1" />
+                    <div class="form-group">
+                        <label for="CompanionName">Nombre del Acompañante <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="CompanionName" name="CompanionName" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="DocumentId">Documento de Identidad <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="DocumentId" name="DocumentId" required />
+                    </div>
+                    <!-- Agrega más campos si es necesario -->
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts Necesarios -->
+<script src="~/Content/jquery.min.js"></script>
+<script src="~/Content/bootstrap.bundle.min.js"></script>
+<script src="~/Content/jquery.dataTables.min.js"></script>
+<script src="~/Content/dataTables.bootstrap4.min.js"></script>
+<script src="~/Content/sweetalert2.all.min.js"></script>
+<script src="~/Content/moment.min.js"></script>
+
+<!-- Scripts Personalizados -->
+<script>
+    $(document).ready(function () {
+        // Inicializar DataTable para Detalles de Acompañantes
+        var companionTable = $('#companionDetailTable').DataTable({
+            "ajax": {
+                "url": "@Url.Action("GetEventRegistrationDetailsJson", "EventRegistrationDetail")",
+                "type": "GET",
+                "data": { "eventId": @ViewBag.EventId },
+                "datatype": "json",
+                "dataSrc": "data"
+            },
+            "columns": [
+                {
+                    "data": "EventRegistrationDetailId",
+                    "render": function (data, type, row) {
+                        return `
+                            <button class="btn btn-primary btn-sm editCompanionBtn" data-id="${data}">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-danger btn-sm deleteCompanionBtn" data-id="${data}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        `;
+                    },
+                    "orderable": false,
+                    "searchable": false,
+                    "width": "150px"
+                },
+                { "data": "EventRegistrationDetailId" },
+                { "data": "CompanionName" },
+                { "data": "DocumentId" }
+                // Agrega más columnas si es necesario
+            ],
+            "dom": 'Bfrtip',
+            "buttons": [
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="fas fa-file-excel"></i> Exportar a Excel',
+                    className: 'btn btn-success',
+                    exportOptions: {
+                        columns: ':not(:first-child)'
+                    }
+                },
+                {
+                    extend: 'pdfHtml5',
+                    text: '<i class="fas fa-file-pdf"></i> Exportar a PDF',
+                    className: 'btn btn-danger',
+                    orientation: 'landscape',
+                    pageSize: 'A4',
+                    exportOptions: {
+                        columns: ':not(:first-child)'
+                    },
+                    customize: function (doc) {
+                        doc.defaultStyle.fontSize = 8;
+                        doc.styles.tableHeader.fontSize = 10;
+                    }
+                }
+            ],
+            "lengthMenu": [10, 20, 50, 100],
+            "pageLength": 10,
+            "responsive": true,
+            "language": {
+                "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+            }
+        });
+
+        // Manejar el botón de Agregar Acompañante dentro del modal
+        $('#addCompanionBtn').click(function () {
+            $('#companionForm')[0].reset();
+            $('#EventRegistrationDetailId').val('-1');
+            $('#companionDetailModal .modal-title').text('Agregar Acompañante');
+        });
+
+        // Manejar el botón de Editar Acompañante
+        $('#companionDetailTable').on('click', '.editCompanionBtn', function () {
+            var detailId = $(this).data('id');
+            $.ajax({
+                url: '@Url.Action("GetDetailById", "EventRegistrationDetail")',
+                type: "GET",
+                data: { "detailId": detailId },
+                success: function (response) {
+                    if (response.success) {
+                        var data = response.data;
+                        $('#EventRegistrationDetailId').val(data.EventRegistrationDetailId);
+                        $('#CompanionName').val(data.CompanionName);
+                        $('#DocumentId').val(data.DocumentId);
+                        // Agrega más campos si es necesario
+                        $('#companionDetailModal .modal-title').text('Editar Acompañante');
+                        $('#companionDetailModal').modal('show');
+                    } else {
+                        Swal.fire('Error', response.message, 'error');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'Ocurrió un error al obtener los datos del acompañante.', 'error');
+                }
+            });
+        });
+
+        // Manejar el botón de Eliminar Acompañante
+        $('#companionDetailTable').on('click', '.deleteCompanionBtn', function () {
+            var detailId = $(this).data('id');
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "¿Desea eliminar este acompañante?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Llamar a la acción DeleteDetail via AJAX
+                    $.ajax({
+                        url: '@Url.Action("DeleteDetail", "EventRegistrationDetail")',
+                        type: "POST",
+                        data: { "detailId": detailId },
+                        dataType: "json",
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (data) {
+                            if (data.status !== "Error") {
+                                Swal.fire('Eliminado', data.message, 'success');
+                                companionTable.ajax.reload();
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Ocurrió un error al eliminar el acompañante.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
+        // Manejar el envío del formulario para Agregar/Editar Acompañante
+        $('#companionForm').submit(function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var formData = new FormData(this);
+            var detailId = $('#EventRegistrationDetailId').val();
+            var url = detailId == '-1' ? '@Url.Action("AddDetail", "EventRegistrationDetail")' : '@Url.Action("EditDetail", "EventRegistrationDetail")';
+
+            $.ajax({
+                url: url,
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (data) {
+                    if (data.status === "Exito") {
+                        Swal.fire('Éxito', data.message, 'success');
+                        $('#companionDetailModal').modal('hide');
+                        companionTable.ajax.reload();
+                        // También recargar la tabla principal si es necesario
+                        // table.ajax.reload();
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'Ocurrió un error al guardar el acompañante.', 'error');
+                }
+            });
+        });
+
+        // Manejar el botón de Ver Soporte (Si Aplica)
+        $('#eventRegistrationTable').on('click', '.viewSupportBtn', function () {
+            var eventId = $(this).data('id');
+            var url = '@Url.Action("LoadSupport", "EventRegistration")' + '?eventId=' + eventId;
+            $('#supportFrame').attr('src', url);
+            $('#viewSupportModal').modal('show');
+        });
+
+        // Confirmar Acción (Asistir/No Asistir)
+        var currentAction = "";
+        var currentEventId = 0;
+
+        $('#eventRegistrationTable').on('click', '.goEventBtn', function () {
+            currentAction = "Asistir";
+            currentEventId = $(this).data('id');
+            $('#confirmActionMessage').text("¿Está seguro de asistir a este evento?");
+            $('#confirmActionModal').modal('show');
+        });
+
+        $('#eventRegistrationTable').on('click', '.dontGoEventBtn', function () {
+            currentAction = "No Asistir";
+            currentEventId = $(this).data('id');
+            $('#confirmActionMessage').text("¿Está seguro de no asistir a este evento?");
+            $('#confirmActionModal').modal('show');
+        });
+
+        $('#confirmActionBtn').click(function () {
+            if (currentAction === "Asistir") {
+                // Llamar a la acción GoEvent via AJAX
+                $.ajax({
+                    url: '@Url.Action("GoEvent", "EventRegistration")',
+                    type: "POST",
+                    data: { eventId: currentEventId },
+                    dataType: "json",
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (data) {
+                        if (data.status !== "Error") {
+                            Swal.fire('Éxito', data.message, 'success');
+                            $('#confirmActionModal').modal('hide');
+                            table.ajax.reload();
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'Ocurrió un error en la transacción.', 'error');
+                    }
+                });
+            } else if (currentAction === "No Asistir") {
+                // Llamar a la acción DontGoEvent via AJAX
+                $.ajax({
+                    url: '@Url.Action("DontGoEvent", "EventRegistration")',
+                    type: "POST",
+                    data: { eventId: currentEventId },
+                    dataType: "json",
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (data) {
+                        if (data.status !== "Error") {
+                            Swal.fire('Éxito', data.message, 'success');
+                            $('#confirmActionModal').modal('hide');
+                            table.ajax.reload();
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'Ocurrió un error en la transacción.', 'error');
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+<!-- Estilos Personalizados -->
+<style type="text/css">
+    .breadcrumb-container {
+        margin: 20px 0;
+    }
+
+    .breadcrumb {
+        background-color: transparent;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .breadcrumb-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+        .breadcrumb-item a {
+            color: blue;
+            text-decoration: none;
+        }
+
+    .breadcrumb-box {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+        .breadcrumb-box:hover {
+            background-color: #e2e6ea;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    .breadcrumb-item.active .breadcrumb-box {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .breadcrumb-item.active .breadcrumb-box:hover {
+            background-color: #5a6268;
+        }
+
+    .breadcrumb-box i {
+        margin-right: 5px;
+    }
+
+    /* Ajustes para DataTables */
+    table.dataTable thead .sorting:after,
+    table.dataTable thead .sorting_asc:after,
+    table.dataTable thead .sorting_desc:after {
+        content: "";
+    }
+
+    table.dataTable tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Ajustes de botones */
+    .dt-buttons .btn {
+        margin-right: 5px;
+    }
+</style>

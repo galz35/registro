@@ -1,0 +1,140 @@
+﻿
+@Html.DevExpress().GetStyleSheets(
+      new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" })
+
+<script type="text/javascript">
+    var selectedIDs;
+    function onBeginCallback(s, e) {
+        // Pasamos los ids seleccionados al boton de autorizar
+        e.customArgs["selectedIDs"] = selectedIDs;
+        if (selectedIDs != "")
+            gvAuthorizeRrhh.PerformCallback;
+    }
+
+    function onSelectionChanged(s, e) {
+        s.GetSelectedFieldValues("ExpenseId", GetSelectedFieldValuesCallback);
+    }
+
+    function GetSelectedFieldValuesCallback(values) {
+        // Captura todas las llaves seleccionadas
+        selectedIDs = values.join(',');
+    }
+
+    function onAuthorizeButtonClick(s, e) {
+        $("#selectedIdsAP").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function onDeniedButtonClick(s, e) {
+        $("#selectedIdsDN").val(selectedIDs);
+        selectedIDs = "";
+    }
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvAuthorizeRrhh.SetHeight(height - 200);
+    }
+    function ShowDetailPopup(elementID, url) {
+        popImage.SetContentUrl(url);
+        popImage.ShowAtElementByID(elementID);
+    }
+
+</script>
+
+@*<div class="col-12 form-h1 content" style="margin:0;padding:0;">
+        <h1 class="form-h1 col-12 divContent" style="margin:0;">Autorizaciones Pendientes</h1>
+    </div>*@
+
+<div class="form-h2 col-12 content" style="margin-top: 10px; background-color: transparent; padding:0; margin-bottom:5px; margin-left:30px;">
+    @using (Html.BeginForm("AuthorizeRrhh", "Expenses"))
+    {
+        <div style="width:70px; float:left;">
+            @Html.Hidden("selectedIdsAP")
+            @Html.DevExpress().Button(settings =>
+       {
+           settings.Name = "btnAutorizar";
+           settings.EncodeHtml = false;
+           settings.Text = "Autorizar";
+           settings.Width = 40;
+           settings.Height = 25;
+           settings.Theme = "Aqua";
+           settings.UseSubmitBehavior = true;
+           settings.ClientSideEvents.Click = "onAuthorizeButtonClick";
+       }).GetHtml()
+        </div>
+    }
+        <div style="width:70px; float:left; padding-left:30px;">
+            @using (Html.BeginForm("DeniedRrhh", "Expenses"))
+            {
+                @Html.Hidden("selectedIdsDN");
+                @Html.DevExpress().Button(settings =>
+           {
+               settings.Name = "btnDenegar";
+               settings.EncodeHtml = false;
+               settings.Text = "Denegar";
+               settings.Width = 40;
+               settings.Height = 25;
+               //settings.Theme = "Aqua";
+               settings.UseSubmitBehavior = true;
+               settings.ClientSideEvents.Click = "onDeniedButtonClick";
+           }).GetHtml()
+            }
+
+        </div>
+    </div>
+
+
+    @using (Html.BeginForm())
+    {
+        if (ViewData["EditError"] != null)
+        {
+            <font face="univers" size="3" color="red">
+                @ViewData["EditError"]
+            </font>
+        }
+    }
+
+
+    @{Html.RenderAction("AuthorizeRrhhPartial");}
+
+    @Html.DevExpress().PopupControl(settings =>
+{
+    settings.Theme = "Mulberry";
+    settings.Name = "popup";
+    settings.ShowHeader = true;
+    settings.HeaderText = "Detalle de viatico";
+    settings.Width = 800;
+    settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settings.CloseAction = CloseAction.CloseButton;
+    settings.CloseOnEscape = true;
+    settings.SetContent(() =>
+    {
+        Html.RenderPartial("AuthorizeConsultPartial", null);
+    });
+}).GetHtml()
+
+    @Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Theme = "Mulberry";
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Imagen de archivo de rendición";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 800;
+    settingsPopup.Height = 600;
+    //settingsPopup.Modal = true;
+
+
+
+}).GetHtml()

@@ -1,0 +1,1195 @@
+﻿@{
+    ViewBag.Title = "Inventario · Hub Central";
+}
+
+<style>
+    :root {
+        --rojo: #e1251b;
+        --rojo2: #b30000;
+        --primario: #1a252f;
+        --gris: #f4f7f6;
+        --gris2: #e9ecf2;
+        --blanco: #fff;
+        --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    }
+
+    body {
+        background-color: var(--gris);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ---- Header hero + KPIs Estilo Dashboard ---- */
+    .hero {
+        background: linear-gradient(135deg, var(--primario), #2c3e50);
+        color: #fff;
+        border-radius: 20px;
+        padding: 25px 30px;
+        box-shadow: 0 10px 25px rgba(26, 37, 47, 0.2);
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero::before {
+            content: '\f4d3';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: -20px;
+            top: -30px;
+            font-size: 150px;
+            opacity: 0.05;
+        }
+
+    .kpi {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(5px);
+        border-radius: 12px;
+        padding: 12px 20px;
+        border: 1px solid rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .kpi .n {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .kpi small {
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+    /* ---- Contenedores y Tablas ---- */
+    .shell {
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: var(--card-shadow);
+        border: none;
+        padding: 20px;
+    }
+
+    table.dataTable thead th {
+        border-bottom: 2px solid var(--gris2) !important;
+        border-top: none;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #666;
+        background: #fff;
+    }
+
+    table.dataTable tbody td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f9f9f9;
+    }
+
+    .dt-filter-row th {
+        background: #f8f9fa;
+        border-top: none;
+        padding: 8px !important;
+    }
+
+    .dt-filter-row input, .dt-filter-row select {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background: #fff;
+    }
+
+    /* ---- Pestañas (Tabs) Estilo Moderno ---- */
+    .sticky-tabs {
+        position: sticky;
+        top: 15px;
+        z-index: 100;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        padding: 5px;
+        border: none;
+        gap: 5px;
+    }
+
+    #menuTabs .nav-link {
+        color: #666 !important;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 10px 20px;
+        border: none;
+        transition: 0.3s;
+    }
+
+        #menuTabs .nav-link:hover {
+            background-color: var(--gris);
+        }
+
+        #menuTabs .nav-link.active {
+            background-color: var(--rojo) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 10px rgba(225, 37, 27, 0.2);
+        }
+
+    /* ---- Chips (Filtros) ---- */
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--gris2);
+        margin: 4px;
+        cursor: pointer;
+        background: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #555;
+        transition: 0.2s;
+        user-select: none;
+    }
+
+        .chip:hover {
+            background: #f8f9fa;
+        }
+
+        .chip.active {
+            background: var(--primario);
+            color: white;
+            border-color: var(--primario);
+            box-shadow: 0 4px 10px rgba(26, 37, 47, 0.2);
+        }
+
+    /* ---- Botón flotante (FAB) ---- */
+    .fab {
+        position: fixed;
+        right: 30px;
+        bottom: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--rojo);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow: 0 10px 25px rgba(225, 37, 27, 0.4);
+        cursor: pointer;
+        z-index: 1050;
+        transition: 0.3s;
+    }
+
+        .fab:hover {
+            transform: scale(1.1);
+            background: var(--rojo2);
+        }
+
+    /* ---- Resaltado bajo stock y Badges ---- */
+    .row-low td {
+        background-color: #fff5f5 !important;
+        color: var(--rojo2);
+        font-weight: bold;
+    }
+
+    .badge {
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    /* ---- Modales Clean UI ---- */
+    .modal-content {
+        border-radius: 16px;
+        border: none;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid var(--gris2);
+        padding: 20px;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--gris2);
+        background: #fff;
+        padding: 20px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+
+        .form-control:focus {
+            border-color: var(--primario);
+            box-shadow: none;
+        }
+
+    .btn {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    /* ---- Autocomplete liviano ---- */
+    .ac-wrap {
+        position: relative;
+    }
+
+    .ac-input {
+        width: 100%;
+    }
+
+    .ac-list {
+        position: absolute;
+        z-index: 2051;
+        left: 0;
+        right: 0;
+        top: 100%;
+        background: #fff;
+        border: 1px solid var(--gris2);
+        border-radius: 10px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        max-height: 250px;
+        overflow: auto;
+        display: none;
+        margin-top: 5px;
+    }
+
+    .ac-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f9f9f9;
+    }
+
+        .ac-item:hover {
+            background: #fff5f5;
+            color: var(--rojo);
+            font-weight: bold;
+        }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+
+    <div class="hero d-flex flex-wrap justify-content-between align-items-center">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="font-weight-bold mb-1">Hub Central de Logística</h3>
+            <p class="mb-0 opacity-75">Gestión integral de EPP, Ropa y Medicamentos.</p>
+            <small class="mt-2 d-block opacity-50"><i class="fas fa-keyboard mr-1"></i> Atajos: <kbd class="bg-dark text-light border-0">N</kbd> Solicitud · <kbd class="bg-dark text-light border-0">I</kbd> Inventario</small>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center" style="gap:15px">
+            <div class="kpi">
+                <div><div class="n" id="kpiPendAprob">0</div><small>Por Aprobar Jefe</small></div>
+            </div>
+            <div class="kpi">
+                <div><div class="n text-warning" id="kpiPendAtender">0</div><small>Bodega Pendiente</small></div>
+            </div>
+            <div class="kpi">
+                <div><div class="n text-danger" id="kpiBajo">0</div><small>Stock Crítico</small></div>
+            </div>
+            <div class="ml-2 pl-3 border-left" style="border-color: rgba(255,255,255,0.2) !important;">
+                <label class="mb-1 text-white-50 small font-weight-bold d-block">BODEGA ACTIVA</label>
+                <select id="selAlm" class="form-control form-control-sm font-weight-bold border-0 shadow-sm" style="width:200px; border-radius:6px; color: var(--primario);"></select>
+            </div>
+        </div>
+    </div>
+
+    <ul id="menuTabs" class="nav nav-tabs sticky-tabs bg-white mb-4">
+        <li class="nav-item"><a class="nav-link active" data-target="#secSolic" href="#"><i class="fas fa-inbox mr-2"></i>Solicitudes Globales</a></li>
+        <li class="nav-item"><a class="nav-link" data-target="#secBodega" href="#"><i class="fas fa-truck-loading mr-2"></i>Monitor Despachos</a></li>
+        <li class="nav-item"><a class="nav-link" data-target="#secInv" href="#"><i class="fas fa-boxes mr-2"></i>Inventario Físico</a></li>
+        <li class="nav-item"><a class="nav-link" data-target="#secReg" href="#"><i class="fas fa-history mr-2"></i>Auditoría y Kardex</a></li>
+    </ul>
+
+    <div class="tab-content shell">
+
+        <div id="secSolic" class="tab-pane fade show active">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div id="chipsEstado">
+                    <span class="chip active" data-estado="*">Todas</span>
+                    <span class="chip" data-estado="Pendiente">Pendientes</span>
+                    <span class="chip" data-estado="Aprobada">Aprobadas</span>
+                    <span class="chip" data-estado="Parcial">Parciales</span>
+                    <span class="chip" data-estado="Atendida">Atendidas</span>
+                    <span class="chip" data-estado="Rechazada">Rechazadas</span>
+                </div>
+                <button id="btnNuevaSol" class="btn btn-danger font-weight-bold shadow-sm"><i class="fas fa-plus mr-1"></i> Crear Solicitud</button>
+            </div>
+            <div class="table-responsive">
+                <table id="tblSolic" class="table table-hover w-100"></table>
+            </div>
+        </div>
+
+        <div id="secBodega" class="tab-pane fade">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <button id="btnSalidaDir" class="btn btn-dark font-weight-bold"><i class="fas fa-dolly mr-1"></i> Salida Directa</button>
+                    <button id="btnTransfer" class="btn btn-outline-secondary font-weight-bold ml-2"><i class="fas fa-exchange-alt mr-1"></i> Transferir Stock</button>
+                </div>
+                <small class="text-muted"><i class="fas fa-info-circle text-primary"></i> Aprobadas/Parciales → <b>Atender</b> (Medicamentos aplica FEFO automático).</small>
+            </div>
+            <div class="table-responsive">
+                <table id="tblBod" class="table table-hover w-100"></table>
+            </div>
+        </div>
+
+        <div id="secInv" class="tab-pane fade">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <div class="d-flex gap-2">
+                    <div class="chip active" data-filtro="tipo:*">Todos</div>
+                    <div class="chip" data-filtro="tipo:ROPA">Ropa</div>
+                    <div class="chip" data-filtro="tipo:EPP">EPP</div>
+                    <div class="chip" data-filtro="tipo:MEDICAMENTO">Medicamentos</div>
+                    <div class="chip text-danger border-danger" data-filtro="min:1"><i class="fas fa-exclamation-triangle mr-1"></i> Ver Críticos</div>
+                </div>
+                <button id="btnNewArt" class="btn btn-danger font-weight-bold shadow-sm"><i class="fas fa-box-open mr-1"></i> Nuevo Artículo</button>
+            </div>
+            <div class="table-responsive">
+                <table id="tblInvVar" class="table table-hover w-100"></table>
+            </div>
+            <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle text-primary"></i> <b>Entrada:</b> Compras/Ingresos | <b>Merma:</b> Daños/Vencimientos | <b>Historial:</b> Ver Kardex.</small>
+        </div>
+
+        <div id="secReg" class="tab-pane fade">
+            <div class="bg-light p-3 rounded mb-3 border">
+                <div class="row align-items-end">
+                    <div class="col-md-2"><label class="small font-weight-bold text-muted mb-1">Desde</label><input type="date" id="fDesde" class="form-control form-control-sm"></div>
+                    <div class="col-md-2"><label class="small font-weight-bold text-muted mb-1">Hasta</label><input type="date" id="fHasta" class="form-control form-control-sm"></div>
+                    <div class="col-md-2">
+                        <label class="small font-weight-bold text-muted mb-1">Tipo de Movimiento</label>
+                        <select id="fTipo" class="form-control form-control-sm">
+                            <option value="">(Todos)</option>
+                            <option>ENTRADA</option>
+                            <option>SALIDA</option>
+                            <option>MERMA</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small font-weight-bold text-muted mb-1">Origen / Causa</label>
+                        <select id="fOrigen" class="form-control form-control-sm">
+                            <option value="">(Todos)</option>
+                            <option>Entrada</option>
+                            <option>Merma</option>
+                            <option>Solicitud</option>
+                            <option>Directa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2"><label class="small font-weight-bold text-muted mb-1">Carnet Empleado</label><input id="fEmp" class="form-control form-control-sm" placeholder="Opcional..."></div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button id="btnRegBuscar" class="btn btn-primary btn-sm btn-block font-weight-bold shadow-sm">Buscar</button>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-pills mb-3 small font-weight-bold">
+                <li class="nav-item"><a class="nav-link active rounded-pill px-4" data-toggle="tab" href="#regMov">Kardex General</a></li>
+                <li class="nav-item"><a class="nav-link rounded-pill px-4 text-muted" data-toggle="tab" href="#regDia">Resumen Salidas del Día</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div id="regMov" class="tab-pane fade show active"><div class="table-responsive"><table id="tblReg" class="table table-hover w-100"></table></div></div>
+                <div id="regDia" class="tab-pane fade"><div class="table-responsive"><table id="tblDia" class="table table-hover w-100"></table></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fab" id="fabNueva" title="Crear nueva solicitud (Tecla N)"><i class="fas fa-plus"></i></div>
+
+<div class="modal fade" id="mdlNuevaSol" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header d-flex justify-content-between align-items-center">
+                <h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-file-alt text-danger mr-2"></i>Crear Solicitud Manual</h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body bg-light" style="max-height:75vh; overflow-y:auto">
+                <form id="frmNuevaSol" autocomplete="off">
+                    <div class="row">
+                        <div class="form-group col-md-4"><label class="small font-weight-bold text-muted">CARNET EMPLEADO</label><input id="nsEmpCarnet" class="form-control" placeholder="Ej: 123456" /></div>
+                        <div class="form-group col-md-8"><label class="small font-weight-bold text-muted">MOTIVO DE SOLICITUD</label><input id="nsMotivo" class="form-control" placeholder="Ej: Ingreso nuevo, reposición por desgaste..." /></div>
+                    </div>
+
+                    <div class="bg-white p-3 rounded border mb-3 shadow-sm">
+                        <div class="row align-items-end">
+                            <div class="form-group col-md-5 mb-0"><label class="small font-weight-bold text-muted">BUSCAR ARTÍCULO</label><input id="nsArt" class="form-control border-primary" placeholder="Escribe código o nombre…" /><input type="hidden" id="nsIdArt" /></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold text-muted">TALLA</label><select id="nsTalla" class="form-control"><option>UNI</option></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold text-muted">SEXO</label><select id="nsSexo" class="form-control"><option>N</option><option>M</option><option>F</option></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold text-muted">CANT</label><input id="nsCant" type="number" class="form-control text-center font-weight-bold" min="1" value="1" /></div>
+                            <div class="form-group col-md-1 mb-0"><button type="button" id="btnAddNS" class="btn btn-dark btn-block shadow-sm"><i class="fas fa-level-down-alt"></i></button></div>
+                        </div>
+                        <div class="form-group mt-2 mb-0"><input id="nsObs" class="form-control form-control-sm bg-light" placeholder="Observación específica para este ítem (Opcional)" /></div>
+                    </div>
+
+                    <div class="table-responsive bg-white rounded border">
+                        <table class="table table-sm mb-0" id="tblNS">
+                            <thead class="bg-light text-muted"><tr><th>Código</th><th>Descripción</th><th>Talla</th><th>Sexo</th><th class="text-center">Cant</th><th>Notas</th><th></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 text-right">
+                        <button type="button" class="btn btn-light border px-4 mr-2" data-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-danger px-5 shadow"><i class="fas fa-save mr-2"></i> Guardar Solicitud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlDetalle" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header"><h5 class="modal-title font-weight-bold">Detalle de Solicitud</h5><button class="close" data-dismiss="modal">&times;</button></div>
+            <div class="modal-body p-0">
+                <table class="table table-hover mb-0" id="tblDetalle">
+                    <thead class="bg-light small text-muted text-uppercase"><tr><th class="pl-3">Artículo</th><th>Variante</th><th class="text-center">Pidió</th><th class="text-center">Entregado</th><th class="text-center text-danger">Pendiente</th><th class="text-center">En Stock</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlMov" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark text-white border-0 pb-3">
+                <h5 class="modal-title font-weight-bold" id="movTitle"><i class="fas fa-exchange-alt mr-2"></i> Registro de Inventario</h5>
+                <button class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <form id="frmMov">
+                <div class="modal-body bg-light p-4">
+                    <input type="hidden" id="movTipo" value="ENTRADA" />
+                    <input type="hidden" id="movIdArt" />
+
+                    <div class="form-group"><label class="small font-weight-bold text-muted">ARTÍCULO</label><input id="movArtTxt" class="form-control font-weight-bold" disabled /></div>
+
+                    <div class="row">
+                        <div class="form-group col-md-4"><label class="small font-weight-bold text-muted">TALLA</label><select id="movTalla" class="form-control"></select></div>
+                        <div class="form-group col-md-4"><label class="small font-weight-bold text-muted">SEXO</label><select id="movSexo" class="form-control"><option>N</option><option>M</option><option>F</option></select></div>
+                        <div class="form-group col-md-4"><label class="small font-weight-bold text-muted">CANTIDAD</label><input id="movCant" type="number" class="form-control text-center font-weight-bold text-primary" style="font-size:1.2rem" min="1" value="1" /></div>
+                    </div>
+
+                    <div class="row" id="grpLoteWrapper">
+                        <div class="form-group col-md-6" id="grpLote"><label class="small font-weight-bold text-muted">LOTE (Medicina)</label><input id="movLote" class="form-control" placeholder="Cód. Lote" /></div>
+                        <div class="form-group col-md-6" id="grpVenc"><label class="small font-weight-bold text-muted">VENCIMIENTO</label><input id="movVenc" type="date" class="form-control" /></div>
+                    </div>
+
+                    <div class="form-group mb-0"><label class="small font-weight-bold text-muted">RESPALDO / COMENTARIO</label><textarea id="movCom" class="form-control" rows="2" placeholder="Motivo o No. Factura"></textarea></div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 bg-light">
+                    <button class="btn btn-danger btn-block btn-lg font-weight-bold shadow-sm" id="btnSavMov">Procesar Transacción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlAtender" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-box-open text-primary mr-2"></i> Despachar Solicitud</h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0 bg-light">
+                <div class="table-responsive bg-white">
+                    <table class="table table-hover mb-0" id="tblAtender">
+                        <thead class="small text-muted text-uppercase bg-light"><tr><th class="pl-3">Artículo</th><th>Variante</th><th class="text-center">Aprobado</th><th class="text-center text-success">Ya Entregado</th><th class="text-center text-danger">Falta</th><th class="text-center bg-dark text-white">Stock Bodega</th><th class="text-center" style="width:120px">Cant. a Entregar</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="p-4 border-top">
+                    <div class="row align-items-end">
+                        <div class="form-group col-md-6 mb-0"><label class="small font-weight-bold text-muted">Nota para el empleado (Opcional)</label><input id="bodComentario" class="form-control bg-white" placeholder="Ej: Pasa por bodega a retirar..." /></div>
+                        <div class="form-group col-md-3 mb-0"><label class="small font-weight-bold text-muted">Fecha Envío Físico</label><input id="bodFechaEnvio" type="date" class="form-control bg-white" /></div>
+                        <div class="form-group col-md-3 mb-0 d-flex align-items-center h-100 pb-2">
+                            <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input" id="bodNotif"><label class="custom-control-label font-weight-bold text-primary" for="bodNotif">Enviar Email</label></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button id="btnRechazarTodo" class="btn btn-outline-danger font-weight-bold px-4"><i class="fas fa-ban mr-1"></i> Rechazar Todo</button>
+                <div>
+                    <button id="btnAuto" class="btn btn-dark font-weight-bold px-4 mr-2" title="Llena las cantidades basado en el stock disponible"><i class="fas fa-magic mr-1"></i> Auto-Completar</button>
+                    <button id="btnDesp" class="btn btn-success font-weight-bold px-5 shadow"><i class="fas fa-check-circle mr-1"></i> Despachar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlSalida" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-dark text-white border-0"><h5 class="modal-title font-weight-bold"><i class="fas fa-dolly mr-2"></i> Registro de Salida Directa</h5><button class="close text-white" data-dismiss="modal">&times;</button></div>
+            <form id="frmSalida" autocomplete="off">
+                <div class="modal-body bg-light" style="max-height:70vh;overflow:auto">
+                    <div class="row bg-white p-3 rounded shadow-sm border mb-3 mx-0">
+                        <div class="form-group col-md-4 mb-0"><label class="small font-weight-bold text-muted">CARNET EMPLEADO</label><input id="sdEmp" class="form-control font-weight-bold text-primary" placeholder="Requerido" /></div>
+                        <div class="form-group col-md-5 mb-0"><label class="small font-weight-bold text-muted">OBSERVACIÓN GENERAL</label><input id="sdObsGlobal" class="form-control bg-light border-0" placeholder="Motivo del despacho exprés..." /></div>
+                        <div class="form-group col-md-3 mb-0"><label class="small font-weight-bold text-muted">FECHA</label><input id="sdFechaEnvio" type="date" class="form-control" /></div>
+                    </div>
+
+                    <div class="bg-white p-3 rounded shadow-sm border mb-3">
+                        <div class="row align-items-end">
+                            <div class="form-group col-md-5 mb-0"><label class="small font-weight-bold text-muted">BUSCAR ARTÍCULO</label><input id="sdArt" class="form-control border-danger" placeholder="Código o nombre…" /><input type="hidden" id="sdIdArt" /></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold text-muted">TALLA</label><select id="sdTalla" class="form-control"><option>UNI</option></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold text-muted">SEXO</label><select id="sdSexo" class="form-control"><option>N</option><option>M</option><option>F</option></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold text-muted">CANT</label><input id="sdCant" type="number" class="form-control text-center font-weight-bold" min="1" value="1" /></div>
+                            <div class="form-group col-md-1 mb-0"><button id="btnAddSD" type="button" class="btn btn-dark btn-block shadow-sm"><i class="fas fa-plus"></i></button></div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="form-group col-md-6 mb-0"><input id="sdLote" class="form-control form-control-sm bg-light" placeholder="Lote (Solo Medicinas)" /></div>
+                            <div class="form-group col-md-6 mb-0"><input id="sdObs" class="form-control form-control-sm bg-light" placeholder="Nota por ítem (Opcional)" /></div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive bg-white rounded border">
+                        <table class="table table-sm mb-0" id="tblSalDet">
+                            <thead class="bg-light text-muted"><tr><th class="pl-3">Código</th><th>Nombre</th><th>Variante</th><th class="text-center">Cant</th><th>Lote</th><th>Obs</th><th></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light px-4 mr-2" data-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger px-5 font-weight-bold shadow">Procesar Salida Inmediata</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlTransfer" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-light border-0"><h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-exchange-alt text-primary mr-2"></i> Traslado de Inventario</h5><button class="close" data-dismiss="modal">&times;</button></div>
+            <form id="frmTransfer">
+                <div class="modal-body p-4">
+                    <div class="row mb-3">
+                        <div class="form-group col-6"><label class="small font-weight-bold text-muted">BODEGA ORIGEN</label><select id="trAlmOri" class="form-control font-weight-bold bg-light"></select></div>
+                        <div class="form-group col-6"><label class="small font-weight-bold text-muted">BODEGA DESTINO</label><select id="trAlmDes" class="form-control font-weight-bold border-primary"></select></div>
+                    </div>
+                    <div class="form-group"><label class="small font-weight-bold text-muted">ARTÍCULO</label><input id="trArtTxt" class="form-control border-dark" placeholder="Buscar..." /><input type="hidden" id="trIdArt" /></div>
+                    <div class="row">
+                        <div class="form-group col-4"><label class="small font-weight-bold text-muted">TALLA</label><input id="trTalla" class="form-control text-center" value="UNI" /></div>
+                        <div class="form-group col-4"><label class="small font-weight-bold text-muted">SEXO</label><input id="trSexo" class="form-control text-center" value="N" /></div>
+                        <div class="form-group col-4"><label class="small font-weight-bold text-muted">CANTIDAD</label><input id="trCant" type="number" class="form-control text-center font-weight-bold text-primary" min="1" value="1" /></div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-6"><label class="small font-weight-bold text-muted">LOTE (Opcional)</label><input id="trLote" class="form-control" /></div>
+                        <div class="form-group col-6"><label class="small font-weight-bold text-muted">VENCE</label><input id="trVence" type="date" class="form-control" /></div>
+                    </div>
+                    <div class="form-group mb-0"><label class="small font-weight-bold text-muted">JUSTIFICACIÓN</label><textarea id="trCom" class="form-control" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button class="btn btn-dark btn-block btn-lg shadow font-weight-bold">Ejecutar Traslado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlNewArt" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0"><h5 class="modal-title font-weight-bold">Crear Artículo en Catálogo</h5><button class="close" data-dismiss="modal">&times;</button></div>
+            <form id="frmNewArt">
+                <div class="modal-body pt-0">
+                    <div class="form-group"><label class="small font-weight-bold text-muted">CÓDIGO (SKU)</label><input id="naCod" class="form-control text-uppercase font-weight-bold" required maxlength="30" /></div>
+                    <div class="form-group"><label class="small font-weight-bold text-muted">DESCRIPCIÓN COMERCIAL</label><input id="naNom" class="form-control" required maxlength="120" /></div>
+                    <div class="row">
+                        <div class="form-group col-md-6"><label class="small font-weight-bold text-muted">TIPO</label><select id="naTipo" class="form-control" required><option>EPP</option><option>ROPA</option><option>MEDICAMENTO</option><option class="text-danger">EVENTO</option></select></div>
+                        <div class="form-group col-md-6"><label class="small font-weight-bold text-muted">UNIDAD DE MEDIDA</label><input id="naUni" class="form-control text-center" value="UN" /></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button class="btn btn-danger btn-block font-weight-bold shadow-sm">Guardar en Base de Datos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlHist" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-dark text-white border-0"><h5 class="modal-title font-weight-bold"><i class="fas fa-list mr-2"></i> Auditoría de Movimientos (Kardex)</h5><button class="close text-white" data-dismiss="modal">&times;</button></div>
+            <div class="modal-body p-0">
+                <div class="table-responsive" style="max-height: 500px;">
+                    <table id="tblHist" class="table table-hover table-sm mb-0">
+                        <thead class="bg-light text-muted small text-uppercase"><tr><th class="pl-3">Fecha</th><th>Tipo</th><th>Talla</th><th>Sexo</th><th class="text-center">Cant</th><th>Lote</th><th>Vence</th><th>Respaldo/Nota</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+
+    <script>
+        $.ajaxSetup({ cache:false });
+
+        const URLS = {
+            almacenes      : '@Url.Action("Almacenes","Inventario")',
+            articulos      : '@Url.Action("Articulos","Inventario")',
+            articuloCrear  : '@Url.Action("ArticuloCrear","Inventario")',
+            empleados      : '@Url.Action("Empleados","Inventario")',
+            inventario     : '@Url.Action("Inventario","Inventario")',
+            variantes      : '@Url.Action("ArticuloVariantes","Inventario")',
+            invMov         : '@Url.Action("InventarioMovimiento","Inventario")',
+            movHist        : '@Url.Action("MovHist","Inventario")',
+            solicitudes    : '@Url.Action("Solicitudes","Inventario")',
+            soliCrear      : '@Url.Action("SolicitudesCrear","Inventario")',
+            soliApr        : '@Url.Action("SolicitudesAprobar","Inventario")',
+            soliRech       : '@Url.Action("SolicitudesRechazar","Inventario")',
+            solDetalle     : '@Url.Action("SolicitudDetalle","Inventario")',
+            bodPend        : '@Url.Action("BodegaPendientes","Inventario")',
+            bodDesp        : '@Url.Action("BodegaDespachar","Inventario")',
+            bodSalidaDir   : '@Url.Action("BodegaSalidaDirecta","Inventario")',
+            movList        : '@Url.Action("MovimientosListado","Inventario")',
+            salDia         : '@Url.Action("SalidasDelDia","Inventario")',
+            transferir     : '@Url.Action("Transferir","Inventario")'
+        };
+
+        const DT_ES = {
+            sProcessing:"Procesando...", sLengthMenu:"Mostrar _MENU_", sZeroRecords:"No se encontraron resultados",
+            sEmptyTable:"Sin datos", sInfo:"_START_–_END_ de _TOTAL_", sInfoEmpty:"0–0 de 0",
+            sInfoFiltered:"(filtrado de _MAX_)",
+            oPaginate:{ sFirst:"Primero", sLast:"Último", sNext:"Sig.", sPrevious:"Ant." },
+            buttons:{ colvis:"Columnas", excel:"Excel" }
+        };
+
+        function ok(t){ if(window.Swal){ Swal.fire({toast:true,position:'top-end',icon:'success',title:t,timer:1400,showConfirmButton:false}); } else alert(t); }
+        function err(t){ if(window.Swal){ Swal.fire({toast:true,position:'top-end',icon:'error',title:t,timer:2000,showConfirmButton:false}); } else alert(t); }
+        function loading(v){ v?$.LoadingOverlay("show",{background:"rgba(255,255,255,.6)"}):$.LoadingOverlay("hide"); }
+        const getJson=(u,d)=>$.ajax({url:u,type:'GET',data:d,dataType:'json'});
+        const post   =(u,d)=>$.ajax({url:u,type:'POST',data:d,dataType:'json'});
+        function fmt(d){ const x=new Date(d); return isNaN(x)?'':x.toLocaleString(); }
+        function iso10(d){ if(!d) return ''; const dt=new Date(d); if(isNaN(dt)) return ''; return new Date(dt.getTime()-dt.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+        function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+        let ALM=1;
+        let ALMS=[], ART=[], EMP=[], INV=[];
+        let DT_Solic=null, DT_Bod=null, DT_InvVar=null, DT_Reg=null, DT_Dia=null;
+        let filtroTipo='*', filtroMin=0, filtroEstado='*';
+        let NS_DET=[], SD_DET=[], BOD_LAST_ID=null;
+
+        function buildAc($input, sourceFn, onPick){
+            const wrap=$('<div class="ac-wrap"></div>');
+            const list=$('<div class="ac-list"></div>');
+            $input.wrap(wrap).addClass('ac-input').attr('autocomplete','off').after(list);
+
+            function render(items){
+                if(!items.length){ list.hide(); return; }
+                list.html(items.map(it=>`<div class="ac-item" data-id="${it.id}">${it.txt}</div>`).join('')).show();
+            }
+            $input.on('input focus', ()=>{ render(sourceFn(norm($input.val())).slice(0,50)); });
+            $(document).on('click', e=>{ if(!$(e.target).closest(list).length && e.target!==$input[0]) list.hide(); });
+            list.on('click','.ac-item', function(){ onPick({id:$(this).data('id'), txt:$(this).text()}); list.hide(); });
+        }
+
+        function loadAlmacenes(){
+            return getJson(URLS.almacenes).done(r=>{
+                ALMS=r.data||[];
+                const opt=ALMS.map(a=>`<option value="${a.IdAlmacen}">${a.Nombre}</option>`).join('');
+                $('#selAlm,#trAlmOri,#trAlmDes').html(opt);
+                if(!$('#selAlm').val() && ALMS.length) $('#selAlm').val(ALMS[0].IdAlmacen);
+                ALM = parseInt($('#selAlm').val()||ALM,10);
+                $('#trAlmOri').val(ALM);
+            });
+        }
+        function loadArt(){ return getJson(URLS.articulos).done(r=>{ ART=r.data||[]; }); }
+        function loadEmp(){ return getJson(URLS.empleados).done(r=>{ EMP=r.data||[]; }); }
+
+        function kpis(){
+            getJson(URLS.solicitudes).done(r=>{ $('#kpiPendAprob').text((r.data||[]).filter(x=>x.Estado==='Pendiente').length); });
+            getJson(URLS.bodPend).done(r=>{ $('#kpiPendAtender').text((r.data||[]).length); });
+            getJson(URLS.inventario,{idAlmacen:ALM}).done(r=>{ $('#kpiBajo').text(r.bajoMinimo||0); });
+        }
+
+        function addColumnFilters(tableSelector, api) {
+            const $t = $(tableSelector);
+            if ($t.data('hasFilters')) return;
+            const $thead = $t.find('thead'); if (!$thead.length) return;
+
+            const $row = $thead.find('tr').first();
+            const $filter = $row.clone(false).appendTo($thead).addClass('dt-filter-row');
+
+            $filter.find('th').each(function (i) {
+                const title = ($row.find('th').eq(i).text() || '').trim();
+                if (!title || /acciones?/i.test(title)) { $(this).html(''); return; }
+                $(this).html('<input type="text" class="form-control form-control-sm" placeholder="Buscar...">');
+                $('input', this).on('keyup change', function () {
+                    if (api.column(i).search() !== this.value) { api.column(i).search(this.value).draw(); }
+                });
+            });
+            $t.data('hasFilters', true);
+        }
+
+        function addColumnFiltersSolic(tableSelector, api){
+            const $t=$(tableSelector);
+            if($t.data('hasFilters')) return;
+            const $thead=$t.find('thead'); if(!$thead.length) return;
+
+            const cells=[
+                {html:'<input type="text" class="form-control form-control-sm" placeholder="#">'},
+                {html:'<input type="text" class="form-control form-control-sm" placeholder="Fecha">'},
+                {html:'<input type="text" class="form-control form-control-sm" placeholder="Gerencia">'},
+                {html:'<input type="text" class="form-control form-control-sm" placeholder="Empleado">'},
+                {html:'<select class="form-control form-control-sm"><option value="">(Todos)</option><option>M</option><option>F</option><option>N</option></select>'},
+                {html:'<select class="form-control form-control-sm"><option value="">(Todos)</option><option>Pendiente</option><option>Aprobada</option><option>Parcial</option><option>Atendida</option><option>Rechazada</option></select>'},
+                {html:'<input type="text" class="form-control form-control-sm" placeholder="Motivo">'},
+                {html:''}
+            ];
+            const $tr=$('<tr/>').addClass('dt-filter-row');
+            cells.forEach(c=> $tr.append($('<th/>').html(c.html)) );
+            $thead.append($tr);
+
+            $tr.find('th').each(function(i){
+                const $el=$(this).find('input,select'); if(!$el.length) return;
+                if($el.is('input')){
+                    $el.on('keyup change', function(){ api.column(i).search(this.value).draw(); });
+                }else{
+                    $el.on('change', function(){
+                        const val=this.value;
+                        api.column(i).search(val ? '^'+$.fn.dataTable.util.escapeRegex(val)+'$':'' , true, false).draw();
+                    });
+                }
+            });
+            $t.data('hasFilters', true);
+        }
+
+        function bindSolic(){
+            if($.fn.DataTable.isDataTable('#tblSolic')){ DT_Solic=$('#tblSolic').DataTable(); DT_Solic.ajax.reload(); return; }
+            DT_Solic=$('#tblSolic').DataTable({
+                ajax:(d,cb)=>{ loading(true); getJson(URLS.solicitudes).done(r=>cb({data:r.data||[]})).always(()=>loading(false)); },
+                language:DT_ES, orderCellsTop:true,
+                columns:[
+                    {title:'Id',data:'IdSolicitud',width:60},
+                    {title:'Fecha',data:'FechaCreacion',render:fmt},
+                    {title:'Gerencia',data:'Gerencia'},
+                    {title:'Empleado',data:'Empleado'},
+                    {title:'Sexo',data:'Sexo',width:70},
+                    {title:'Estado',data:'Estado',width:110,render:s=>{
+                        const cls = s==='Pendiente'?'warning':s==='Aprobada'?'primary':s==='Rechazada'?'secondary':s==='Parcial'?'info':'success';
+                        return `<span class="badge badge-${cls}">${s}</span>`;
+                    }},
+                    {title:'Motivo',data:'Motivo'},
+                    {title:'Acciones',data:null,orderable:false,width:250,render:r=>{
+                        const a=[];
+                        if(r.Estado==='Pendiente'){
+                            a.push(`<button class="btn btn-sm btn-success act-aprobar shadow-sm" title="Aprobar" data-id="${r.IdSolicitud}"><i class="fas fa-check"></i></button>`);
+                            a.push(`<button class="btn btn-sm btn-danger act-rechazar shadow-sm" title="Rechazar" data-id="${r.IdSolicitud}"><i class="fas fa-ban"></i></button>`);
+                        }
+                        a.push(`<button class="btn btn-sm btn-dark act-detalle shadow-sm" data-id="${r.IdSolicitud}"><i class="fas fa-eye mr-1"></i>Detalle</button>`);
+                        return a.join(' ');
+                    }}
+                ],
+                dom:'Bfrtip',
+                buttons:[{extend:'colvis',text:'Columnas', className:'btn btn-light btn-sm border'},{extend:'excelHtml5',text:'<i class="fas fa-file-excel mr-1"></i> Excel', className:'btn btn-success btn-sm'}],
+                pageLength:10,
+                initComplete(){ addColumnFiltersSolic('#tblSolic', this.api()); }
+            });
+
+            if(!$.fn.dataTable.ext._solicEstado){
+                $.fn.dataTable.ext._solicEstado = true;
+                $.fn.dataTable.ext.search.push(function(settings,data){
+                    if(settings.nTable.id!=='tblSolic') return true;
+                    if(filtroEstado==='*') return true;
+                    return (data[5]||'').indexOf(filtroEstado)!==-1;
+                });
+            }
+        }
+
+        function bindBod(){
+            if($.fn.DataTable.isDataTable('#tblBod')){ DT_Bod=$('#tblBod').DataTable(); DT_Bod.ajax.reload(); return; }
+            DT_Bod=$('#tblBod').DataTable({
+                ajax:{ url:URLS.bodPend, dataSrc:'data', beforeSend:()=>loading(true), complete:()=>loading(false) },
+                language:DT_ES, orderCellsTop:true,
+                columns:[
+                    {title:'Id',data:'IdSolicitud',width:60},
+                    {title:'Fecha',data:'FechaCreacion',render:fmt},
+                    {title:'Gerencia',data:'Gerencia'},
+                    {title:'Empleado',data:'Empleado'},
+                    {title:'Sexo',data:'Sexo',width:70},
+                    {title:'Acciones',data:null,orderable:false,width:240,render:r=>`
+                        <button class="btn btn-sm btn-light border font-weight-bold act-det shadow-sm" data-id="${r.IdSolicitud}"><i class="fas fa-eye text-primary"></i></button>
+                        <button class="btn btn-sm btn-danger font-weight-bold act-open shadow-sm" data-id="${r.IdSolicitud}"><i class="fas fa-box-open mr-1"></i> Atender</button>`}
+                ],
+                pageLength:10,
+                initComplete(){ addColumnFilters('#tblBod', this.api()); }
+            });
+        }
+
+        function bindInvVar(){
+            if($.fn.DataTable.isDataTable('#tblInvVar')){ DT_InvVar=$('#tblInvVar').DataTable(); DT_InvVar.ajax.reload(); return; }
+            DT_InvVar=$('#tblInvVar').DataTable({
+                ajax:(d,cb)=>{ loading(true); getJson(URLS.inventario,{idAlmacen:ALM}).done(r=>{ INV=r.data||[]; cb({data:INV}); }).always(()=>loading(false)); },
+                language:DT_ES, orderCellsTop:true,
+                columns:[
+                    {title:'Código',data:'Codigo', className:'font-weight-bold'},
+                    {title:'Artículo',data:'Nombre'},
+                    {title:'Tipo',data:'Tipo',width:120, render:t=>`<span class="badge badge-light border">${t}</span>`},
+                    {title:'Sexo',data:'Sexo',render:d=>d||'N',width:60},
+                    {title:'Talla',data:'Talla',render:d=>d||'UNI',width:80},
+                    {title:'Stock',data:'StockActual',width:70, className:'font-weight-bold text-center text-primary', render:d=>`<span style="font-size:1.1rem">${d}</span>`},
+                    {title:'Mínimo',data:'StockMinimo',width:80, className:'text-center text-muted'},
+                    {title:'Precio',data:'PrecioUnitario',width:90,render:d=>'$'+Number(d||0).toFixed(2)},
+                    {title:'Acciones',data:null,orderable:false,width:200,render:()=>
+                        `<div class="btn-group btn-group-sm shadow-sm">
+                           <button class="btn btn-light border text-success act-entr" title="Ingreso"><i class="fas fa-arrow-up"></i></button>
+                           <button class="btn btn-light border text-danger act-merm" title="Merma"><i class="fas fa-arrow-down"></i></button>
+                           <button class="btn btn-dark act-hist" title="Kardex"><i class="fas fa-list"></i></button>
+                         </div>`}
+                ],
+                dom:'Bfrtip',
+                buttons:[{extend:'excelHtml5',text:'<i class="fas fa-file-excel mr-1"></i> Exportar', className:'btn btn-success btn-sm'}],
+                createdRow:(row,d)=>{ if((d.StockActual||0)<=(d.StockMinimo||0)) $(row).addClass('row-low'); },
+                pageLength:10,
+                initComplete(){ addColumnFilters('#tblInvVar', this.api()); }
+            });
+
+            if(!$.fn.dataTable.ext._invFiltro){
+                $.fn.dataTable.ext._invFiltro = true;
+                $.fn.dataTable.ext.search.push(function(settings,data){
+                    if(settings.nTable.id!=='tblInvVar') return true;
+                    const tipo=$(data[2]).text()||'', stock=parseInt(data[5]||'0',10)||0, min=parseInt(data[6]||'0',10)||0;
+                    if(filtroTipo!=='*' && tipo!==filtroTipo) return false;
+                    if(filtroMin===1 && !(stock<=min)) return false;
+                    return true;
+                });
+            }
+        }
+
+        function bindRegistro(){
+            const today=new Date();
+            const iso=(d)=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+            if(!$('#fDesde').val()) $('#fDesde').val(iso(new Date(today.getFullYear(), today.getMonth(), 1)));
+            if(!$('#fHasta').val()) $('#fHasta').val(iso(today));
+
+            if(!$.fn.DataTable.isDataTable('#tblReg')){
+                DT_Reg=$('#tblReg').DataTable({
+                    ajax:(d,cb)=>{
+                        const q={ desde:$('#fDesde').val(), hasta:$('#fHasta').val(),
+                                  tipo:$('#fTipo').val()||null, origen:$('#fOrigen').val()||null,
+                                  empleado:($('#fEmp').val()||'').trim()||null, idAlmacen:ALM };
+                        loading(true); getJson(URLS.movList,q).always(()=>loading(false)).done(r=>cb({data:r.data||[]})); },
+                    language:DT_ES, orderCellsTop:true,
+                    columns:[
+                        {title:'Fecha',data:'Fecha',render:fmt},
+                        {title:'Tipo',data:'Tipo',width:100, render:t=>`<span class="badge ${t==='ENTRADA'?'badge-success':'badge-danger'}">${t}</span>`},
+                        {title:'Origen',data:'Origen',width:100},
+                        {title:'Código',data:'Codigo',width:110, className:'font-weight-bold'},
+                        {title:'Artículo',data:'Nombre'},
+                        {title:'Variante',data:null,render:r=>`${r.Talla||'UNI'} · ${r.Sexo||'—'}`,width:100},
+                        {title:'Cant',data:'Cantidad',width:70, className:'font-weight-bold text-center'},
+                        {title:'Lote',data:'Lote',width:100},
+                        {title:'Vence',data:'FechaVencimiento',render:iso10,width:90},
+                        {title:'Solicitud',data:'IdSolicitud',width:80,render:d=>d?`#${d}`:'—'},
+                        {title:'Empleado',data:'EmpleadoCarnet',width:100,render:d=>d||'—'}
+                    ],
+                    dom:'Bfrtip',
+                    buttons:[{extend:'excelHtml5',text:'<i class="fas fa-file-excel mr-1"></i> Excel', className:'btn btn-success btn-sm'}],
+                    pageLength:10,
+                    initComplete(){ addColumnFilters('#tblReg', this.api()); }
+                });
+            } else { DT_Reg.ajax.reload(); }
+
+            if(!$.fn.DataTable.isDataTable('#tblDia')){
+                DT_Dia=$('#tblDia').DataTable({
+                    ajax:(d,cb)=>{ loading(true); getJson(URLS.salDia,{ fecha:$('#fHasta').val(), idAlmacen:ALM }).always(()=>loading(false)).done(r=>cb({data:r.data||[]})); },
+                    language:DT_ES, orderCellsTop:true,
+                    columns:[
+                        {title:'Código',data:'Codigo',width:110, className:'font-weight-bold'},
+                        {title:'Artículo',data:'Nombre'},
+                        {title:'Variante',data:null,render:r=>`${r.Talla||'UNI'} · ${r.Sexo||'—'}`,width:110},
+                        {title:'Cantidad',data:'Cantidad',width:90, className:'font-weight-bold text-danger text-center'}
+                    ],
+                    dom:'Bfrtip',
+                    buttons:[{extend:'excelHtml5',text:'<i class="fas fa-file-excel mr-1"></i> Excel', className:'btn btn-success btn-sm'}],
+                    pageLength:10,
+                    initComplete(){ addColumnFilters('#tblDia', this.api()); }
+                });
+            } else { DT_Dia.ajax.reload(); }
+        }
+
+        /* ---------------- LOGICA DE MODALES (INTACTA) ---------------- */
+        function openDetalle(id){
+            loading(true);
+            getJson(URLS.solDetalle,{id, idAlmacen:ALM}).always(()=>loading(false)).done(r=>{
+                const rows=r.data||[];
+                const tb=rows.map(x=>{
+                    const pend=Math.max(0,(x.Cantidad||0)-(x.Entregado||0));
+                    return `<tr><td><strong>${x.Codigo}</strong><br><small>${x.Nombre}</small></td><td class="align-middle">${x.Talla||'UNI'} · ${x.Sexo||'—'}</td><td class="text-center align-middle">${x.Cantidad||0}</td><td class="text-center text-success font-weight-bold align-middle">${x.Entregado||0}</td><td class="text-center text-danger font-weight-bold align-middle">${pend}</td><td class="text-center align-middle">${x.Stock||0}</td></tr>`;
+                }).join('');
+                $('#tblDetalle tbody').html(tb||'<tr><td colspan="6" class="text-center text-muted">Sin líneas</td></tr>');
+                $('#mdlDetalle').modal('show');
+            });
+        }
+
+        function openAtender(id){
+            loading(true);
+            getJson(URLS.solDetalle,{id, idAlmacen:ALM}).always(()=>loading(false)).done(r=>{
+                const rows=r.data||[];
+                const body=rows.map(x=>{
+                    const pend=Math.max(0,(x.Cantidad||0)-(x.Entregado||0));
+                    return `<tr data-id="${x.IdDetalle}" data-pend="${pend}" data-stock="${x.Stock||0}">
+                        <td><strong>${x.Codigo}</strong><br><small>${x.Nombre}</small> <span class="badge badge-light border ml-1">${x.Tipo||''}</span></td>
+                        <td class="align-middle">${x.Talla||'UNI'} · ${x.Sexo||'—'}</td>
+                        <td class="text-center align-middle">${x.Cantidad||0}</td><td class="text-center text-success align-middle">${x.Entregado||0}</td><td class="text-center text-danger font-weight-bold align-middle">${pend}</td>
+                        <td class="text-center font-weight-bold bg-dark text-white align-middle">${x.Stock||0}</td>
+                        <td style="width:120px" class="align-middle"><input type="number" class="form-control text-center text-primary font-weight-bold inp-entregar" min="0" max="${pend}" value="0"></td>
+                    </tr>`;
+                }).join('');
+                $('#tblAtender tbody').html(body||'<tr><td colspan="7" class="text-center text-muted">Sin líneas</td></tr>');
+                $('#mdlAtender').modal('show');
+            });
+        }
+
+        function openMov(tipo,row){
+            $('#movTitle').html(tipo==='ENTRADA'?'<i class="fas fa-arrow-up text-success mr-2"></i>Entrada de Inventario':'<i class="fas fa-arrow-down text-danger mr-2"></i>Salida por Merma / Daño');
+            $('#movTipo').val(tipo);
+            $('#movIdArt').val(row.IdArticulo);
+            $('#movArtTxt').val(`${row.Codigo} · ${row.Nombre} (${row.Tipo})`);
+            $('#movCom').val(''); $('#movCant').val(1); $('#movVenc').val(''); $('#movLote').val('');
+
+            getJson(URLS.variantes,{idArticulo:row.IdArticulo,idAlmacen:ALM}).done(r=>{
+                const vars=r.data||[], tallas=[...new Set(vars.map(v=>v.Talla).filter(Boolean))], sexos=[...new Set(vars.map(v=>v.Sexo).filter(Boolean))];
+                const fill=(id,arr,def)=>$(id).html((arr.length?arr:[def]).map(x=>`<option>${x}</option>`).join(''));
+                fill('#movTalla',tallas,'UNI'); fill('#movSexo',sexos,'N');
+            });
+            const isMed=($(row.Tipo).text()==='MEDICAMENTO' || row.Tipo === 'MEDICAMENTO');
+            $('#grpLote,#grpVenc').toggle(isMed);
+            $('#mdlMov').modal('show');
+        }
+
+        function openHist(row){
+            getJson(URLS.movHist,{ idAlmacen:ALM, idArticulo:row.IdArticulo, talla:row.Talla, sexo:row.Sexo, top:200 }).done(r=>{
+                const tb=(r.data||[]).map(m=>`<tr><td><span class="text-muted">${fmt(m.Fecha)}</span></td><td class="font-weight-bold ${m.Tipo==='ENTRADA'?'text-success':'text-danger'}">${m.Tipo}</td><td>${m.Talla||'—'}</td><td>${m.Sexo||'—'}</td><td class="font-weight-bold text-center">${m.Cantidad}</td><td>${m.Lote||''}</td><td>${iso10(m.FechaVencimiento)||'—'}</td><td class="small">${m.Comentario||''}</td></tr>`).join('');
+                $('#tblHist tbody').html(tb||'<tr><td colspan="8" class="text-center text-muted">Sin movimientos en Kardex</td></tr>');
+                $('#mdlHist').modal('show');
+            });
+        }
+
+        function ns_reset(){
+            NS_DET=[]; $('#tblNS tbody').empty();
+            $('#nsEmpCarnet').val(''); $('#nsMotivo').val(''); $('#nsArt').val(''); $('#nsIdArt').val('');
+            $('#nsTalla').html('<option>UNI</option>'); $('#nsSexo').val('N'); $('#nsCant').val(1); $('#nsObs').val('');
+        }
+        function ns_render(){
+            const rows = NS_DET.map((x,i)=>`<tr data-i="${i}"><td><b>${x.Codigo}</b></td><td>${x.Nombre}</td><td>${x.Talla}</td><td>${x.Sexo}</td><td class="text-center font-weight-bold">x${x.Cantidad}</td><td><small class="text-muted">${x.Obs||''}</small></td><td class="text-right"><button type="button" class="btn btn-sm btn-light text-danger ns-del"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            $('#tblNS tbody').html(rows||'<tr><td colspan="7" class="text-center text-muted py-3">No has agregado artículos a la solicitud.</td></tr>');
+        }
+        function ns_bind_ac(){
+            buildAc($('#nsArt'),
+                q=>ART.filter(a=>norm(a.Codigo+' '+a.Nombre).includes(q)).map(a=>({id:a.IdArticulo, txt:`${a.Codigo} · ${a.Nombre} (${a.Tipo})`})),
+                p=>{
+                    $('#nsArt').val(p.txt); $('#nsIdArt').val(p.id);
+                    getJson(URLS.variantes,{idArticulo:p.id, idAlmacen:ALM}).done(r=>{
+                        const vars=r.data||[], tallas=[...new Set(vars.map(v=>v.Talla).filter(Boolean))], sexos=[...new Set(vars.map(v=>v.Sexo).filter(Boolean))];
+                        $('#nsTalla').html((tallas.length?tallas:['UNI']).map(x=>`<option>${x}</option>`).join(''));
+                        $('#nsSexo').html((sexos.length?sexos:['N']).map(x=>`<option>${x}</option>`).join(''));
+                    });
+                }
+            );
+        }
+
+        function sd_reset(){
+            SD_DET=[]; $('#tblSalDet tbody').empty();
+            $('#sdArt,#sdIdArt,#sdLote,#sdObs').val(''); $('#sdTalla').val('UNI'); $('#sdSexo').val('N'); $('#sdCant').val(1);
+        }
+        function sd_render(){
+            const rows = SD_DET.map((x,i)=>`<tr data-i="${i}"><td class="pl-3"><b>${x.Codigo}</b></td><td>${x.Nombre}</td><td><span class="badge badge-light border">${x.Talla} · ${x.Sexo}</span></td><td class="text-center font-weight-bold text-danger">x${x.Cantidad}</td><td>${x.LoteCodigo||''}</td><td><small class="text-muted">${x.Obs||''}</small></td><td class="text-right"><button type="button" class="btn btn-sm btn-light text-danger sd-del"><i class="fas fa-times"></i></button></td></tr>`).join('');
+            $('#tblSalDet tbody').html(rows||'<tr><td colspan="7" class="text-center text-muted py-3">Lista vacía.</td></tr>');
+        }
+        function sd_bind_ac(){
+            buildAc($('#sdArt'),
+                q=>ART.filter(a=>norm(a.Codigo+' '+a.Nombre).includes(q)).map(a=>({id:a.IdArticulo, txt:`${a.Codigo} · ${a.Nombre} (${a.Tipo})`})),
+                p=>{ $('#sdArt').val(p.txt); $('#sdIdArt').val(p.id); }
+            );
+        }
+
+        /* ---------------- DELEGACIÓN DE EVENTOS (INTACTA) ---------------- */
+        $(document)
+            .on('click', '#fabNueva, #btnNuevaSol', function(){ ns_reset(); ns_bind_ac(); $('#mdlNuevaSol').modal('show'); })
+            .on('click', '#btnNewArt', function(){ $('#mdlNewArt').modal('show'); })
+            .on('click', '#btnSalidaDir', function(){ sd_reset(); sd_bind_ac(); $('#mdlSalida').modal('show'); })
+            .on('click', '#btnTransfer', function(){
+                $('#trAlmOri').val(ALM);
+                const dest = (ALMS.find(a=>a.IdAlmacen!==ALM) || {}).IdAlmacen || ALM;
+                $('#trAlmDes').val(dest);
+                buildAc($('#trArtTxt'),
+                    q=>ART.filter(a=>norm(a.Codigo+' '+a.Nombre).includes(q)).map(a=>({id:a.IdArticulo, txt:`${a.Codigo} · ${a.Nombre} (${a.Tipo})`})),
+                    p=>{ $('#trArtTxt').val(p.txt); $('#trIdArt').val(p.id); }
+                );
+                $('#mdlTransfer').modal('show');
+            })
+
+            .on('click', '.act-aprobar', function(e){
+                e.preventDefault(); const id = $(this).data('id');
+                post(URLS.soliApr, { id }).done(x => { x.ok ? (ok('Solicitud Aprobada'), DT_Solic&&DT_Solic.ajax.reload(), kpis()) : err('Error al aprobar'); });
+            })
+            .on('click', '.act-rechazar', function(e){
+                e.preventDefault(); const id = $(this).data('id');
+                if(window.Swal){
+                    Swal.fire({ title: 'Motivo de Rechazo', input: 'text', showCancelButton: true }).then((res)=>{
+                        if(res.isConfirmed && res.value) post(URLS.soliRech, { id, observacion: res.value }).done(x => { x.ok ? (ok('Rechazada'), DT_Solic&&DT_Solic.ajax.reload(), kpis()) : err('Error'); });
+                    });
+                } else {
+                    const o = prompt('Motivo de rechazo', ''); if (o) post(URLS.soliRech, { id, observacion: o }).done(x => { x.ok ? (ok('Rechazada'), DT_Solic&&DT_Solic.ajax.reload(), kpis()) : err('Error'); });
+                }
+            })
+            .on('click', '.act-detalle', function(e){ e.preventDefault(); openDetalle($(this).data('id')); })
+            .on('click', '.act-open', function(e){ e.preventDefault(); BOD_LAST_ID=$(this).data('id'); openAtender(BOD_LAST_ID); })
+            .on('click', '.act-det', function(e){ e.preventDefault(); openDetalle($(this).data('id')); })
+
+            .on('click', '#btnAuto', function(){
+                $('#tblAtender tbody tr').each(function(){
+                    const v=Math.min(+$(this).data('pend')||0, +$(this).data('stock')||0);
+                    $(this).find('.inp-entregar').val(v);
+                });
+            })
+            .on('click', '#btnDesp', function(){
+                const det=[]; $('#tblAtender tbody tr').each(function(){
+                    const id=$(this).data('id'), n=parseInt($(this).find('.inp-entregar').val()||'0',10);
+                    if(n>0) det.push({IdDetalle:id, Entregar:n});
+                });
+                if(!det.length) return err('Indique cantidad a despachar');
+                loading(true);
+                post(URLS.bodDesp,{ idAlmacen:ALM, id:BOD_LAST_ID, despachoJson:JSON.stringify(det), comentario:$('#bodComentario').val(), fechaEnvio:$('#bodFechaEnvio').val(), notificar:$('#bodNotif').is(':checked') })
+                .always(()=>loading(false))
+                .done(r=>{ r.ok?(ok('Despacho Exitoso'), $('#mdlAtender').modal('hide'), DT_Bod&&DT_Bod.ajax.reload(), DT_InvVar&&DT_InvVar.ajax.reload(), DT_Solic&&DT_Solic.ajax.reload(), kpis()):err(r.msg||'No se pudo despachar'); });
+            })
+            .on('click','#btnRechazarTodo', function(){
+                if(!BOD_LAST_ID) return;
+                if(window.Swal){
+                    Swal.fire({ title: 'Rechazar desde Bodega', input: 'text', showCancelButton: true }).then((res)=>{
+                        if(res.isConfirmed && res.value) post(URLS.soliRech,{ id:BOD_LAST_ID, observacion:res.value }).done(r=>{ r.ok ? (ok('Rechazada'), $('#mdlAtender').modal('hide'), DT_Bod&&DT_Bod.ajax.reload(), DT_Solic&&DT_Solic.ajax.reload(), kpis()) : err('Error'); });
+                    });
+                } else {
+                    const o=prompt('Motivo de rechazo',''); if(o) post(URLS.soliRech,{ id:BOD_LAST_ID, observacion:o }).done(r=>{ r.ok ? (ok('Rechazada'), $('#mdlAtender').modal('hide'), DT_Bod&&DT_Bod.ajax.reload(), DT_Solic&&DT_Solic.ajax.reload(), kpis()) : err('Error'); });
+                }
+            })
+
+            .on('click','.act-entr,.act-merm,.act-hist', function(e){
+                e.preventDefault(); const row = DT_InvVar.row($(this).closest('tr')).data();
+                if($(this).hasClass('act-hist')) return openHist(row);
+                openMov($(this).hasClass('act-entr')?'ENTRADA':'MERMA', row);
+            })
+
+            .on('submit','#frmMov', function(e){
+                e.preventDefault();
+                const b={ idAlmacen:ALM, tipo:$('#movTipo').val(), idArticulo:$('#movIdArt').val(), talla:$('#movTalla').val(), sexo:$('#movSexo').val(), cantidad:parseInt($('#movCant').val()||'0',10), comentario:$('#movCom').val(), loteCodigo:$('#movLote').val(), venc:$('#movVenc').val()||null };
+                if(b.cantidad<=0) return err('Cantidad debe ser mayor a 0');
+                loading(true);
+                post(URLS.invMov,b).always(()=>loading(false)).done(r=>{ r.ok ? (ok('Movimiento registrado en Kardex'), $('#mdlMov').modal('hide'), DT_InvVar&&DT_InvVar.ajax.reload(), kpis()) : err(r.msg||'Fallo en Base de Datos'); });
+            })
+
+            .on('submit','#frmTransfer', function(e){
+                e.preventDefault();
+                const b={ idAlmacenOrigen:+$('#trAlmOri').val(), idAlmacenDestino:+$('#trAlmDes').val(), idArticulo:+$('#trIdArt').val(), talla:$('#trTalla').val()||'UNI', sexo:$('#trSexo').val()||'N', cantidad:+$('#trCant').val(), comentario:$('#trCom').val(), usuario:'@User.Identity.Name', loteCodigo:$('#trLote').val()||null, fechaVencimiento:$('#trVence').val()||null };
+                if(!b.idArticulo || b.cantidad<=0) return err('Datos incompletos');
+                loading(true);
+                post(URLS.transferir,b).always(()=>loading(false)).done(r=>{ r.ok? (ok('Transferencia de Stock Exitosa'), $('#mdlTransfer').modal('hide'), DT_InvVar&&DT_InvVar.ajax.reload(), kpis()) : err(r.msg||'Fallo de Transferencia'); });
+            })
+
+            .on('click','#btnAddNS', function(){
+                const id = +($('#nsIdArt').val()||0); if(!id) return err('Seleccione un artículo de la lista');
+                const art = ART.find(a=>a.IdArticulo===id); if(!art) return err('Artículo inválido');
+                const talla=$('#nsTalla').val()||'UNI', sexo=$('#nsSexo').val()||'N', cant=+($('#nsCant').val()||0);
+                if(cant<=0) return err('Cantidad debe ser mayor a 0');
+                NS_DET.push({ IdArticulo:id, Codigo:art.Codigo, Nombre:art.Nombre, Talla:talla, Sexo:sexo, Cantidad:cant, Obs:$('#nsObs').val() });
+                ns_render(); $('#nsArt,#nsIdArt').val(''); $('#nsObs').val(''); $('#nsCant').val(1);
+            })
+            .on('click','#tblNS .ns-del', function(){ const i=$(this).closest('tr').data('i'); NS_DET.splice(i,1); ns_render(); })
+            .on('submit','#frmNuevaSol', function(e){
+                e.preventDefault();
+                const carnet=($('#nsEmpCarnet').val()||'').trim(); if(!carnet) return err('Falta el carnet del empleado');
+                if(!NS_DET.length) return err('Agregue al menos un artículo a la lista inferior');
+                loading(true);
+                post(URLS.soliCrear, { carnetEmpleado:carnet, motivo:$('#nsMotivo').val(), detallesJson:JSON.stringify(NS_DET.map(x=>({ IdArticulo:x.IdArticulo, Talla:x.Talla, Sexo:x.Sexo, Cantidad:x.Cantidad, Obs:x.Obs }))) })
+                .always(()=>loading(false)).done(r=>{ r.ok ? (ok('Solicitud enviada a Jefatura'), $('#mdlNuevaSol').modal('hide'), DT_Solic&&DT_Solic.ajax.reload(), kpis()) : err(r.msg||'Fallo la creación'); });
+            })
+
+            .on('click','#btnAddSD', function(){
+                const id=+($('#sdIdArt').val()||0); if(!id) return err('Seleccione artículo de la lista');
+                const art=ART.find(a=>a.IdArticulo===id); const cant=+($('#sdCant').val()||0); if(cant<=0) return err('Cantidad inválida');
+                SD_DET.push({ IdArticulo:id, Codigo:art.Codigo, Nombre:art.Nombre, Talla:$('#sdTalla').val()||'UNI', Sexo:$('#sdSexo').val()||'N', Cantidad:cant, LoteCodigo:$('#sdLote').val(), Obs:$('#sdObs').val() });
+                sd_render(); $('#sdArt,#sdIdArt,#sdLote,#sdObs').val(''); $('#sdCant').val(1);
+            })
+            .on('click','#tblSalDet .sd-del', function(){ const i=$(this).closest('tr').data('i'); SD_DET.splice(i,1); sd_render(); })
+            .on('submit','#frmSalida', function(e){
+                e.preventDefault();
+                if(!$('#sdEmp').val().trim()) return err('Carnet del empleado requerido');
+                if(!SD_DET.length) return err('No hay artículos para sacar');
+                loading(true);
+                post(URLS.bodSalidaDir,{ idAlmacen:ALM, carnetEmpleado:$('#sdEmp').val().trim(), comentario:$('#sdObsGlobal').val(), fechaEnvio:$('#sdFechaEnvio').val()||null, notificar:$('#sdNotif').is(':checked'), salidaJson:JSON.stringify(SD_DET.map(x=>({ IdArticulo:x.IdArticulo, Sexo:x.Sexo, Talla:x.Talla, Cantidad:x.Cantidad, LoteCodigo:x.LoteCodigo, Obs:x.Obs }))) })
+                .always(()=>loading(false)).done(r=>{ r.ok ? (ok('Kardex actualizado por Salida Directa'), $('#mdlSalida').modal('hide'), DT_InvVar&&DT_InvVar.ajax.reload(), kpis()) : err(r.msg||'Error de inventario'); });
+            });
+
+        /* ---------------- INIT ---------------- */
+        $(function(){
+            $.when(loadAlmacenes(), loadArt(), loadEmp()).always(function(){
+                const firstTab = localStorage.getItem('lastTab') || 'secSolic';
+
+                $('a.nav-link[data-target]').on('click', function(e){
+                    e.preventDefault(); const tgt=$(this).data('target');
+                    $('.nav-link').removeClass('active'); $(this).addClass('active');
+                    $('.tab-pane').removeClass('show active'); $(tgt).addClass('show active');
+                    if(tgt==='#secSolic') bindSolic();
+                    if(tgt==='#secBodega') bindBod();
+                    if(tgt==='#secInv') bindInvVar();
+                    if(tgt==='#secReg') bindRegistro();
+                    localStorage.setItem('lastTab', tgt.substring(1));
+                });
+                $(`.nav-link[data-target="#${firstTab}"]`).trigger('click');
+
+                $('[data-filtro^="tipo"]').on('click', function(){
+                    $('[data-filtro^="tipo"]').removeClass('active text-white').css('background','').css('color','');
+                    $(this).addClass('active');
+                    filtroTipo=(this.dataset.filtro.split(':')[1])||'*'; if(DT_InvVar) DT_InvVar.draw();
+                });
+                $('[data-filtro="min:1"]').on('click', function(){
+                    $(this).toggleClass('bg-danger text-white border-danger'); filtroMin=$(this).hasClass('bg-danger')?1:0; if(DT_InvVar) DT_InvVar.draw();
+                });
+
+                $('#chipsEstado .chip').on('click', function(){
+                    $('#chipsEstado .chip').removeClass('active'); $(this).addClass('active');
+                    filtroEstado=$(this).data('estado')||'*'; if(DT_Solic) DT_Solic.draw();
+                });
+
+                $('#selAlm').on('change', function(){ ALM=+this.value; $('#trAlmOri').val(ALM); bindInvVar(); kpis(); });
+
+                document.addEventListener('keydown', function(e){
+                    if($(e.target).is('input,textarea,select')) return;
+                    const k=e.key.toLowerCase();
+                    if(k==='i'){ e.preventDefault(); $('.nav-link[data-target="#secInv"]').click(); }
+                    if(k==='n'){ e.preventDefault(); $('#fabNueva').click(); }
+                });
+
+                kpis();
+            });
+        });
+    </script>
+}

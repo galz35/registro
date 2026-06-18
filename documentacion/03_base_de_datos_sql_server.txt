@@ -1,0 +1,250 @@
+================================================================================
+📄 DOCUMENTO 03: ESTRUCTURA DE BASE DE DATOS Y MIGRACIÓN DE DATOS DESDE EXCEL
+================================================================================
+Motor de Base de Datos: Microsoft SQL Server (Hospedado en VPS)
+Archivos Excel Origen: 
+- DATAS ANALIZADAS PADRE_HIJOS.xlsx
+- SELLECCION DE JUGUETES 2026.xlsx
+================================================================================
+
+Este documento detalla el esquema físico de base de datos en SQL Server, las 
+relaciones, las reglas de integridad de datos y el plan de migración inicial 
+desde los archivos Excel al nuevo modelo de base de datos relacional.
+
+--------------------------------------------------------------------------------
+1. ESQUEMA DE BASE DE DATOS DDL COMPLETO (SQL SERVER)
+--------------------------------------------------------------------------------
+
+A continuación, el script Transact-SQL para generar la base de datos limpia con
+sus restricciones e índices optimizados:
+
+```sql
+-- Habilitar integridad referencial y configurar base de datos
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+
+-- 1. Crear Tabla: tblColaboradores
+-- Almacena los datos únicos del empleado para evitar redundancia
+IF OBJECT_ID('dbo.tblColaboradores', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.tblColaboradores (
+        Carnet VARCHAR(50) NOT NULL,
+        Nombre VARCHAR(250) NOT NULL,
+        Gerencia VARCHAR(250) NULL,
+        Ubicacion VARCHAR(250) NULL,
+        Activo BIT NOT NULL CONSTRAINT DF_Colaboradores_Activo DEFAULT (1),
+        CONSTRAINT PK_Colaboradores PRIMARY KEY CLUSTERED (Carnet ASC)
+    );
+END;
+
+-- 2. Crear Tabla: tblCatalogoJuguetes
+-- Inventario físico de regalos clasificados por categoría de edad y género
+IF OBJECT_ID('dbo.tblCatalogoJuguetes', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.tblCatalogoJuguetes (
+        Id INT IDENTITY(1,1) NOT NULL,
+        Categoria VARCHAR(100) NOT NULL,
+        Genero VARCHAR(10) NOT NULL, -- 'M', 'F', 'TODOS' (unisex)
+        NombreJuguete VARCHAR(250) NOT NULL,
+        StockInicial INT NOT NULL,
+        StockActual INT NOT NULL,
+        FotoUrl VARCHAR(500) NULL, -- Dirección relativa del archivo WebP en el VPS
+        Activo BIT NOT NULL CONSTRAINT DF_CatalogoJuguetes_Activo DEFAULT (1),
+        CONSTRAINT PK_CatalogoJuguetes PRIMARY KEY CLUSTERED (Id ASC),
+        CONSTRAINT CK_CatalogoJuguetes_Genero CHECK (Genero IN ('M', 'F', 'TODOS')),
+        CONSTRAINT CK_CatalogoJuguetes_Stock CHECK (StockActual >= 0) -- Evita stock negativo a nivel de BD
+    );
+END;
+
+-- 3. Crear Tabla: tblHijos
+-- Relación de niños asociados a cada colaborador
+IF OBJECT_ID('dbo.tblHijos', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.tblHijos (
+        Id INT IDENTITY(1,1) NOT NULL,
+        CarnetColaborador VARCHAR(50) NOT NULL,
+        NombreHijo VARCHAR(250) NOT NULL,
+        EdadHijo DECIMAL(18,2) NOT NULL,
+        GeneroHijo VARCHAR(10) NOT NULL,
+        Categoria VARCHAR(100) NOT NULL,
+        CONSTRAINT PK_Hijos PRIMARY KEY CLUSTERED (Id ASC),
+        CONSTRAINT FK_Hijos_Colaboradores FOREIGN KEY (CarnetColaborador) 
+            REFERENCES dbo.tblColaboradores(Carnet) ON DELETE CASCADE,
+        CONSTRAINT CK_Hijos_Genero CHECK (GeneroHijo IN ('M', 'F'))
+    );
+END;
+
+-- 4. Crear Tabla: tblAsistenciaEventos
+-- Registro de asistencia física de empleados al evento
+IF OBJECT_ID('dbo.tblAsistenciaEventos', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.tblAsistenciaEventos (
+        Id INT IDENTITY(1,1) NOT NULL,
+        CarnetColaborador VARCHAR(50) NOT NULL,
+        EventId INT NOT NULL,
+        FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_Asistencia_Fecha DEFAULT (GETDATE()),
+        RegistradoPor VARCHAR(100) NOT NULL,
+        CONSTRAINT PK_Asistencia PRIMARY KEY CLUSTERED (Id ASC),
+        CONSTRAINT FK_Asistencia_Colaboradores FOREIGN KEY (CarnetColaborador) 
+            REFERENCES dbo.tblColaboradores(Carnet) ON DELETE CASCADE
+    );
+END;
+
+-- 5. Crear Tabla: tblEntregasJuguetes
+-- Historial detallado de despachos y reversiones con auditoría
+IF OBJECT_ID('dbo.tblEntregasJuguetes', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.tblEntregasJuguetes (
+        Id INT IDENTITY(1,1) NOT NULL,
+        HijoId INT NOT NULL,
+        JugueteId INT NOT NULL,
+        CarnetColaborador VARCHAR(50) NOT NULL,
+        Estado VARCHAR(20) NOT NULL, -- 'DELIVERED', 'REVERTED'
+        RecibidoPor VARCHAR(20) NOT NULL, -- 'COLABORADOR', 'CONYUGE', 'TERCERO'
+        NombreReceptor VARCHAR(250) NULL, -- Obligatorio si es TERCERO
+        FotoEvidenciaUrl VARCHAR(500) NULL, -- URL estática al archivo WebP en el VPS
+        FechaEntrega DATETIME2(0) NOT NULL CONSTRAINT DF_Entregas_Fecha DEFAULT (GETDATE()),
+        UsuarioDespacho VARCHAR(100) NOT NULL,
+        FechaReversion DATETIME2(0) NULL,
+        UsuarioReversion VARCHAR(100) NULL,
+        MotivoReversion VARCHAR(500) NULL,
+        CONSTRAINT PK_Entregas PRIMARY KEY CLUSTERED (Id ASC),
+        CONSTRAINT FK_Entregas_Hijos FOREIGN KEY (HijoId) REFERENCES dbo.tblHijos(Id),
+        CONSTRAINT FK_Entregas_Catalogo FOREIGN KEY (JugueteId) REFERENCES dbo.tblCatalogoJuguetes(Id),
+        CONSTRAINT FK_Entregas_Colaboradores FOREIGN KEY (CarnetColaborador) REFERENCES dbo.tblColaboradores(Carnet),
+        CONSTRAINT CK_Entregas_Estado CHECK (Estado IN ('DELIVERED', 'REVERTED')),
+        CONSTRAINT CK_Entregas_Recibido CHECK (RecibidoPor IN ('COLABORADOR', 'CONYUGE', 'TERCERO'))
+    );
+END;
+
+-- CREACIÓN DE ÍNDICES DE RENDIMIENTO (BÚSQUEDAS RÁPIDAS E INTEGRIDAD)
+-- Búsqueda rápida de hijos por carnet
+CREATE NONCLUSTERED INDEX IX_Hijos_CarnetColaborador ON dbo.tblHijos(CarnetColaborador ASC);
+
+-- Validación de asistencia del colaborador
+CREATE NONCLUSTERED INDEX IX_Asistencia_CarnetColaborador ON dbo.tblAsistenciaEventos(CarnetColaborador ASC);
+
+-- Consulta de juguetes activos por categoría
+CREATE NONCLUSTERED INDEX IX_Catalogo_Categoria ON dbo.tblCatalogoJuguetes(Categoria ASC, Genero ASC) WHERE Activo = 1;
+
+-- Búsqueda de entregas activas
+CREATE UNIQUE NONCLUSTERED INDEX UX_Entregas_HijoActivo ON dbo.tblEntregasJuguetes(HijoId ASC) WHERE Estado = 'DELIVERED';
+```
+
+--------------------------------------------------------------------------------
+2. ESTRATEGIA DE CARGA Y MIGRACIÓN DESDE LOS ARCHIVOS EXCEL
+--------------------------------------------------------------------------------
+
+El censo de 892 niños se encuentra estructurado en el archivo de Excel 
+`DATAS ANALIZADAS PADRE_HIJOS.xlsx`. El catálogo inicial de juguetes se 
+encuentra en `SELLECCION DE JUGUETES 2026.xlsx`.
+
+Para poblar las nuevas tablas estructuradas en SQL Server sin duplicar datos y 
+garantizando la integridad relacional, se proponen dos alternativas de carga:
+
+--- ALTERNATIVA A: Script SQL con Tabla Temporal (Recomendado por facilidad) ---
+
+Paso 1: Carga directa de la hoja de Excel a una tabla temporal en SQL Server
+Utilizando el Asistente de Importación y Exportación de SQL Server Management Studio
+(SSMS), cargamos la hoja de niños a una tabla temporal llamada `dbo.tmpCensoExcel`.
+
+Paso 2: Poblar la tabla de Colaboradores (tblColaboradores)
+Extraemos los registros únicos de colaboradores eliminando duplicados:
+
+INSERT INTO dbo.tblColaboradores (Carnet, Nombre, Gerencia, Ubicacion, Activo)
+SELECT DISTINCT 
+    RTRIM(LTRIM(CarnetColaborador)) AS Carnet,
+    RTRIM(LTRIM(NombreColaborador)) AS Nombre,
+    RTRIM(LTRIM(GerenciaColaborador)) AS Gerencia,
+    RTRIM(LTRIM(UbicacionColaborador)) AS Ubicacion,
+    1 AS Activo
+FROM dbo.tmpCensoExcel
+WHERE CarnetColaborador IS NOT NULL AND CarnetColaborador <> '';
+
+Paso 3: Poblar la tabla de Hijos (tblHijos)
+Extraemos los hijos relacionándolos mediante el carnet:
+
+INSERT INTO dbo.tblHijos (CarnetColaborador, NombreHijo, EdadHijo, GeneroHijo, Categoria)
+SELECT 
+    RTRIM(LTRIM(CarnetColaborador)) AS CarnetColaborador,
+    RTRIM(LTRIM(NombreHijo)) AS NombreHijo,
+    CAST(EdadHijo AS DECIMAL(18,2)) AS EdadHijo,
+    UPPER(RTRIM(LTRIM(GeneroHijo))) AS GeneroHijo,
+    RTRIM(LTRIM(Categoria)) AS Categoria
+FROM dbo.tmpCensoExcel
+WHERE CarnetColaborador IS NOT NULL AND NombreHijo IS NOT NULL;
+
+Paso 4: Limpieza
+DROP TABLE dbo.tmpCensoExcel;
+
+--- ALTERNATIVA B: Script en Node.js (NestJS Command) ---
+Si se prefiere una opción totalmente automatizada desde el backend, se puede 
+crear un comando CLI en NestJS utilizando las librerías `xlsx` y `typeorm`:
+
+```typescript
+// Script en NestJS/Node.js para migración automática
+import * as XLSX from 'xlsx';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { getManager } from 'typeorm';
+
+async function migrarCenso() {
+  const app = await NestFactory.createApplicationContext(AppModule);
+  const manager = getManager();
+  
+  // 1. Leer el archivo Excel
+  const workbook = XLSX.readFile('d:/PROYECTOS_PORTAL/asistencia/DATAS ANALIZADAS PADRE_HIJOS.xlsx');
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const filas = XLSX.utils.sheet_to_json(sheet); // Array de objetos
+
+  console.log(`Cargando ${filas.length} registros desde el Excel...`);
+
+  // Usar transacción para garantizar atomicidad
+  await manager.transaction(async (trx) => {
+    for (const fila of filas) {
+      const carnet = String(fila['CarnetColaborador']).trim();
+      const nombreColab = String(fila['NombreColaborador']).trim();
+      const gerencia = fila['GerenciaColaborador'] ? String(fila['GerenciaColaborador']).trim() : null;
+      const ubicacion = fila['UbicacionColaborador'] ? String(fila['UbicacionColaborador']).trim() : null;
+
+      const nombreHijo = String(fila['NombreHijo']).trim();
+      const edad = parseFloat(fila['EdadHijo']);
+      const genero = String(fila['GeneroHijo']).trim().toUpperCase();
+      const categoria = String(fila['Categoria']).trim();
+
+      // 2. Insertar o actualizar colaborador
+      await trx.query(`
+        IF NOT EXISTS (SELECT 1 FROM tblColaboradores WHERE Carnet = @0)
+        BEGIN
+            INSERT INTO tblColaboradores (Carnet, Nombre, Gerencia, Ubicacion, Activo) 
+            VALUES (@0, @1, @2, @3, 1)
+        END
+      `, [carnet, nombreColab, gerencia, ubicacion]);
+
+      // 3. Insertar Hijo
+      await trx.query(`
+        INSERT INTO tblHijos (CarnetColaborador, NombreHijo, EdadHijo, GeneroHijo, Categoria)
+        VALUES (@0, @1, @2, @3, @4)
+      `, [carnet, nombreHijo, edad, genero, categoria]);
+    }
+  });
+
+  console.log('Migración del censo completada con éxito.');
+  await app.close();
+}
+```
+
+--------------------------------------------------------------------------------
+3. MIGRACIÓN DEL CATÁLOGO DE JUGUETES
+--------------------------------------------------------------------------------
+El catálogo inicial de juguetes se carga desde `SELLECCION DE JUGUETES 2026.xlsx`. 
+Dado que la tabla `tblCatalogoJuguetes` contiene el campo `FotoUrl` (que apunta al 
+archivo WebP) en lugar del string largo de Base64, el proceso consiste en:
+1. Importar los juguetes (Categoría, Género, Nombre, StockInicial, StockActual)
+   directamente a la base de datos usando SSMS o el script de Node.
+2. Guardar físicamente las fotos de los juguetes en formato WebP comprimido
+   dentro de la carpeta `uploads/fotos_juguetes/` en el VPS.
+3. Actualizar la columna `FotoUrl` con la ruta correspondiente en el servidor:
+   `UPDATE tblCatalogoJuguetes SET FotoUrl = '/uploads/fotos_juguetes/juguete_categoria_genero.webp' WHERE Id = X;`
+================================================================================

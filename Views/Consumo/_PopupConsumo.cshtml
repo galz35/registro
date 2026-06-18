@@ -1,0 +1,267 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    @Html.DevExpress().GetStyleSheets(
+              new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+              new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+               new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+               new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+                 new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+          )
+    @Html.DevExpress().GetScripts(
+        new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+        new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+        new Script { ExtensionSuite = ExtensionSuite.Editors },
+        new Script { ExtensionSuite = ExtensionSuite.Chart },
+        new Script { ExtensionSuite = ExtensionSuite.Report },
+        new Script { ExtensionSuite = ExtensionSuite.GridView },
+        new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+        new Script { ExtensionSuite = ExtensionSuite.TreeList },
+         new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+    )
+
+}
+
+@using (Html.BeginForm("GuardarConsumoPorUnidad", "Consumo", FormMethod.Post, new { id = "frmEditConsumo" }))
+{
+
+
+    @Html.DevExpress().PopupControl(settings =>
+{
+    settings.Name = "popEditarConsumo";
+   settings.HeaderText = "Edición de consumo";
+   settings.SettingsAdaptivity.MaxWidth = Unit.Pixel(700);
+   settings.SettingsAdaptivity.Mode = PopupControlAdaptivityMode.Always;
+   settings.SettingsAdaptivity.VerticalAlign = PopupAdaptiveVerticalAlign.WindowCenter;
+   settings.ShowOnPageLoad = false;
+   settings.CloseAction = CloseAction.CloseButton;
+   settings.CloseOnEscape = true;
+   settings.AllowDragging = false;
+   settings.ResizingMode = ResizingMode.Postponed;
+   settings.ScrollBars = ScrollBars.Auto;
+   settings.ShowFooter = true;
+   settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+   settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+   settings.Styles.Content.Paddings.Padding = 0;
+   settings.Styles.Content.Paddings.PaddingTop = 12;
+   settings.Modal = true;
+   //settings.ClientSideEvents.PopUp = "OnPopupInit";
+
+   settings.SetFooterTemplateContent(c =>
+   {
+       @Html.DevExpress().FormLayout(formLayoutsettings =>
+       {
+           formLayoutsettings.Name = "footerFormLayout";
+           formLayoutsettings.Width = Unit.Percentage(100);
+           formLayoutsettings.ControlStyle.CssClass = "clearPaddings";
+           formLayoutsettings.Styles.LayoutItem.CssClass = "clearPaddings";
+           formLayoutsettings.Styles.LayoutGroup.CssClass = "clearPaddings";
+           formLayoutsettings.Items.AddGroupItem(g =>
+           {
+               g.GroupBoxDecoration = GroupBoxDecoration.None;
+               g.Paddings.Padding = Unit.Pixel(0);
+               g.Items.Add(i =>
+               {
+                   i.ShowCaption = DefaultBoolean.False;
+               }).SetNestedContent(() =>
+               {
+                   ViewContext.Writer.Write("<div class='buttonsContainer'>");
+                   Html.DevExpress().Button(s =>
+                   {
+                       s.Name = "btnAceptar";
+                       s.Width = Unit.Pixel(100);
+                       s.ControlStyle.CssClass = "submitButton";
+
+                       //s.RenderMode = ButtonRenderMode.Link;
+                       s.Text = "Aceptar";
+                       s.UseSubmitBehavior = false;
+                       s.ClientSideEvents.Click = "GuardarConsumo2";
+                   }).Render();
+                   Html.DevExpress().Button(s =>
+                   {
+                       s.Name = "btnCancelar";
+                       s.Width = Unit.Pixel(100);
+                       s.ControlStyle.CssClass = "cancelButton";
+                       s.RenderMode = ButtonRenderMode.Danger;
+                       s.Text = "Cancelar";
+                       s.UseSubmitBehavior = false;
+                       s.ClientSideEvents.Click = "function(s, e){ popEditarConsumo.Hide(); }";
+                   }).Render();
+                   ViewContext.Writer.Write("</div>");
+               });
+           });
+       }).Render();
+   });
+
+   settings.SetContent(() =>
+   {
+
+
+
+
+       @Html.DevExpress().FormLayout(s =>
+       {
+           s.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+           s.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+           s.Name = "frmEditVoucher";
+           s.RequiredMarkDisplayMode = RequiredMarkMode.None;
+           s.Width = Unit.Percentage(100);
+
+           s.ColumnCount = 2;
+
+           s.Items.Add(i =>
+           {
+               i.Name = "IdCombustibleConsumoClaro";
+               i.Caption = "IdCombustibleConsumoClaro";
+               i.ClientVisible = false;
+               i.NestedExtensionType = FormLayoutNestedExtensionItemType.TextBox;
+               i.Width = Unit.Percentage(100);
+           });
+
+           s.Items.Add(i =>
+           {
+               i.Name = "FechaRegistro";
+               i.Caption = "Fecha";
+               i.NestedExtensionType = FormLayoutNestedExtensionItemType.DateEdit;
+
+           });
+
+           s.Items.Add(i =>
+           {
+               i.FieldName = "IdUnidad";
+               i.Caption = "Unidad";
+               i.NestedExtension().ComboBox(c =>
+               {
+                   //s.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "GetAssigmnentCarsByManagement", TextField = "IdUnidad", ValueField = "IdUnidad" };
+                   c.Properties.TextField = "IdUnidad";
+                   c.Properties.ValueField = "IdUnidad";
+                   c.Properties.ValueType = typeof(string);
+                   //s.Properties.LoadDropDownOnDemand = true;
+                   c.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                   c.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+                   c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   c.Properties.ValidationSettings.Display = Display.Dynamic;
+                   c.ShowModelErrors = true;
+                   c.Width = Unit.Percentage(100);
+                   c.Properties.DataSource = slnRhonline.Data.Consumo.ObtenerListaUnidades(string.Empty);
+                   c.Properties.Columns.Add("IdUnidad", "Unidad", 50);
+                   c.Properties.Columns.Add("Saldo", "Saldo", 50);
+
+
+
+               });
+           });
+
+
+           s.Items.Add(i =>
+           {
+               i.Name = "IdVoucher";
+               i.Caption = "No.Referencia";
+               i.NestedExtensionType = FormLayoutNestedExtensionItemType.TextBox;
+           });
+           s.Items.Add(i =>
+           {
+               i.Name = "CantidadLitros";
+               i.Caption = "Litros";
+               i.NestedExtensionType = FormLayoutNestedExtensionItemType.SpinEdit;
+           });
+           s.Items.Add(i =>
+           {
+               i.Name = "ValorCordobas";
+               i.Caption = "Monto";
+               i.NestedExtensionType = FormLayoutNestedExtensionItemType.SpinEdit;
+           });
+           s.Items.Add(i =>
+           {
+               i.Name = "OdometroInicial";
+               i.Caption = "Odometro";
+               i.NestedExtensionType = FormLayoutNestedExtensionItemType.SpinEdit;
+           });
+
+
+           s.Items.Add(i =>
+           {
+               i.FieldName = "IdTipoCombustible";
+               i.Caption = "Combustible";
+               i.NestedExtension().ComboBox(c =>
+               {
+                   //s.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "GetAssigmnentCarsByManagement", TextField = "IdUnidad", ValueField = "IdUnidad" };
+                   c.Properties.TextField = "Descripcion";
+                   c.Properties.ValueField = "IdCatalogo";
+                   c.Properties.ValueType = typeof(string);
+                   //s.Properties.LoadDropDownOnDemand = true;
+                   c.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                   c.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+                   c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   c.Properties.ValidationSettings.Display = Display.Dynamic;
+                   c.ShowModelErrors = true;
+                   c.Width = Unit.Percentage(100);
+                   c.Properties.DataSource = slnRhonline.Data.CatalogoSiaf.GetGasById("07"); ;
+
+
+
+
+               });
+           });
+           s.Items.Add(i =>
+           {
+               i.Name = "Estacion";
+               i.Caption = "Estación";
+               i.NestedExtension().TextBox(c =>
+               {
+                   c.ControlStyle.CssClass = "memo";
+               });
+
+           });
+
+           s.Items.Add(i =>
+           {
+               i.Name = "Municipio";
+               i.Caption = "Municipio";
+               i.NestedExtension().TextBox(c =>
+               {
+                   c.ControlStyle.CssClass = "memo";
+               });
+           });
+
+           s.Items.Add(i =>
+           {
+               i.FieldName = "IdDepartamento";
+               i.Caption = "Departamento";
+               i.NestedExtension().ComboBox(c =>
+               {
+                   c.Properties.TextField = "Descripcion";
+                   c.Properties.ValueField = "IdCatalogo";
+                   c.Properties.ValueType = typeof(string);
+                   c.Properties.DataSource = slnRhonline.Data.CatalogoSiaf.GetDepartmentById("02");
+                   c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   c.Properties.ValidationSettings.Display = Display.Dynamic;
+                   c.ShowModelErrors = true;
+                   c.Width = Unit.Percentage(100);
+                   c.Properties.DropDownStyle = DropDownStyle.DropDownList;
+
+
+               });
+           });
+
+       }).Render();
+
+
+
+   });
+
+
+
+   settings.ClientSideEvents.CloseUp = "function(s, e){ ASPxClientEdit.ClearEditorsInContainer(null, '', true); }";
+
+}).GetHtml()
+
+}

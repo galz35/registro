@@ -1,0 +1,128 @@
+﻿@model List<Entities.ConsumptionClaro>
+@{
+    ViewBag.Title = "Lista de Vouchers";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<script>
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvConsumption.SetHeight(height - 150);
+    }
+
+    function ShowEditConsumption(elementID, url) {
+        popEditConsumption.SetContentUrl(url);
+        popEditConsumption.ShowAtElementByID(elementID);
+    }
+
+    function VerDetalleEstados(elementID, url) {
+        popDetalleEstado.SetContentUrl(url);
+        popDetalleEstado.ShowAtElementByID(elementID);
+    }
+
+
+
+    function LoadConsumptionList(s, e) {
+        $.ajax({
+            url: '@Url.Action("ListPartial","ConsumptionClaro")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#ListPartial').html(result);
+        });
+    }
+
+    function DeniedByUser(id, e) {
+        var visibleIndex = gvConsumption.GetFocusedRowIndex();
+        var key = gvConsumption.GetRowKey(visibleIndex);
+
+        $.ajax({
+            url: '@Url.Action("DeniedByUser")',
+            type: "POST",
+            data: { consumptionId: key },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                LoadConsumptionList();
+
+                            }
+
+                        });
+                } else {
+                    swal("ERROR!", data.message, "error");
+                }
+
+
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+    }
+
+</script>
+<div id="ListPartial">
+
+    @Html.Partial("ListPartial", Model);
+
+
+</div>
+
+
+
+
+@*//temporalmente fuera*@
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popEditConsumption";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Edicion de Consumo";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 700;
+    settingsPopup.Height = 450;
+    settingsPopup.ClientSideEvents.CloseUp = "LoadConsumptionList";
+
+
+
+}).GetHtml()
+@Html.DevExpress().PopupControl(settings =>
+{
+    settings.Theme = "Mulberry";
+    settings.Name = "popDetalleEstado";
+    settings.ShowHeader = true;
+    settings.HeaderText = "Detalle de Estados";
+    settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settings.Width = 800;
+    settings.Height = 400;
+    settings.CloseAction = CloseAction.CloseButton;
+    settings.CloseOnEscape = true;
+
+}).GetHtml()
+

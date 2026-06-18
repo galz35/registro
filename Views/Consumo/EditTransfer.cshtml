@@ -1,0 +1,213 @@
+﻿@model Entities.ViewModels.VistaTraslados
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+ 
+<script>
+
+
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvDetalleTraslado.SetHeight(height - 100);
+    }
+
+
+    function SaveTraslado(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("SaveTraslado")',
+            type: "POST",
+            data: $('#frmTraslado').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false, beforeSend: function () {
+                // Muestra el overlay antes de enviar la solicitud AJAX
+                $.LoadingOverlay("show");
+            },
+            complete: function () {
+                // Oculta el overlay una vez que la solicitud AJAX ha finalizado
+                $.LoadingOverlay("hide");
+            },
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditarTraslado.Hide();
+                            }
+
+                        });
+                } else {
+                    swal("Advertencia!", data.message, "warning");
+                }
+
+
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+    }
+
+    function OnInit(s, e) {
+        var message = '@ViewData["EditError"]';
+        if(message) {
+            s.SetContentHtml(message);
+            s.Show();
+        }
+
+    }
+
+    function OnSelectedProveedorChanged() {
+
+        gvDetalleTraslado.GetEditor("IdUnidadOrigen").PerformCallback();
+        gvDetalleTraslado.GetEditor("IdUnidadDestino").PerformCallback();
+    }
+
+    function UnidadOrigenBeginCallback(s, e) {
+        e.customArgs["idProveedor"] = IdCombustibleProveedor.GetValue();
+
+    }
+    function UnidadDestinoBeginCallback(s, e) {
+        e.customArgs["idProveedor"] = IdCombustibleProveedor.GetValue();
+
+    }
+    //function OnCtrl_Init(s, e) {
+    //    var inputElement = s.GetInputElement();
+    //    inputElement.placeholder = "Type something";
+    //}
+
+</script>
+
+<div id="master">
+    @using (Html.BeginForm("SaveTraslado", "Consumo", FormMethod.Post, new { id = "frmTraslado" }))
+    {
+        @Html.DevExpress().FormLayout(settings =>
+        {
+       settings.Name = "frmEditTraslado";
+       settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+       settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 500;
+       settings.ControlStyle.CssClass = "formLayout";
+
+       settings.Items.AddGroupItem(g =>
+            {
+           g.Caption = "";
+           g.ColCount = 2;
+           g.UseDefaultPaddings = false;
+           g.Paddings.PaddingTop = Unit.Pixel(10);
+           g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+           g.Items.Add(m => m.IdCombustibleTraslado, i =>
+           {
+               i.Caption = "Id";
+               i.ClientVisible = false;
+               i.NestedExtension().TextBox(s =>
+               {
+
+                   s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   s.Properties.ValidationSettings.Display = Display.Dynamic;
+                   s.ShowModelErrors = true;
+                   s.Width = Unit.Percentage(100);
+
+
+               });
+           });
+
+
+           g.Items.Add(i =>
+           {
+               i.FieldName = "FechaTraslado";
+               i.Caption = "Fecha de Traslado";
+               i.NestedExtension().DateEdit(s =>
+               {
+                   s.Properties.NullText = "DD/MM/YYYY";
+                   s.Properties.EditFormat = EditFormat.Date;
+                   s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                   s.Properties.ValidationSettings.Display = Display.Dynamic;
+                   s.ShowModelErrors = true;
+                   s.Width = Unit.Percentage(100);
+                   s.ReadOnly = true;
+
+               });
+           });
+
+           //g.Items.Add(i =>
+           //{
+           //    //i.Name = "IdProveedor";
+           //    i.FieldName = "IdCombustibleProveedor";
+           //    i.Caption = "Proveedor";
+           //    i.NestedExtension().ComboBox(s =>
+           //    {
+
+           //        s.Properties.TextField = "NombreProveedor";
+           //        s.Properties.ValueField = "IdCombustibleProveedor";
+           //        s.Properties.ValueType = typeof(int);
+           //        s.Properties.DataSource = slnRhonline.Data.CombustibleProveedor.ObtenerProveedoresCombustible();
+           //        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+           //        s.Properties.ValidationSettings.Display = Display.Dynamic;
+           //        s.ShowModelErrors = true;
+           //        s.Width = Unit.Percentage(100);
+           //        s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+           //        s.Properties.ClientSideEvents.Init = "function (s, e) { s.GetInputElement().placeholder = 'Seleccione Proveedor'; }";
+           //        s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedProveedorChanged";
+
+           //    });
+           //});
+
+
+
+       });
+   }).GetHtml()
+    }
+    @Html.DevExpress().PopupControl(settingsPopup =>
+    {
+        settingsPopup.Name = "pc";
+        settingsPopup.ShowOnPageLoad = false;
+        settingsPopup.HeaderText = "Información";
+        settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+        settingsPopup.CloseOnEscape = true;
+        settingsPopup.Width = 200;
+        //settingsPopup.Modal = true;
+        settingsPopup.ClientSideEvents.Init = "OnInit";
+
+
+
+        settingsPopup.SetContent(() =>
+        {
+            ViewContext.Writer.Write(ViewData["EditError"]);
+        });
+    }).GetHtml()
+</div>
+<div id="partial">@{Html.RenderAction("EditDetailTransfer");}</div>
+<br />
+<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings =>
+{
+    settings.Name = "btnDanger";
+    settings.Width = 164;
+    settings.Text = "Actualizar";
+    settings.UseSubmitBehavior = false;
+
+    settings.RenderMode = ButtonRenderMode.Danger;
+    settings.ClientSideEvents.Click = "SaveTraslado";  //"function(s, e) { top.popImage.Hide(); }";
+
+}).GetHtml()
+</div>

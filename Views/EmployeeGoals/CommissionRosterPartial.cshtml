@@ -1,0 +1,131 @@
+﻿@using DevExpress.Web.Mvc;
+@using DevExpress.Web.ASPxTreeList
+@Html.DevExpress().TreeList(settings => {
+    settings.Name = "treeList";
+    settings.Caption = "Plantilla";
+    settings.CallbackRouteValues = new { Controller = "EmployeeGoals", Action = "CommissionRosterPartial" };
+
+
+    settings.Width = Unit.Percentage(100);
+
+    //settings.SettingsSearchPanel.Visible = true;
+
+
+    settings.AutoGenerateColumns = false;
+    settings.KeyFieldName = "OrganizationId";
+    settings.ParentFieldName = "ParentId";
+
+    settings.Images.ExpandedButton.Url = "~/Content/Icons/Expand.png";
+    settings.Images.ExpandedButton.Width = 20;
+    settings.Images.ExpandedButton.Height = 20;
+
+    settings.Images.CollapsedButton.Url = "~/Content/Icons/Collapse.png";
+    settings.Images.CollapsedButton.Width = 20;
+    settings.Images.CollapsedButton.Height = 20;
+
+
+
+    settings.SettingsPager.Visible = true;
+    settings.SettingsSelection.Recursive = true;
+    settings.SettingsBehavior.AllowFocusedNode = true;
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.Settings.ScrollableHeight = 380;
+    settings.ClientSideEvents.CustomButtonClick = "onCustomButtonClick";
+    settings.ClientSideEvents.FocusedNodeChanged = "NodeChanged";
+  
+
+    settings.CommandColumn.Visible = true;
+    settings.CommandColumn.Width = 30;
+
+    TreeListCommandColumnCustomButton newBtn = new TreeListCommandColumnCustomButton();
+    newBtn.ID = "btnNew";
+    newBtn.Text = "New";
+    newBtn.Image.Url = "~/Content/Icons/Add.png";
+    newBtn.Image.ToolTip = "Ver colaboradores";
+    settings.CommandColumn.CustomButtons.Add(newBtn);
+    settings.CommandColumn.ButtonType = System.Web.UI.WebControls.ButtonType.Image;
+
+    settings.CommandColumnButtonInitialize = (sender, e) =>
+    {
+
+        MVCxTreeList treeList = (MVCxTreeList)sender;
+        DevExpress.Web.ASPxTreeList.TreeListNode node = treeList.FindNodeByKeyValue(e.NodeKey);
+        if (node.HasChildren)
+        {
+            e.Visible = DefaultBoolean.False;
+        }
+        else
+        {
+            e.Visible = DefaultBoolean.Default;
+
+        }
+        //    e.CommandColumn.DeleteButton.Visible = true;
+        //    e.CommandColumn.NewButton.Visible = true;
+    };
+
+    //    settings.Columns.Add(
+    //    column =>
+    //    {
+    //        column.FieldName = "OrganizationName";
+    //        column.SetDataCellTemplateContent(c =>
+    //        {
+    //            Html.DevExpress().HyperLink(hl =>
+    //            {
+    //                hl.Name = "hlSbmt_" + c.NodeKey;
+    //                hl.Properties.Text = DataBinder.Eval(c.DataItem, "OrganizationName").ToString();
+    //                hl.NavigateUrl = "javascript:;";
+    //                hl.Properties.ClientSideEvents.Click =
+    //                    string.Format("function() {{ {0}.PerformCallback({{ \"nodeKey\": {1} }}) }}", settings.Name, c.NodeKey);
+    //            }).Render();
+    //        });
+    //    }
+    //);
+
+
+    //settings.Columns.Add("OrganizationName").SetDataCellTemplateContent(c =>
+    //{
+    //    Html.DevExpress().Image(image =>
+    //    {
+    //        image.Name = "Image" + c.NodeKey;
+    //        image.ImageUrl = (Convert.ToInt32(DataBinder.Eval(c.DataItem, "ParentId")) % 1 == 0 ? "~/Content/Icons/organizations.png" : "~/Content/Icons/datosgenerales.png");
+    //    }).GetHtml();
+    //    Html.DevExpress().Label(label =>
+    //    {
+    //        label.Name = "Label" + c.NodeKey;
+    //        object value = DataBinder.Eval(c.DataItem, c.Column.FieldName);
+    //        if (value != null)
+    //            label.Text = value.ToString();
+    //    }).GetHtml();
+    //});
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "OrganizationName";
+        col.Caption = "Organizacion";
+        col.Width = Unit.Percentage(100);
+
+    });
+
+    //settings.SettingsBehavior.ExpandCollapseAction = DevExpress.Web.ASPxTreeList.TreeListExpandCollapseAction.NodeDblClick;
+    //settings.SettingsSelection.Enabled = true;
+
+
+
+
+    //settings.SettingsCookies.StoreExpandedNodes = true;
+
+    settings.ClientLayout = (s, e) => {
+        if(e.LayoutMode == ClientLayoutMode.Loading) {
+            if(Session["TreeListState"] != null)
+                e.LayoutData = (string)Session["TreeListState"];
+        }
+        else
+            Session["TreeListState"] = e.LayoutData;
+    };
+
+    settings.PreRender = (sender, e) => {
+        if(Session["TreeListState"] == null)
+            ((MVCxTreeList)sender).ExpandToLevel(2);
+    };
+}
+).Bind(Model).GetHtml()

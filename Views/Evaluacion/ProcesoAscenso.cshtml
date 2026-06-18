@@ -1,0 +1,96 @@
+﻿@using slnRhonline.Models
+
+@{
+    ViewBag.Title = "Proceso de Ascenso";
+    List<EvaluacionCicloViewModel> lstEmployees = Session["levaluaciontotalx"] as List<EvaluacionCicloViewModel>;
+    EvaluacionCicloViewModel evaluacion = new EvaluacionCicloViewModel();
+    evaluacion=lstEmployees.FirstOrDefault();
+}
+
+<h2>Proceso de Ascenso</h2>
+
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form>
+                <div class="form-group">
+                    <label for="nombre">Yo:</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" value="@evaluacion.nombrejefe" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="cargo">Cargo:</label>
+                    <input type="text" class="form-control" id="cargo" name="cargo" value="@evaluacion.Cargo3" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="jefe-inmediato">Jefe Inmediato del Colaborador:</label>
+                    <input type="text" class="form-control" id="jefe-inmediato" name="jefe-inmediato" value="@evaluacion.colaborador" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="empleado-no">Empleado No.:</label>
+                    <input type="text" class="form-control" id="empleado-no" name="empleado-no" value="@evaluacion.CodigoEmpleado" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="cargo-ascenso">Cargo al que Asciende:</label>
+                    <input type="text" class="form-control" id="cargo-ascenso" name="cargo-ascenso" value="@evaluacion.Cargo2" readonly>
+                </div>
+
+                <h2>Información General</h2>
+                <p>
+                    Ambos hacemos constar que hemos sido notificados sobre los resultados de las evaluaciones psicométricas, aplicadas por la Coordinación de Reclutamiento y Selección. Asimismo, a través de la Subgerencia de Compensación se nos ha hecho saber el proceso siguiente:
+                </p>
+                <ul>
+                    <li>Toda documentación de periodo de prueba se deberá reportar durante el tiempo establecido, a través de carpeta compartida en SharePoint donde se encuentra en formato de Excel para procesos de periodo de prueba.</li>
+                    <li>El reporte de objetivos a evaluar se deberá alojar en carpeta SharePoint compartida por Subgcia de Compensación los primeros 5 días durante cada uno de los meses establecidos.</li>
+                    <li>Los resultados de las evaluaciones y retroalimentación de la evaluación de cada mes se deberá alojar en carpeta SharePoint compartida por Subgcia de Compensación en los primeros 2 días hábiles después del periodo de prueba de cada mes.</li>
+                    <li>Se debe garantizar el cumplimiento de las fechas establecidas para el periodo de prueba de forma consecutiva en cada reporte mensual.</li>
+                    <li>Los formatos relacionados con cursos de capacitación, activo fijo y plan auto consumo, deben coordinarse con cada responsable de área.</li>
+                    <li>De no cumplir con el procedimiento establecido, se retrasa la confirmación del colaborador en su nuevo puesto de trabajo.</li>
+                </ul>
+                <button type="button" class="btn btn-success" id="agreeButton">Estoy de acuerdo</button>
+
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        $('#agreeButton').click(function() {
+            var empleadoNo = $('#empleado-no').val();
+            var nombre = $('#nombre').val();
+
+            $.ajax({
+                url: '@Url.Action("ConfirmarAscenso", "Evaluacion")',
+                type: 'POST',
+                data: { empleadoNo: empleadoNo, nombre: nombre },
+                success: function(response) {
+                   if(response.success) {
+                    Swal.fire({
+                        title: '¡Confirmado!',
+                        text: 'Confirmación registrada con éxito.',
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '@Url.Action("Encurso", "Evaluacion")';
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Hubo un problema al registrar la confirmación.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ocurrió un error: ' + error,
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });                }
+            });
+        });
+    });
+</script>

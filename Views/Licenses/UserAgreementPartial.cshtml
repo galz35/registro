@@ -1,0 +1,54 @@
+﻿
+
+<div style="text-align: center; margin-top: 10px;">
+    <p style="color:red">
+        Reconozco que el uso de la presente cuenta de RH OLINE es de uso exclusivo
+        de mi persona, en consecuencia toda la información y registros que se almacenen mediante la misma son de mi entero conocimiento y aceptación.
+    </p>
+    <p style="color:red">
+        Por tanto a partir de la fecha autorizó a la Gerencia de Recursos Humanos de la EMPRESA NICARAGUENSE DE TELECOMUNICACIONES, S.A. (ENITEL) a administrar las licencias y/o permisos
+        de los que haga uso mediante este módulo informático, no requiriendo para ello validación mediante la firma del suscrito.
+    </p>
+</div>
+
+<div class="form-h2 col-12 content" style="margin-top: 10px; background-color: transparent; padding:0; margin-bottom:5px; margin-left:30px;">
+    @using (Html.BeginForm("SaveExpense", "Expenses", FormMethod.Post))
+    {
+
+        @Html.DevExpress().FormLayout(settings =>
+   {
+       settings.Name = "formLayout";
+       settings.UseDefaultPaddings = false;
+       settings.AlignItemCaptionsInAllGroups = true;
+       settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+       settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+       settings.ColCount = 2;
+
+
+       settings.Items.AddEmptyItem();
+       settings.Items.Add(i =>
+       {
+           i.ShowCaption = DefaultBoolean.False;
+       }).SetNestedContent(() =>
+       {
+           ViewContext.Writer.Write("<div style='float:right'>");
+           Html.DevExpress().Button(btnSettings =>
+           {
+               btnSettings.Name = "btnUpdate";
+               btnSettings.Text = "Actualizar";
+               btnSettings.ClientSideEvents.Click = "function(s, e){ gvLicensesRegisterDetail.UpdateEdit(); }";
+           }).Render();
+           Html.DevExpress().Button(btnSettings =>
+           {
+               btnSettings.Name = "btnCancel";
+               btnSettings.Text = "Cancelar";
+               btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+               btnSettings.ClientSideEvents.Click = "function(s, e){ gvLicensesRegisterDetail.CancelEdit(); }";
+           }).Render();
+           ViewContext.Writer.Write("</div>");
+       });
+
+   }).GetHtml()
+    }
+
+</div>

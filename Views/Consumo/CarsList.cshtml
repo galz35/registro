@@ -1,0 +1,717 @@
+﻿@model List<Entities.ViewModels.VistaUnidadesConsumo>
+@{
+    ViewBag.Title = "Lista de Unidades";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@section scripts {
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <!-- No se usa autocomplete de jQuery UI para conductores, se usa datalist -->
+    <script>
+        // Configurar DataTable para la lista de unidades
+        var tabla_persona;
+        $(document).ready(function () {
+            $.LoadingOverlay("show");
+            tabla_persona = $('#listTable').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("CarsListPartialjson", "Consumo")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+                    {
+                        "data": "IdUnidad",
+                        "render": function (data) {
+                            var url = '@Url.Action("VouchersListByCar", "Consumo", new { idUnidad = "IdUnidad" })';
+                            url = url.replace("IdUnidad", data);
+                            return `
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-cogs"></i> Solicitudes
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="${url}"><i class="fas fa-gas-pump"></i> Consumo</a>
+                                        <a class="dropdown-item" href="${url.replace("VouchersListByCar", "TransfersList")}"><i class="fas fa-exchange-alt"></i> Traslados</a>
+                                        <a class="dropdown-item" href="${url.replace("VouchersListByCar", "ExtraPlanList")}"><i class="fas fa-plus-circle"></i> Extra Plan</a>
+    <a class="dropdown-item"
+   href="javascript:void(0)"
+   onclick="abrirDetalleMovimientos('${data}')">
+   <i class="fas fa-file-alt"></i> Ver Movimientos
+</a>
+ 
+                                    </div>
+                                </div>
+                            `;
+                        },
+                        "orderable": true,
+                        "searchable": true,
+                        "width": "150px"
+                    },
+                    { "data": "IdUnidad" },
+                    { "data": "TotalAsignacion" },
+                    { "data": "TotalTraslado" },
+                    { "data": "TotalExtraPlan" },
+                    { "data": "TotalConsumo" },
+                    { "data": "Saldo" },
+                    { "data": "NombreEmpleado" },
+                    { "data": "NombreArea" }
+                ],
+                "dom": 'Blfrtip',
+                "lengthMenu": [10, 20, 50, 100],
+                "pageLength": 10,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                responsive: true,
+                initComplete: function () {
+                    $('#listTable tbody').on('click', '.dropdown-toggle', function (e) {
+                        e.stopPropagation();
+                        $(this).siblings('.dropdown-menu').toggleClass('show');
+                    });
+                    $(document).on('click', function (e) {
+                        if (!$('.dropdown-toggle').is(e.target) && $('.dropdown-toggle').has(e.target).length === 0 && $('.show').has(e.target).length === 0) {
+                            $('.dropdown-menu').removeClass('show');
+                        }
+                    });
+                }
+            });
+            $.LoadingOverlay("hide");
+        });
+
+        // POPUP: Actualización de Datos (Registro/Edición)
+        function abrirPopupActualizacion(idVehiculo) {
+            $("#idVehiculo").val(idVehiculo);
+            $("#formInspeccion")[0].reset();
+            $("#vistaLicencia").html("Sin vista previa");
+            $("#fotosGrid div[id^='preview-']").html("Sin foto");
+            // Limpiar conductores: vaciar contenedor y hidden
+            $("#conductoresContainer").empty();
+            $("#conductoresHidden").val("");
+            $("#conductoresInput").val("");
+            imagenes = {};
+            $("#actualizacionModal").modal("show");
+        }
+        function abrirDetalleMovimientos(idUnidad) {
+    $('#detalleModal').modal('show');
+
+    $('#tablaDetalle').DataTable({
+        destroy: true,                                  // reinicia la tabla
+        ajax: {
+            url: '@Url.Action("DetalleMovimientoJson","Consumo")',
+            type: 'GET',
+            data: { idUnidad: idUnidad },
+            datatype: 'json'
+        },
+        columns: [
+            { data: 'Fecha' },
+            { data: 'Movimiento' },
+            { data: 'Debito',  className: 'text-right' },
+            { data: 'Credito', className: 'text-right' },
+            { data: 'SaldoCombustible', className: 'text-right' }
+        ],
+        order: [[0, 'asc']],                           // más antiguo arriba
+        language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' }
+    });
+}
+        // POPUP: Visualización de Inspección (Solo Lectura)
+        function abrirPopupVisualizacion(idVehiculo) {
+            $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("ObtenerInspeccion", "Consumo")',
+                type: "GET",
+                data: { idVehiculo: idVehiculo },
+                dataType: "json",
+                success: function (response) {
+                    $.LoadingOverlay("hide");
+                    if (response.success) {
+                        $("#viewKilometraje").text(response.data.Kilometraje);
+                        $("#viewUbicacion").text(response.data.Ubicacion);
+                        $("#viewAsignadaA").text(response.data.AsignadaA);
+                        $("#viewConductores").text(response.data.Conductores);
+                        $("#viewNombreCompleto").text(response.data.NombreCompleto);
+                        $("#viewDomicilio").text(response.data.Domicilio);
+                        $("#viewTelefono").text(response.data.Telefono);
+                        $("#viewPlantelAsignado").text(response.data.PlantelAsignado);
+                        if(response.data.FotoLicenciaBase64)
+                            $("#viewLicencia").html("<img src='" + response.data.FotoLicenciaBase64 + "' style='width:100%; height:100%; object-fit:cover;' />");
+                        else
+                            $("#viewLicencia").html("Sin foto");
+                        $("#viewPruebaManejo").text(response.data.PruebaManejo ? "Sí" : "No");
+                        for(var parte in response.data.Imagenes){
+                            $("#view-" + parte.replace(/\s/g, "")).html("<img src='" + response.data.Imagenes[parte] + "' style='width:100%; height:100%; object-fit:cover;' />");
+                        }
+                        $("#visualizacionModal").modal("show");
+                    } else {
+                        Swal.fire("Error", response.message, "error");
+                    }
+                },
+                error: function () {
+                    $.LoadingOverlay("hide");
+                    Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+                }
+            });
+        }
+
+        // Objeto para almacenar imágenes de inspección
+        var imagenes = {};
+        var parteActual = null;
+        var imagenTemporal = null;
+
+        // Al hacer clic en un contenedor de foto del formulario se abre un input file
+        $("#fotosGrid div[data-parte]").click(function () {
+            parteActual = $(this).data("parte");
+            var input = $("<input type='file' accept='image/*' style='display:none;' />");
+            $("body").append(input);
+            input.change(function (e) {
+                if (e.target.files && e.target.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function (evt) {
+                        imagenTemporal = evt.target.result;
+                        $("#preview-" + parteActual.replace(/\s/g, "")).html("<img src='" + imagenTemporal + "' style='width:100%; height:100%; object-fit:cover;' />");
+                        imagenes[parteActual] = imagenTemporal;
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+                input.remove();
+            });
+            input.click();
+        });
+
+        // Cargar la foto de licencia y mostrar vista previa
+        $("#inputLicencia").change(function (e) {
+            if (e.target.files && e.target.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    $("#vistaLicencia").html("<img src='" + evt.target.result + "' style='width:100%; height:100%; object-fit:cover;' />");
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // Función para asignar el valor seleccionado del datalist para "Quien tiene asignada"
+        function OnSelectedReceivePersonChanged() {
+            var selectedText = $("#ReceivePersonIdDisplay").val();
+            var option = $("#ReceivePersonList option").filter(function() {
+                return $(this).text().trim() === selectedText.trim();
+            }).first();
+            var value = option.data("value") || "";
+            $("#ReceivePersonIdHidden").val(value);
+        }
+
+        // Función para agregar conductor desde el input con datalist para conductores
+        function agregarConductorFromDatalist() {
+            var input = $("#conductoresInput");
+            var selectedText = input.val();
+            var option = $("#ConductoresList option").filter(function(){
+                return $(this).text().trim() === selectedText.trim();
+            }).first();
+            var value = option.data("value") || "";
+            if(value && !existeConductor(value)){
+                agregarConductor(value, selectedText);
+            }
+            input.val("");
+        }
+
+        // Verifica si el conductor ya fue agregado
+        function existeConductor(value) {
+            var exists = false;
+            $("#conductoresContainer span").each(function(){
+                if ($(this).data("value") === value) {
+                    exists = true;
+                    return false;
+                }
+            });
+            return exists;
+        }
+
+        // Función para agregar un chip de conductor en el contenedor
+        function agregarConductor(value, label) {
+            var chip = $('<span class="badge badge-info mr-1 mb-1" style="cursor:pointer;">' + label + ' <i class="fas fa-times"></i></span>');
+            chip.data("value", value);
+            chip.click(function(){
+                $(this).remove();
+                actualizarConductoresHidden();
+            });
+            $("#conductoresContainer").append(chip);
+            actualizarConductoresHidden();
+        }
+
+        // Actualiza el campo hidden de conductores con los valores seleccionados, separados por coma
+        function actualizarConductoresHidden() {
+            var arr = [];
+            $("#conductoresContainer span").each(function(){
+                arr.push($(this).data("value"));
+            });
+            $("#conductoresHidden").val(arr.join(","));
+        }
+
+        // Guardar la inspección mediante AJAX
+        $("#btnGuardarInspeccion").click(function () {
+            var conductoresArr = $("#conductoresHidden").val().split(",").filter(function(v){ return v !== ""; });
+            var inspeccionData = {
+                IdVehiculo: $("#idVehiculo").val(),
+                Kilometraje: $("#kilometraje").val(),
+                Ubicacion: $("#ubicacion").val(),
+                // "Quien tiene asignada" se obtiene del input con datalist
+                ReceivePersonId: $("#ReceivePersonIdHidden").val(),
+                AsignadaA: $("#ReceivePersonIdDisplay").val(),
+                Conductores: conductoresArr,
+                // Se omite el campo "Nombre Completo" ya que no se usa para conductores múltiples
+                NombreCompleto: "",
+                Domicilio: $("#domicilio").val(),
+                Telefono: $("#telefono").val(),
+                PlantelAsignado: $("#plantelAsignado").val(),
+                FotoLicenciaBase64: $("#vistaLicencia img").attr("src") || "",
+                PruebaManejo: $("#pruebaManejo").is(":checked"),
+                Estado: "Activo",
+                Imagenes: imagenes
+            };
+
+            $.LoadingOverlay("show");
+            $.ajax({
+                url: '@Url.Action("ActualizarDatos", "Consumo")',
+                type: "POST",
+                data: JSON.stringify(inspeccionData),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    $.LoadingOverlay("hide");
+                    if (response.success) {
+                        Swal.fire("Éxito", response.message, "success");
+                        $("#actualizacionModal").modal("hide");
+                        tabla_persona.ajax.reload();
+                    } else {
+                        Swal.fire("Error", response.message, "error");
+                    }
+                },
+                error: function () {
+                    $.LoadingOverlay("hide");
+                    Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+                }
+            });
+        });
+    </script>
+
+    <!-- JavaScript adicional para manejo de datalist y chips en Conductores -->
+    <script>
+        // Función para agregar conductor desde el input con datalist para conductores
+        function agregarConductorFromDatalist() {
+            var input = $("#conductoresInput");
+            var selectedText = input.val();
+            var option = $("#ConductoresList option").filter(function () {
+                return $(this).text().trim() === selectedText.trim();
+            }).first();
+            var value = option.data("value") || "";
+            if (value && !existeConductor(value)) {
+                agregarConductor(value, selectedText);
+            }
+            input.val("");
+        }
+
+        // Verifica si el conductor ya fue agregado
+        function existeConductor(value) {
+            var exists = false;
+            $("#conductoresContainer span").each(function () {
+                if ($(this).data("value") === value) {
+                    exists = true;
+                    return false;
+                }
+            });
+            return exists;
+        }
+
+        // Función para agregar un chip de conductor en el contenedor
+        function agregarConductor(value, label) {
+            var chip = $('<span class="badge badge-info mr-1 mb-1" style="cursor:pointer;">' + label + ' <i class="fas fa-times"></i></span>');
+            chip.data("value", value);
+            chip.click(function () {
+                $(this).remove();
+                actualizarConductoresHidden();
+            });
+            $("#conductoresContainer").append(chip);
+            actualizarConductoresHidden();
+        }
+
+        // Actualiza el campo hidden de conductores con los valores seleccionados, separados por coma
+        function actualizarConductoresHidden() {
+            var arr = [];
+            $("#conductoresContainer span").each(function () {
+                arr.push($(this).data("value"));
+            });
+            $("#conductoresHidden").val(arr.join(","));
+        }
+
+        // Función para asignar el valor seleccionado del datalist para "Quien tiene asignada"
+        function OnSelectedReceivePersonChanged() {
+            var selectedText = $("#ReceivePersonIdDisplay").val();
+            var option = $("#ReceivePersonList option").filter(function () {
+                return $(this).text().trim() === selectedText.trim();
+            }).first();
+            var value = option.data("value") || "";
+            $("#ReceivePersonIdHidden").val(value);
+        }
+    </script>
+
+}
+
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Lista de Unidades</h6>
+                </div>
+                <div class="card-body p-3">
+                    <table id="listTable" class="table table-striped table-bordered table-hover display responsive nowrap" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th>Unidad</th>
+                                <th>Asignación</th>
+                                <th>Traslados</th>
+                                <th>Extra Plan</th>
+                                <th>Consumo</th>
+                                <th>Saldo</th>
+                                <th>Nombre Empleado</th>
+                                <th>Nombre Área</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="actualizacionModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Actualización de Datos</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Campo oculto para el Id del vehículo -->
+                <input type="hidden" id="idVehiculo" value="" />
+                <form id="formInspeccion">
+                    <!-- 1. Quien tiene asignada -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="ReceivePersonIdDisplay">Quien tiene asignada</label>
+                            <input list="ReceivePersonList" class="form-control" id="ReceivePersonIdDisplay" placeholder="Buscar responsable..." onchange="OnSelectedReceivePersonChanged()">
+                            <datalist id="ReceivePersonList">
+                             
+                            </datalist>
+                            <input type="hidden" id="ReceivePersonIdHidden" name="ReceivePersonId">
+                        </div>
+                        <!-- 2. Conductores -->
+                        <div class="form-group col-md-6">
+                            <label for="conductoresInput">Conductores</label>
+                            <input list="ConductoresList" class="form-control" id="conductoresInput" placeholder="Buscar conductor..." onchange="agregarConductorFromDatalist()">
+                            <datalist id="ConductoresList">
+                              
+                            </datalist>
+                            <div id="conductoresContainer" style="margin-top:5px;"></div>
+                            <input type="hidden" id="conductoresHidden" name="Conductores">
+                        </div>
+                    </div>
+                    <!-- 3. Kilometraje -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="kilometraje">Kilometraje</label>
+                            <input type="number" id="kilometraje" class="form-control" placeholder="Kilometraje" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        </div>
+                        <!-- 4. Plantel Asignado -->
+                        <div class="form-group col-md-6">
+                            <label>Plantel Asignado</label>
+                            <select id="plantelAsignado" class="form-control">
+
+                                <option value="ENITEL METROCENTRO">ENITEL METROCENTRO</option>
+                                <option value="ENITEL SAN JORGE">ENITEL SAN JORGE</option>
+                                <option value="ENITEL CAMOAPA">ENITEL CAMOAPA</option>
+                                <option value="ENITEL CHINANDEGA">ENITEL CHINANDEGA</option>
+                                <option value="ENITEL RIVAS">ENITEL RIVAS</option>
+                                <option value="ENITEL MASATEPE">ENITEL MASATEPE</option>
+                                <option value="ENITEL SAN ISIDRO">ENITEL SAN ISIDRO</option>
+                                <option value="ENITEL MATAGALPA 2">ENITEL MATAGALPA 2</option>
+                                <option value="ENITEL ALTAGRACIA">ENITEL ALTAGRACIA</option>
+                                <option value="ENITEL PUEBLO NUEVO">ENITEL PUEBLO NUEVO</option>
+                                <option value="ENITEL EL RAMA">ENITEL EL RAMA</option>
+                                <option value="ENITEL CORN ISLANDS">ENITEL CORN ISLANDS</option>
+                                <option value="ENITEL SANTO DOMINGO">ENITEL SANTO DOMINGO</option>
+                                <option value="ENITEL MUY MUY">ENITEL MUY MUY</option>
+                                <option value="ENITEL SEBACO">ENITEL SEBACO</option>
+                                <option value="ENITEL SIUNA 2">ENITEL SIUNA 2</option>
+                                <option value="ENITEL MULTICENTRO ESTELI">ENITEL MULTICENTRO ESTELI</option>
+                                <option value="ENITEL SAN CARLOS">ENITEL SAN CARLOS</option>
+                                <option value="ENITEL NAGAROTE">ENITEL NAGAROTE</option>
+                                <option value="ENITEL SABANA GRANDE">ENITEL SABANA GRANDE</option>
+                                <option value="ENITEL MATIGUAS">ENITEL MATIGUAS</option>
+                                <option value="ENITEL SAN PEDRO DE LOVAGO">ENITEL SAN PEDRO DE LOVAGO</option>
+                                <option value="ENITEL ESTACION TERRENA">ENITEL ESTACION TERRENA</option>
+                                <option value="ENITEL LA GATEADA">ENITEL LA GATEADA</option>
+                                <option value="ENITEL PALACAGUINA">ENITEL PALACAGUINA</option>
+                                <option value="ENITEL SANTA LUCIA">ENITEL SANTA LUCIA</option>
+                                <option value="ENITEL TEUSTEPE">ENITEL TEUSTEPE</option>
+                                <option value="ENITEL NANDAIME">ENITEL NANDAIME</option>
+                                <option value="ENITEL VERACRUZ/P.OFINOVA">ENITEL VERACRUZ/P.OFINOVA</option>
+                                <option value="ENITEL CHICHIGALPA">ENITEL CHICHIGALPA</option>
+                                <option value="ENITEL SIUNA">ENITEL SIUNA</option>
+                                <option value="ESTESA EDIFICIO CENTRAL">ESTESA EDIFICIO CENTRAL</option>
+                                <option value="ENITEL CARRETERA NORTE">ENITEL CARRETERA NORTE</option>
+                                <option value="ENITEL CETEL">ENITEL CETEL</option>
+                                <option value="ENITEL EL BLUFF">ENITEL EL BLUFF</option>
+                                <option value="ENITEL LA CONQUISTA">ENITEL LA CONQUISTA</option>
+                                <option value="ENITEL LA TRINIDAD">ENITEL LA TRINIDAD</option>
+                                <option value="ENITEL BOACO">ENITEL BOACO</option>
+                                <option value="ENITEL TELICA">ENITEL TELICA</option>
+                                <option value="ENITEL PLAZA ESPAÑA">ENITEL PLAZA ESPAÑA</option>
+                                <option value="ENITEL LA LIBERTAD">ENITEL LA LIBERTAD</option>
+                                <option value="ENITEL MULTICENTRO LAS AMERICAS">ENITEL MULTICENTRO LAS AMERICAS</option>
+                                <option value="ENITEL CARRETERA MASAYA ALMACEN">ENITEL CARRETERA MASAYA ALMACEN</option>
+                                <option value="ENITEL CATARINA">ENITEL CATARINA</option>
+                                <option value="ENITEL CASA PROTOCOLO(STO.DGO MGA)">ENITEL CASA PROTOCOLO(STO.DGO MGA)</option>
+                                <option value="ENITEL ACOYAPA">ENITEL ACOYAPA</option>
+                                <option value="ENITEL JUIGALPA">ENITEL JUIGALPA</option>
+                                <option value="ENITEL GRANADA">ENITEL GRANADA</option>
+                                <option value="ENITEL BLUEFIELDS">ENITEL BLUEFIELDS</option>
+                                <option value="ENITEL PLAZA LA LIGA">ENITEL PLAZA LA LIGA</option>
+                                <option value="ENITEL BELEN">ENITEL BELEN</option>
+                                <option value="ENITEL LA SABANA">ENITEL LA SABANA</option>
+                                <option value="ENITEL PUERTO CABEZAS">ENITEL PUERTO CABEZAS</option>
+                                <option value="ENITEL MASAYA">ENITEL MASAYA</option>
+                                <option value="ENITEL VILLA FONTANA">ENITEL VILLA FONTANA</option>
+                                <option value="ENITEL OFIBODEGAS SAN JOSE">ENITEL OFIBODEGAS SAN JOSE</option>
+                                <option value="ENITEL MUELLE DE LOS BUEYES">ENITEL MUELLE DE LOS BUEYES</option>
+                                <option value="ENITEL POTOSI">ENITEL POTOSI</option>
+                                <option value="ENITEL CIUDAD JARDIN">ENITEL CIUDAD JARDIN</option>
+                                <option value="ENITEL ALTAMIRA">ENITEL ALTAMIRA</option>
+                                <option value="ENITEL LAS PIEDRECITAS">ENITEL LAS PIEDRECITAS</option>
+                                <option value="ENITEL TIPITAPA">ENITEL TIPITAPA</option>
+                                <option value="ENITEL NUEVA GUINEA">ENITEL NUEVA GUINEA</option>
+                                <option value="ENITEL CONDEGA">ENITEL CONDEGA</option>
+                                <option value="ENITEL DIRIAMBA">ENITEL DIRIAMBA</option>
+                                <option value="ENITEL LAS COLINAS">ENITEL LAS COLINAS</option>
+                                <option value="ENITEL CORINTO">ENITEL CORINTO</option>
+                                <option value="ENITEL TOLA">ENITEL TOLA</option>
+                                <option value="ENITEL CRISTIAN PEREZ">ENITEL CRISTIAN PEREZ</option>
+                                <option value="ENITEL ESTELI">ENITEL ESTELI</option>
+                                <option value="ENITEL PATIO CABLE">ENITEL PATIO CABLE</option>
+                                <option value="ENITEL QUILALI">ENITEL QUILALI</option>
+                                <option value="ENITEL CIUDAD SANDINO">ENITEL CIUDAD SANDINO</option>
+                                <option value="ENITEL CARR.MASAYA /COBIRSA">ENITEL CARR.MASAYA /COBIRSA</option>
+                                <option value="ENITEL GALERIA SANTO DOMINGO">ENITEL GALERIA SANTO DOMINGO</option>
+                                <option value="ENITEL 14 DE SEPTIEMBRE">ENITEL 14 DE SEPTIEMBRE</option>
+                                <option value="ENITEL SOMOTO">ENITEL SOMOTO</option>
+                                <option value="ENITEL CARAZO">ENITEL CARAZO</option>
+                                <option value="ENITEL EL JICARO">ENITEL EL JICARO</option>
+                                <option value="ENITEL BELLO HORIZONTE">ENITEL BELLO HORIZONTE</option>
+                                <option value="ENITEL SAN JUAN DEL SUR">ENITEL SAN JUAN DEL SUR</option>
+                                <option value="ENITEL EL VIEJO">ENITEL EL VIEJO</option>
+                                <option value="ENITEL DIRIOMO">ENITEL DIRIOMO</option>
+                                <option value="ENITEL JINOTEGA">ENITEL JINOTEGA</option>
+                                <option value="ENITEL LA PAZ CENTRO">ENITEL LA PAZ CENTRO</option>
+                                <option value="ENITEL SOMOTILLO">ENITEL SOMOTILLO</option>
+                                <option value="ENITEL OCOTAL">ENITEL OCOTAL</option>
+                                <option value="ENITEL JINOTEPE">ENITEL JINOTEPE</option>
+                                <option value="ENITEL SAN RAFAEL DEL NORTE">ENITEL SAN RAFAEL DEL NORTE</option>
+                                <option value="ENITEL PLAZA MAYOR">ENITEL PLAZA MAYOR</option>
+                                <option value="ENITEL SAN MARCOS">ENITEL SAN MARCOS</option>
+                                <option value="ENITEL JALAPA">ENITEL JALAPA</option>
+                                <option value="ENITEL CHINANDEGA 2">ENITEL CHINANDEGA 2</option>
+                                <option value="ENITEL LAS PALMAS">ENITEL LAS PALMAS</option>
+                                <option value="ENITEL PLAZA REAL">ENITEL PLAZA REAL</option>
+                                <option value="ENITEL LEON">ENITEL LEON</option>
+                                <option value="ENITEL WASPAN">ENITEL WASPAN</option>
+                                <option value="ENITEL RIO BLANCO">ENITEL RIO BLANCO</option>
+                                <option value="ENITEL SANTO TOMAS">ENITEL SANTO TOMAS</option>
+                                <option value="ESTESA BASE II">ESTESA BASE II</option>
+                                <option value="ENITEL ESTELI / BODEGA TECNICA">ENITEL ESTELI / BODEGA TECNICA</option>
+                                <option value="ENITEL ACHUAPA">ENITEL ACHUAPA</option>
+                                <option value="ENITEL NUEVA SEGOVIA">ENITEL NUEVA SEGOVIA</option>
+                                <option value="ENITEL BILWI">ENITEL BILWI</option>
+                                <option value="ENITEL EL SAUCE">ENITEL EL SAUCE</option>
+                                <option value="ENITEL LAGUNA DE PERLAS">ENITEL LAGUNA DE PERLAS</option>
+                                <option value="ENITEL PUERTO SANDINO">ENITEL PUERTO SANDINO</option>
+                                <option value="ENITEL YALI">ENITEL YALI</option>
+                                <option value="ENITEL MALPAISILLO">ENITEL MALPAISILLO</option>
+                                <option value="ENITEL MONSEÑOR LEZCANO">ENITEL MONSEÑOR LEZCANO</option>
+                                <option value="ENITEL ROSITA">ENITEL ROSITA</option>
+                                <option value="ENITEL BONANZAS">ENITEL BONANZAS</option>
+                                <option value="ENITEL MATAGALPA">ENITEL MATAGALPA</option>
+                                <option value="ENITEL MOYOGALPA">ENITEL MOYOGALPA</option>
+                                <option value="ENITEL DARIO">ENITEL DARIO</option>
+                                <option value="ENITEL TICOMO">ENITEL TICOMO</option>
+                                <!-- Agregar el resto de opciones según sea necesario -->
+                            </select>
+                        </div>
+                    </div>
+                    <!-- 5. Domicilio y 6. Teléfono -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Domicilio</label>
+                            <input type="text" id="domicilio" class="form-control" placeholder="Domicilio">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control" placeholder="Teléfono" maxlength="8" pattern="\d{8}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        </div>
+                    </div>
+                    <!-- 7. Foto de Licencia -->
+                    <div class="form-group">
+                        <label>Foto de Licencia</label>
+                        <input type="file" id="inputLicencia" class="form-control-file">
+                        <div id="vistaLicencia" class="mt-2 border" style="height: 200px; display:flex; align-items:center; justify-content:center;">
+                            Sin vista previa
+                        </div>
+                    </div>
+                    <!-- 8. Prueba de Manejo -->
+                    <div class="form-group form-check">
+                        <input type="checkbox" id="pruebaManejo" class="form-check-input">
+                        <label for="pruebaManejo" class="form-check-label">Confirmar si realizó prueba de manejo</label>
+                    </div>
+                    <!-- 9. Fotos de Inspección -->
+                    <div class="form-group">
+                        <label>Fotos de Inspección</label>
+                        <div id="fotosGrid" class="row">
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Frontal</p>
+                                <div id="preview-Frontal" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Frontal">Sin foto</div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Tablero</p>
+                                <div id="preview-Tablero" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Tablero">Sin foto</div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Lateral Izquierdo</p>
+                                <div id="preview-LateralIzquierdo" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Lateral Izquierdo">Sin foto</div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Lateral Derecho</p>
+                                <div id="preview-LateralDerecho" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Lateral Derecho">Sin foto</div>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <p>Trasero</p>
+                                <div id="preview-Trasero" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center; cursor:pointer;" data-parte="Trasero">Sin foto</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="btnGuardarInspeccion" type="button" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="detalleModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Movimientos de la Unidad</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table id="tablaDetalle"
+                       class="table table-striped table-bordered nowrap"
+                       style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Movimiento</th>
+                            <th>Débito</th>
+                            <th>Crédito</th>
+                            <th>Saldo Combustible</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Visualización de Inspección (Solo Lectura) -->
+<div id="visualizacionModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Visualización de Inspección</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Se muestran los datos en modo solo lectura -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Kilometraje:</strong> <span id="viewKilometraje"></span><br />
+                        <strong>Plantel Asignado:</strong> <span id="viewPlantelAsignado"></span><br />
+                        <strong>Quien tiene asignada:</strong> <span id="viewAsignadaA"></span><br />
+                        <strong>Conductores:</strong> <span id="viewConductores"></span><br />
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Domicilio:</strong> <span id="viewDomicilio"></span><br />
+                        <strong>Teléfono:</strong> <span id="viewTelefono"></span><br />
+                    </div>
+                </div>
+                <hr />
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Foto de Licencia:</strong>
+                        <div id="viewLicencia" class="border" style="height: 200px; display:flex; align-items:center; justify-content:center;">
+                            Sin foto
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Prueba de Manejo:</strong> <span id="viewPruebaManejo"></span>
+                    </div>
+                </div>
+                <hr />
+                <h5>Fotos de Inspección</h5>
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <p>Frontal</p>
+                        <div id="view-Frontal" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center;">
+                            Sin foto
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <p>Tablero</p>
+                        <div id="view-Tablero" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center;">
+                            Sin foto
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <p>Lateral Izquierdo</p>
+                        <div id="view-LateralIzquierdo" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center;">
+                            Sin foto
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <p>Lateral Derecho</p>
+                        <div id="view-LateralDerecho" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center;">
+                            Sin foto
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <p>Trasero</p>
+                        <div id="view-Trasero" class="border" style="height: 100px; display:flex; align-items:center; justify-content:center;">
+                            Sin foto
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+

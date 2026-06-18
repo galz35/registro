@@ -1,0 +1,239 @@
+﻿@model List<Entities.ConsumptionClaro>
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvVouchers";
+        settings.KeyFieldName = "IdCombustibleConsumoClaro";
+
+        settings.CallbackRouteValues = new { Controller = "Consumo", Action = "VouchersListByCarPartial" };
+        settings.Width = Unit.Percentage(100);
+        settings.Settings.ShowGroupPanel = false;
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 0;
+        settings.Settings.ShowFooter = true;
+        settings.KeyboardSupport = true;
+
+        settings.EnableRowsCache = false;
+
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+
+        #region Paging
+        settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+        #endregion
+        #region filtering
+        settings.SettingsSearchPanel.CustomEditorName = "search";
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+        #endregion
+        #region Sorting
+        //settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "EventName");
+        #endregion
+
+        // settings.Toolbars.Add(t =>
+        //{
+        //    t.Enabled = true;
+        //    t.ItemAlign = GridToolbarItemAlign.Right;
+        //    t.Items.Add(i =>
+        //    {
+        //        i.Text = "Exportar a";
+        //        i.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsDownload16x16office2013;
+        //        i.BeginGroup = true;
+        //        i.Items.Add(GridViewToolbarCommand.ExportToPdf).Text = "Exportar a PDF";
+        //        i.Items.Add(GridViewToolbarCommand.ExportToDocx).Text = "Exportar a Word";
+        //        i.Items.Add(GridViewToolbarCommand.ExportToXls).Text = "Exportar a Excel";
+
+        //    });
+        //    t.Items.Add(i =>
+        //    {
+        //        i.BeginGroup = true;
+        //        i.SetTemplateContent(c =>
+        //        {
+        //            Html.DevExpress().ButtonEdit(s =>
+        //            {
+        //                s.Name = "search";
+        //                s.Properties.NullText = "Buscar..";
+        //                s.Properties.Buttons
+        //                    .Add()
+        //                    .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+        //            }).Render();
+        //        });
+        //    });
+
+        //});
+
+        settings.Columns.Add(c =>
+        {
+            c.Caption = "#";
+            c.SetDataItemTemplateContent(tc =>
+            {
+                ViewContext.Writer.Write(
+                 @Html.DevExpress().Button(p =>
+                 {
+                     p.Name = "btnEdit" + tc.KeyValue;
+                     p.Text = "";
+                     p.Width = 7;
+                     p.EnableTheming = false;
+
+                     p.Images.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+                     p.ImagePosition = ImagePosition.Left;
+                     p.ToolTip = "Editar registro";
+                     p.ClientSideEvents.Click = "function(s, e){ EditarConsumo(s,e) }";
+                     //p.ClientSideEvents.Click = string.Format("function(s,e) {{EditarConsumoPorUnidad(s.name,'{0}'); }}", Url.Action("EditarConsumoPorUnidad", "Consumo", new { IdCombustibleConsumoClaro = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+
+                 }).GetHtml()
+        );
+
+                ViewContext.Writer.Write(
+
+             @Html.DevExpress().Button(p =>
+             {
+                 p.Name = "btnDelete" + tc.KeyValue;
+                 p.Text = "";
+                 p.Width = 7;
+                 p.EnableTheming = false;
+                 p.Images.Image.Url = Url.Content("~/Content/Icons/trash.png");
+                 p.ImagePosition = ImagePosition.Left;
+                 p.ToolTip = "Eliminar registro";
+                 p.ClientSideEvents.Click = string.Format("function(s,e) {{AnularConsumo(s.name,'{0}'); }}", Url.Action("AnularConsumo", "Consumo", new { IdCombustibleConsumoClaro = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+             }).GetHtml()
+                    );
+                ViewContext.Writer.Write(
+
+                    @Html.DevExpress().Button(p =>
+                    {
+                        p.Name = "btnViewConsumoState" + tc.KeyValue;
+                        p.Text = "";
+                        p.Width = 7;
+                        p.EnableTheming = false;
+                        p.Images.Image.Url = Url.Content("~/Content/Icons/ViewDetail.png");
+                        p.ImagePosition = ImagePosition.Left;
+                        p.ToolTip = "Ver Estados ";
+                        p.ClientSideEvents.Click = string.Format("function(s,e) {{VerDetalleEstados(s.name,'{0}'); }}", Url.Action("ConsumoStateConsult", "Consumo", new { IdConsumo = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+                    }).GetHtml()
+                    );
+
+
+
+
+
+            });
+
+            c.SetHeaderTemplateContent(tc =>
+            {
+                @Html.DevExpress().Button(p =>
+                {
+                    p.Name = "Nuevo";
+                    p.Text = "";
+                    p.Width = 5;
+                    p.EnableTheming = false;
+                    p.Images.Image.Url = Url.Content("~/Content/Icons/Add.png");
+                    p.ImagePosition = ImagePosition.Right;
+                    p.ClientSideEvents.Click = "function(s, e){ NuevoConsumo(s,e) }";
+                    p.ToolTip = "Agregar nuevo registro";
+                }).GetHtml();
+
+
+            });
+            c.Settings.AllowDragDrop = DefaultBoolean.False;
+            c.Settings.AllowSort = DefaultBoolean.False;
+            c.Width = Unit.Percentage(10);
+        });
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "FechaRegistro";
+            col.Caption = "Fecha Registro";
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.AdaptivePriority = 1;
+            col.Width = Unit.Percentage(10);
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "IdVoucher";
+            col.Caption = "# Referencia";
+            col.AdaptivePriority = 2;
+            col.Width = Unit.Percentage(10);
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "NombreProveedor";
+            col.Caption = "Proveedor";
+            col.AdaptivePriority = 3;
+            col.Width = Unit.Percentage(20);
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "CantidadLitros";
+            col.Caption = "Cantidad(lts)";
+            col.PropertiesEdit.DisplayFormatString = "n2";
+            col.Width = Unit.Percentage(10);
+            col.AdaptivePriority = 4;
+
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "ValorCordobas";
+            col.Caption = "ValorC$";
+            col.PropertiesEdit.DisplayFormatString = "n2";
+            col.Width = Unit.Percentage(10);
+            col.AdaptivePriority = 5;
+
+
+        });
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Estado";
+            col.Caption = "Estado";
+            col.Width = Unit.Percentage(20);
+            col.AdaptivePriority = 6;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+    });
+
+    //settings.ClientLayout = (s, e) => {
+    @*if(e.LayoutMode == ClientLayoutMode.Loading) {
+                if(Session["GridState"] != null)
+                    e.LayoutData = (string)Session["GridState"];
+            }
+            else
+                Session["GridState"] = e.LayoutData;
+        };*@
+
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+
+
+}
+@grid.Bind(Model).GetHtml()
+

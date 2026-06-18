@@ -1,0 +1,924 @@
+﻿
+
+@{
+    ViewBag.Title = "Lista de Unidades";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<link href="~/css/jquery-ui.min.css" rel="stylesheet" />
+<link href="~/css/jquery-ui-timepicker-addon.css" rel="stylesheet" />
+<link href="~/css/bootstrap-duallistbox.min.css" rel="stylesheet" />
+<link href="~/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="~/css/sweetalert.css" rel="stylesheet" />
+
+
+
+<style>
+
+    /* Contenedor con márgenes */
+    .div-con-margen {
+        margin: 30px !important; /* margen superior, derecho, inferior e izquierdo */
+    }
+
+    /* Tabs de encabezado */
+    .header-tabs {
+        margin-bottom: 20px !important;
+        text-align: center !important;
+    }
+
+        .header-tabs button {
+            padding: 10px 20px !important;
+            cursor: pointer !important;
+            background-color: #e74c3c !important; /* Rojo impactante */
+            color: #fff !important; /* Texto blanco */
+            border: none !important;
+            border-radius: 5px !important;
+            margin-right: 10px !important;
+            transition: background-color 0.3s ease !important;
+        }
+
+            .header-tabs button:hover {
+                background-color: #c0392b !important; /* Rojo más oscuro al pasar el ratón */
+            }
+
+    /* Estilos globales del cuerpo */
+    body {
+        font-family: Arial, sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #ecf0f1 !important; /* Gris muy claro */
+        color: #333 !important; /* Texto oscuro */
+    }
+
+    /* Titulares y párrafos */
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: bold !important;
+        margin-bottom: 10px !important;
+    }
+
+    p {
+        margin-bottom: 10px !important;
+    }
+
+    /* Enlaces */
+    a {
+        color: #e74c3c !important; /* Rojo */
+        text-decoration: none !important;
+    }
+
+        a:hover {
+            text-decoration: underline !important;
+        }
+
+    /* Botones para Excel y PDF */
+    .buttons-excel {
+        background-color: #27ae60 !important; /* Verde */
+        color: #fff !important; /* Texto blanco */
+        border: none !important;
+        padding: 10px 20px !important;
+        text-align: center !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+        font-size: 16px !important;
+        margin: 4px 2px !important;
+        cursor: pointer !important;
+        border-radius: 8px !important;
+        transition: background-color 0.3s ease !important;
+    }
+
+        .buttons-excel:hover {
+            background-color: #1e8449 !important; /* Verde oscuro */
+        }
+
+    /* Encabezado principal */
+    header {
+        background-color: #000 !important; /* Negro */
+        color: #fff !important;
+        text-align: center !important;
+        padding: 20px 0 !important;
+    }
+
+        header h1 {
+            margin: 0 !important;
+            font-size: 36px !important;
+        }
+
+        header img {
+            max-width: 200px !important;
+        }
+
+    /* Secciones de contenido */
+    .section {
+        padding: 40px 20px !important;
+        margin: 20px !important;
+        background-color: #fff !important; /* Blanco */
+        border-radius: 10px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important; /* Sombra sutil */
+    }
+
+        .section h2 {
+            color: #e74c3c !important; /* Rojo para titulares */
+            font-size: 24px !important;
+            margin-bottom: 20px !important;
+        }
+
+        .section p {
+            font-size: 16px !important;
+        }
+
+    /* Testimonios */
+    .testimonial {
+        margin: 20px !important;
+        padding: 20px !important;
+        background-color: #f9f9f9 !important; /* Blanco roto */
+        border-left: 4px solid #e74c3c !important; /* Acento rojo */
+    }
+
+        .testimonial blockquote {
+            margin: 0 !important;
+            font-style: italic !important;
+        }
+
+        .testimonial p {
+            margin-top: 10px !important;
+        }
+
+    /* Pie de página */
+    footer {
+        background-color: #333 !important; /* Gris oscuro */
+        color: #fff !important;
+        text-align: center !important;
+        padding: 20px 0 !important;
+    }
+
+        footer ul {
+            list-style: none !important;
+            padding: 0 !important;
+        }
+
+            footer ul li {
+                display: inline !important;
+                margin-right: 20px !important;
+            }
+
+                footer ul li:last-child {
+                    margin-right: 0 !important;
+                }
+
+                footer ul li a {
+                    color: #fff !important;
+                }
+
+                    footer ul li a:hover {
+                        text-decoration: underline !important;
+                    }
+
+    /* Elementos de acento y destacados */
+    .equipo-rojo {
+        color: #e74c3c !important;
+    }
+
+    .partido {
+        background-color: #fff !important; /* Blanco */
+        border: 1px solid #bdc3c7 !important; /* Gris claro */
+        border-radius: 5px !important;
+        padding: 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .partido2 {
+        background-color: #fff !important;
+    }
+
+    .partido h4 {
+        margin-top: 0 !important;
+        margin-bottom: 5px !important;
+    }
+
+    .equipo-logo {
+        max-width: 50px !important;
+        max-height: 50px !important;
+    }
+
+        /* Añade un margen inferior a los logotipos consecutivos */
+        .equipo-logo + .equipo-logo {
+            margin-left: 10px !important;
+        }
+
+    /* Modal personalizado */
+    .modal-dialog-custom {
+        max-width: 80% !important;
+    }
+
+    /* Clases de utilidad */
+    .oculto {
+        display: none !important;
+    }
+
+    .accent-green {
+        color: #27ae60 !important;
+    }
+
+    .bg-green {
+        background-color: #27ae60 !important;
+        color: #fff !important;
+    }
+</style>
+<div class="div-con-margen">
+
+
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="mb-3" id="accordion">
+                <div class="card border-info">
+                    <div class="card-header p-2 bg-info text-white" id="headingOne">
+                        Lista de equipo
+
+                    </div>
+
+                    <div>
+                        <div class="card-body p-3">
+
+                            <div class="row align-items-end">
+                                <input id="txtIdTienda" type="hidden" value="0" />
+                                <div class="col-sm-2">
+                                    <div class="form-group mb-0">
+
+                                        <input type="text" id="txtRuc3" name="campoOculto" class="oculto" placeholder="Campo Oculto"><br>
+                                        <input type="text" id="txtRuc4" name="campoOculto" class="oculto" placeholder="Campo Oculto"><br>
+                                        <label for="txtRuc" class="col-form-label col-form-label-sm">Equipo:</label>
+                                        <input type="text" class="form-control form-control-sm model" id="txtRuc" name="equipo">
+                                    </div>
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group mb-0">
+                                        <label for="txtRazonSocial" class="col-form-label col-form-label-sm">Disciplina:</label>
+                                        <select class="form-control" id="cbdisciplina">
+                                            <option value="" disabled selected>Seleccione una opción</option>
+                                            <option value="Softball">Softball</option>
+                                            <option value="Football Sala">Football Sala</option>
+                                            <option value="Tenis de Mesa">Tenis de Mesa</option>
+                                            <option value="Volibol">Volibol</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <div class="form-group mb-0">
+                                        <label for="txtRuc" class="col-form-label col-form-label-sm">Registrador:</label>
+                                        <input type="text" class="form-control form-control-sm model" readonly id="txtRuc2" name="equipo">
+                                    </div>
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group mb-0">
+                                        <button id="btnBuscarTienda" type="button" class="btn btn-sm btn-success btn-block" onclick="Guardardiciplina()"><i class="fas fa-creative-commons"></i> Crear</button>
+
+                                    </div>
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group mb-0">
+                                        <button id="btnBuscarTienda2" type="button" class="btn btn-sm btn-dark btn-block" onclick="Guardardiciplinaf()"><i class="fas fa-creative-commons"></i> Finalizar inscripcion</button>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="m-2">
+                            <div class="row">
+                                <div class="col-sm-3"><h6 class="m-0">Jugadores</h6></div>
+                            </div>
+                            <div class="row align-items-end">
+                                <input id="txtIdProducto" type="hidden" value="0" />
+                                <div class="col-sm-2">
+                                    <div class="form-group mb-0">
+                                        <label for="txtCodigo" class="col-form-label col-form-label-sm">Codigo:</label>
+                                        <input type="text" class="form-control form-control-sm model" id="txtCodigo" name="Codigo" autocomplete="off" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <div class="form-group mb-0">
+                                        <label for="txtNombre" class="col-form-label col-form-label-sm">Telefono:</label>
+                                        <input type="text" class="form-control form-control-sm model" id="txtNombre" name="Nombre" required>
+                                    </div>
+                                </div>
+                                @*<div class="col-sm-3">
+                                        <div class="form-group mb-0">
+                                            <label for="txtDescripcion" class="col-form-label col-form-label-sm">Gerencia:</label>
+                                            <input type="text" class="form-control form-control-sm model" readonly id="txtDescripcion" name="Descripcion">
+                                        </div>
+                                    </div>*@
+                                @*<div class="col-sm-2">
+                                        <div class="form-group mb-0">
+                                            <button id="btnBuscarProducto" type="button" class="btn btn-sm btn-success btn-block" onclick="buscarProducto()"><i class="fas fa-search"></i> Buscar</button>
+                                        </div>
+                                    </div>*@
+                                <div class="col-sm-2">
+                                    <div class="form-group mb-0">
+                                        <button id="btnAsignar" type="button" class="btn btn-sm btn-primary btn-block" onclick="asignarProducto()"><i class="fas fa-clipboard-check"></i> Asignar</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="card border-info">
+                <div class="card-header bg-info text-white p-2">
+                    jugadores
+                </div>
+                <div id="card-lista" class="card-body p-3">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="table-responsive">
+                                <table id="tbdata" class="table table-striped table-bordered nowrap compact" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>codigo</th>
+                                            <th>gerencia</th>
+                                            <th>sexo</th>
+                                            <th>telefono</th>
+
+                                            <th>Eliminar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="modal fade" id="modalTienda" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-custom" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Tiendas</h5>
+                    <button type="button" class="close" onclick="cerrarModalt()" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table id="tbTienda" class="table table-striped table-bordered nowrap compact" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>nombre</th>
+                                    <th>gerencia</th>
+                                    <th>area</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="cerrarModalt()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalProducto" tabindex="-1" data-backdrop="static" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-custom" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">empleado</h5>
+                    <button type="button" class="close" onclick="cerrarModalt1()" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table id="tbProducto" class="table table-striped table-bordered nowrap compact" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Codigo</th>
+                                    <th>Nombre</th>
+                                    <th>gerencia</th>
+                                    <th>sexo</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="cerrarModalt1()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+@section scripts{
+    <script src="~/js/datatableall.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/js/sweetalert.js"></script>
+    @*<script src="~/onlinejs/jquery-ui.js"></script>*@
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/sb-admin-2.min.js"></script>
+    <script src="~/js/dataTables.buttons.min.js"></script>
+    <script src="~/js/jquery-ui.es.js"></script>
+    <script src="~/js/jszip.min.js"></script>
+    <script src="~/js/jquery-ui.min.js"></script>
+    <script src="~/js/jquery-ui-timepicker-addon.js"></script>
+    <script src="~/js/jquery.validate.js"></script>
+    <script src="~/js/pdfmake.min.js"></script>
+    <script src="~/js/buttons.html5.min.js"></script>
+    <script src="~/js/vfs_fonts.js"></script>
+    <script src="~/js/jquery.bootstrap-duallistbox.min.js"></script>
+    <script>
+        var tabladata;
+var tablatienda;
+var tablaproducto;
+
+$(document).ready(function () {
+    $.LoadingOverlay("show");
+
+    // Validar formulario
+    $("#form").validate({
+        rules: {
+            Nombre: "required",
+            Descripcion: "required"
+        },
+        messages: {
+            Nombre: "(*)",
+            Descripcion: "(*)"
+        },
+        errorElement: 'span'
+    });
+
+    // Obtener equipo mediante AJAX (reemplaza fetch)
+    $.ajax({
+        url: '@Url.Action("Obtenerequipo", "Events")',
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        success: function (data) {
+            if (data.data && data.data.Nombre && data.data.Nombre.length > 0) {
+                $("#txtRuc").val(data.data.Nombre);       // Asigna el nombre del equipo
+                $("#txtRuc2").val(data.data.fullnombre);    // Asigna el nombre completo
+                $("#txtRuc3").val(data.data.estado);        // Asigna el estado
+                $("#txtRuc4").val(data.data.rg);            // Asigna el RG
+                $("#cbdisciplina").val(data.data.Disciplina);// Asigna la disciplina
+
+                // Deshabilitar controles
+                $("#cbdisciplina, #txtRuc, #btnBuscarTienda")
+                    .prop("disabled", true)
+                    .css("background", "silver");
+
+                if (data.data.rg !== "ok" || data.data.estado === "F") {
+                    $("#btnBuscarTienda2, #btnAsignar")
+                        .prop("disabled", true)
+                        .css("background", "silver");
+                    if (data.data.estado === "F") {
+                        swal("Mensaje!", "Guardado : Ya esta finalizado", "success");
+                        $("#txtNombre, #txtCodigo").prop("disabled", true);
+                    }
+                }
+            } else {
+                $("#btnBuscarTienda2, #btnAsignar, #txtCodigo")
+                    .prop("disabled", true)
+                    .css("background", "silver");
+            }
+        },
+        error: function (err) {
+            console.error('Error en la solicitud AJAX:', err);
+            $("#btnBuscarTienda2, #btnAsignar, #txtCodigo")
+                .prop("disabled", true)
+                .css("background", "silver");
+        }
+    });
+
+    // Inicializar DataTable para productos
+    tablaproducto = $('#tbProducto').DataTable({
+        "ajax": {
+            "url": '@Url.Action("Obtener", "Events")',
+            "type": "GET",
+            "datatype": "json"
+        },
+        "columns": [
+            {
+                "data": "carnet",
+                "render": function (data, type, row, meta) {
+                    return "<button class='btn btn-sm btn-primary ml-2' type='button' onclick='productoSelect(" +
+                        JSON.stringify(row) +
+                        ")'><i class='fas fa-check'></i></button>";
+                },
+                "orderable": false,
+                "searchable": false,
+                "width": "90px"
+            },
+            { "data": "carnet" },
+            { "data": "nombre" },
+            { "data": "gerente" }
+        ],
+        "language": {
+            "url": '@Url.Content("~/js/datatable_spanish.json")'
+        },
+        responsive: true
+    });
+
+    // Inicializar DataTable para equipo
+    tabladata = $('#tbdata').DataTable({
+        "ajax": {
+            "url": '@Url.Action("Obtenerequipo2", "Events")',
+            "type": "GET",
+            "datatype": "json"
+        },
+        "columns": [
+            { "data": "carnet" },
+            { "data": "nombre" },
+            { "data": "gerencia" },
+            { "data": "sexo" },
+            { "data": "telefono" },
+            {
+                "data": "iddliga",
+                "render": function (data, type, row, meta) {
+                    return "<button class='btn btn-danger btn-sm ml-2' type='button' onclick='eliminar(" +
+                        data +
+                        ")'><i class='fa fa-trash'></i></button>";
+                },
+                "orderable": false,
+                "searchable": false,
+                "width": "80px"
+            }
+        ],
+        dom: 'Blfrtip',
+        "language": {
+            "url": '@Url.Content("~/js/datatable_spanish.json")'
+        },
+        responsive: true,
+        buttons: [
+            {
+                extend: 'excel',
+                className: 'buttons-excel'
+            },
+            {
+                extend: 'pdf',
+                className: 'buttons-excel'
+            }
+        ]
+    });
+
+    $.LoadingOverlay("hide");
+});
+ function cargartodo() {
+    fetch('@Url.Action("Obtenerequipo", "Events")')  // Realiza la petición GET
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error en la respuesta de la red: " + response.statusText);
+            }
+            return response.json();  // Convierte la respuesta a JSON
+        })
+        .then(data => {
+            if (data.data && data.data.Nombre && data.data.Nombre.length > 0) {
+                $("#txtRuc").val(data.data.Nombre);
+                $("#txtRuc2").val(data.data.fullnombre);
+                $("#txtRuc3").val(data.data.estado);
+                $("#txtRuc4").val(data.data.rg);
+                $("#cbdisciplina").val(data.data.Disciplina);
+                $("#cbdisciplina, #txtRuc, #btnBuscarTienda")
+                    .prop("disabled", true)
+                    .css("background", "silver");
+                if (data.data.rg !== "ok") {
+                    $("#btnBuscarTienda2, #btnAsignar")
+                        .prop("disabled", true)
+                        .css("background", "silver");
+                }
+            } else {
+                $("#btnBuscarTienda2, #btnAsignar, #txtCodigo")
+                    .prop("disabled", true)
+                    .css("background", "silver");
+            }
+        })
+        .catch(error => {
+            console.error('Error en la solicitud fetch:', error);
+            $("#btnBuscarTienda2, #btnAsignar, #txtCodigo")
+                .prop("disabled", true)
+                .css("background", "silver");
+        });
+}
+
+
+function mostrarSeleccion() {
+    var comboBox = document.getElementById("cbdisciplina");
+    var seleccion = comboBox.options[comboBox.selectedIndex].text;
+    swal("Mensaje!", "Seleccionaste: " + seleccion, "warning");
+}
+
+function Guardardiciplina() {
+    swal({
+        title: "Mensaje",
+        text: "¿Desea crear equipo?",
+        type: "success",
+        showCancelButton: true,
+        confirmButtonText: "Si",
+        confirmButtonColor: "green",
+        cancelButtonText: "No",
+        closeOnConfirm: true
+    }, function () {
+        var comboBox = document.getElementById("cbdisciplina");
+        var seleccion = comboBox.options[comboBox.selectedIndex].text;
+        var camposvacios = false;
+        var tel = $("#txtNombre").val();
+        if (seleccion === "" || $("#txtRuc").val() === "")
+            camposvacios = true;
+        if (!camposvacios) {
+            var $data = {
+                oPersona: {
+                    Nombre: $("#txtRuc").val(),
+                    Disciplina: seleccion,
+                    Telefono: tel
+                }
+            };
+            $.ajax({
+                url: "@Url.Action("Guardar", "Events")",
+                type: "POST",
+                data: JSON.stringify($data),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    if (data.resultado === "OK") {
+                        alert("Su equipo se ha registrado");
+                        window.location.href = "https://recursoshumanosni/RHOnline/Events/Registrar";
+                    } else {
+                        alert(data.resultado);
+                        window.location.href = "https://recursoshumanosni/RHOnline/Events/Registrar";
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        } else {
+            swal("Mensaje!", "Es necesario completar todos los campos", "warning");
+        }
+    });
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    alert(mensaje);
+}
+
+function Guardardiciplinaf() {
+    swal({
+        title: "Mensaje",
+        text: "¿Desea finaliza el equipo?",
+        type: "success",
+        showCancelButton: true,
+        confirmButtonText: "Si",
+        confirmButtonColor: "green",
+        cancelButtonText: "No",
+        closeOnConfirm: true
+    }, function () {
+        var comboBox = document.getElementById("cbdisciplina");
+        var seleccion = comboBox.options[comboBox.selectedIndex].text;
+        var $data = {
+            oPersona: {
+                Nombre: $("#txtRuc").val(),
+                Disciplina: seleccion
+            }
+        };
+        // Llamada AJAX comentada para finalizar el equipo
+
+        $.ajax({
+            url: "@Url.Action("Guardarf", "Events")",
+            type: "POST",
+            data: JSON.stringify($data),
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.resultado === "Se a finalizado el equipo") {
+                    swal("Mensaje!", "Se a finalizado la inscripcion", "success");
+                    window.location.href = "https://recursoshumanosni/RHOnline/Events/Registrar";
+                } else {
+                    alert(data.resultado);
+                    window.location.href = "https://recursoshumanosni/RHOnline/Events/Registrar";
+                }
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+
+    });
+}
+
+function llenarformulario(response) {
+    document.getElementById("txtRuc").value = response.data.nombre;
+    document.getElementById("cbdisciplina").value = response.data.disciplina;
+}
+
+function buscarTienda() {
+    tablatienda.ajax.reload();
+    var modal = document.getElementById('modalTienda');
+    var backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop fade show';
+    document.body.appendChild(backdrop);
+    modal.style.display = 'block';
+    modal.className += ' show';
+    modal.setAttribute('aria-modal', true);
+}
+
+function buscarProducto() {
+    tablaproducto.ajax.reload();
+    var modal = document.getElementById('modalProducto');
+    var backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop fade show';
+    document.body.appendChild(backdrop);
+    modal.style.display = 'block';
+    modal.className += ' show';
+    modal.setAttribute('aria-modal', true);
+}
+
+function tiendaSelect(json) {
+    $("#txtIdTienda").val(json.carnet);
+    $("#txtRuc").val(json.nombre);
+    $("#txtRazonSocial").val(json.area);
+    $("#txtDireccion").val(json.gerente);
+    var modal = document.getElementById('modalTienda');
+    var backdrop = document.querySelector('.modal-backdrop');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    modal.removeAttribute('aria-modal');
+    if (backdrop) backdrop.parentNode.removeChild(backdrop);
+}
+
+function productoSelect(json) {
+    $("#txtIdProducto").val(json.carnet);
+    $("#txtCodigo").val(json.carnet);
+    // $("#txtDescripcion").val(json.gerente);
+    var modal = document.getElementById('modalProducto');
+    var backdrop = document.querySelector('.modal-backdrop');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    modal.removeAttribute('aria-modal');
+    if (backdrop) backdrop.parentNode.removeChild(backdrop);
+}
+
+function cerrarModalt() {
+    var modal = document.getElementById('modalTienda');
+    var backdrop = document.querySelector('.modal-backdrop');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    modal.removeAttribute('aria-modal');
+    if (backdrop) backdrop.parentNode.removeChild(backdrop);
+}
+
+function cerrarModalt1() {
+    var modal = document.getElementById('modalProducto');
+    var backdrop = document.querySelector('.modal-backdrop');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    modal.removeAttribute('aria-modal');
+    if (backdrop) backdrop.parentNode.removeChild(backdrop);
+}
+
+$("#txtCodigo").on('keypress', function (e) {
+    if (e.which == 13) {
+        $.ajax({
+            url: '@Url.Action("Obtener", "Events")',
+            type: "GET",
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                $("#txtCodigo").LoadingOverlay("hide");
+                var encontrado = false;
+                if (data.data != null) {
+                    $.each(data.data, function (i, item) {
+                        if (item.Activo === true && item.Codigo === $("#txtCodigo").val()) {
+                            $("#txtIdProducto").val(item.IdProducto);
+                            $("#txtCodigo").val(item.Codigo);
+                            // $("#txtDescripcion").val(item.Descripcion);
+                            encontrado = true;
+                            return false;
+                        }
+                    });
+                    if (!encontrado) {
+                        $("#txtIdProducto").val("0");
+                        $("#txtNombre").val("");
+                        // $("#txtDescripcion").val("");
+                    }
+                }
+            },
+            error: function (error) {
+                console.log(error);
+            },
+            beforeSend: function () {
+                $("#txtCodigo").LoadingOverlay("show");
+            }
+        });
+    }
+});
+
+function cargarequipo() {
+    // Implementar si se requiere cargar datos adicionales del equipo
+}
+
+function asignarProducto() {
+    swal({
+        title: "Mensaje",
+        text: "¿Desea asignar jugador al equipo?",
+        type: "success",
+        showCancelButton: true,
+        confirmButtonText: "Si",
+        confirmButtonColor: "green",
+        cancelButtonText: "No",
+        closeOnConfirm: true
+    }, function () {
+        if ($("#txtCodigo").val() === "" || $("#txtNombre").val() === "") {
+            swal("Mensaje!", "Es necesario completar todos los campos", "warning");
+            return;
+        }
+        var $data = {
+            oPersona: {
+                Nombre: $("#txtCodigo").val(),
+                Disciplina: $("#txtNombre").val()
+            }
+        };
+        $.ajax({
+            url: '@Url.Action("Guardar2", "Events")',
+            type: "POST",
+            data: JSON.stringify($data),
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.resultado === "ok") {
+                    swal("Mensaje!", "registro guardado ", "success");
+                    $("#txtNombre, #txtCodigo").val("");
+                    tabladata.ajax.reload();
+                } else {
+                    alert(data.resultado);
+                }
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    });
+}
+
+function eliminar($id) {
+    var estado = $("#txtRuc3").val();
+    var rg = $("#txtRuc4").val();
+    if (estado !== "fin" && rg === "ok") {
+        swal({
+            title: "Mensaje",
+            text: "¿Desea eliminar la asignación?",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Si",
+            confirmButtonColor: "#DD6B55",
+            cancelButtonText: "No",
+            closeOnConfirm: true
+        }, function () {
+            $.ajax({
+                url: '@Url.Action("Guardar3", "Events")' + "?id=" + $id,
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    if (data.resultado) {
+                        tabladata.ajax.reload();
+                    } else {
+                        swal("Mensaje", "No se pudo eliminar la asignación?", "warning");
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        });
+    }
+}
+
+    </script>
+}
+

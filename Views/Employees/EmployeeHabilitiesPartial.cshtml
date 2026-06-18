@@ -1,0 +1,154 @@
+﻿
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.Habilities>(settings =>
+    {
+        settings.Name = "gvEmployeeHabilities";
+        settings.KeyFieldName = "HabilityId";
+        settings.CallbackRouteValues = new { Controller = "Employees", Action = "EmployeeHabilitiesPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Employees", Action = "AddHability" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Employees", Action = "EditHability" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Employees", Action = "DeleteHability" };
+
+
+        //Configuracion basica del grid
+        settings.Width = Unit.Percentage(100);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+        //settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 0;
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+
+        //Configuracion del grid para hacerlo responsive
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 120;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+        //Configuracion del popup
+
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de conocimientos técnicos";
+        settings.SettingsPopup.EditForm.Width = 700;
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+
+
+        #region Personalizacion de botones
+        //Configuracion de botones de accion
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.Width = 70;
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.CommandColumn.ShowDeleteButton = true;
+        settings.CommandColumn.ShowEditButton = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+        settings.SettingsCommandButton.NewButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsAdd16x16;
+        settings.SettingsCommandButton.EditButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditEdit16x16;
+        settings.SettingsCommandButton.UpdateButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsApply16x16;
+        settings.SettingsCommandButton.DeleteButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.EditDelete16x16;
+        settings.SettingsCommandButton.CancelButton.Image.IconID = DevExpress.Web.ASPxThemes.IconID.ActionsCancel16x16;
+        #endregion
+
+        //Configuracion de Columnas
+
+        settings.Columns.Add(m => m.HabilityTypeId, column =>
+        {
+            column.Caption = "Conocimiento";
+            column.AdaptivePriority = 1;
+
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.Width = 200;
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.TextField = "HabilityTypeName";
+                p.ValueField = "HabilityTypeId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.HabilityTypes.GetAllHabilityTypes();
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                p.ClientSideEvents.SelectedIndexChanged = "OnSelectedHabilityTypeIdChanged";
+
+
+            });
+        });
+
+
+
+        settings.Columns.Add(m => m.ApplicationTypeId, column =>
+        {
+            column.Caption = "Aplicación";
+            column.AdaptivePriority = 2;
+
+            column.EditorProperties().ComboBox(p =>
+            {
+
+      
+
+                p.CallbackRouteValues = new { Controller = "ApplicationTypes", Action = "GetApplicationTypeById", TextField = "ApplicationTypeName", ValueField = "ApplicationTypeId" };
+                p.TextField = "ApplicationTypeName";
+                p.ValueField = "ApplicationTypeId";
+                p.ValueType = typeof(int);
+                p.LoadDropDownOnDemand = true;
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = 200;
+                p.ClientSideEvents.BeginCallback = "ApplicationTypeIdBeginCallback";
+                p.DataSource = slnRhonline.Models.ApplicationTypes.GetAllApplicationTypes();
+              
+            });
+        });
+
+        settings.Columns.Add(m => m.AcademicLevelId, column =>
+        {
+            column.Caption = "Nivel";
+            column.AdaptivePriority = 3;
+
+            column.EditorProperties().ComboBox(p =>
+            {
+                p.Width = 200;
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.TextField = "AcademicLevelName";
+                p.ValueField = "AcademicLevelId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.AcademicLevels.GetAllAcademicLevels();
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+            
+
+            });
+        });
+
+        settings.CellEditorInitialize = (s, e) =>
+        {
+            ((ASPxEdit)e.Editor).ValidationSettings.Display = Display.Dynamic;
+        };
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+
+
+
+

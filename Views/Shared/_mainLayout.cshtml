@@ -1,0 +1,832 @@
+@using Entities
+
+@{
+    var estilodev = false;
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Rhonline</title>
+    <link href="~/Styles/imagencarga.css" rel="stylesheet" />
+    <link href="~/Content/fontawesome-free/css/all.min.css" rel="stylesheet" />
+    <link href="~/Content/css2024/sb-admin-2.css" rel="stylesheet" />
+    <link href="~/onlinecss/buttons.dataTables.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/responsive.dataTables.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/bootstrap2.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/spin.css" rel="stylesheet" />
+    <link href="~/onlinecss/chartist.min.css" rel="stylesheet" />
+    <link href="~/Content/css/custocss.css" rel="stylesheet" />
+    <link href="~/onlinecss/swiper-bundle.min.css" rel="stylesheet" />
+    <link href="~/Content/css/select2.min.css" rel="stylesheet" />
+    <link href="~/onlinecss/jquery.fancybox.min.css" rel="stylesheet" />
+
+    <style>
+        .noti-table-details {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+            .noti-table-details th,
+            .noti-table-details td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+
+            .noti-table-details th {
+                background-color: #f44336;
+                color: white;
+                text-align: center;
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+                .noti-table-details th:first-child,
+                .noti-table-details td:first-child {
+                    width: 20%;
+                    white-space: nowrap;
+                }
+
+                .noti-table-details th:last-child,
+                .noti-table-details td:last-child {
+                    width: 80%;
+                }
+
+            .noti-table-details tbody tr {
+                background-color: #fff;
+            }
+
+        .noti-cita-group .card,
+        .card.proxima,
+        .card.hoy,
+        .card.pasada {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 5px;
+            border: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+
+        .card.proxima {
+            border-left: 5px solid #4caf50;
+        }
+
+        .card.hoy {
+            border-left: 5px solid orange;
+            background-color: #fffbea;
+        }
+
+        .card.pasada {
+            border-left: 5px solid #f44336;
+        }
+
+        .noti-dropdown .dropdown-menu {
+            min-width: 320px;
+        }
+
+        .noti-dropdown .dropdown-header {
+            font-size: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+        }
+
+        .noti-dropdown .noti-items {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .navbar-nav .dropdown-menu.notifications {
+            min-width: 320px;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .notifications .dropdown-header {
+            font-size: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .notifications .items-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notifications .cita-group,
+        .notifications .solicitud-group {
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+            .notifications .cita-group .group-header,
+            .notifications .solicitud-group .group-header {
+                padding: 0.3rem 0.5rem;
+                border-radius: 0.3rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .notifications .cita-group .group-item,
+            .notifications .solicitud-group .group-item {
+                padding-left: 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            .notifications .solicitud-group button {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.4rem;
+                margin-left: 0.3rem;
+            }
+
+        .noti-carousel .carousel-item img {
+            max-height: 300px;
+            object-fit: contain;
+        }
+
+        .navbar-nav .nav-item .badge {
+            margin-left: 0.5rem;
+            background-color: red;
+            color: #fff;
+            border-radius: 50%;
+            padding: 0.2rem 0.5rem;
+        }
+
+        .sidebar-heading {
+            color: white !important;
+            font-weight: bold !important;
+            font-size: 1.3rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .nav-link {
+            color: white !important;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+            .nav-link:hover {
+                color: black !important;
+                background-color: white !important;
+            }
+
+        .nav-item .collapse-inner .nav-link {
+            color: #adb5bd !important;
+        }
+
+            .nav-item .collapse-inner .nav-link:hover {
+                color: white !important;
+            }
+
+        .sidebar-brand {
+            padding: 1.5rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            letter-spacing: 0.1em;
+            color: white;
+        }
+
+        .nav-link i {
+            color: white !important;
+        }
+
+        .nav-link:hover i {
+            color: black !important;
+        }
+
+        .sidebar-brand-icon {
+            margin-right: 0.5rem;
+        }
+
+        .sidebar-divider {
+            border-top: 1px solid rgba(255,255,255,0.15);
+            margin: 0 1rem 1rem;
+        }
+
+        .nav-item.dropdown .icon-chat {
+            color: #4e73df !important;
+        }
+
+        .nav-item.dropdown .icon-auth {
+            color: #1cc88a !important;
+        }
+
+        .nav-item.dropdown .icon-solicitudes {
+            color: #f6c23e !important;
+        }
+
+        .nav-item.dropdown .icon-solicitudes2 {
+            color: #808080 !important;
+        }
+
+        .nav-item.dropdown .icon-solicitudes3 {
+            color: #ff9e05 !important;
+        }
+
+        .nav-item.dropdown .icon-solicitudes4 {
+            color: #f6c23e !important;
+        }
+
+        .rh-userbox {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            color: black !important;
+        }
+
+        .rh-name-badge {
+            font-weight: 700;
+            font-size: .95rem;
+            letter-spacing: .2px;
+            color: black !important;
+            border: 1px solid #e5e7eb;
+            padding: .35rem .6rem;
+            border-radius: 999px;
+            line-height: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,.06);
+            white-space: nowrap;
+            max-width: 28ch;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .rh-logout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            color: black !important;
+            font-weight: 600;
+            font-size: .85rem;
+            padding: .45rem .9rem;
+            border-radius: 20px;
+            line-height: 1;
+            transition: background-color .2s ease;
+        }
+
+            .rh-logout-btn:hover {
+                color: black !important;
+                text-decoration: none;
+            }
+
+            .rh-logout-btn:active {
+                color: black !important;
+                transform: translateY(1px);
+            }
+
+            .rh-logout-btn i {
+                color: red !important;
+            }
+
+        #userDropdownLi.no-arrow .nav-link {
+            border-left: none !important;
+            background: transparent !important;
+        }
+    </style>
+</head>
+
+<body id="page-top" class="sidebar-toggled">
+    <div id="wrapper">
+
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion toggled" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+                <div class="sidebar-brand-icon">
+                    <img src="~/Content/Images/rh5.jpg" alt="Logo" class="img-fluid" style="width: 200px; height: 50px;">
+                </div>
+            </a>
+
+            <hr class="sidebar-divider my-0">
+
+            @{
+                List<Entities.MenuRhOnline> menuItems = (List<Entities.MenuRhOnline>)Session["Menulista"];
+            }
+            <div class="sidebar-heading">
+                MENU
+            </div>
+            <ul class="nav">
+                @foreach (var menuItem in menuItems)
+                {
+                    <li class="nav-item">
+                        @if (menuItem.MenuList.Count > 0)
+                        {
+                            <a class="nav-link" href="javascript:void(0);" onclick="toggleSubMenu('@menuItem.Controller')">
+                                <i class="fas @menuItem.icon"></i>
+                                <span>@menuItem.MenuText</span>
+                            </a>
+                            <div id="@menuItem.Controller" class="collapse" data-parent="#accordionSidebar">
+                                <div class="bg-white py-2 collapse-inner rounded">
+                                    @RenderSubMenu(menuItem.MenuList)
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <a class="nav-link" href="@Url.Action(menuItem.Action, menuItem.Controller)">
+                                <i class="fas @menuItem.icon"></i>
+                                <span>@menuItem.MenuText</span>
+                            </a>
+                        }
+                    </li>
+                }
+            </ul>
+
+            @helper RenderSubMenu(List<Entities.MenuRhOnline> subMenuItems)
+            {
+                foreach (var subMenuItem in subMenuItems)
+                {
+                    if (subMenuItem.MenuList.Count > 0)
+                    {
+                        <div id="@subMenuItem.Controller">
+                            <div class="bg-white py-2 rounded">
+                                <h6 class="collapse-header">@subMenuItem.MenuText:</h6>
+                                @RenderSubMenu(subMenuItem.MenuList)
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <a class="collapse-item" href="@Url.Action(subMenuItem.Action, subMenuItem.Controller)">@subMenuItem.MenuText</a>
+                    }
+                }
+            }
+        </ul>
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <nav class="navbar navbar-expand navbar-light bg-white2 topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
+                    <ul class="navbar-nav ml-auto">
+                        <div class="topbar-divider d-none d-sm-block"></div>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="citasDropdown" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-clock icon-solicitudes3"></i>
+                                <span class="badge badge-info" id="citasBadge">0</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="solicitudesDropdown" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-clipboard-list icon-solicitudes4"></i>
+                                <span class="badge badge-info" id="solicitudesBadge">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in notifications" aria-labelledby="solicitudesDropdown">
+                                <h6 class="dropdown-header">Solicitudes:</h6>
+                                <div id="solicitudesContainer" class="items-container"></div>
+                            </div>
+                        </li>
+
+                        <li class="nav-item no-arrow" id="userDropdownLi">
+                            <a class="nav-link rh-logout-btn" href="@Url.Action("Logout","Login")" title="Cerrar sesion">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Cerrar sesion</span>
+                            </a>
+                        </li>
+
+                        <div class="topbar-divider d-none d-sm-block"></div>
+
+                        @{
+                            Entities.Employees employee = (Employees)Session["User"];
+                            // Si quieres forzar dominio para pruebas puedes dejar esta lÃ­nea:
+                            // if (employee != null) { employee.Domain = "CLARONI"; }
+                            var employeeName = (employee != null && !string.IsNullOrEmpty(employee.Names))
+                                ? employee.Names
+                                : "Usuario";
+                            var employeeDomain = (employee != null && !string.IsNullOrEmpty(employee.Domain))
+                                ? employee.Domain
+                                : "";
+                        }
+
+                        <li class="nav-item dropdown no-arrow" id="userDropdownLi">
+                            <a id="userDropdownButton" class="nav-link" href="#" role="button">
+                                <span class="rh-name-badge">@employeeName</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="container-fluid">
+                    @RenderBody()
+                </div>
+            </div>
+
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>Copyright &copy; Todos los derechos Reservados 2023</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- INICIO DE MODALS INYECTADOS -->
+    <style>
+        .card-cita-premium { transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 10px; border-left-width: 5px !important; }
+        .card-cita-premium:hover { transform: translateY(-4px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+        .border-left-warning { border-left-color: #f6c23e !important; }
+        .border-left-success { border-left-color: #1cc88a !important; }
+        .border-left-danger { border-left-color: #e74a3b !important; }
+    </style>
+    <div class="modal fade" id="tablaCitasModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #e74a3b 0%, #b82315 100%); border-radius: 12px 12px 0 0;">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-calendar-alt mr-2"></i>Citas Pendientes</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" style="opacity: 1; text-shadow: none;"><span>&times;</span></button>
+                </div>
+                <div class="modal-body bg-light p-4">
+                    <div id="citas-grid-container" class="row"></div>
+                </div>
+                <div class="modal-footer border-top-0 bg-light">
+                    <button type="button" class="btn btn-secondary shadow-sm rounded-pill px-4" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="solicitudModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">Detalle de Solicitud</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div id="solicitudDetails"></div><hr /><div id="solicitudImages" class="text-center"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="btnApprove" class="btn btn-success">Aprobar</button>
+                    <button type="button" id="btnDeny" class="btn btn-danger">Denegar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIN MODALS -->
+
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/sb-admin-2.min.js"></script>
+    <script src="~/onlinejs/inject.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/sweetalert2.10.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <!-- <script src="~/onlinejs/buttons.print.min.js"></script> -->
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/Content/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="~/Scripts/JsCustom.js" type="text/javascript"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+
+    <script>
+        var citasData = [];
+
+        // ===== INICIO CONTROLADO =====
+        $(document).ready(function () {
+
+            // Si no hay usuario no ejecutar nada de notificaciones/citas
+            var canInit = '@(employee != null ? "1" : "")';
+            if (!canInit) {
+                console.warn('Init not executed: usuario sin sesiÃ³n.');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("obtenercita", "Home")',
+                type: 'GET',
+                success: function (data) {
+                    citasData = data || [];
+                    $('#citasBadge').text(citasData.length);
+                },
+                error: function () {
+                    console.error('Error al obtener las citas.');
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("GetNotifications", "Notifications")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    if (data && data.Error) {
+                        console.error(data.Error);
+                        return;
+                    }
+
+                    $('#solicitudesBadge').text(data && data.SolicitudCount ? data.SolicitudCount : 0);
+
+                    var solicitudesHtml = '';
+                    if (data && data.SolicitudList && data.SolicitudList.length > 0) {
+
+                        var groupedSolicitudes = {};
+                        $.each(data.SolicitudList, function (i, solicitud) {
+                            var key = solicitud.IdCita;
+                            if (!groupedSolicitudes[key]) {
+                                groupedSolicitudes[key] = solicitud;
+                            }
+                        });
+
+                        $.each(groupedSolicitudes, function (key, solicitud) {
+                            solicitudesHtml += '<div class="dropdown-item noti-solicitud-group border-bottom py-2">';
+                            solicitudesHtml += '<div class="noti-group-header bg-light p-1 rounded">';
+                            solicitudesHtml += '<span class="font-weight-bold">Unidad: ' + solicitud.IdUnidad + ' - Cita #: ' + solicitud.IdCita + ' </span>';
+                            solicitudesHtml += '</div>';
+                            solicitudesHtml += '<div class="text-right">';
+                            solicitudesHtml += '<button class="btn btn-primary btn-sm" onclick="visualizarSolicitud(\'' + solicitud.IdCita + '\')">Visualizar</button>';
+                            solicitudesHtml += '</div>';
+                            solicitudesHtml += '</div>';
+                        });
+                    } else {
+                        solicitudesHtml = '<a class="dropdown-item" href="#">No hay solicitudes</a>';
+                    }
+
+                    $('#solicitudesContainer').html(solicitudesHtml);
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error al cargar notificaciones: " + error);
+                }
+            });
+        });
+        // ===== FIN CONTROL =====
+
+        $("#citasDropdown").on("click", function (e) {
+            e.preventDefault();
+            if (citasData && citasData.length > 0) {
+                const hoy = new Date();
+                $("#citas-grid-container").empty();
+
+                // 1. Normalizar fechas para poder ordenar
+                citasData.forEach(cita => {
+                    if (!cita) return;
+                    let f = new Date();
+                    try {
+                        if (cita.HoraCita && typeof cita.HoraCita === 'string' && cita.HoraCita.indexOf('/Date(') !== -1) {
+                            f = new Date(parseInt(cita.HoraCita.match(/\d+/)[0], 10));
+                        } else if (cita.HoraCita) {
+                            f = new Date(cita.HoraCita);
+                        } else if (cita.FechaCita) {
+                            f = new Date(cita.FechaCita);
+                        }
+                    } catch(e) {}
+                    cita._fechaObj = f;
+                });
+
+                // 2. Ordenar cronológicamente (las de hoy primero, luego en orden de fecha)
+                citasData.sort((a, b) => {
+                    if (!a._fechaObj) return 1;
+                    if (!b._fechaObj) return -1;
+                    return a._fechaObj.getTime() - b._fechaObj.getTime();
+                });
+
+                // 3. Renderizar las tarjetas
+                citasData.forEach(cita => {
+                    if (!cita) return;
+                    let fechaCita = cita._fechaObj;
+                    
+                    const esHoy = moment(fechaCita).isSame(hoy, 'day');
+                    const pasada = fechaCita < hoy && !esHoy;
+                    
+                    let badgeClass = esHoy ? 'badge-warning text-dark' : (pasada ? 'badge-danger' : 'badge-success');
+                    let borderClass = esHoy ? 'border-left-warning' : (pasada ? 'border-left-danger' : 'border-left-success');
+                    const label = esHoy ? 'Hoy' : (pasada ? 'Perdida' : 'Proxima');
+                    
+                    let cardHtml = `
+                    <div class="col-xl-4 col-md-6 mb-3">
+                        <div class="card shadow-sm h-100 ${borderClass} card-cita-premium bg-white">
+                            <div class="card-body p-3">
+                                <div class="row no-gutters align-items-center mb-2">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1"><i class="fas fa-car mr-1 text-primary"></i> ${cita.IdUnidad}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <span class="badge ${badgeClass} px-2 py-1 shadow-sm" style="font-size: 0.75rem;">${label}</span>
+                                    </div>
+                                </div>
+                                <div class="h6 mb-2 font-weight-bold text-gray-800" style="font-size:0.9rem;">
+                                    <i class="fas fa-clock mr-1 text-muted"></i> ${moment(fechaCita).format('DD/MM/YYYY hh:mm A')}
+                                </div>
+                                <div class="text-xs font-weight-bold text-muted text-uppercase mb-1 mt-2" style="font-size:0.7rem;">Conductor:</div>
+                                <div class="h6 mb-0 text-gray-800" style="line-height: 1.2; font-size:0.85rem;">${cita.NombreEmpleado}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    
+                    $("#citas-grid-container").append(cardHtml);
+                });
+
+                $("#tablaCitasModal").modal("show");
+            } else {
+                Swal.fire("Informacion", "No se encontraron citas.", "info");
+            }
+        });
+
+        function visualizarSolicitud(id) {
+            $('#solicitudModal').modal('show');
+
+            $.ajax({
+                url: '@Url.Action("GetSolicitudDetails", "Notifications")',
+                type: 'GET',
+                data: { id: id },
+                dataType: 'json',
+                success: function (data) {
+                    var detailsHtml = '';
+                    if (data && data.length > 0) {
+                        detailsHtml += '<table class="table table-bordered noti-table-details">';
+                        detailsHtml += '<thead><tr><th>Trabajo</th><th>Descripcion</th></tr></thead><tbody>';
+                        $.each(data, function (i, detail) {
+                            detailsHtml += '<tr>';
+                            detailsHtml += '<td>' + detail.TipoOrden + '</td>';
+                            detailsHtml += '<td>' + detail.Observacion + '</td>';
+                            detailsHtml += '</tr>';
+                        });
+                        detailsHtml += '</tbody></table>';
+                    } else {
+                        detailsHtml = '<p>No se encontraron detalles para esta solicitud.</p>';
+                    }
+                    $('#solicitudDetails').html(detailsHtml);
+
+                    var imagesHtml = '';
+                    if (data && data.length > 0) {
+                        if (data.length > 1) {
+                            imagesHtml += '<div id="carouselImages" class="carousel slide noti-carousel" data-ride="carousel"><div class="carousel-inner">';
+                            $.each(data, function (i, imgData) {
+                                if (imgData.FotoBase64 && imgData.FotoBase64.trim() !== "") {
+                                    var base64 = imgData.FotoBase64;
+                                    imagesHtml += '<div class="carousel-item ' + (i === 0 ? 'active' : '') + '">';
+                                    imagesHtml += '<a data-fancybox="gallery" href="data:image/webp;base64,' + base64 + '">';
+                                    imagesHtml += '<img src="data:image/webp;base64,' + base64 + '" class="d-block w-100" style="max-height:300px;object-fit:contain;margin:5px;" />';
+                                    imagesHtml += '</a></div>';
+                                }
+                            });
+                            imagesHtml += '</div>';
+                            imagesHtml += '<a class="carousel-control-prev" href="#carouselImages" role="button" data-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="sr-only">Anterior</span></a>';
+                            imagesHtml += '<a class="carousel-control-next" href="#carouselImages" role="button" data-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="sr-only">Siguiente</span></a>';
+                            imagesHtml += '</div>';
+                        } else {
+                            var base64 = data[0].FotoBase64;
+                            imagesHtml = '<a data-fancybox="gallery" href="data:image/webp;base64,' + base64 + '">';
+                            imagesHtml += '<img src="data:image/webp;base64,' + base64 + '" class="img-fluid" style="max-height:300px;object-fit:contain;margin:5px;" />';
+                            imagesHtml += '</a>';
+                        }
+                    } else {
+                        imagesHtml = '<p>No hay imÃ¡genes disponibles.</p>';
+                    }
+                    $('#solicitudImages').html(imagesHtml);
+                },
+                error: function () {
+                    $('#solicitudDetails').html('<p>Error al cargar los detalles.</p>');
+                    $('#solicitudImages').html('<p>Error al cargar las imÃ¡genes.</p>');
+                }
+            });
+
+            $('#btnApprove').data('solicitudId', id);
+            $('#btnDeny').data('solicitudId', id);
+        }
+
+        function aprobarSolicitud(id) {
+            Swal.fire({
+                title: 'Â¿EstÃ¡ seguro de aprobar la solicitud?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'SÃ­, aprobar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("Approve", "Notifications")',
+                        type: 'POST',
+                        data: { id: id },
+                        dataType: 'json',
+                        success: function (data) {
+                            Swal.fire('Aprobada', data.message, 'success');
+                            $('#solicitudModal').modal('hide');
+                            window.location.reload();
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Error al aprobar la solicitud.', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        function denegarSolicitud(id) {
+            Swal.fire({
+                title: 'Ingrese el motivo de la denegaciÃ³n',
+                input: 'text',
+                inputPlaceholder: 'Motivo de la denegaciÃ³n...',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => {
+                    if (!value || value.trim() === '') {
+                        return 'Debe ingresar un motivo para denegar la solicitud.';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var motivo = result.value;
+                    Swal.fire({
+                        title: 'Â¿EstÃ¡ seguro?',
+                        text: 'La solicitud serÃ¡ denegada.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'SÃ­, denegar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((confirmResult) => {
+                        if (confirmResult.isConfirmed) {
+                            $.ajax({
+                                url: '@Url.Action("Deny", "Notifications")',
+                                type: 'POST',
+                                data: { id: id, motivo: motivo },
+                                dataType: 'json',
+                                success: function (data) {
+                                    Swal.fire('Denegada', data.message, 'success');
+                                    $('#solicitudModal').modal('hide');
+                                    window.location.reload();
+                                },
+                                error: function () {
+                                    Swal.fire('Error', 'Error al denegar la solicitud.', 'error');
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        $('#btnApprove').click(function () {
+            var id = $(this).data('solicitudId');
+            aprobarSolicitud(id);
+        });
+
+        $('#btnDeny').click(function () {
+            var id = $(this).data('solicitudId');
+            denegarSolicitud(id);
+        });
+
+        function toggleSubMenu(subMenuId) {
+            var $target = $('#' + subMenuId);
+            var $open = $('#accordionSidebar .collapse.show').not($target);
+
+            if ($open.length) {
+                if (!$target.hasClass('show')) {
+                    $open.one('hidden.bs.collapse', function () {
+                        $target.collapse('show');
+                    });
+                }
+                $open.collapse('hide');
+                return;
+            }
+            $target.collapse('toggle');
+        }
+
+        document.getElementById("userDropdownButton").addEventListener("click", function (e) {
+            e.preventDefault();
+            document.querySelector("#userDropdownLi .dropdown-menu").classList.toggle("show");
+        });
+
+        document.addEventListener("click", function (event) {
+            if (event.target.closest("#userDropdownButton") === null &&
+                document.querySelector("#userDropdownLi .dropdown-menu").classList.contains("show")) {
+                document.querySelector("#userDropdownLi .dropdown-menu").classList.remove("show");
+            }
+        });
+    </script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>
+

@@ -1,0 +1,333 @@
+﻿@model List<Entities.ViewModels.ExpenseDetailView>
+@{
+        var grid = Html.DevExpress().GridView(settings =>
+        {
+            settings.Name = "gvConsult";
+            settings.KeyFieldName = "ExpenseId";
+            settings.CallbackRouteValues = new { Controller = "Expenses", Action = "ConsultPartial" };
+
+
+
+            settings.SettingsBehavior.AllowFocusedRow = true;
+
+            settings.Width = Unit.Percentage(100);
+
+
+            settings.Settings.ShowGroupPanel = false;
+            settings.SettingsBehavior.AllowSelectByRowClick = true;
+            settings.ControlStyle.Border.BorderWidth = 1;
+            settings.Settings.ShowFooter = true;
+            settings.KeyboardSupport = true;
+
+            settings.EnableRowsCache = false;
+            settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+
+
+            settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+            settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+            settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+            settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+            settings.SettingsBehavior.AllowEllipsisInText = true;
+
+            settings.ClientSideEvents.Init = "OnInit";
+            settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+            #region Paging
+            settings.SettingsPager.Visible = true;
+            settings.SettingsPager.PageSizeItemSettings.Visible = true;
+            settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+            settings.SettingsPager.PageSize = 10;
+            #endregion
+
+
+
+            #region filtering
+            settings.Settings.ShowFilterRow = true;
+
+            settings.Settings.ShowHeaderFilterButton = true;
+            settings.SettingsPopup.HeaderFilter.Height = 200;
+            settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+            settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+            #endregion
+            #region Sorting
+            settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalAmount");
+
+            #endregion
+
+            #region Configuración de las columnas
+            settings.Columns.Add(col =>
+            {
+
+                col.SetDataItemTemplateContent(container =>
+                {
+                    Html.DevExpress().HyperLink(hlSettings =>
+                    {
+                        hlSettings.Name = string.Format("hl_{0}", (container as GridViewDataItemTemplateContainer).VisibleIndex);
+                        hlSettings.NavigateUrl = "javascript:void(0)";
+                        hlSettings.Properties.ClientSideEvents.Click = string.Format("function(s, e) {{OnHyperLinkClick('{0}'); }}", (container as GridViewDataItemTemplateContainer).KeyValue.ToString());
+                        hlSettings.Properties.Text = "Ver detalle";
+                    }).Render();
+                });
+                col.Settings.AllowDragDrop = DefaultBoolean.False;
+                col.Settings.AllowSort = DefaultBoolean.False;
+                col.Width = 40;
+            });
+
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "EmployeeNumber";
+
+                col.Caption = "N° Empleado";
+
+                col.Width = 40;
+                col.AdaptivePriority = 1;
+            });
+
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "FullName";
+
+                col.Caption = "Nombre Completo";
+
+                col.Width = 60;
+                col.AdaptivePriority = 2;
+            });
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "AreaName";
+
+                col.Caption = "Area";
+
+                col.Width = 60;
+                col.AdaptivePriority = 3;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "ExpenseDate";
+
+                col.Caption = "Fecha";
+                col.PropertiesEdit.DisplayFormatString = "dd/MM/yyyy";
+                col.ColumnType = MVCxGridViewColumnType.DateEdit;
+                col.Width = 40;
+                col.AdaptivePriority = 4;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "ClassName";
+
+                col.Caption = "Tipo";
+
+                col.Width = 40;
+                col.AdaptivePriority = 5;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "TotalAmount";
+
+                col.Caption = "Monto Total";
+                col.PropertiesEdit.DisplayFormatString = "c";
+                col.Width = 40;
+                col.AdaptivePriority = 6;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "ExpenseStatus";
+
+                col.Caption = "Estado";
+                col.Width = 40;
+                col.AdaptivePriority = 7;
+            });
+
+            settings.CellEditorInitialize = (s, e) =>
+            {
+                ASPxEdit editor = (ASPxEdit)e.Editor;
+                editor.ValidationSettings.Display = Display.Dynamic;
+            };
+
+
+            settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalAmount");
+        });
+        #endregion
+
+        if (ViewData["EditError"] != null)
+        {
+            grid.SetEditErrorText((string)ViewData["EditError"]);
+        }
+    }
+    @grid.Bind(Model).GetHtml()
+
+
+@*@{
+        var grid = Html.DevExpress().GridView(settings =>
+        {
+            #region Configuración básica del gridview
+            settings.Name = "gvConsult";
+            settings.KeyFieldName = "ExpenseId";
+            settings.CallbackRouteValues = new { Controller = "Expenses", Action = "ConsultPartial" };
+            settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Paging, new { Controller = "Expenses", Action = "GridListConsultPagingAction" });
+            settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Filtering, new { Controller = "Expenses", Action = "GridListConsultFilteringAction" });
+
+
+            settings.SettingsBehavior.AllowFocusedRow = true;
+
+            settings.Width = Unit.Percentage(100);
+
+
+            settings.Settings.ShowGroupPanel = false;
+            settings.SettingsBehavior.AllowSelectByRowClick = true;
+            settings.ControlStyle.Border.BorderWidth = 1;
+            settings.Settings.ShowFooter = true;
+            settings.KeyboardSupport = true;
+
+            settings.EnableRowsCache = false;
+            settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+
+
+            settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+            settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+            settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+            settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+            settings.SettingsBehavior.AllowEllipsisInText = true;
+
+            settings.ClientSideEvents.Init = "OnInit";
+            settings.ClientSideEvents.EndCallback = "OnEndCallback";
+            #endregion
+
+            #region Paging
+            settings.SettingsPager.Visible = true;
+            settings.SettingsPager.PageSizeItemSettings.Visible = true;
+            settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+            settings.SettingsPager.PageSize = 10;
+            #endregion
+
+
+
+            #region filtering
+            settings.Settings.ShowFilterRow = true;
+
+            settings.Settings.ShowHeaderFilterButton = true;
+            settings.SettingsPopup.HeaderFilter.Height = 200;
+            settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+            settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+            #endregion
+
+            #region Configuración de las columnas
+            settings.Columns.Add(col =>
+            {
+
+                col.SetDataItemTemplateContent(container =>
+                {
+                    Html.DevExpress().HyperLink(hlSettings =>
+                    {
+                        hlSettings.Name = string.Format("hl_{0}", (container as GridViewDataItemTemplateContainer).VisibleIndex);
+                        hlSettings.NavigateUrl = "javascript:void(0)";
+                        hlSettings.Properties.ClientSideEvents.Click = string.Format("function(s, e) {{OnHyperLinkClick('{0}'); }}", (container as GridViewDataItemTemplateContainer).KeyValue.ToString());
+                        hlSettings.Properties.Text = "Ver detalle";
+                    }).Render();
+                });
+                col.Settings.AllowDragDrop = DefaultBoolean.False;
+                col.Settings.AllowSort = DefaultBoolean.False;
+                col.Width = 40;
+            });
+
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "EmployeeNumber";
+
+                col.Caption = "N° Empleado";
+
+                col.Width = 40;
+                col.AdaptivePriority = 1;
+            });
+
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "FullName";
+
+                col.Caption = "Nombre Completo";
+
+                col.Width = 60;
+                col.AdaptivePriority = 2;
+            });
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "AreaName";
+
+                col.Caption = "Area";
+
+                col.Width = 60;
+                col.AdaptivePriority = 3;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "ExpenseDate";
+
+                col.Caption = "Fecha";
+                col.PropertiesEdit.DisplayFormatString = "dd/MM/yyyy";
+                col.ColumnType = MVCxGridViewColumnType.DateEdit;
+                col.Width = 40;
+                col.AdaptivePriority = 4;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "ClassName";
+
+                col.Caption = "Tipo";
+
+                col.Width = 40;
+                col.AdaptivePriority = 5;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "TotalAmount";
+
+                col.Caption = "Monto Total";
+                col.PropertiesEdit.DisplayFormatString = "c";
+                col.Width = 40;
+                col.AdaptivePriority = 6;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "ExpenseStatus";
+
+                col.Caption = "Estado";
+                col.Width = 40;
+                col.AdaptivePriority = 7;
+            });
+
+            settings.CellEditorInitialize = (s, e) =>
+            {
+                ASPxEdit editor = (ASPxEdit)e.Editor;
+                editor.ValidationSettings.Display = Display.Dynamic;
+            };
+
+
+            settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalAmount");
+        });
+        #endregion
+
+
+        if (ViewData["EditError"] != null)
+        {
+            grid.SetEditErrorText((string)ViewData["EditError"]);
+        }
+    }
+    @grid.BindToCustomData(Model).GetHtml()*@
+
+
+

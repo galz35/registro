@@ -1,0 +1,175 @@
+﻿@model Entities.MyEntities.GratefulnessParameters
+@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+    ViewBag.Title = "Parámetros de reporte";
+}
+@Html.DevExpress().GetStyleSheets(
+   new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+      new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+<style type="text/css">
+    .buttonsContainer {
+        max-width: 300px;
+        margin: 0 0 0 auto;
+        text-align: right;
+        padding-top: 12px;
+    }
+
+    .submitButton,
+    .cancelButton {
+        margin-bottom: 12px;
+    }
+
+    .cancelButton {
+        margin-left: 8px;
+    }
+
+    .groupCaption {
+        margin-top: -6px;
+    }
+
+    .clearPaddings {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+</style>
+
+
+
+
+<!DOCTYPE html>
+<html>
+<body>
+    @using (Html.BeginForm("GratefulnessReport", "Gratefulness", FormMethod.Post))
+    {
+        @Html.DevExpress().PopupControl(settings =>
+   {
+       settings.Theme = "Mulberry";
+       settings.Name = "PopupControl";
+       settings.HeaderText = "Selección de parametros";
+       settings.ShowOnPageLoad = true;
+       settings.CloseAction = CloseAction.CloseButton;
+       settings.CloseOnEscape = true;
+       settings.AllowDragging = false;
+       settings.ShowFooter = true;
+       settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+       settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+       settings.Width = 400;
+       settings.Modal = true;
+       settings.SetFooterTemplateContent(c =>
+       {
+           @Html.DevExpress().FormLayout(formLayoutsettings =>
+           {
+               formLayoutsettings.Name = "footerFormLayout";
+               formLayoutsettings.Width = Unit.Percentage(100);
+               formLayoutsettings.ControlStyle.CssClass = "clearPaddings";
+               formLayoutsettings.Styles.LayoutItem.CssClass = "clearPaddings";
+               formLayoutsettings.Styles.LayoutGroup.CssClass = "clearPaddings";
+               formLayoutsettings.Items.AddGroupItem(g =>
+               {
+                   g.GroupBoxDecoration = GroupBoxDecoration.None;
+                   g.Paddings.Padding = Unit.Pixel(0);
+                   g.Items.Add(i =>
+                   {
+                       i.ShowCaption = DefaultBoolean.False;
+                   }).SetNestedContent(() =>
+                   {
+                       ViewContext.Writer.Write("<div class='buttonsContainer'>");
+                       Html.DevExpress().Button(s =>
+                       {
+                           s.Name = "btnAcept";
+                           s.Width = Unit.Pixel(100);
+                           s.ControlStyle.CssClass = "submitButton";
+                           s.Text = "Aceptar";
+                           s.UseSubmitBehavior = true;
+                       }).Render();
+                       Html.DevExpress().Button(s =>
+                       {
+                           s.Name = "btnCancel";
+                           s.Width = Unit.Pixel(100);
+                           s.ControlStyle.CssClass = "cancelButton";
+                           s.Text = "Cancelar";
+                           s.UseSubmitBehavior = false;
+                           s.ClientSideEvents.Click = "function(s, e){ PopupControl.Hide(); }";
+                       }).Render();
+                       ViewContext.Writer.Write("</div>");
+                   });
+               });
+           }).Render();
+       });
+
+       settings.SetContent(() =>
+       {
+           @Html.DevExpress().FormLayout(formLayoutsettings =>
+           {
+               formLayoutsettings.Name = "detailFormLayout";
+               formLayoutsettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+               formLayoutsettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 576;
+
+               formLayoutsettings.Items.AddGroupItem(g =>
+               {
+                   g.Caption = "";
+                   g.RowSpan = 2;
+                   g.Paddings.Padding = Unit.Pixel(0);
+                   g.Paddings.PaddingTop = Unit.Pixel(10);
+                   g.GroupBoxDecoration = GroupBoxDecoration.None;
+                   g.GroupBoxStyle.Caption.Font.Bold = true;
+                   g.GroupBoxStyle.Caption.Font.Size = 10;
+
+
+                   g.Items.Add(m => m.StartDate, i =>
+                   {
+                       i.Caption = "Fecha de Inicio";
+                       i.NestedExtension().DateEdit(de =>
+                       {
+                           de.Width = 200;
+                           de.ShowModelErrors = true;
+                           de.Properties.ValidationSettings.Display = Display.Dynamic;
+                           de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                           de.Properties.MinDate = Convert.ToDateTime(ViewData["startPeriod"]);
+
+                       });
+                   });
+                   g.Items.Add(m => m.EndDate, i =>
+                   {
+                       i.Caption = "Fecha de Fin";
+                       i.NestedExtension().DateEdit(de =>
+                       {
+                           de.Width = 200;
+                           de.ShowModelErrors = true;
+                           de.Properties.ValidationSettings.Display = Display.Dynamic;
+                           de.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+                       });
+                   });
+
+
+               });
+           }).Render();
+       });
+   }).GetHtml()
+    }
+</body>
+</html>

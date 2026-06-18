@@ -1,0 +1,71 @@
+﻿@model Entities.ViewModels.ExpenseParametersView
+@{
+    ViewBag.Title = "Detalle de Viáticos";
+}
+
+<div class="form-group d-flex justify-content-start">
+    <!-- Botón "Volver" -->
+    <button type="button" id="btnBack" class="btn btn-secondary d-flex align-items-center">
+        <i class="fas fa-times-circle"></i>
+        <span class="ml-2">Volver</span>
+    </button>
+
+    <!-- Botón "Exportar Modo Tabla" -->
+    <a href='@Url.Action("ExportDetailAllUsers", "ExpenseDetail")'
+       class="btn btn-success d-flex align-items-center ml-3">
+        <i class="fas fa-file-excel"></i>
+        <span class="ml-2">Exportar Modo Tabla</span>
+    </a>
+</div>
+
+<!-- Div para mostrar mensajes de resultado -->
+<div id="result"></div>
+
+<!-- Acción parcial para cargar detalles -->
+@Html.Action("DetailReportPartial")
+
+<!-- Formulario, solo se mostrará el error si lo hay -->
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="2" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+}
+
+<script>
+    $(document).ready(function () {
+        // Acción AJAX para el botón "Volver"
+        $('#btnBack').click(function () {
+            $.ajax({
+                url: '@Url.Action("ParametersReport", "Expenses")',
+                type: 'GET',
+                success: function (response) {
+                    $('#result').html('<div class="alert alert-success">Redirección exitosa: ' + response + '</div>');
+                },
+                error: function (xhr, status, error) {
+                    $('#result').html('<div class="alert alert-danger">Error al redirigir: ' + xhr.status + ' - ' + error + '</div>');
+                }
+            });
+        });
+
+        // Acción AJAX para el botón "Exportar Modo Tabla"
+        $('#btnExportXls').click(function () {
+           
+
+
+            @*$.ajax({
+                url: '@Url.Action("ExportDetailAllUsers", "ExpenseDetail")',
+                type: 'GET',
+                success: function (response) {
+                    $('#result').html('<div class="alert alert-success">Exportación exitosa: ' + response + '</div>');
+                },
+                error: function (xhr, status, error) {
+                    $('#result').html('<div class="alert alert-danger">Error en la exportación: ' + xhr.status + ' - ' + error + '</div>');
+                }
+            });*@
+        });
+    });
+</script>

@@ -1,0 +1,90 @@
+﻿@model List<Entities.ViewModels.ExpenseDetailView>
+@{
+    ViewBag.Title = "Autorización";
+}
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <h1 class="h3 mb-4 text-gray-800">Autorización</h1>
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Tabla de Gastos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="checkAll"></th>
+                                    <th>Carnet</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Fecha</th>
+                                    <th>Clase</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Vehículo</th>
+                                    <th>Justificación</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                <tr>
+                                    <td><input type="checkbox" class="checkItem"></td>
+                                    <td>@item.EmployeeNumber</td>
+                                    <td>@item.FullName</td>
+                                    <td>@item.ExpenseDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.ClassName</td>
+                                    <td>@item.TotalAmount.ToString("c")</td>
+                                    <td>@item.ExpenseStatus</td>
+                                    <td>@item.VehicleNumber</td>
+                                    <td>@item.Justify</td>
+                                    <td>@item.NOTES  </td>
+
+                                </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+ 
+    <script>
+        $(document).ready(function () {
+            $('#dataTable').DataTable({
+                "paging": true,
+               "order": [],
+            "columnDefs": [
+                { "orderable": true, "searchable": true, "targets": "_all" }
+            ],
+            "dom": 'Bfrtip',
+            "language": {
+                "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+            },
+            responsive: true,
+            buttons: [
+                'copy', 'excel', 'pdf', 'print'
+            ]
+            });
+
+            $('#checkAll').click(function () {
+                $('.checkItem').prop('checked', this.checked);
+            });
+
+            $('.checkItem').click(function () {
+                if ($('.checkItem:checked').length === $('.checkItem').length) {
+                    $('#checkAll').prop('checked', true);
+                } else {
+                    $('#checkAll').prop('checked', false);
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,89 @@
+﻿
+@using slnRhonline.Reports
+@{
+    ViewBag.Title = "Reporte de detalle de viaticos";
+}
+
+@Html.DevExpress().GetStyleSheets(
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().GetScripts(
+
+    new Script { ExtensionSuite = ExtensionSuite.Report }
+
+)
+
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().FormLayout(settings =>
+{
+    settings.Name = "formLayout";
+
+
+
+    settings.Items.AddGroupItem(g =>
+    {
+        g.Caption = "Opciones";
+        g.GroupBoxDecoration = GroupBoxDecoration.Default;
+        g.ColCount = 2;
+        g.Items.Add(i =>
+        {
+            i.ShowCaption = DefaultBoolean.False;
+            i.Paddings.PaddingLeft = 0;
+            i.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+            i.NestedExtension().Button(b =>
+            {
+                b.Name = "btnBack";
+                b.Text = "Volver";
+                b.UseSubmitBehavior = false;
+                b.RouteValues = new { Controller = "Expenses", Action = "ParametersReport" };
+                b.Width = Unit.Pixel(150);
+                b.Images.Image.IconID = IconID.ActionsClose16x16;
+                b.ImagePosition = ImagePosition.Right;
+            });
+        });
+        //g.Items.Add(i =>
+        //{
+        //    i.ShowCaption = DefaultBoolean.False;
+        //    i.Paddings.PaddingLeft = 0;
+        //    i.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+        //    i.NestedExtension().Button(b =>
+        //    {
+        //        b.Name = "btnBack";
+        //        b.Text = "Volver";
+        //        b.UseSubmitBehavior = false;
+        //        b.RouteValues = new { Controller = "Expenses", Action = "FinancialParameters" };
+        //        b.Width = Unit.Pixel(150);
+        //        b.Images.Image.IconID = IconID.ActionsClose16x16;
+        //        b.ImagePosition = ImagePosition.Right;
+        //    });
+        //});
+
+
+    });
+
+}).GetHtml()
+}
+
+
+
+@Html.Action("cuentaclaro")
+
+
+
+
+@using(Html.BeginForm())
+{
+        if (ViewData["EditError"] != null)
+        {
+    <font face="univers" size="2" color="red">
+        @ViewData["EditError"]
+    </font>
+}
+}
+
+
+
+

@@ -1,0 +1,3545 @@
+﻿
+@{
+    ViewBag.Title = "Baja";
+    string url2 = Url.Action("empleadobaja", "Evaluacion");
+
+}
+
+<style>
+    .grafico-container {
+        width: 600px;
+        height: 600px;
+        margin: 0 auto; /* Centrar el gráfico */
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background-color: #fff;
+        border-radius: 8px;
+    }
+
+    canvas {
+        background-color: white; /* Asegura que el fondo sea blanco */
+    }
+    body {
+        background-color: #f8f9fc;
+    }
+
+    .card-header {
+        background-color: #dc3545 !important;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #ffffff !important;
+        border-color: #dc3545 #dc3545 #ffffff !important;
+        color: #dc3545 !important;
+    }
+
+    .nav-tabs .nav-link {
+        color: #6c757d !important;
+    }
+
+    .btn-primary {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+        .btn-primary:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+    .btn-secondary, .btn-info, .btn-success {
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .tab-pane {
+        display: none;
+    }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+    .star-rating {
+        font-size: 2rem;
+        color: gold;
+    }
+
+    /* Contenedor de las pestañas */
+    .tabs-container {
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+    }
+
+    /* Lista de pestañas */
+    .tabs-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        background-color: #ffe6e6; /* Rojo pastel claro */
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    /* Elementos de la pestaña */
+    .tab-item {
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #b30000; /* Rojo oscuro */
+        border-right: 1px solid #e0e0e0;
+        font-weight: bold;
+    }
+
+        .tab-item:last-child {
+            border-right: none;
+        }
+
+        /* Pestaña activa */
+        .tab-item.active {
+            color: #800000; /* Rojo más oscuro */
+        }
+
+    /* Contenido de las pestañas */
+    /* Contenedor de las pestañas */
+    .tabs-container {
+        border: 1px solid #dcdcdc;
+        border-radius: 5px;
+        background-color: #f9f9f9; /* Gris muy claro */
+    }
+
+    /* Lista de pestañas */
+    .tabs-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        background-color: #e6e6e6; /* Gris suave */
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .tab-item {
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #333; /* Letras negras */
+        border-right: 1px solid #dcdcdc;
+        font-weight: bold;
+    }
+
+        .tab-item:last-child {
+            border-right: none;
+        }
+
+        .tab-item.active {
+            background-color: #ffffff; /* Blanco */
+            color: #000; /* Letras negras */
+            border-bottom: 2px solid #007bff; /* Línea azul para indicar la pestaña activa */
+        }
+
+    /* Contenido de las pestañas */
+    .tabs-content {
+        padding: 20px;
+    }
+
+    .tab-content-item {
+        display: none;
+    }
+
+        .tab-content-item.active {
+            display: block;
+        }
+
+    /* Tabla de respuestas */
+    .tabla-respuestas {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+
+        .tabla-respuestas th, .tabla-respuestas td {
+            border: 1px solid #dcdcdc;
+            padding: 8px;
+            color: #333; /* Letras negras */
+        }
+
+        .tabla-respuestas th {
+            background-color: #e6e6e6; /* Gris suave */
+            text-align: left;
+        }
+
+        .tabla-respuestas td {
+            background-color: #fff; /* Blanco */
+        }
+
+    /* Promedio de respuestas */
+    .promedio-respuestas {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333; /* Letras negras */
+    }
+
+    /* Resumen general */
+    .promedio-general {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333; /* Letras negras */
+        background-color: #f2f2f2; /* Gris muy claro */
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    /* Ajustes adicionales */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5; /* Fondo general en gris claro */
+        color: #333; /* Letras negras */
+    }
+
+    .tab-item:hover {
+        background-color: #dcdcdc; /* Gris claro al pasar el cursor */
+    }
+
+    .tabla-respuestas tr:nth-child(even) {
+        background-color: #f9f9f9; /* Alternar colores en filas */
+    }
+</style>
+
+
+<div id="wrapper">
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            <div class="container-fluid">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h4 class="m-0 text-white">Encuestas Paso a Paso</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="encuestaTabs" role="tablist"></ul>
+                        <div class="tab-content" id="encuestaContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script src="~/onlinejs/chart.js"></script>
+    <script src="~/Content/js2024/jquery.jeditable.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/onlinejs/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <script>
+        const elementosFormulario = [];  // Array para almacenar los IDs o names
+        let resumenChartInstance = null;
+        const preguntasRespuestas = [];
+        function agregarPreguntaAlArray(preguntaID, inputID, tabID, tipoInput) {
+            preguntasRespuestas.push({
+                PreguntaID: preguntaID,
+                InputID: inputID,   // El ID del input o tabla
+                TabID: tabID,       // El ID del tab al que pertenece
+                TipoInput: tipoInput // Puede ser 'tabla', 'input', o 'opcion_multiples'
+            });
+        }
+
+        // Variable de prueba para decidir qué función utilizar (0 o 1)
+        // Variable de prueba para decidir qué función utilizar (0 o 1)
+        let usarCumplimientoObjetivosVacio = 0; // Cambia a 1 para usar la versión vacía
+        let grafico = 0; // Cambia a 1 para usar la versión vacía
+        let estrella = 0; // Cambia a 1 para usar la versión vacía
+        const data = [];
+        $(document).ready(function () {
+             $.ajax({
+                url: "@Url.Action("ObtenerDatosProceso", "Evaluacion")", // Ruta a tu controlador
+                method: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    // Guardar los datos obtenidos en la variable global 'data'
+                   // this.data = Array.isArray(response) ? response : [response];
+
+                    data.length = 0; // Limpiar el array por si acaso
+                    Array.isArray(response) ? data.push(...response) : data.push(response);
+
+                    // Ahora que los datos están listos, puedes ejecutar la creación de encuestas
+                    crearEncuestas( data);
+
+                    // Si necesitas agregar otras funciones, las llamas aquí
+                    // agregarTabResumen();
+                    // agregarEstrellasResumenMejorado(data);
+                    // mostrarRespuestasPorTab(data);
+                    // crearGraficoResumenTotal(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error al obtener los datos de la encuesta:', error);
+                }
+            });
+        });
+        // Función principal para crear las encuestas basadas en el JSON
+        function crearEncuestas(data) {
+            const encuestaTabs = document.getElementById('encuestaTabs');
+            const encuestaContent = document.getElementById('encuestaContent');
+
+            const formularios = data[0].Procesos[0].Formularios;
+
+            formularios.forEach((formulario, index) => {
+                // Crear pestañas
+                crearPestaña(formulario, index, encuestaTabs);
+
+                // Crear contenido de la pestaña
+                const tabPane = document.createElement('div');
+                tabPane.className = 'tab-pane';
+                if (index === 0) tabPane.classList.add('active');
+                tabPane.id = `content-${formulario.FormularioID}`;
+                tabPane.setAttribute('role', 'tabpanel');
+                tabPane.setAttribute('aria-labelledby', `tab-${formulario.FormularioID}`);
+
+                // Crear formulario
+                const form = document.createElement('form');
+                form.setAttribute('data-formulario-id', formulario.FormularioID);
+
+                // Verificar si es "Cumplimiento de Objetivos"
+                if (formulario.TituloFormulario === "Cumplimiento de Objetivos") {
+                    formulario.Preguntas.forEach(pregunta => {
+                        const formGroup = document.createElement('div');
+                        formGroup.className = 'form-group';
+
+                        // Aquí decidimos qué función llamar según la variable
+                        if (usarCumplimientoObjetivosVacio === 1) {
+                            agregarPreguntaCumplimientoObjetivosvacio(pregunta, formGroup, tabPane.id);
+                        } else {
+                            agregarPreguntaCumplimientoObjetivos(pregunta, formGroup, tabPane.id);
+                        }
+
+                        form.appendChild(formGroup);
+                    });
+                } else {
+                    // Crear preguntas para los demás formularios
+                    formulario.Preguntas.forEach(pregunta => {
+                        const formGroup = document.createElement('div');
+                        formGroup.className = 'form-group';
+
+                        // Añadir el tipo de pregunta adecuado
+                        if (pregunta.TipoPregunta === 'opcion_multiples') {
+                            agregarPreguntaOpcion(pregunta, formGroup, data[0].Opciones, tabPane.id);
+                        } else if (pregunta.TipoPregunta === 'abierta_multiples') {
+                            agregarPreguntaAbierta(pregunta, formGroup, tabPane.id);
+                        }
+                        else if (pregunta.TipoPregunta === 'opcion_multiples_N') {
+                            agregarPreguntaOpcionMultiplesNx(pregunta, formGroup, data[0].Opciones, tabPane.id);
+                        } else if (pregunta.TipoPregunta === 'abierta') {
+                            agregarPreguntaAbiertatexto(pregunta, formGroup, tabPane.id);
+                        }
+                        form.appendChild(formGroup);
+                    });
+                }
+
+                // Botones de navegación
+                agregarBotonesNavegacion(formulario, index, formularios, form);
+
+                // Añadir el formulario al contenido de la pestaña
+                tabPane.appendChild(form);
+                encuestaContent.appendChild(tabPane);
+            });
+        }
+
+        // Función para crear una pestaña (Tab)
+        function crearPestaña(formulario, index, encuestaTabs) {
+            const tabItem = document.createElement('li');
+            tabItem.className = 'nav-item';
+
+            const tabLink = document.createElement('a');
+            tabLink.className = 'nav-link';
+            if (index === 0) tabLink.classList.add('active');
+            tabLink.id = `tab-${formulario.FormularioID}`;
+            tabLink.href = `#content-${formulario.FormularioID}`;
+            tabLink.setAttribute('data-toggle', 'tab');
+            tabLink.setAttribute('role', 'tab');
+            tabLink.setAttribute('aria-controls', `content-${formulario.FormularioID}`);
+            tabLink.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+            tabLink.innerText = formulario.TituloFormulario;
+
+            tabItem.appendChild(tabLink);
+            encuestaTabs.appendChild(tabItem);
+        }
+
+        // Función especial para manejar el formulario "Cumplimiento de Objetivos"
+        function agregarPreguntaCumplimientoObjetivos(pregunta, formGroup, tabID) {
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            formGroup.appendChild(label);
+
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-responsive';
+
+            const table = document.createElement('table');
+            table.className = 'table table-bordered';
+            table.id = `table_pregunta_${pregunta.PreguntaID}`;
+            elementosFormulario.push(pregunta.PreguntaID);  // Almacenamos el ID en el array
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            const thRespuesta = document.createElement('th');
+            thRespuesta.innerText = 'Respuesta';
+            thRespuesta.disabled = false;
+            headerRow.appendChild(thRespuesta);
+
+            // Campo especial para "Porcentaje (%)"
+            const thPorcentaje = document.createElement('th');
+            thPorcentaje.innerText = 'Porcentaje (%)';
+            headerRow.appendChild(thPorcentaje);
+
+            // Campo para "Porcentaje Real (%)"
+            const thPorcentajeReal = document.createElement('th');
+            thPorcentajeReal.innerText = 'Porcentaje Real (%)';
+            headerRow.appendChild(thPorcentajeReal);
+
+            // Campo para "Motivo"
+            const thMotivo = document.createElement('th');
+            thMotivo.innerText = 'Motivo';
+            headerRow.appendChild(thMotivo);
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            agregarFilaCumplimientoObjetivos1(pregunta, tbody);
+
+            table.appendChild(tbody);
+            tableWrapper.appendChild(table);
+
+            // const addRowBtn = document.createElement('button');
+            // addRowBtn.type = 'button';
+            //  addRowBtn.className = 'btn btn-sm btn-primary add-row';
+            //  addRowBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Respuesta';
+            //  addRowBtn.onclick = () => agregarFilaCumplimientoObjetivos1(pregunta, tbody);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, table.id, tabID, 'tabla');  // Solo una vez, no necesitas agregar por fila
+
+            formGroup.appendChild(tableWrapper);
+            // formGroup.appendChild(addRowBtn);
+        }
+
+        // Función especial vacía para manejar "Cumplimiento de Objetivos"
+        function agregarPreguntaCumplimientoObjetivosvacio(pregunta, formGroup, tabID) {
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            formGroup.appendChild(label);
+
+            // Aquí mantenemos la estructura igual pero con una lógica vacía para prueba
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-responsive';
+
+            const table = document.createElement('table');
+            table.className = 'table table-bordered';
+            table.id = `table_pregunta_vacio_${pregunta.PreguntaID}`;
+            elementosFormulario.push(pregunta.PreguntaID);  // Almacenamos el ID en el array
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            const thRespuesta = document.createElement('th');
+            thRespuesta.innerText = 'Respuesta';
+            headerRow.appendChild(thRespuesta);
+
+            const thAcciones = document.createElement('th');
+            thAcciones.innerText = 'Acciones';
+            headerRow.appendChild(thAcciones);
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            agregarFilaCumplimientoObjetivos2(pregunta, tbody);
+
+            table.appendChild(tbody);
+            tableWrapper.appendChild(table);
+
+            const addRowBtn = document.createElement('button');
+            addRowBtn.type = 'button';
+            addRowBtn.className = 'btn btn-sm btn-primary add-row';
+            addRowBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Respuesta';
+            addRowBtn.onclick = () => agregarFilaCumplimientoObjetivos2(pregunta, tbody);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, table.id, tabID, 'tabla');  // Solo una vez, no necesitas agregar por fila
+
+            formGroup.appendChild(tableWrapper);
+            formGroup.appendChild(addRowBtn);
+        }
+        function agregarFilaCumplimientoObjetivos2(pregunta, tbody, tabID) {
+            const row = document.createElement('tr');
+
+            const tdRespuesta = document.createElement('td');
+            const inputRespuesta = document.createElement('input');
+            inputRespuesta.type = 'text';
+            inputRespuesta.className = 'form-control';
+            inputRespuesta.name = `pregunta_${pregunta.PreguntaID}_respuesta[]`;
+            tdRespuesta.appendChild(inputRespuesta);
+            row.appendChild(tdRespuesta);
+
+            // Select para "Porcentaje (%)"
+            const tdPorcentaje = document.createElement('td');
+            const selectPorcentaje = document.createElement('select');
+            selectPorcentaje.className = 'form-control';
+            selectPorcentaje.name = `pregunta_${pregunta.PreguntaID}_porcentaje`;
+
+            for (let i = 10; i <= 100; i += 10) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.innerText = `${i}%`;
+                selectPorcentaje.appendChild(option);
+            }
+
+            tdPorcentaje.appendChild(selectPorcentaje);
+            row.appendChild(tdPorcentaje);
+
+
+            // Lógica para habilitar/deshabilitar "Motivo"
+
+
+            // Botón para eliminar fila
+            const tdAcciones = document.createElement('td');
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'remove-row';
+            removeBtn.innerHTML = '<i class="fas fa-minus-circle"></i>';
+            removeBtn.onclick = () => eliminarFila(row, tbody);
+            tdAcciones.appendChild(removeBtn);
+            row.appendChild(tdAcciones);
+
+            tbody.appendChild(row);
+
+        }
+        // Función especial para agregar una fila en "Cumplimiento de Objetivos"
+        function agregarFilaCumplimientoObjetivos1(pregunta, tbody, tabID) {
+            const row = document.createElement('tr');
+
+            const tdRespuesta = document.createElement('td');
+            const inputRespuesta = document.createElement('input');
+            inputRespuesta.type = 'text';
+            inputRespuesta.className = 'form-control';
+            inputRespuesta.name = `pregunta_${pregunta.PreguntaID}_respuesta[]`;
+            inputRespuesta.disabled = false;
+            tdRespuesta.appendChild(inputRespuesta);
+            row.appendChild(tdRespuesta);
+
+            // Select para "Porcentaje (%)"
+            const tdPorcentaje = document.createElement('td');
+            const selectPorcentaje = document.createElement('select');
+            selectPorcentaje.className = 'form-control';
+            selectPorcentaje.name = `pregunta_${pregunta.PreguntaID}_porcentaje`;
+
+            for (let i = 10; i <= 100; i += 10) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.innerText = `${i}%`;
+                selectPorcentaje.appendChild(option);
+            }
+
+            tdPorcentaje.appendChild(selectPorcentaje);
+            row.appendChild(tdPorcentaje);
+
+            // Input para "Porcentaje Real (%)"
+            const tdPorcentajeReal = document.createElement('td');
+            const inputPorcentajeReal = document.createElement('select');
+            //inputPorcentajeReal.type = 'number';
+            inputPorcentajeReal.className = 'form-control';
+            inputPorcentajeReal.name = `pregunta_${pregunta.PreguntaID}_porcentaje_real`;
+            for (let i = 10; i <= 100; i += 10) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.innerText = `${i}%`;
+                inputPorcentajeReal.appendChild(option);
+            }
+            tdPorcentajeReal.appendChild(inputPorcentajeReal);
+            row.appendChild(tdPorcentajeReal);
+
+            // Input para "Motivo"
+            const tdMotivo = document.createElement('td');
+            const inputMotivo = document.createElement('input');
+            inputMotivo.type = 'text';
+            inputMotivo.className = 'form-control';
+            inputMotivo.name = `pregunta_${pregunta.PreguntaID}_motivo[]`;
+            inputMotivo.disabled = false;  // Inicialmente desactivado
+            tdMotivo.appendChild(inputMotivo);
+            row.appendChild(tdMotivo);
+
+            // Lógica para habilitar/deshabilitar "Motivo"
+            inputPorcentajeReal.addEventListener('input', function () {
+                const porcentajeReal = parseInt(inputPorcentajeReal.value) || 0;
+                const porcentajeSeleccionado = parseInt(selectPorcentaje.value) || 0;
+
+                if (porcentajeReal < porcentajeSeleccionado) {
+                    inputMotivo.disabled = false; // Habilitar motivo si el porcentaje real es menor
+                } else {
+                    inputMotivo.disabled = true;  // Deshabilitar motivo en otros casos
+                }
+            });
+
+            // Botón para eliminar fila
+            // const tdAcciones = document.createElement('td');
+            // const removeBtn = document.createElement('span');
+            // removeBtn.className = 'remove-row';
+            // removeBtn.innerHTML = '<i class="fas fa-minus-circle"></i>';
+            // removeBtn.onclick = () => eliminarFila(row, tbody);
+            // tdAcciones.appendChild(removeBtn);
+            // row.appendChild(tdAcciones);
+
+            tbody.appendChild(row);
+            preguntasRespuestas.push({
+                PreguntaID: pregunta.PreguntaID,
+                ElementoRespuestaID: inputRespuesta.name,  // Identificamos el campo de respuesta
+                ElementoPorcentajeID: selectPorcentaje.name,  // Identificamos el select de porcentaje
+                TabID: tabID
+            });
+        }
+        function agregarPreguntaOpcion2(pregunta, formGroup, opcionesGlobales, tabID) {
+            // Crear una fila con dos columnas usando clases de Bootstrap
+            const formRow = document.createElement('div');
+            formRow.className = 'form-row align-items-center mb-3'; // Añadido espacio entre las filas
+
+            const labelCol = document.createElement('div');
+            labelCol.className = 'col-md-4';
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            label.style.whiteSpace = 'nowrap';  // Esto evitará que el texto del label se corte en múltiples líneas
+            labelCol.appendChild(label);
+
+            const selectCol = document.createElement('div');
+            selectCol.className = 'col-md-8';
+            const select = document.createElement('select');
+            select.className = 'form-control';
+            select.name = `pregunta_${pregunta.PreguntaID}`;
+            select.id = `pregunta_${pregunta.PreguntaID}`;  // Añadimos un ID
+
+            elementosFormulario.push(pregunta.PreguntaID);
+            select.required = pregunta.Requerido;
+
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.innerText = 'Seleccione una opción';
+            select.appendChild(emptyOption);
+
+            const opcionesFiltradas = opcionesGlobales.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+            opcionesFiltradas.forEach(opcion => {
+                const option = document.createElement('option');
+                option.value = opcion.ValorOpcion;
+                option.id = `opcion_${opcion.OpcionID}`;
+                option.innerText = opcion.TextoOpcion;
+                select.appendChild(option);
+            });
+
+            selectCol.appendChild(select);
+            formRow.appendChild(labelCol);
+            formRow.appendChild(selectCol);
+            formGroup.appendChild(formRow);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, select.id, tabID, 'opcion_multiples');
+        }
+        function agregarPreguntaOpcion(pregunta, formGroup, opcionesGlobales, tabID) {
+            const formRow = document.createElement('div');
+            formRow.className = 'form-row align-items-center mb-3';  // Espaciado entre filas
+
+            const labelCol = document.createElement('div');
+            labelCol.className = 'col-md-4';
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            labelCol.appendChild(label);
+
+            const radioCol = document.createElement('div');
+            radioCol.className = 'col-md-8';
+
+            const opcionesFiltradas = opcionesGlobales.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+
+            const opcionesContainer = document.createElement('div');
+            opcionesContainer.className = 'd-flex flex-wrap';  // Flexbox para permitir opciones en horizontal
+
+            opcionesFiltradas.forEach(opcion => {
+                const divRadio = document.createElement('div');
+                divRadio.className = 'form-check form-check-inline';  // Clase para alineación horizontal
+
+                const inputRadio = document.createElement('input');
+                inputRadio.type = 'radio';
+                inputRadio.className = 'form-check-input';
+                inputRadio.name = `pregunta_${pregunta.PreguntaID}`;  // El mismo name para que solo se seleccione una opción
+
+                // Crear un id único combinando PreguntaID y OpcionID
+                inputRadio.id = `pregunta_${pregunta.PreguntaID}_opcion_${opcion.OpcionID}`;
+                inputRadio.value = opcion.ValorOpcion;
+                inputRadio.required = pregunta.Requerido;
+
+                const labelRadio = document.createElement('label');
+                labelRadio.className = 'form-check-label';
+                labelRadio.setAttribute('for', inputRadio.id);  // Vincula la etiqueta con el input usando el nuevo id
+                labelRadio.innerText = opcion.TextoOpcion;
+
+                divRadio.appendChild(inputRadio);
+                divRadio.appendChild(labelRadio);
+                opcionesContainer.appendChild(divRadio);
+            });
+
+            // Detectar si el texto de las opciones es demasiado largo para mostrarlas en horizontal
+            const maxOptionLength = Math.max(...opcionesFiltradas.map(opcion => opcion.TextoOpcion.length));
+            if (maxOptionLength > 20) {
+                opcionesContainer.classList.remove('flex-wrap');  // Si el texto es largo, eliminar la visualización horizontal
+                opcionesContainer.classList.add('d-block');  // Mostrar verticalmente si el texto es largo
+            }
+
+            radioCol.appendChild(opcionesContainer);
+            formRow.appendChild(labelCol);
+            formRow.appendChild(radioCol);
+            formGroup.appendChild(formRow);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, `pregunta_${pregunta.PreguntaID}`, tabID, 'opcion_multiples');
+        }
+        // Función para manejar preguntas de tipo opción múltiple
+        function agregarPreguntaOpcionx(pregunta, formGroup, opcionesGlobales, tabID) {
+
+            const formRow = document.createElement('div');
+            formRow.className = 'form-row align-items-center';
+
+            const labelCol = document.createElement('div');
+            labelCol.className = 'col-md-4';
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            labelCol.appendChild(label);
+
+            const selectCol = document.createElement('div');
+            selectCol.className = 'col-md-8';
+            const select = document.createElement('select');
+            select.className = 'form-control';
+            select.name = `pregunta_${pregunta.PreguntaID}`;
+            select.id = `pregunta_${pregunta.PreguntaID}`;  // Añadimos un ID
+
+            elementosFormulario.push(pregunta.PreguntaID);
+            select.required = pregunta.Requerido;
+
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.innerText = 'Seleccione una opción';
+            select.appendChild(emptyOption);
+
+            const opcionesFiltradas = opcionesGlobales.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+            opcionesFiltradas.forEach(opcion => {
+                const option = document.createElement('option');
+                option.value = opcion.ValorOpcion;
+                option.id = opcion.OpcionID;
+                option.innerText = opcion.TextoOpcion;
+                select.appendChild(option);
+            });
+
+            selectCol.appendChild(select);
+            formRow.appendChild(labelCol);
+            formRow.appendChild(selectCol);
+            formGroup.appendChild(formRow);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, select.id, tabID, 'opcion_multiples');
+
+        }
+        function agregarBotonesResumen() {
+            const resumenContainer = document.getElementById('content-resumen');
+
+            // Botón de Regresar
+            const btnRegresar = document.createElement('button');
+            btnRegresar.className = 'btn btn-secondary';
+            btnRegresar.innerText = 'Regresar';
+            btnRegresar.onclick = () => openTab(0);  // Regresar al primer tab
+            resumenContainer.appendChild(btnRegresar);
+
+            // Botón de Enviar
+            const btnEnviar = document.createElement('button');
+            btnEnviar.className = 'btn btn-primary ml-2';
+            btnEnviar.innerText = 'Enviar Formulario';
+            btnEnviar.onclick = () => enviarFormulario();
+            resumenContainer.appendChild(btnEnviar);
+        }
+        // Función para manejar preguntas de tipo abierta_multiples
+        function agregarPreguntaAbierta(pregunta, formGroup, tabID) {
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            formGroup.appendChild(label);
+
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-responsive';
+
+            const table = document.createElement('table');
+            table.className = 'table table-bordered';
+            table.id = `table_pregunta_${pregunta.PreguntaID}`;
+            elementosFormulario.push(pregunta.PreguntaID);  // Almacenamos el ID en el array
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            const thRespuesta = document.createElement('th');
+            thRespuesta.innerText = 'Respuesta';
+            headerRow.appendChild(thRespuesta);
+
+            if (pregunta.RequierePorcentaje) {
+                const thPorcentaje = document.createElement('th');
+                thPorcentaje.innerText = 'Porcentaje (%)';
+                headerRow.appendChild(thPorcentaje);
+            }
+
+            if (pregunta.RequierePorcentajeReal) {
+                const thPorcentajeReal = document.createElement('th');
+                thPorcentajeReal.innerText = 'Porcentaje Real (%)';
+                headerRow.appendChild(thPorcentajeReal);
+            }
+
+            if (pregunta.RequiereMotivo) {
+                const thMotivo = document.createElement('th');
+                thMotivo.innerText = 'Motivo';
+                headerRow.appendChild(thMotivo);
+            }
+
+            const thAcciones = document.createElement('th');
+            thAcciones.innerText = 'Acciones';
+            headerRow.appendChild(thAcciones);
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            agregarFilaAbierta(pregunta, tbody);
+
+            table.appendChild(tbody);
+            tableWrapper.appendChild(table);
+
+            const addRowBtn = document.createElement('button');
+            addRowBtn.type = 'button';
+            addRowBtn.className = 'btn btn-sm btn-primary add-row';
+            addRowBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Respuesta';
+            addRowBtn.onclick = () => agregarFilaAbierta(pregunta, tbody);
+
+            formGroup.appendChild(tableWrapper);
+            formGroup.appendChild(addRowBtn);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, table.id, tabID, 'tabla');
+
+        }
+        // Función para manejar preguntas de tipo abierta_multiples utilizando input en vez de tabla
+        function agregarPreguntaAbiertatexto(pregunta, formGroup, tabID) {
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            formGroup.appendChild(label);
+
+            // Crear un input de texto para la respuesta abierta
+            const inputRespuesta = document.createElement('input');
+            inputRespuesta.type = 'text';
+            inputRespuesta.className = 'form-control';
+            inputRespuesta.id = `input_pregunta_${pregunta.PreguntaID}`;
+            elementosFormulario.push(pregunta.PreguntaID);  // Almacenamos el ID en el array
+            formGroup.appendChild(inputRespuesta);
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, `input_pregunta_${pregunta.PreguntaID}`, tabID, 'input');
+        }
+
+        // Función para agregar una fila dinámica a una pregunta abierta
+        function agregarFilaAbierta(pregunta, tbody, tabID) {
+            const row = document.createElement('tr');
+
+            const tdRespuesta = document.createElement('td');
+            const inputRespuesta = document.createElement('input');
+            inputRespuesta.type = 'text';
+            inputRespuesta.className = 'form-control';
+            inputRespuesta.name = `pregunta_${pregunta.PreguntaID}_respuesta[]`;
+            tdRespuesta.appendChild(inputRespuesta);
+            row.appendChild(tdRespuesta);
+
+            if (pregunta.RequierePorcentaje) {
+                const tdPorcentaje = document.createElement('td');
+                const inputPorcentaje = document.createElement('input');
+                inputPorcentaje.type = 'number';
+                inputPorcentaje.className = 'form-control';
+                inputPorcentaje.name = `pregunta_${pregunta.PreguntaID}_porcentaje`;
+                tdPorcentaje.appendChild(inputPorcentaje);
+                row.appendChild(tdPorcentaje);
+            }
+
+            if (pregunta.RequierePorcentajeReal) {
+                const tdPorcentajeReal = document.createElement('td');
+                const inputPorcentajeReal = document.createElement('input');
+                inputPorcentajeReal.type = 'number';
+                inputPorcentajeReal.className = 'form-control';
+                inputPorcentajeReal.name = `pregunta_${pregunta.PreguntaID}_porcentaje_real`;
+                tdPorcentajeReal.appendChild(inputPorcentajeReal);
+                row.appendChild(tdPorcentajeReal);
+            }
+
+            if (pregunta.RequiereMotivo) {
+                const tdMotivo = document.createElement('td');
+                const inputMotivo = document.createElement('input');
+                inputMotivo.type = 'text';
+                inputMotivo.className = 'form-control';
+                inputMotivo.name = `pregunta_${pregunta.PreguntaID}_motivo[]`;
+                tdMotivo.appendChild(inputMotivo);
+                row.appendChild(tdMotivo);
+            }
+
+            const tdAcciones = document.createElement('td');
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'remove-row';
+            removeBtn.innerHTML = '<i class="fas fa-minus-circle"></i>';
+            removeBtn.onclick = () => eliminarFila(row, tbody);
+            tdAcciones.appendChild(removeBtn);
+            row.appendChild(tdAcciones);
+
+            tbody.appendChild(row);
+            //  agregarPreguntaAlArray(pregunta.PreguntaID, inputRespuesta.id, tabID);
+
+        }
+
+        // Función para eliminar una fila en preguntas abiertas
+        function eliminarFila(row, tbody) {
+            if (tbody.rows.length > 1) {
+                row.remove();
+            } else {
+                alert('Debe haber al menos una respuesta.');
+            }
+        }
+
+        // Función para agregar botones de navegación
+        function agregarBotonesNavegacion(formulario, index, formularios, form) {
+            const navButtons = document.createElement('div');
+            navButtons.className = 'd-flex justify-content-between';
+
+            if (index > 0) {
+                const backButton = document.createElement('button');
+                backButton.type = 'button';
+                backButton.className = 'btn btn-secondary';
+                backButton.innerText = 'Regresar';
+                backButton.onclick = () => openTab(index - 1);
+                navButtons.appendChild(backButton);
+            }
+
+            if (index < formularios.length - 1) {
+                const nextButton = document.createElement('button');
+                nextButton.type = 'button';
+                nextButton.className = 'btn btn-primary';
+                nextButton.innerText = 'Siguiente';
+                nextButton.onclick = () => {
+                    const tabID = `content-${formulario.FormularioID}`;
+
+                    // Validar las preguntas requeridas antes de avanzar
+                    if (validarPreguntasRequeridas(tabID)) {
+                        openTab(index + 1);  // Si es válido, abrir el siguiente tab
+                    }
+                };
+                navButtons.appendChild(nextButton);
+            } else {
+                const summaryButton = document.createElement('button');
+                summaryButton.type = 'button';
+                summaryButton.className = 'btn btn-info';
+                summaryButton.innerText = 'Ver Resumen';
+                summaryButton.onclick = () => {
+                    //  mostrarRespuestasPorTab(data);  // Mostrar el desglose de las respuestas
+                    // crearGraficoResumenTotal(data); // Crear gráfico de resumen total
+                    //  agregarEstrellasResumenMejorado(data);  // Agregar estrellas dinámicas
+                    //  openTabResumen();  // Ir al tab de resumen
+
+                    const tabID = `content-${formulario.FormularioID}`;
+
+                    // Validar las preguntas requeridas antes de avanzar
+                    if (validarPreguntasRequeridas(tabID)) {
+
+                        agregarTabResumen();  // Crear el tab y el contenido de resumen si aún no se ha creado
+
+
+                        // Asegúrate de que el canvas está presente en el DOM
+                        setTimeout(() => {
+                            openTabResumen();
+
+                            const respuestas = capturarRespuestasUsuario();  // Capturamos las respuestas de todas las preguntas
+                            //  agregarEstrellasResumenMejorado2(respuestas);  // Agregar estrellas dinámicas
+                            //  crearGraficoResumenTotal2(respuestas);  // Crear gráfico de resumen total
+                            // Mostrar estrellas
+                            let grafico = false;
+                            let estrella = false;
+                              mostrarRespuestasPorTab4(respuestas);
+                            // Verificar si en los formularios hay alguno que requiera gráfico o estrellas
+                            data[0].Procesos[0].Formularios.forEach(formulario => {
+                                if (formulario.grafico) {
+                                    grafico = true;
+                                }
+                                if (formulario.estrella) {
+                                    estrella = true;
+                                }
+                            });
+                            if (estrella) {
+                                agregarEstrellasResumenOpcionMultiples2(respuestas);  // Llamar a función para mostrar estrellas
+                            }
+
+                            // Crear el gráfico
+
+
+                            if (grafico) {
+                                crearGraficoOpcionMultiplesxx(respuestas);  // Llamar a función para crear el gráfico
+                            }
+                            agregarBotonEnviar(respuestas);
+
+                        }, 100);
+                    }
+                };
+                navButtons.appendChild(summaryButton);
+
+            }
+
+            form.appendChild(navButtons);
+        }
+        // Función para manejar preguntas de tipo opcion_multiples_N con campo "Otros"
+        function agregarPreguntaOpcionMultiplesN(pregunta, formGroup, opcionesGlobales, tabID) {
+            const formRow = document.createElement('div');
+            formRow.className = 'form-row align-items-center';
+
+            const labelCol = document.createElement('div');
+            labelCol.className = 'col-md-4';
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            labelCol.appendChild(label);
+
+            const selectCol = document.createElement('div');
+            selectCol.className = 'col-md-8';
+
+            // Crear contenedor para checkboxes
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.className = 'checkbox-container';
+            let tieneOtros = false;
+
+            // Agregar opciones como checkboxes
+            const opcionesFiltradas = opcionesGlobales.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+            opcionesFiltradas.forEach(opcion => {
+                if (opcion.TextoOpcion.toLowerCase() === 'otros') {
+                    tieneOtros = true; // Marcar que ya existe una opción "Otros"
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.className = 'form-check-input';
+                    input.value = opcion.ValorOpcion;
+                    input.id = `pregunta_${pregunta.PreguntaID}_opcion_${opcion.OpcionID}`;
+                    input.name = `pregunta_${pregunta.PreguntaID}`;
+                    input.onclick = (e) => toggleInputOtros(e, pregunta.PreguntaID);
+
+                    const labelOpcion = document.createElement('label');
+                    labelOpcion.className = 'form-check-label';
+                    labelOpcion.innerText = opcion.TextoOpcion;
+
+                    div.appendChild(input);
+                    div.appendChild(labelOpcion);
+                    checkboxContainer.appendChild(div);
+                }
+            });
+            if (tieneOtros === true) {
+                // Agregar el input "Otros"
+                const divOtros = document.createElement('div');
+                divOtros.className = 'form-check';
+
+                const inputOtros = document.createElement('input');
+                inputOtros.type = 'checkbox';
+                inputOtros.className = 'form-check-input';
+                inputOtros.id = `pregunta_${pregunta.PreguntaID}_opcion_otros`;
+                inputOtros.name = `pregunta_${pregunta.PreguntaID}`;
+                inputOtros.onclick = (e) => toggleInputOtros(e, pregunta.PreguntaID);
+
+                const labelOtros = document.createElement('label');
+                labelOtros.className = 'form-check-label';
+                labelOtros.innerText = 'Otros';
+
+                divOtros.appendChild(inputOtros);
+                divOtros.appendChild(labelOtros);
+                checkboxContainer.appendChild(divOtros);
+
+                // Campo de texto para "Otros" (inicialmente oculto)
+                const inputTextoOtros = document.createElement('input');
+                inputTextoOtros.type = 'text';
+                inputTextoOtros.className = 'form-control mt-2';
+                inputTextoOtros.id = `pregunta_${pregunta.PreguntaID}_otros_input`;
+                inputTextoOtros.style.display = 'none';  // Oculto inicialmente
+
+                selectCol.appendChild(checkboxContainer);
+                selectCol.appendChild(inputTextoOtros);
+                formRow.appendChild(labelCol);
+                formRow.appendChild(selectCol);
+                formGroup.appendChild(formRow);
+            }
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, `pregunta_${pregunta.PreguntaID}`, tabID, 'opcion_multiples_N');
+        }
+
+        function agregarPreguntaOpcionMultiplesNx(pregunta, formGroup, opcionesGlobales, tabID) {
+            const formRow = document.createElement('div');
+            formRow.className = 'form-row align-items-center';
+
+            const labelCol = document.createElement('div');
+            labelCol.className = 'col-md-4';
+            const label = document.createElement('label');
+            label.innerText = pregunta.TextoPregunta;
+            labelCol.appendChild(label);
+
+            const selectCol = document.createElement('div');
+            selectCol.className = 'col-md-8';
+
+            // Crear contenedor para radio buttons
+            const radioContainer = document.createElement('div');
+            radioContainer.className = 'radio-container';
+            let tieneOtros = false;
+
+            // Agregar opciones como radio buttons
+            const opcionesFiltradas = opcionesGlobales.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+            opcionesFiltradas.forEach(opcion => {
+                if (opcion.TextoOpcion.toLowerCase() === 'otros') {
+                    tieneOtros = true; // Marcar que ya existe una opción "Otros"
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+
+                    const input = document.createElement('input');
+                    input.type = 'radio'; // Cambiar a radio
+                    input.className = 'form-check-input';
+                    input.value = opcion.ValorOpcion;
+                    input.id = `pregunta_${pregunta.PreguntaID}_opcion_${opcion.OpcionID}`;
+                    input.name = `pregunta_${pregunta.PreguntaID}`;
+                    input.onclick = (e) => toggleInputOtros(e, pregunta.PreguntaID); // Manejo para "Otros"
+
+                    const labelOpcion = document.createElement('label');
+                    labelOpcion.className = 'form-check-label';
+                    labelOpcion.setAttribute('for', input.id); // Asociar label con input
+                    labelOpcion.innerText = opcion.TextoOpcion;
+
+                    div.appendChild(input);
+                    div.appendChild(labelOpcion);
+                    radioContainer.appendChild(div);
+                }
+            });
+
+            if (tieneOtros === true) {
+                // Agregar la opción "Otros" como radio button
+                const divOtros = document.createElement('div');
+                divOtros.className = 'form-check';
+
+                const inputOtros = document.createElement('input');
+                inputOtros.type = 'radio';
+                inputOtros.className = 'form-check-input';
+                inputOtros.id = `pregunta_${pregunta.PreguntaID}_opcion_otros`;
+                inputOtros.name = `pregunta_${pregunta.PreguntaID}`;
+                inputOtros.onclick = (e) => toggleInputOtros(e, pregunta.PreguntaID);
+
+                const labelOtros = document.createElement('label');
+                labelOtros.className = 'form-check-label';
+                labelOtros.setAttribute('for', inputOtros.id); // Asociar label con input
+                labelOtros.innerText = 'Otros';
+
+                divOtros.appendChild(inputOtros);
+                divOtros.appendChild(labelOtros);
+                radioContainer.appendChild(divOtros);
+
+                // Campo de texto para "Otros" (inicialmente oculto)
+                const inputTextoOtros = document.createElement('input');
+                inputTextoOtros.type = 'text';
+                inputTextoOtros.className = 'form-control mt-2';
+                inputTextoOtros.id = `pregunta_${pregunta.PreguntaID}_otros_input`;
+                inputTextoOtros.style.display = 'none';  // Oculto inicialmente
+
+                selectCol.appendChild(radioContainer);
+                selectCol.appendChild(inputTextoOtros);
+                formRow.appendChild(labelCol);
+                formRow.appendChild(selectCol);
+                formGroup.appendChild(formRow);
+            } else {
+                selectCol.appendChild(radioContainer);
+                formRow.appendChild(labelCol);
+                formRow.appendChild(selectCol);
+                formGroup.appendChild(formRow);
+            }
+
+            agregarPreguntaAlArray(pregunta.PreguntaID, `pregunta_${pregunta.PreguntaID}`, tabID, 'opcion_multiples_N');
+        }
+
+        function validarPreguntasRequeridas(tabID) {
+            let esValido = true;
+            let preguntasFaltantes = [];
+
+            // Filtrar las preguntas del tab específico
+            const preguntasDelTab = preguntasRespuestas.filter(p => p.TabID === tabID);
+
+            preguntasDelTab.forEach(pregunta => {
+                // Obtenemos el elemento HTML correspondiente
+                let elementoPregunta = document.getElementById(pregunta.InputID);
+                let esRadio = false;
+
+                // Si no se encuentra el elemento por ID, mostramos advertencia y continuamos
+                if (!elementoPregunta) {
+                    const elementosRadio = document.getElementsByName(pregunta.InputID);
+                    if (elementosRadio.length > 0) {
+                        elementoPregunta = elementosRadio;
+                        esRadio = true;
+                    }
+                }
+                if (!elementoPregunta) {
+                    return;
+                }
+                // Buscamos en el JSON si la pregunta es requerida
+                const preguntaJson = data[0].Procesos[0].Formularios
+                    .flatMap(f => f.Preguntas)
+                    .find(p => p.PreguntaID === pregunta.PreguntaID && p.Requerido);
+
+                if (preguntaJson) {
+                    if (esRadio) {
+                        // Manejar grupo de radio buttons
+                        validarRadio(elementoPregunta, preguntaJson, pregunta, preguntasFaltantes);
+                    } else {
+                        // Primero determinamos el tipo de elemento (input, select, checkbox, etc.)
+                        switch (elementoPregunta.tagName) {
+                            case 'INPUT':
+                                validarInput(elementoPregunta, preguntaJson, pregunta, preguntasFaltantes);
+                                break;
+
+                            case 'SELECT':
+                                validarSelect(elementoPregunta, preguntaJson, preguntasFaltantes);
+                                break;
+
+                            case 'DIV': // Para el caso de checkbox o inputs múltiples dentro de un contenedor
+                                validarCheckboxMultiple(elementoPregunta, preguntaJson, preguntasFaltantes);
+                                break;
+
+                            default:
+                                console.log('Tipo de input no soportado');
+                                break;
+                        }
+                    }
+                }
+            });
+
+            if (preguntasFaltantes.length>0) {
+                const mensaje = `Por favor, complete las siguientes preguntas obligatorias:\n - ${preguntasFaltantes.join('\n - ')}`;
+                Swal.fire({
+                    title: 'Error',
+                    text: mensaje,
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar'
+                });
+                return false;
+            }
+
+            return esValido;
+        }
+
+        // Función para validar inputs de texto (tipo abierta)
+        function validarInput(elemento, preguntaJson, pregunta, preguntasFaltantes) {
+            switch (preguntaJson.TipoPregunta) {
+                case 'abierta':
+                    if (!elemento.value.trim()) {
+                        preguntasFaltantes.push(preguntaJson.TextoPregunta);
+                        mostrarError(elemento, 'Esta pregunta es obligatoria.');
+                        return false;
+                    } else {
+                        quitarError(elemento);
+                        return true;
+                    }
+                case 'abierta_multiples': // Para inputs múltiples
+                    if (!elemento.value.trim()) {
+                        preguntasFaltantes.push(preguntaJson.TextoPregunta);
+                        mostrarError(elemento, 'Esta pregunta es obligatoria.');
+                        return false;
+                    } else {
+                        quitarError(elemento);
+                        return true;
+                    }
+                    break;
+                default:
+                    console.log('Tipo de pregunta no soportado en inputs');
+                    break;
+            }
+        }
+
+        function validarRadio(elementosRadio, preguntaJson, pregunta, preguntasFaltantes) {
+            // Verificar si alguno de los radio buttons está seleccionado
+            const algunoSeleccionado = Array.from(elementosRadio).some(radio => radio.checked);
+
+            if (!algunoSeleccionado) {
+                preguntasFaltantes.push(preguntaJson.TextoPregunta);
+                // Mostrar error en el contenedor del grupo de radio buttons
+                mostrarError(elementosRadio[0].closest('.form-group'), 'Esta pregunta es obligatoria.');
+                return false;
+            } else {
+                // Quitar error si ya se seleccionó una opción
+                quitarError(elementosRadio[0].closest('.form-group'));
+                return true;
+            }
+        }
+
+        // Función para validar selects
+        function validarSelect(elemento, preguntaJson, preguntasFaltantes) {
+            if (elemento.value === '') {
+                preguntasFaltantes.push(preguntaJson.TextoPregunta);
+                mostrarError(elemento, 'Debe seleccionar una opción.');
+                return false;
+            } else {
+                quitarError(elemento);
+                return true;
+            }
+        }
+
+        // Función para validar opciones múltiples (checkboxes)
+        function validarCheckboxMultiple(elemento, preguntaJson, preguntasFaltantes) {
+            const checkboxes = document.getElementsByName(pregunta.InputID);
+            const alMenosUnoMarcado = Array.from(checkboxes).some(checkbox => checkbox.checked);
+
+            if (!alMenosUnoMarcado) {
+                preguntasFaltantes.push(preguntaJson.TextoPregunta);
+                mostrarError(checkboxes[0], 'Debe seleccionar al menos una opción.');
+                return false;
+            } else {
+                quitarError(checkboxes[0]);
+                return true;
+            }
+        }
+        function mostrarError(pregunta, mensaje) {
+            if (!pregunta) return;
+
+            const errorSpan = document.createElement('span');
+            errorSpan.className = 'text-danger';
+            errorSpan.innerText = mensaje;
+
+            if (!pregunta.closest('.form-group').querySelector('.text-danger')) {
+                pregunta.closest('.form-group').appendChild(errorSpan);
+            }
+            pregunta.classList.add('is-invalid');  // Añadir clase de error visual
+        }
+
+        function quitarError(pregunta) {
+            if (!pregunta) return;
+
+            const errorSpan = pregunta.closest('.form-group').querySelector('.text-danger');
+            if (errorSpan) {
+                errorSpan.remove();
+            }
+            pregunta.classList.remove('is-invalid');  // Quitar clase de error visual
+        }
+
+        // Función que muestra el input de texto si se selecciona la opción "Otros"
+        function toggleInputOtros(e, preguntaID) {
+            const inputOtros = document.getElementById(`pregunta_${preguntaID}_otros_input`);
+            if (e.target.id.includes('otros') && e.target.checked) {
+                inputOtros.style.display = 'block';  // Mostrar input de texto
+            } else if (!e.target.id.includes('otros') && e.target.checked) {
+                inputOtros.style.display = 'none';  // Ocultar input de texto
+            }
+        }
+
+        function agregarBotonEnviar(respuestas) {
+            const resumenContainer = document.getElementById('content-resumen');
+
+            // Crear botón "Enviar"
+            const botonEnviar = document.createElement('button');
+            botonEnviar.className = 'btn btn-success mt-3';  // Clase de Bootstrap para estilo
+            botonEnviar.innerText = 'Enviar';
+
+            // Evento al hacer clic en el botón "Enviar"
+            botonEnviar.onclick = () => {
+                const arregloParaApi = crearArregloRespuestas(respuestas);  // Crear arreglo con las respuestas
+                $.LoadingOverlay("show");
+
+
+                $.ajax({
+                     url: "@Url.Action("GuardarEncuestax", "Evaluacion")",
+                    type: 'POST',
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(arregloParaApi),
+                    success: function (response) {
+                        $.LoadingOverlay("hide");
+
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Datos enviados',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                         
+                         window.location.href = "@url2";
+                        window.location.assign("@url2");
+                        window.location.replace("@url2");
+                      
+                            }); 
+
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $.LoadingOverlay("hide");
+
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Ocurrió un error al enviar los datos.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+                // Simulación de la llamada a la API usando Swal
+                //Swal.fire({
+                //    title: 'Datos enviados',
+                //    text: JSON.stringify(arregloParaApi, null, 2),  // Mostrar los datos enviados en formato JSON
+                //    icon: 'success',
+                //    confirmButtonText: 'OK'
+                //});
+            };
+
+            // Agregar el botón al contenedor del resumen
+            resumenContainer.appendChild(botonEnviar);
+        }
+
+        function enviarFormulario() {
+            // Simular llamada a una API con un Swal
+            Swal.fire({
+                title: 'Confirmación de envío',
+                text: '¿Deseas enviar el formulario?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, enviar',
+                cancelButtonText: 'Cancelar',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Simular la llamada a la API
+                    Swal.fire({
+                        title: 'Enviando...',
+                        text: 'Por favor espera mientras enviamos tu formulario.',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+
+                            // Simulación de tiempo de espera para una API (2 segundos)
+                            setTimeout(() => {
+                                Swal.fire({
+                                    title: 'Formulario Enviado',
+                                    text: 'El formulario ha sido enviado exitosamente.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                            }, 2000);  // Simulación de retraso para la respuesta de la API
+                        }
+                    });
+                }
+            });
+        }
+
+        function generarEstrellasConMedias(promedio) {
+            const starRating = document.createElement('div');
+            starRating.className = 'star-rating text-center';
+
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+
+                // Si el valor de "i" es menor o igual al promedio, añadir una estrella completa
+                if (i <= promedio) {
+                    star.className = 'fas fa-star'; // Estrella completa
+                }
+                // Si la estrella actual está a media unidad del promedio, mostrar media estrella
+                else if (i - 0.5 <= promedio) {
+                    star.className = 'fas fa-star-half-alt'; // Media estrella
+                }
+                // En otro caso, mostrar estrella vacía
+                else {
+                    star.className = 'far fa-star'; // Estrella vacía
+                }
+                star.style.color = '#ffc107'; // Color dorado para las estrellas
+                starRating.appendChild(star);
+            }
+
+            return starRating;
+        }
+        function agregarEstrellasResumenMejorado2(respuestas) {
+            const totalPorcentajeReal = respuestas
+                .filter(r => !isNaN(parseInt(r.PorcentajeReal)))
+                .reduce((sum, r) => sum + parseInt(r.PorcentajeReal || 0), 0);
+            const promedio = totalPorcentajeReal / respuestas.length;
+
+            const starRating = generarEstrellasBonitas2(Math.round(promedio / 20));
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenContainer.innerHTML = ''; // Limpiar contenido anterior
+
+            resumenContainer.appendChild(starRating); // Agregar las estrellas
+
+            // Crear el canvas para el gráfico si no existe
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 100;
+                resumenContainer.appendChild(canvas); // Añadir el canvas justo debajo de las estrellas
+            }
+
+            crearGraficoResumenTotal2(respuestas); // Crear gráfico basado en las respuestas
+        }
+
+        function generarEstrellasBonitas2(promedio) {
+            const starRating = document.createElement('div');
+            starRating.className = 'star-rating text-center'; // Centramos las estrellas
+
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.className = i <= promedio ? 'fas fa-star' : 'far fa-star'; // Usamos FontAwesome para estrellas
+                star.style.color = '#ffc107'; // Color dorado para estrellas llenas
+                starRating.appendChild(star);
+            }
+
+            return starRating;
+        }
+
+        function crearGraficoResumenTotal2(respuestas) {
+            const totalObtenido = respuestas
+                .filter(r => !isNaN(parseInt(r.PorcentajeReal)))
+                .reduce((sum, r) => sum + parseInt(r.PorcentajeReal || 0), 0);
+            const totalMaximo = respuestas.length * 100;
+
+            const canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                console.error('Canvas "resumenChart" no encontrado');
+                return; // Detener si no existe el canvas
+            }
+
+            const ctx = canvas.getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+
+            // Crear nuevo gráfico
+            window.myResumenChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Obtenido', 'Total Máximo'],
+                    datasets: [{
+                        label: 'Puntaje Total',
+                        data: [totalObtenido, totalMaximo],
+                        backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: totalMaximo
+                        }
+                    }
+                }
+            });
+        }
+
+        function capturarRespuestasOpcionMultiples() {
+            const respuestas = [];
+
+            preguntasRespuestas.forEach(item => {
+                // Solo capturamos las respuestas del tipo 'opcion_multiples'
+                if (item.TipoInput === 'opcion_multiples') {
+                    const select = document.getElementById(item.InputID);
+                    const respuesta = select ? select.value : 'No respondida';
+                    const porcentajeReal = parseInt(respuesta) || 0; // Asegurarse de capturar correctamente el valor
+                    respuestas.push({
+                        PreguntaID: item.PreguntaID,
+                        TextoPregunta: `Pregunta ${item.PreguntaID}`, // Nombre genérico para la pregunta
+                        PorcentajeReal: porcentajeReal, // Guardamos el valor numérico de la respuesta
+                    });
+                }
+            });
+
+            return respuestas;
+        }
+
+        function crearGraficoOpcionMultiples(respuestas) {
+
+
+
+            const totalObtenido = respuestas
+                .reduce((sum, r) => {
+                    const valorNumerico = parseFloat(r.Respuesta);  // Intentar convertir la respuesta a número
+                    return sum + (isNaN(valorNumerico) ? 0 : valorNumerico); // Si es NaN, sumar 0, de lo contrario sumar el número
+                }, 0);
+            const formulariosConGraficoOEstrella = data[0].Procesos[0].Formularios
+                .filter(formulario => formulario.grafico || formulario.estrella)
+                .map(formulario => formulario.FormularioID);
+
+            // Filtrar respuestas que pertenecen a esos formularios
+            const respuestasFiltradas = respuestas.filter(r => {
+                const formularioID = parseInt(r.TabID.replace('content-', '')); // Convertir el TabID al FormularioID
+                return formulariosConGraficoOEstrella.includes(formularioID);
+            });
+
+            // Sumar solo las respuestas numéricas de formularios con gráfico o estrella
+
+            // Calcular el promedio basado en las respuestas filtradas
+            const promedio = respuestasFiltradas.length > 0 ? totalObtenido / respuestasFiltradas.length : 0;
+
+
+            const totalMaximo = respuestasFiltradas.length * 5; // Asumimos que cada pregunta tiene un máximo de 100
+            const diferencia = totalMaximo - totalObtenido;
+
+            // Asegurarse de que el canvas esté en el DOM
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+
+            // Crear nuevo gráfico
+            window.myResumenChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Obtenido', 'Total Máximo', 'Diferencia'],
+                    datasets: [{
+                        label: 'Puntaje Total',
+                        data: [totalObtenido, totalMaximo, diferencia],
+                        backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)', 'rgba(255, 206, 86, 0.2)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(255, 206, 86, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: totalMaximo // El máximo será el puntaje total posible
+                        }
+                    }
+                }
+            });
+        }
+        function crearGraficoOpcionMultiplesxx(respuestas) {
+            // Agrupar respuestas por FormularioID
+            const respuestasPorFormulario = respuestas.reduce((acc, curr) => {
+                const formularioID = parseInt(curr.TabID.replace('content-', ''));
+                if (!acc[formularioID]) {
+                    acc[formularioID] = [];
+                }
+                acc[formularioID].push(curr);
+                return acc;
+            }, {});
+
+            // Obtener formularios con 'grafico: true' o 'estrella: true'
+            const formulariosConGraficoOEstrella = data[0].Procesos[0].Formularios
+                .filter(formulario => formulario.grafico || formulario.estrella);
+
+            // Contenedor general para los botones
+            const resumenContainer = document.getElementById('content-resumen');
+
+            formulariosConGraficoOEstrella.forEach((formulario, index) => {
+                const formularioID = formulario.FormularioID;
+                const respuestasFormulario = respuestasPorFormulario[formularioID];
+
+                if (respuestasFormulario && respuestasFormulario.length > 0) {
+                    // Crear botón para abrir el modal
+                    const boton = document.createElement('button');
+                    boton.className = 'btn btn-primary m-2';
+                    boton.innerText = `Gráfico ${index + 1}`; // Cambiar el texto del botón
+                    boton.dataset.toggle = 'modal';
+                    boton.dataset.target = `#modalGrafico${formularioID}`;
+
+                    resumenContainer.appendChild(boton);
+
+                    // Crear el modal y el gráfico
+                    crearModalGrafico(formulario, respuestasFormulario);
+                }
+            });
+        }
+
+        // Función para crear el modal y generar el gráfico
+        function crearModalGrafico(formulario, respuestasFormulario) {
+            const formularioID = formulario.FormularioID;
+
+            // Verificar y crear el modal solo si no existe
+            let modalExistente = document.getElementById(`modalGrafico${formularioID}`);
+            if (!modalExistente) {
+                // Crear elementos del modal
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = `modalGrafico${formularioID}`;
+                modal.tabIndex = -1;
+                modal.role = 'dialog';
+                modal.setAttribute('aria-labelledby', `modalLabel${formularioID}`);
+                modal.setAttribute('aria-hidden', 'true');
+
+                const modalDialog = document.createElement('div');
+                modalDialog.className = 'modal-dialog modal-lg';
+                modalDialog.role = 'document';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'modal-content';
+
+                // Modal Header
+                const modalHeader = document.createElement('div');
+                modalHeader.className = 'modal-header';
+
+                const modalTitle = document.createElement('h5');
+                modalTitle.className = 'modal-title';
+                modalTitle.id = `modalLabel${formularioID}`;
+                modalTitle.innerText = `Resultados de ${formulario.TituloFormulario}`;
+
+                const modalCloseButton = document.createElement('button');
+                modalCloseButton.className = 'close';
+                modalCloseButton.type = 'button';
+                modalCloseButton.dataset.dismiss = 'modal';
+                modalCloseButton.setAttribute('aria-label', 'Close');
+                modalCloseButton.innerHTML = '<span aria-hidden="true">&times;</span>';
+
+                modalHeader.appendChild(modalTitle);
+                modalHeader.appendChild(modalCloseButton);
+
+                // Modal Body
+                const modalBody = document.createElement('div');
+                modalBody.className = 'modal-body';
+
+                // Crear o reutilizar el canvas para el gráfico
+                let canvas = document.getElementById(`graficoFormulario${formularioID}`);
+                if (!canvas) {
+                    canvas = document.createElement('canvas');
+                    canvas.id = `graficoFormulario${formularioID}`;
+                    canvas.style.maxWidth = '100%';
+                    modalBody.appendChild(canvas);
+                }
+
+                // Modal Footer
+                const modalFooter = document.createElement('div');
+                modalFooter.className = 'modal-footer';
+
+                const closeButton = document.createElement('button');
+                closeButton.className = 'btn btn-secondary';
+                closeButton.type = 'button';
+                closeButton.dataset.dismiss = 'modal';
+                closeButton.innerText = 'Cerrar';
+
+                modalFooter.appendChild(closeButton);
+
+                // Armar el modal
+                modalContent.appendChild(modalHeader);
+                modalContent.appendChild(modalBody);
+                modalContent.appendChild(modalFooter);
+                modalDialog.appendChild(modalContent);
+                modal.appendChild(modalDialog);
+
+                // Agregar el modal al body
+                document.body.appendChild(modal);
+
+                // Generar el gráfico
+                generarGraficoParaFormulario(formulario, respuestasFormulario, canvas);
+            }
+        }
+
+        function getColor(index, total) {
+            const hue = (index * (360 / total)) % 360; // Distribuye hues de manera uniforme
+            return `hsla(${hue}, 70%, 50%, 0.6)`; // hsla para mayor flexibilidad en la transparencia
+        }
+
+        // Función para generar el gráfico para cada formulario
+        function generarGraficoParaFormulario(formulario, respuestasFormulario, canvas) {
+            const formularioID = formulario.FormularioID;
+            const labels = [];
+            const dataObtenido = [];
+            const backgroundColors = [];
+            const totalPreguntas = respuestasFormulario.length;
+
+            respuestasFormulario.forEach((respuesta, index) => {
+                const pregunta = formulario.Preguntas.find(p => p.PreguntaID === respuesta.PreguntaID);
+                const preguntaTexto = pregunta ? pregunta.TextoPregunta : `Pregunta ${respuesta.PreguntaID}`;
+                const valorNumerico = parseFloat(respuesta.Respuesta) || 0;
+
+                labels.push(preguntaTexto);
+                dataObtenido.push(valorNumerico);
+
+                // Asignar colores vibrantes usando HSL para una distribución uniforme
+                backgroundColors.push(getColor(index, totalPreguntas));
+            });
+
+            const ctx = canvas.getContext('2d');
+
+            // Definir el tipo de gráfico: 'radar' o 'polarArea'
+            const tipoGrafico =  'radar'; // Por defecto 'polarArea'
+
+            // Establecer el fondo del canvas a blanco para una mejor visualización
+            canvas.style.backgroundColor = 'white';
+
+            // Destruir gráfico anterior si existe para evitar duplicados
+            if (canvas.chartInstance) {
+                canvas.chartInstance.destroy();
+            }
+
+            canvas.chartInstance = new Chart(ctx, {
+                type: tipoGrafico,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Puntaje Obtenido',
+                        data: dataObtenido,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)', // Color de relleno del área
+                        borderColor: 'rgba(54, 162, 235, 1)', // Color del borde
+                        pointBackgroundColor: backgroundColors, // Color de los puntos
+                        pointBorderColor: '#fff', // Color del borde de los puntos
+                        pointHoverBackgroundColor: '#fff', // Color del punto al pasar el cursor
+                        pointHoverBorderColor: backgroundColors, // Color del borde al pasar el cursor
+                        fill: true, // Rellenar el área del gráfico
+                        lineTension: 0.1, // Suavidad de las líneas
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Permitir que el gráfico ocupe todo el contenedor
+                    rotation: -Math.PI / 2, // Rotación de -90 grados para alinear el primer punto en la parte superior
+                    plugins: {
+                        // Configuración del plugin Data Labels
+                        datalabels: {
+                            color: '#000', // Color de las etiquetas de datos
+                            align: 'center',
+                            anchor: 'center',
+                            formatter: function (value, context) {
+                                return value;
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 14, // Aumentar tamaño para mejor legibilidad
+                                family: 'Arial, sans-serif' // Especificar familia de fuente
+                            }
+                        },
+                        title: {
+                            display: true, // Mostrar título siempre en radar
+                            text: `Resultados de ${formulario.TituloFormulario}`,
+                            font: {
+                                size: 16, // Aumentar tamaño del título
+                                weight: 'bold',
+                                family: 'Arial, sans-serif'
+                            },
+                            color: '#000',
+                            padding: {
+                                top: 10,
+                                bottom: 30
+                            }
+                        },
+                        legend: {
+                            display: false, // Ocultar leyenda en radar para claridad
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed.r || 0;
+                                    return `${label}: ${value}`;
+                                }
+                            },
+                            titleFont: {
+                                size: 16,
+                                weight: 'bold',
+                                family: 'Arial, sans-serif'
+                            },
+                            bodyFont: {
+                                size: 14,
+                                family: 'Arial, sans-serif'
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 1)', // Líneas de ángulo completamente negras
+                                lineWidth: 2 // Aumentar grosor
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 1)', // Líneas de cuadrícula completamente negras
+                                circular: true,
+                                lineWidth: 2 // Aumentar grosor
+                            },
+                            ticks: {
+                                beginAtZero: true,
+                                max: 5,
+                                stepSize: 1,
+                                color: '#000', // Color de las etiquetas de los ticks
+                                backdropColor: 'rgba(0, 0, 0, 0)', // Fondo transparente para etiquetas de ticks
+                                font: {
+                                    size: 14, // Aumentar tamaño de fuente en ticks
+                                    weight: 'bold',
+                                    family: 'Arial, sans-serif'
+                                }
+                            },
+                            pointLabels: {
+                                color: '#000', // Color de las etiquetas de los puntos
+                                font: {
+                                    size: 14, // Aumentar tamaño de fuente en labels de puntos
+                                    weight: 'bold',
+                                    family: 'Arial, sans-serif'
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels] // Registrar el plugin Data Labels
+            });
+        }
+
+        function crearGraficoOpcionMultiples11(respuestas) {
+            // Agrupar respuestas por FormularioID
+            const respuestasPorFormulario = respuestas.reduce((acc, curr) => {
+                const formularioID = parseInt(curr.TabID.replace('content-', ''));
+                if (!acc[formularioID]) {
+                    acc[formularioID] = [];
+                }
+                acc[formularioID].push(curr);
+                return acc;
+            }, {});
+
+            // Obtener formularios con 'grafico: true' o 'estrella: true'
+            const formulariosConGraficoOEstrella = data[0].Procesos[0].Formularios
+                .filter(formulario => formulario.grafico || formulario.estrella);
+
+            // Contenedor general para los gráficos
+            const resumenContainer = document.getElementById('content-resumen');
+
+            // Limpiar contenido anterior para evitar duplicados
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+            formulariosConGraficoOEstrella.forEach(formulario => {
+                const formularioID = formulario.FormularioID;
+                const respuestasFormulario = respuestasPorFormulario[formularioID];
+
+                if (respuestasFormulario && respuestasFormulario.length > 0) {
+                    const labels = [];
+                    const dataObtenido = [];
+                    const backgroundColors = [];
+
+                    respuestasFormulario.forEach(respuesta => {
+                        const pregunta = formulario.Preguntas.find(p => p.PreguntaID === respuesta.PreguntaID);
+                        const preguntaTexto = pregunta ? pregunta.TextoPregunta : `Pregunta ${respuesta.PreguntaID}`;
+                        const valorNumerico = parseFloat(respuesta.Respuesta) || 0;
+
+                        labels.push(preguntaTexto);
+                        dataObtenido.push(valorNumerico);
+                        // Generar colores aleatorios para cada pregunta
+                        backgroundColors.push(`rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`);
+                    });
+
+                    // Crear contenedor del gráfico
+                    const graficoContainer = document.createElement('div');
+                    graficoContainer.className = 'grafico-container mb-4'; // Añadido margen inferior para separación
+                    resumenContainer.appendChild(graficoContainer);
+
+                    // Título del gráfico
+                    const tituloGrafico = document.createElement('h4');
+                    tituloGrafico.innerText = `Resultados de ${formulario.TituloFormulario}`;
+                    graficoContainer.appendChild(tituloGrafico);
+
+                    // Canvas para el gráfico
+                    const canvas = document.createElement('canvas');
+                    canvas.id = `graficoFormulario${formularioID}`;
+                    canvas.style.maxWidth = '600px'; // Ajustar el tamaño máximo del gráfico
+                    graficoContainer.appendChild(canvas);
+
+                    const ctx = canvas.getContext('2d');
+
+                    // Opciones de gráfico: Radar y Polar Area
+                    // Puedes cambiar el tipo aquí según tus preferencias
+                    const tipoGrafico = formulario.tipoGrafico || 'radar'; // Por defecto radar
+
+                    // Destruir gráfico anterior si existe
+                    if (window[`myResumenChart${formularioID}`]) {
+                        window[`myResumenChart${formularioID}`].destroy();
+                    }
+
+                    // Crear el gráfico
+                    window[`myResumenChart${formularioID}`] = new Chart(ctx, {
+                        type: tipoGrafico, // 'radar' o 'polarArea'
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Puntaje Obtenido',
+                                data: dataObtenido,
+                                backgroundColor: tipoGrafico === 'radar' ? 'rgba(54, 162, 235, 0.2)' : backgroundColors,
+                                borderColor: tipoGrafico === 'radar' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 255, 255, 1)',
+                                pointBackgroundColor: tipoGrafico === 'radar' ? 'rgba(54, 162, 235, 1)' : '#fff',
+                                fill: tipoGrafico === 'radar' ? true : false,
+                                // En Polar Area, cada sección puede tener un color diferente
+                                ...(tipoGrafico === 'polarArea' && { backgroundColor: backgroundColors }),
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: `Resultados de ${formulario.TituloFormulario}`
+                                },
+                                legend: {
+                                    display: tipoGrafico === 'radar', // Mostrar leyenda solo para radar
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed || 0;
+                                            return `${label}: ${value}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: tipoGrafico === 'radar' ? {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 5,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            } : {}
+                        }
+                    });
+                }
+            });
+        }
+
+        function agregarEstrellasResumenOpcionMultiples2(respuestas) {
+            // Obtener solo los formularios con estrella o gráfico habilitado
+            const formulariosConGraficoOEstrella = data[0].Procesos[0].Formularios
+                .filter(formulario => formulario.grafico || formulario.estrella)
+                .map(formulario => formulario.FormularioID);
+
+            // Filtrar respuestas que pertenecen a esos formularios
+            const respuestasFiltradas = respuestas.filter(r => {
+                const formularioID = parseInt(r.TabID.replace('content-', '')); // Convertir el TabID al FormularioID
+                return formulariosConGraficoOEstrella.includes(formularioID);
+            });
+
+            // Sumar solo las respuestas numéricas de formularios con gráfico o estrella
+            const totalPorcentajeReal = respuestasFiltradas
+                .reduce((sum, r) => {
+                    const valorNumerico = parseFloat(r.Respuesta);  // Intentar convertir la respuesta a número
+                    return sum + (isNaN(valorNumerico) ? 0 : valorNumerico); // Si es NaN, sumar 0, de lo contrario sumar el número
+                }, 0);
+
+            // Calcular el promedio basado en las respuestas filtradas
+            const promedio = respuestasFiltradas.length > 0 ? totalPorcentajeReal / respuestasFiltradas.length : 0;
+
+            // No redondeamos a un número entero para permitir medias estrellas
+            const estrellas = promedio;
+
+            // Generar las estrellas incluyendo medias
+            const starRating = generarEstrellasConMedias(estrellas);
+
+            // Limpiar el contenido anterior del contenedor del resumen
+            const resumenContainer = document.getElementById('content-resumen');
+      //      resumenContainer.innerHTML = ''; // Limpiar contenido anterior
+
+            // Insertar las estrellas al inicio del contenedor de resumen
+            resumenContainer.appendChild(starRating);
+        }
+
+        function agregarEstrellasResumenOpcionMultiples(respuestas) {
+            // Sumar todas las respuestas que son válidas (numéricas)
+            const totalPorcentajeReal = respuestas
+                .reduce((sum, r) => {
+                    const valorNumerico = parseFloat(r.Respuesta);  // Intentar convertir la respuesta a número
+                    return sum + (isNaN(valorNumerico) ? 0 : valorNumerico); // Si es NaN, sumar 0, de lo contrario sumar el número
+                }, 0);
+            const promedio = respuestas.length > 0 ? totalPorcentajeReal / respuestas.length : 0;
+
+            // No redondeamos a un número entero para permitir medias estrellas
+            const estrellas = promedio;
+
+            // Generar las estrellas incluyendo medias
+            const starRating = generarEstrellasConMedias(estrellas);
+
+            // Limpiar el contenido anterior del contenedor del resumen
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenContainer.innerHTML = ''; // Limpiar contenido anterior
+
+            // Insertar las estrellas al inicio del contenedor de resumen
+            resumenContainer.appendChild(starRating);
+        }
+
+        function mostrarRespuestasPorTab4(respuestas) {
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenContainer.innerHTML = '';  // Limpiar el contenedor antes de agregar contenido nuevo.
+
+            const respuestasAgrupadas = respuestas.reduce((acc, curr) => {
+                const tab = curr.TabID;  // Usamos el TabID para identificar cada formulario.
+                if (!acc[tab]) {
+                    acc[tab] = [];  // Inicializamos un array vacío si no existe.
+                }
+                acc[tab].push(curr);
+                return acc;
+            }, {});
+
+            // Crear el contenedor de pestañas
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'tabs-container';
+
+            const tabsList = document.createElement('ul');
+            tabsList.className = 'tabs-list';
+
+            const tabsContent = document.createElement('div');
+            tabsContent.className = 'tabs-content';
+
+            let firstTab = true;
+
+            // Recorrer las respuestas agrupadas por TabID
+            Object.keys(respuestasAgrupadas).forEach((tabID, index) => {
+                const formularioID = parseInt(tabID.replace('content-', ''));
+                const formulario = data[0].Procesos[0].Formularios.find(f => f.FormularioID === formularioID);
+                const nombreFormulario = formulario ? formulario.TituloFormulario : `Tab ${tabID}`;  // Usar el nombre del formulario o un nombre genérico.
+
+                // Crear el elemento de la pestaña
+                const tabItem = document.createElement('li');
+                tabItem.className = 'tab-item';
+                tabItem.innerText = nombreFormulario;
+                tabItem.dataset.tab = `tab-${index}`;
+                if (firstTab) tabItem.classList.add('active');
+                tabsList.appendChild(tabItem);
+
+                // Crear el contenido de la pestaña
+                const tabContentItem = document.createElement('div');
+                tabContentItem.className = 'tab-content-item';
+                tabContentItem.id = `tab-${index}`;
+                if (firstTab) tabContentItem.classList.add('active');
+
+                // Crear una tabla para mostrar las respuestas
+                const table = document.createElement('table');
+                table.className = 'tabla-respuestas';
+
+                // Crear el encabezado de la tabla
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+
+                const thPregunta = document.createElement('th');
+                thPregunta.innerText = 'Pregunta';
+                headerRow.appendChild(thPregunta);
+
+                const thRespuesta = document.createElement('th');
+                thRespuesta.innerText = 'Respuesta';
+                headerRow.appendChild(thRespuesta);
+
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+
+                let sum = 0;
+                let count = 0;
+
+                respuestasAgrupadas[tabID].forEach(respuesta => {
+                    const pregunta = formulario.Preguntas.find(p => p.PreguntaID === respuesta.PreguntaID);
+                    const preguntaTexto = pregunta ? pregunta.TextoPregunta : `Pregunta ${respuesta.PreguntaID}`;
+
+                    const row = document.createElement('tr');
+
+                    const cellPregunta = document.createElement('td');
+                    cellPregunta.innerText = preguntaTexto;
+                    row.appendChild(cellPregunta);
+
+                    const cellRespuesta = document.createElement('td');
+                    cellRespuesta.innerText = respuesta.Respuesta;
+                    row.appendChild(cellRespuesta);
+
+                    tbody.appendChild(row);
+
+                    // Si la respuesta es numérica, acumular para calcular el promedio
+                    const valorNumerico = parseFloat(respuesta.Respuesta);
+                    if (!isNaN(valorNumerico)) {
+                        sum += valorNumerico;
+                        count++;
+                    }
+
+                    // Agregar Porcentaje, Porcentaje Real y Motivo si se requieren
+                    if (pregunta && pregunta.RequierePorcentaje) {
+                        const rowPorcentaje = document.createElement('tr');
+
+                        const cellPorcentajeLabel = document.createElement('td');
+                        cellPorcentajeLabel.innerText = 'Porcentaje';
+                        rowPorcentaje.appendChild(cellPorcentajeLabel);
+
+                        const cellPorcentajeValor = document.createElement('td');
+                        cellPorcentajeValor.innerText = respuesta.Porcentaje || 'No proporcionado';
+                        rowPorcentaje.appendChild(cellPorcentajeValor);
+
+                        tbody.appendChild(rowPorcentaje);
+                    }
+
+                    if (pregunta && pregunta.RequierePorcentajeReal) {
+                        const rowPorcentajeReal = document.createElement('tr');
+
+                        const cellPorcentajeRealLabel = document.createElement('td');
+                        cellPorcentajeRealLabel.innerText = 'Porcentaje Real';
+                        rowPorcentajeReal.appendChild(cellPorcentajeRealLabel);
+
+                        const cellPorcentajeRealValor = document.createElement('td');
+                        cellPorcentajeRealValor.innerText = respuesta.PorcentajeReal || 'No proporcionado';
+                        rowPorcentajeReal.appendChild(cellPorcentajeRealValor);
+
+                        tbody.appendChild(rowPorcentajeReal);
+                    }
+
+                    if (pregunta && pregunta.RequiereMotivo) {
+                        const rowMotivo = document.createElement('tr');
+
+                        const cellMotivoLabel = document.createElement('td');
+                        cellMotivoLabel.innerText = 'Motivo';
+                        rowMotivo.appendChild(cellMotivoLabel);
+
+                        const cellMotivoValor = document.createElement('td');
+                        cellMotivoValor.innerText = respuesta.Motivo || 'No proporcionado';
+                        rowMotivo.appendChild(cellMotivoValor);
+
+                        tbody.appendChild(rowMotivo);
+                    }
+                });
+
+                table.appendChild(tbody);
+                tabContentItem.appendChild(table);
+
+                // Si hay respuestas numéricas, calcular y mostrar el promedio
+                if (count > 0) {
+                    const promedio = (sum / count).toFixed(2);
+                    const promedioElemento = document.createElement('p');
+                    promedioElemento.className = 'promedio-respuestas';
+                    promedioElemento.innerHTML = `<strong>Promedio de respuestas numéricas:</strong> ${promedio}`;
+                    tabContentItem.appendChild(promedioElemento);
+                }
+
+                tabsContent.appendChild(tabContentItem);
+
+                firstTab = false;
+            });
+
+            tabsContainer.appendChild(tabsList);
+            tabsContainer.appendChild(tabsContent);
+            resumenContainer.appendChild(tabsContainer);
+
+            // Agregar evento para cambiar entre pestañas
+            const tabItems = tabsList.querySelectorAll('.tab-item');
+            tabItems.forEach(tab => {
+                tab.addEventListener('click', function () {
+                    // Remover la clase 'active' de todas las pestañas y contenidos
+                    tabItems.forEach(t => t.classList.remove('active'));
+                    const contentItems = tabsContent.querySelectorAll('.tab-content-item');
+                    contentItems.forEach(c => c.classList.remove('active'));
+
+                    // Agregar la clase 'active' a la pestaña y contenido seleccionado
+                    this.classList.add('active');
+                    const activeContent = tabsContent.querySelector(`#${this.dataset.tab}`);
+                    activeContent.classList.add('active');
+                });
+            });
+        }
+
+        function mostrarRespuestasPorTab2(respuestas) {
+            const resumenContainer = document.getElementById('content-resumen');
+            // resumenContainer.innerHTML = '';  // Limpiar el contenedor antes de agregar contenido nuevo.
+
+            const respuestasAgrupadas = respuestas.reduce((acc, curr) => {
+                const tab = curr.TabID;  // Usamos el TabID para identificar cada formulario.
+                if (!acc[tab]) {
+                    acc[tab] = [];  // Inicializamos un array vacío si no existe.
+                }
+                acc[tab].push(curr);
+                return acc;
+            }, {});
+
+            // Recorrer las respuestas agrupadas por TabID
+            Object.keys(respuestasAgrupadas).forEach(tabID => {
+                const formularioID = parseInt(tabID.replace('content-', ''));
+                const formulario = data[0].Procesos[0].Formularios.find(f => f.FormularioID === formularioID);
+                const nombreFormulario = formulario ? formulario.TituloFormulario : `Tab ${tabID}`;  // Usar el nombre del formulario o un nombre genérico.
+
+                const tabResumen = document.createElement('div');
+                tabResumen.className = 'tab-resumen';
+
+                const titulo = document.createElement('h5');
+                const textoNegrita = document.createElement('strong');
+                textoNegrita.innerText = `${nombreFormulario}`;;
+
+                //  const nombreFormularioElemento = document.createElement('span');
+                //nombreFormularioElemento.innerText = nombreFormulario;  // Nombre del formulario
+                titulo.appendChild(textoNegrita);
+                //titulo.appendChild(nombreFormularioElemento);
+
+                // Insertar el título en el contenedor del resumen
+                tabResumen.appendChild(titulo);
+
+                respuestasAgrupadas[tabID].forEach(respuesta => {
+                    const pregunta = formulario.Preguntas.find(p => p.PreguntaID === respuesta.PreguntaID);
+                    const preguntaTexto = pregunta ? pregunta.TextoPregunta : `Pregunta ${respuesta.PreguntaID}`;
+
+                    const preguntaElemento = document.createElement('p');
+                    preguntaElemento.innerHTML = `<strong>${preguntaTexto}:</strong> ${respuesta.Respuesta}`;
+                    tabResumen.appendChild(preguntaElemento);
+
+                    // Si la pregunta tiene Porcentaje o Motivo, agregarlos solo si se requieren
+                    if (pregunta && pregunta.RequierePorcentaje) {
+                        const porcentajeElemento = document.createElement('p');
+                        porcentajeElemento.innerHTML = `<strong>Porcentaje:</strong> ${respuesta.Porcentaje || 'No proporcionado'}`;
+                        tabResumen.appendChild(porcentajeElemento);
+                    }
+
+                    if (pregunta && pregunta.RequierePorcentajeReal) {
+                        const porcentajeRealElemento = document.createElement('p');
+                        porcentajeRealElemento.innerHTML = `<strong>Porcentaje Real:</strong> ${respuesta.PorcentajeReal || 'No proporcionado'}`;
+                        tabResumen.appendChild(porcentajeRealElemento);
+                    }
+
+                    if (pregunta && pregunta.RequiereMotivo) {
+                        const motivoElemento = document.createElement('p');
+                        motivoElemento.innerHTML = `<strong>Motivo:</strong> ${respuesta.Motivo || 'No proporcionado'}`;
+                        tabResumen.appendChild(motivoElemento);
+                    }
+                });
+
+                resumenContainer.appendChild(tabResumen);
+            });
+        }
+        function mostrarRespuestasPorTab3(respuestas) {
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenContainer.innerHTML = '';  // Limpiar el contenedor antes de agregar contenido nuevo.
+
+            const respuestasAgrupadas = respuestas.reduce((acc, curr) => {
+                const tab = curr.TabID;  // Usamos el TabID para identificar cada formulario.
+                if (!acc[tab]) {
+                    acc[tab] = [];  // Inicializamos un array vacío si no existe.
+                }
+                acc[tab].push(curr);
+                return acc;
+            }, {});
+
+            // Recorrer las respuestas agrupadas por TabID
+            Object.keys(respuestasAgrupadas).forEach(tabID => {
+                const formularioID = parseInt(tabID.replace('content-', ''));
+                const formulario = data[0].Procesos[0].Formularios.find(f => f.FormularioID === formularioID);
+                const nombreFormulario = formulario ? formulario.TituloFormulario : `Tab ${tabID}`;  // Usar el nombre del formulario o un nombre genérico.
+
+                const tabResumen = document.createElement('div');
+                tabResumen.className = 'tab-resumen';
+
+                // Crear el título de la pestaña
+                const titulo = document.createElement('h3');
+                titulo.className = 'tab-titulo';
+                titulo.innerText = nombreFormulario;
+                tabResumen.appendChild(titulo);
+
+                // Crear una tabla para mostrar las respuestas
+                const table = document.createElement('table');
+                table.className = 'tabla-respuestas';
+
+                // Crear el encabezado de la tabla
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+
+                const thPregunta = document.createElement('th');
+                thPregunta.innerText = 'Pregunta';
+                headerRow.appendChild(thPregunta);
+
+                const thRespuesta = document.createElement('th');
+                thRespuesta.innerText = 'Respuesta';
+                headerRow.appendChild(thRespuesta);
+
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+
+                let sum = 0;
+                let count = 0;
+
+                respuestasAgrupadas[tabID].forEach(respuesta => {
+                    const pregunta = formulario.Preguntas.find(p => p.PreguntaID === respuesta.PreguntaID);
+                    const preguntaTexto = pregunta ? pregunta.TextoPregunta : `Pregunta ${respuesta.PreguntaID}`;
+
+                    const row = document.createElement('tr');
+
+                    const cellPregunta = document.createElement('td');
+                    cellPregunta.innerText = preguntaTexto;
+                    row.appendChild(cellPregunta);
+
+                    const cellRespuesta = document.createElement('td');
+                    cellRespuesta.innerText = respuesta.Respuesta;
+                    row.appendChild(cellRespuesta);
+
+                    tbody.appendChild(row);
+
+                    // Si la respuesta es numérica, acumular para calcular el promedio
+                    const valorNumerico = parseFloat(respuesta.Respuesta);
+                    if (!isNaN(valorNumerico)) {
+                        sum += valorNumerico;
+                        count++;
+                    }
+
+                    // Agregar Porcentaje, Porcentaje Real y Motivo si se requieren
+                    if (pregunta && pregunta.RequierePorcentaje) {
+                        const rowPorcentaje = document.createElement('tr');
+
+                        const cellPorcentajeLabel = document.createElement('td');
+                        cellPorcentajeLabel.innerText = 'Porcentaje';
+                        rowPorcentaje.appendChild(cellPorcentajeLabel);
+
+                        const cellPorcentajeValor = document.createElement('td');
+                        cellPorcentajeValor.innerText = respuesta.Porcentaje || 'No proporcionado';
+                        rowPorcentaje.appendChild(cellPorcentajeValor);
+
+                        tbody.appendChild(rowPorcentaje);
+                    }
+
+                    if (pregunta && pregunta.RequierePorcentajeReal) {
+                        const rowPorcentajeReal = document.createElement('tr');
+
+                        const cellPorcentajeRealLabel = document.createElement('td');
+                        cellPorcentajeRealLabel.innerText = 'Porcentaje Real';
+                        rowPorcentajeReal.appendChild(cellPorcentajeRealLabel);
+
+                        const cellPorcentajeRealValor = document.createElement('td');
+                        cellPorcentajeRealValor.innerText = respuesta.PorcentajeReal || 'No proporcionado';
+                        rowPorcentajeReal.appendChild(cellPorcentajeRealValor);
+
+                        tbody.appendChild(rowPorcentajeReal);
+                    }
+
+                    if (pregunta && pregunta.RequiereMotivo) {
+                        const rowMotivo = document.createElement('tr');
+
+                        const cellMotivoLabel = document.createElement('td');
+                        cellMotivoLabel.innerText = 'Motivo';
+                        rowMotivo.appendChild(cellMotivoLabel);
+
+                        const cellMotivoValor = document.createElement('td');
+                        cellMotivoValor.innerText = respuesta.Motivo || 'No proporcionado';
+                        rowMotivo.appendChild(cellMotivoValor);
+
+                        tbody.appendChild(rowMotivo);
+                    }
+                });
+
+                table.appendChild(tbody);
+                tabResumen.appendChild(table);
+
+                // Si hay respuestas numéricas, calcular y mostrar el promedio
+                if (count > 0) {
+                    const promedio = (sum / count).toFixed(2);
+                    const promedioElemento = document.createElement('p');
+                    promedioElemento.className = 'promedio-respuestas';
+                    promedioElemento.innerHTML = `<strong>Promedio de respuestas numéricas:</strong> ${promedio}`;
+                    tabResumen.appendChild(promedioElemento);
+                }
+
+                resumenContainer.appendChild(tabResumen);
+            });
+        }
+
+        function crearArregloRespuestas(respuestas) {
+            const arregloRespuestas = [];  // El arreglo que vamos a construir
+
+            const respuestasAgrupadas = respuestas.reduce((acc, curr) => {
+                const tab = curr.TabID;
+                if (!acc[tab]) {
+                    acc[tab] = [];
+                }
+                acc[tab].push(curr);
+                return acc;
+            }, {});
+
+            // Recorrer las respuestas agrupadas por TabID
+            Object.keys(respuestasAgrupadas).forEach(tabID => {
+                const formularioID = parseInt(tabID.replace('content-', ''));
+                const formulario = data[0].Procesos[0].Formularios.find(f => f.FormularioID === formularioID);
+
+                respuestasAgrupadas[tabID].forEach(respuesta => {
+                    const pregunta = formulario.Preguntas.find(p => p.PreguntaID === respuesta.PreguntaID);
+
+                    // Construir objeto para cada respuesta
+                    const respuestaObj = {
+                        Proceso: data[0].Procesos[0].NombreProceso,  // Nombre del proceso (lo tomamos del primero por ahora)
+                        FormularioID: formularioID,
+                        PreguntaID: respuesta.PreguntaID,
+                        TipoPregunta: pregunta ? pregunta.TipoPregunta : 'Desconocido',
+                        TextoRespuesta: respuesta.Respuesta,
+                        OpcionID: null,  // Inicialmente null, luego se puede ajustar según la lógica
+                        Porcentaje: respuesta.Porcentaje || null,
+                        PorcentajeReal: respuesta.PorcentajeReal || null,
+                        Motivo: respuesta.Motivo || null
+                    };
+
+                    // Si la pregunta tiene opciones de respuesta (opción múltiple)
+                    const opcion = data[0].Opciones.find(op => op.PreguntaIDs.includes(respuesta.PreguntaID));
+                    if (opcion) {
+                        respuestaObj.OpcionID = opcion.OpcionID;
+                    }
+
+                    // Agregar la respuesta al arreglo final
+                    arregloRespuestas.push(respuestaObj);
+                });
+            });
+
+            return arregloRespuestas;  // Retornar el arreglo
+        }
+
+        function openTabResumen() {
+            // Buscar el tab y activarlo
+            const resumenTabLink = document.querySelector('a[href="#content-resumen"]');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            const tabLinks = document.querySelectorAll('.nav-link');
+
+            // Activar el tab de resumen
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            tabLinks.forEach(link => link.classList.remove('active'));
+
+            document.getElementById('content-resumen').classList.add('active');
+            resumenTabLink.classList.add('active');
+            resumenTabLink.setAttribute('aria-selected', 'true');
+            //  agregarBotonesResumen();
+
+        }
+        // Función para navegar entre pestañas
+        function openTab(index) {
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            const tabLinks = document.querySelectorAll('.nav-link');
+            tabPanes.forEach((pane, i) => {
+                pane.classList.toggle('active', i === index);
+            });
+            tabLinks.forEach((link, i) => {
+                link.classList.toggle('active', i === index);
+                link.setAttribute('aria-selected', i === index ? 'true' : 'false');
+            });
+        }
+
+        // Función para crear resumen (puedes adaptarla según los datos que recojas)
+        function crearResumen() {
+            alert('Resumen de las respuestas');  // Aquí puedes agregar la lógica para mostrar el resumen.
+        }
+        function agregarTabResumen() {
+            // Verificar si ya existe el tab-resumen y eliminarlo
+            const existingTabLink = document.getElementById('tab-resumen');
+            const existingTabPane = document.getElementById('content-resumen');
+
+            if (existingTabLink) {
+                existingTabLink.parentElement.remove(); // Eliminar el <li> contenedor del tab
+            }
+
+            if (existingTabPane) {
+                existingTabPane.remove(); // Eliminar el contenido del tab
+            }
+
+            // Crear el nuevo tab-resumen
+            const tabItem = document.createElement('li');
+            tabItem.className = 'nav-item';
+
+            const tabLink = document.createElement('a');
+            tabLink.className = 'nav-link';
+            tabLink.id = 'tab-resumen';
+            tabLink.href = '#content-resumen';
+            tabLink.setAttribute('data-toggle', 'tab');
+            tabLink.setAttribute('role', 'tab');
+            tabLink.setAttribute('aria-controls', 'content-resumen');
+            tabLink.innerText = 'Resumen';
+
+            tabItem.appendChild(tabLink);
+            document.getElementById('encuestaTabs').appendChild(tabItem);
+
+            // Crear el contenido del tab de resumen
+            const tabPane = document.createElement('div');
+            tabPane.className = 'tab-pane';
+            tabPane.id = 'content-resumen';
+            tabPane.setAttribute('role', 'tabpanel');
+            tabPane.setAttribute('aria-labelledby', 'tab-resumen');
+
+            let grafico = false;
+            let estrella = false;
+
+            // Verificar si en los formularios hay alguno que requiera gráfico o estrellas
+            data[0].Procesos[0].Formularios.forEach(formulario => {
+                if (formulario.grafico) {
+                    grafico = true;
+                }
+                if (formulario.estrella) {
+                    estrella = true;
+                }
+            });
+
+            // Si hay gráfico o estrellas, añadir elementos al DOM
+            if (estrella) {
+                const starRating = document.createElement('div');
+                starRating.className = 'star-rating text-center'; // Centramos las estrellas
+                tabPane.appendChild(starRating);
+            }
+
+            if (grafico) {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 100;
+                tabPane.appendChild(canvas);
+            }
+
+            // Añadir el tab pane al contenido de las pestañas
+            document.getElementById('encuestaContent').appendChild(tabPane);
+        }
+        // Función para crear el gráfico del resumen
+
+        // Función para crear el gráfico de habilidades
+        function crearGraficoResumen() {
+            const ctx = document.getElementById('resumenChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Habilidad 1', 'Habilidad 2', 'Habilidad 3'], // Estos son los títulos de las habilidades
+                    datasets: [{
+                        label: 'Puntajes de Habilidades',
+                        data: [3, 4, 5], // Puntajes dinámicos que pueden cambiar
+                        backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(75, 192, 192, 0.2)'],
+                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    }
+                }
+            });
+
+            // Añadimos el resumen debajo del gráfico
+            const resumenTexto = document.createElement('p');
+            resumenTexto.innerText = 'Este gráfico muestra el puntaje promedio de cada habilidad evaluada. La escala va de 1 (Muy Bajo) a 5 (Muy Alto).';
+            document.getElementById('content-resumen').appendChild(resumenTexto);
+        }
+        function calcularResumenTotal(data) {
+            let totalObtenido = 0;
+            let totalMaximo = 0;
+
+            data[0].Procesos.forEach(proceso => {
+                proceso.Formularios.forEach(formulario => {
+                    formulario.Preguntas.forEach(pregunta => {
+                        // Calculamos el total de puntos para cada pregunta
+                        const opciones = data[0].Opciones.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+                        opciones.forEach(opcion => {
+                            if (opcion.ValorOpcion) {
+                                totalObtenido += parseFloat(opcion.ValorOpcion);
+                            }
+                            // Suponemos que el valor máximo es siempre 5
+                            totalMaximo += 5;
+                        });
+                    });
+                });
+            });
+
+            return { totalObtenido, totalMaximo };
+        }
+        function crearGraficoResumenTotal(data) {
+            const resumen = calcularResumenTotal(data);
+
+            // Destruir el gráfico existente si ya ha sido creado
+            if (resumenChartInstance) {
+                resumenChartInstance.destroy();  // Destruir el gráfico existente antes de crear uno nuevo
+            }
+
+            const ctx = document.getElementById('resumenChart').getContext('2d');
+            resumenChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Obtenido', 'Total Máximo'],
+                    datasets: [{
+                        label: 'Puntaje Total',
+                        data: [resumen.totalObtenido, resumen.totalMaximo],
+                        backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: resumen.totalMaximo // El máximo será el puntaje total posible
+                        }
+                    }
+                }
+            });
+
+            // Añadir un resumen textual debajo del gráfico
+            const resumenTexto = document.createElement('p');
+            resumenTexto.innerText = `Has obtenido un total de ${resumen.totalObtenido} puntos sobre un máximo posible de ${resumen.totalMaximo} puntos.`;
+            document.getElementById('content-resumen').appendChild(resumenTexto);
+        }
+        function generarEstrellas(promedio) {
+            const starRating = document.createElement('div');
+            starRating.className = 'star-rating text-center'; // Centramos las estrellas
+
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('span');
+                star.innerHTML = i <= promedio ? '⭐' : '☆'; // Usamos estrellas llenas y vacías según el promedio
+                starRating.appendChild(star);
+            }
+
+            return starRating;
+        }
+        function calcularPromedioHabilidades(data) {
+            const opcionesGlobales = data[0].Opciones;
+            let total = 0;
+            let count = 0;
+
+            data[0].Procesos[0].Formularios[0].Preguntas.forEach(pregunta => {
+                const opcionesPregunta = opcionesGlobales.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+                opcionesPregunta.forEach(opcion => {
+                    if (opcion.ValorOpcion) {
+                        total += parseFloat(opcion.ValorOpcion);
+                        count++;
+                    }
+                });
+            });
+
+            return count > 0 ? total / count : 0; // Promedio dinámico
+        }
+        // Función para calcular el resumen de cada tab/pestaña
+        function calcularResumenPorTab(data) {
+            let resumenPorTab = [];
+
+            data[0].Procesos.forEach(proceso => {
+                proceso.Formularios.forEach(formulario => {
+                    let totalObtenido = 0;
+                    let totalMaximo = 0;
+                    let nombreFormulario = formulario.TituloFormulario;
+
+                    formulario.Preguntas.forEach(pregunta => {
+                        // Calculamos el total de puntos para cada pregunta
+                        const opciones = data[0].Opciones.filter(opcion => opcion.PreguntaIDs.includes(pregunta.PreguntaID));
+                        opciones.forEach(opcion => {
+                            if (opcion.ValorOpcion) {
+                                totalObtenido += parseFloat(opcion.ValorOpcion);
+                            }
+                            totalMaximo += 5; // Suponemos que el valor máximo es 5
+                        });
+                    });
+
+                    resumenPorTab.push({
+                        nombreFormulario,
+                        totalObtenido,
+                        totalMaximo
+                    });
+                });
+            });
+
+            return resumenPorTab;
+        }
+        // Función para mostrar el detalle de las respuestas por cada tab usando las respuestas reales del DOM
+        function mostrarRespuestasPorTab(data) {
+            const respuestasUsuario = capturarRespuestasUsuario();  // Capturamos las respuestas directamente
+            const resumenContainer = document.getElementById('content-resumen');
+
+            data[0].Procesos.forEach(proceso => {
+                proceso.Formularios.forEach(formulario => {
+                    const tabResumen = document.createElement('div');
+                    tabResumen.className = 'tab-resumen';
+
+                    const titulo = document.createElement('h5');
+                    titulo.innerText = `Respuestas de ${formulario.TituloFormulario}`;
+                    tabResumen.appendChild(titulo);
+
+                    formulario.Preguntas.forEach(pregunta => {
+                        const preguntaTexto = document.createElement('p');
+                        preguntaTexto.innerHTML = `<strong>${pregunta.TextoPregunta}:</strong> `;
+
+                        const respuestaSeleccionada = respuestasUsuario.find(r => r.PreguntaID === pregunta.PreguntaID);
+                        const respuestaTexto = document.createElement('span');
+                        respuestaTexto.innerText = respuestaSeleccionada ? respuestaSeleccionada.TextoRespuesta : 'No respondida';
+
+                        preguntaTexto.appendChild(respuestaTexto);
+                        tabResumen.appendChild(preguntaTexto);
+                    });
+
+                    resumenContainer.appendChild(tabResumen);
+                });
+            });
+        }
+        function capturarRespuestasUsuario() {
+            const respuestas = [];
+
+            preguntasRespuestas.forEach(item => {
+                // Encuentra el texto de la pregunta
+                const pregunta = data[0].Procesos[0].Formularios.find(f => f.Preguntas.some(p => p.PreguntaID === item.PreguntaID)).Preguntas.find(p => p.PreguntaID === item.PreguntaID);
+
+                // Si es una tabla (pregunta abierta de varias filas)
+                if (item.TipoInput === 'tabla') {
+                    const table = document.getElementById(item.InputID);
+                    if (table) {
+                        const rows = table.querySelectorAll('tbody tr');
+                        rows.forEach(row => {
+                            const respuestaInput = row.querySelector(`input[name^="pregunta_${item.PreguntaID}_respuesta"]`);
+                            const porcentajeInput = row.querySelector(`select[name^="pregunta_${item.PreguntaID}_porcentaje"]`);
+                            const porcentajeRealInput = row.querySelector(`select[name^="pregunta_${item.PreguntaID}_porcentaje_real"]`);
+                            const motivoInput = row.querySelector(`input[name^="pregunta_${item.PreguntaID}_motivo"]`);
+
+                            const porcentaje = porcentajeInput ? parseInt(porcentajeInput.value) || 0 : 0;  // Si no hay valor, se pone 0
+                            const porcentajeReal = porcentajeRealInput ? parseInt(porcentajeRealInput.value) || 0 : 0;  // Si no hay valor, se pone 0
+                            console.log("Porcentaje:", porcentaje);
+                            console.log("Porcentaje Real:", porcentajeReal);
+                            respuestas.push({
+                                PreguntaID: item.PreguntaID,
+                                TextoPregunta: pregunta ? pregunta.TextoPregunta : `Pregunta ${item.PreguntaID}`, // Mostrar TextoPregunta
+                                Respuesta: respuestaInput ? respuestaInput.value : 'No respondida',
+                                Porcentaje: porcentajeInput ? porcentaje : 'No proporcionado',
+                                PorcentajeReal: porcentajeRealInput ? porcentajeReal : 'No proporcionado',
+                                Motivo: motivoInput ? motivoInput.value : 'No proporcionado',
+                                TabID: item.TabID
+                            });
+                        });
+                    }
+                }
+                // Si es una pregunta de opción múltiple
+                else if (item.TipoInput === 'opcion_multiples_N') {
+                    const checkboxes = document.querySelectorAll(`input[name="pregunta_${item.PreguntaID}"]:checked`);
+                    const respuestasSeleccionadas = [];
+                    checkboxes.forEach(checkbox => {
+                        const opcionSeleccionada = data[0].Opciones.find(opcion => opcion.ValorOpcion === checkbox.value);
+
+                        if (opcionSeleccionada) {
+                            respuestasSeleccionadas.push(opcionSeleccionada.TextoOpcion);
+
+                            //    respuestasSeleccionadas.push({
+                            //       valor: checkbox.value,  // Valor de la opción
+                            //       texto: opcionSeleccionada.TextoOpcion  // Texto de la opción
+                            //   });
+                        }
+                        //   respuestasSeleccionadas.push(checkbox.value);
+                    });
+                    // Si la opción "Otros" está seleccionada, capturamos el texto del input de "Otros"
+                    const inputOtros = document.getElementById(`pregunta_${item.PreguntaID}_otros_input`);
+                    if (inputOtros && inputOtros.value.trim() !== '') {
+                        respuestasSeleccionadas.push(`Otros: ${inputOtros.value}`);
+                    }
+
+                    respuestas.push({
+                        PreguntaID: item.PreguntaID,
+                        TextoPregunta: pregunta ? pregunta.TextoPregunta : `Pregunta ${item.PreguntaID}`,
+                        Respuesta: respuestasSeleccionadas.join(', '),  // Unir todas las opciones seleccionadas
+                        TabID: item.TabID
+                    });
+                }
+                // Si es otro tipo de pregunta
+                else if (item.TipoInput === 'opcion_multiples') {
+                    const radios = document.getElementsByName(item.InputID);
+
+                    // Encontrar el radio button que está seleccionado
+                    let respuestaSeleccionada = 'No respondida';
+                    radios.forEach(radio => {
+                        if (radio.checked) {
+                            respuestaSeleccionada = radio.value;  // Obtener el valor de la respuesta seleccionada
+                        }
+                    });
+
+                    // Guardar la respuesta en el array
+                    respuestas.push({
+                        PreguntaID: item.PreguntaID,
+                        TextoPregunta: pregunta ? pregunta.TextoPregunta : `Pregunta ${item.PreguntaID}`, // Mostrar TextoPregunta
+                        Respuesta: respuestaSeleccionada,
+                        TabID: item.TabID
+                    });
+                }
+                // Si es un input normal (texto)
+                else if (item.TipoInput === 'input') {
+                    const input = document.getElementById(item.InputID);
+                    const respuesta = input ? input.value : 'No respondida';
+                    respuestas.push({
+                        PreguntaID: item.PreguntaID,
+                        TextoPregunta: pregunta ? pregunta.TextoPregunta : `Pregunta ${item.PreguntaID}`, // Mostrar TextoPregunta
+                        Respuesta: respuesta,
+                        TabID: item.TabID
+                    });
+                }
+            });
+
+            return respuestas;
+        }
+
+
+
+        function obtenerRespuestaUsuario(preguntaID, respuestasUsuario) {
+            // Busca la respuesta del usuario por el ID de la pregunta
+            const respuesta = respuestasUsuario.find(r => r.PreguntaID === preguntaID);
+            return respuesta ? respuesta.TextoRespuesta : null;
+        } function crearGraficoDoughnut(data) {
+            const ctx = document.getElementById('resumenChart').getContext('2d');
+            const resumenPorTab = calcularResumenPorTab(data); // Obtén los datos del resumen
+
+            // Datos para el gráfico
+            const labels = resumenPorTab.map(tab => tab.nombreFormulario);
+            const totalObtenido = resumenPorTab.map(tab => tab.totalObtenido);
+            const totalMaximo = resumenPorTab.map(tab => tab.totalMaximo);
+
+            new Chart(ctx, {
+                type: 'doughnut',  // Gráfico de tipo doughnut (rosquilla)
+                data: {
+                    labels: labels, // Nombres de los formularios/tabs
+                    datasets: [{
+                        label: 'Puntaje Obtenido',
+                        data: totalObtenido,  // Valores de puntaje obtenido
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                        borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,  // Hacer que el gráfico sea sensible al tamaño del contenedor
+                    maintainAspectRatio: false,  // Para que se ajuste bien al tamaño dado
+                    legend: {
+                        position: 'top',  // Colocamos la leyenda en la parte superior
+                    },
+                    layout: {
+                        padding: {
+                            left: 20,
+                            right: 20,
+                            top: 10,
+                            bottom: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        function generarEstrellasBonitas(promedio) {
+            const starRating = document.createElement('div');
+            starRating.className = 'star-rating text-center'; // Centramos las estrellas
+
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.className = i <= promedio ? 'fas fa-star' : 'far fa-star'; // Usamos FontAwesome para estrellas
+                star.style.color = '#ffc107'; // Color dorado para estrellas llenas
+                starRating.appendChild(star);
+            }
+
+            return starRating;
+        }
+        function agregarEstrellasResumenMejorado(data) {
+            const promedio = calcularPromedioHabilidades(data);
+            const starRating = generarEstrellasBonitas(promedio);
+            document.getElementById('content-resumen').prepend(starRating); // Agregar estrellas al inicio del resumen
+        }
+        // Función para mostrar el resumen detallado de cada tab
+        function mostrarResumenPorTab(data) {
+            const resumenPorTab = calcularResumenPorTab(data);
+
+            const resumenContainer = document.getElementById('content-resumen');
+            resumenPorTab.forEach(tab => {
+                // Crear una sección para cada tab
+                const tabResumen = document.createElement('div');
+                tabResumen.className = 'tab-resumen';
+
+                const titulo = document.createElement('h5');
+                titulo.innerText = `Resumen de ${tab.nombreFormulario}`;
+                tabResumen.appendChild(titulo);
+
+                const descripcion = document.createElement('p');
+                descripcion.innerText = `Obtuviste ${tab.totalObtenido} puntos de un máximo de ${tab.totalMaximo} puntos.`;
+                tabResumen.appendChild(descripcion);
+
+                // Añadir el resumen al contenedor del resumen
+                resumenContainer.appendChild(tabResumen);
+            });
+        }
+
+        function agregarEstrellasResumen(data) {
+            const promedio = calcularPromedioHabilidades(data);
+            const starRating = generarEstrellas(promedio);
+            document.getElementById('content-resumen').prepend(starRating); // Agregar estrellas al inicio del resumen
+        }
+        function crearGraficoOpcionMultiples1(respuestas) {
+            const labels = [];
+            const dataObtenido = [];
+            const dataRestante = [];
+
+            const totalMaximo = respuestas.length * 5;
+
+            respuestas.forEach((respuesta, index) => {
+                const valorNumerico = parseFloat(respuesta.Respuesta) || 0;
+                labels.push(`Pregunta ${index + 1}`);
+                dataObtenido.push(valorNumerico);
+                dataRestante.push(5 - valorNumerico);
+            });
+
+
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            window.myResumenChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Obtenido',
+                            data: dataObtenido,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        },
+                        {
+                            label: 'Restante',
+                            data: dataRestante,
+                            backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Resultados por Pregunta (Barras Apiladas)'
+                        }
+                    }
+                }
+            });
+        }
+        function crearGraficoOpcionMultiples2(respuestas) {
+            const labels = [];
+            const dataObtenido = [];
+
+            respuestas.forEach((respuesta, index) => {
+                const valorNumerico = parseFloat(respuesta.Respuesta) || 0;
+                labels.push(`Pregunta ${index + 1}`);
+                dataObtenido.push(valorNumerico);
+            });
+
+
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            window.myResumenChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Resultados',
+                        data: dataObtenido,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Resultados por Pregunta (Gráfico Radar)'
+                        }
+                    }
+                }
+            });
+        }
+        function crearGraficoOpcionMultiples3(respuestas) {
+            const labels = [];
+            const dataObtenido = [];
+
+            respuestas.forEach((respuesta, index) => {
+                const valorNumerico = parseFloat(respuesta.Respuesta) || 0;
+                labels.push(`P${index + 1}`);
+                dataObtenido.push(valorNumerico);
+            });
+
+
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+            window.myResumenChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Resultados',
+                        data: dataObtenido,
+                        fill: false,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Tendencia de Resultados (Líneas Suavizadas)'
+                        }
+                    }
+                }
+            });
+        }
+        function crearGraficoOpcionMultiples4(respuestas) {
+            const totalObtenido = respuestas.reduce((sum, r) => {
+                const valorNumerico = parseFloat(r.Respuesta) || 0;
+                return sum + valorNumerico;
+            }, 0);
+
+            const totalMaximo = respuestas.length * 5;
+            const restante = totalMaximo - totalObtenido;
+
+
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+            window.myResumenChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Obtenido', 'Restante'],
+                    datasets: [{
+                        data: [totalObtenido, restante],
+                        backgroundColor: ['rgba(54, 162, 235, 0.7)', 'rgba(201, 203, 207, 0.7)'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Obtenido vs Restante (Gráfico de Rosca)'
+                        }
+                    }
+                }
+            });
+        }
+        function crearGraficoOpcionMultiples5(respuestas) {
+            const labels = [];
+            const dataObtenido = [];
+
+            respuestas.forEach((respuesta, index) => {
+                const valorNumerico = parseFloat(respuesta.Respuesta) || 0;
+                labels.push(`Pregunta ${index + 1}`);
+                dataObtenido.push(valorNumerico);
+            });
+
+
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+            window.myResumenChart = new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataObtenido,
+                        backgroundColor: dataObtenido.map(() => `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`),
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Distribución de Resultados (Gráfico Polar Area)'
+                        }
+                    }
+                }
+            });
+        }
+        function crearGraficoOpcionMultiples6(respuestas) {
+            // Limpia el contenedor si ya tiene contenido
+             let canvas = document.getElementById('resumenChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'resumenChart';
+                canvas.height = 50;
+                document.getElementById('content-resumen').appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+
+            // Destruir gráfico anterior si existe
+            if (window.myResumenChart) {
+                window.myResumenChart.destroy();
+            }
+            const data = respuestas.map((respuesta, index) => ({
+                pregunta: `Pregunta ${index + 1}`,
+                valor: parseFloat(respuesta.Respuesta) || 0
+            }));
+
+            const width = 600;
+            const height = 400;
+            const margin = { top: 40, right: 20, bottom: 50, left: 40 };
+
+            const svg = d3.select('#resumenChart')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.pregunta))
+                .range([margin.left, width - margin.right])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, 5])
+                .nice()
+                .range([height - margin.bottom, margin.top]);
+
+            svg.append('g')
+                .attr('fill', '#69b3a2')
+                .selectAll('rect')
+                .data(data)
+                .join('rect')
+                .attr('x', d => x(d.pregunta))
+                .attr('y', d => y(d.valor))
+                .attr('height', d => y(0) - y(d.valor))
+                .attr('width', x.bandwidth())
+                .on('mouseover', function () {
+                    d3.select(this).attr('fill', '#40a69a');
+                })
+                .on('mouseout', function () {
+                    d3.select(this).attr('fill', '#69b3a2');
+                });
+
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x))
+                .selectAll('text')
+                .attr('transform', 'rotate(45)')
+                .style('text-anchor', 'start');
+
+            svg.append('g')
+                .attr('transform', `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y));
+
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', margin.top / 2)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '16px')
+                .text('Resultados por Pregunta (Barras Interactivas)');
+        }
+        function crearGraficoOpcionMultiples7(respuestas) {
+            d3.select('#resumenChart').html('');
+
+            const data = respuestas.map((respuesta, index) => ({
+                pregunta: index + 1,
+                valor: parseFloat(respuesta.Respuesta) || 0
+            }));
+
+            const width = 600;
+            const height = 400;
+            const margin = { top: 40, right: 20, bottom: 50, left: 50 };
+
+            const svg = d3.select('#resumenChart')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            const x = d3.scaleLinear()
+                .domain(d3.extent(data, d => d.pregunta))
+                .range([margin.left, width - margin.right]);
+
+            const y = d3.scaleLinear()
+                .domain([0, 5])
+                .range([height - margin.bottom, margin.top]);
+
+            const line = d3.line()
+                .x(d => x(d.pregunta))
+                .y(d => y(d.valor))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', '#ff7f0e')
+                .attr('stroke-width', 2)
+                .attr('d', line);
+
+            // Puntos interactivos
+            svg.selectAll('dot')
+                .data(data)
+                .enter().append('circle')
+                .attr('cx', d => x(d.pregunta))
+                .attr('cy', d => y(d.valor))
+                .attr('r', 5)
+                .attr('fill', '#ff7f0e')
+                .on('mouseover', function (event, d) {
+                    tooltip.transition().duration(200).style('opacity', .9);
+                    tooltip.html(`Pregunta ${d.pregunta}: ${d.valor}`)
+                        .style('left', (event.pageX) + 'px')
+                        .style('top', (event.pageY - 28) + 'px');
+                })
+                .on('mouseout', function () {
+                    tooltip.transition().duration(500).style('opacity', 0);
+                });
+
+            // Ejes
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(data.length));
+
+            svg.append('g')
+                .attr('transform', `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y));
+
+            // Título
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', margin.top / 2)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '16px')
+                .text('Tendencia de Resultados (Gráfico de Líneas)');
+
+            // Tooltip
+            const tooltip = d3.select('#resumenChart').append('div')
+                .attr('class', 'tooltip')
+                .style('opacity', 0);
+        }
+        function crearGraficoOpcionMultiples8(respuestas) {
+            d3.select('#resumenChart').html('');
+
+            const totalObtenido = respuestas.reduce((sum, r) => sum + (parseFloat(r.Respuesta) || 0), 0);
+            const totalMaximo = respuestas.length * 5;
+            const data = [
+                { label: 'Obtenido', value: totalObtenido },
+                { label: 'Restante', value: totalMaximo - totalObtenido }
+            ];
+
+            const width = 450;
+            const height = 450;
+            const radius = Math.min(width, height) / 2;
+
+            const svg = d3.select('#resumenChart')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+            const color = d3.scaleOrdinal()
+                .domain(data.map(d => d.label))
+                .range(['#66b3ff', '#c2c2c2']);
+
+            const pie = d3.pie()
+                .value(d => d.value);
+
+            const data_ready = pie(data);
+
+            svg.selectAll('path')
+                .data(data_ready)
+                .join('path')
+                .attr('d', d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(radius)
+                )
+                .attr('fill', d => color(d.data.label))
+                .attr('stroke', 'white')
+                .style('stroke-width', '2px');
+
+            // Leyenda
+            svg.selectAll('legend')
+                .data(data)
+                .enter()
+                .append('text')
+                .attr('x', (d, i) => -radius + 20)
+                .attr('y', (d, i) => -radius + 20 + i * 20)
+                .text(d => `${d.label}: ${d.value}`)
+                .style('fill', d => color(d.label))
+                .style('font-size', '14px');
+
+            // Título
+            svg.append('text')
+                .attr('x', 0)
+                .attr('y', -radius - 20)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '16px')
+                .text('Total Obtenido vs Restante');
+        }
+        function crearGraficoOpcionMultiples9(respuestas) {
+            d3.select('#resumenChart').html('');
+
+            const data = respuestas.map((respuesta, index) => ({
+                id: index + 1,
+                value: parseFloat(respuesta.Respuesta) || 0
+            }));
+
+            const diameter = 600;
+            const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+            const bubble = d3.pack()
+                .size([diameter, diameter])
+                .padding(1.5);
+
+            const root = d3.hierarchy({ children: data })
+                .sum(d => d.value);
+
+            bubble(root);
+
+            const svg = d3.select('#resumenChart')
+                .append('svg')
+                .attr('width', diameter)
+                .attr('height', diameter)
+                .attr('class', 'bubble');
+
+            const nodes = svg.selectAll('g')
+                .data(root.children)
+                .enter().append('g')
+                .attr('transform', d => `translate(${d.x},${d.y})`);
+
+            nodes.append('title')
+                .text(d => `Pregunta ${d.data.id}: ${d.data.value}`);
+
+            nodes.append('circle')
+                .attr('r', d => d.r)
+                .style('fill', d => color(d.data.id));
+
+            nodes.append('text')
+                .attr('dy', '.3em')
+                .style('text-anchor', 'middle')
+                .text(d => `P${d.data.id}`);
+        }
+        function crearGraficoOpcionMultiples10(respuestas) {
+            d3.select('#resumenChart').html('');
+
+            const data = respuestas.map((respuesta, index) => ({
+                pregunta: index + 1,
+                valor: parseFloat(respuesta.Respuesta) || 0
+            }));
+
+            const width = 600;
+            const height = 100;
+            const gridSize = Math.floor(width / data.length);
+            const colors = ['#f7fbff', '#6baed6', '#2171b5'];
+
+            const svg = d3.select('#resumenChart').append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            const colorScale = d3.scaleQuantile()
+                .domain([0, 5])
+                .range(colors);
+
+            svg.selectAll('rect')
+                .data(data)
+                .enter().append('rect')
+                .attr('x', (d, i) => i * gridSize)
+                .attr('y', 0)
+                .attr('width', gridSize)
+                .attr('height', gridSize)
+                .style('fill', d => colorScale(d.valor))
+                .append('title')
+                .text(d => `Pregunta ${d.pregunta}: ${d.valor}`);
+
+            svg.selectAll('text')
+                .data(data)
+                .enter().append('text')
+                .attr('x', (d, i) => i * gridSize + gridSize / 2)
+                .attr('y', gridSize / 2)
+                .attr('text-anchor', 'middle')
+                .style('fill', '#fff')
+                .text(d => d.valor);
+        }
+
+
+    </script>
+}

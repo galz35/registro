@@ -1,0 +1,637 @@
+﻿@{
+    ViewBag.Title = "Permisos por Organización";
+}
+<style>
+    :root {
+        --rojo: #dc3545;
+        --rojo-osc: #b91c1c;
+        --bg: #f8fafc;
+        --dark: #0f172a;
+        --muted: #667085;
+        --borde: #e6e8ef;
+        --card: #fff;
+        --shadow: 0 10px 28px rgba(2,6,23,.07);
+        --verde: #10b981;
+        --verde-bg: #ecfdf5;
+        --rojo2: #ef4444;
+        --rojo2-bg: #fef2f2;
+    }
+
+    body {
+        background: var(--bg)
+    }
+
+    .card {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: var(--shadow)
+    }
+
+    .card-header-lite {
+        background: linear-gradient(90deg,var(--rojo),#f87171);
+        color: #fff;
+        border-radius: 14px 14px 0 0;
+        padding: .9rem 1.1rem
+    }
+
+    .h-title {
+        font-weight: 800;
+        margin: 0
+    }
+
+    .subtle {
+        color: var(--muted)
+    }
+
+    .btn-rojo {
+        background: var(--rojo);
+        border-color: var(--rojo-osc);
+        color: #fff
+    }
+
+        .btn-rojo:hover {
+            background: var(--rojo-osc)
+        }
+
+    .btn-outline-negro {
+        border-color: #cfd3d8;
+        color: #111827
+    }
+
+        .btn-outline-negro:hover {
+            background: #f3f4f6
+        }
+
+    /* tabla usuarios: compacta */
+    #tblUsuarios thead th {
+        background: var(--rojo);
+        color: #fff;
+        border: none;
+        position: sticky;
+        top: 0;
+        z-index: 2
+    }
+
+    #tblUsuarios tbody tr:hover {
+        background: #fff3f4
+    }
+
+    #tblUsuarios td, #tblUsuarios th {
+        vertical-align: middle
+    }
+
+    /* tree */
+    .toolbar {
+        display: flex;
+        gap: .5rem;
+        align-items: center;
+        flex-wrap: wrap;
+        background: #f6f7fb;
+        border: 1px dashed #e9eaef;
+        border-radius: 12px;
+        padding: .55rem .8rem;
+        margin: .45rem 0
+    }
+
+        .toolbar .form-control {
+            max-width: 320px
+        }
+
+    .tree {
+        background: #fff;
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: .4rem .2rem;
+        max-height: 70vh;
+        overflow: auto
+    }
+
+    .t-row {
+        --pad: 0px;
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        padding: .25rem .6rem .25rem calc(var(--pad) + .6rem);
+        border-left: 3px solid transparent;
+        position: relative
+    }
+
+        .t-row:hover {
+            background: #fbfbfe
+        }
+
+        .t-row.allow {
+            background: var(--verde-bg);
+            border-left-color: var(--verde)
+        }
+
+        .t-row.deny {
+            background: var(--rojo2-bg);
+            border-left-color: var(--rojo2)
+        }
+
+        .t-row.changed {
+            outline: 2px solid #94a3b8;
+            outline-offset: 2px
+        }
+
+    .t-toggle {
+        width: 22px;
+        height: 22px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .7rem;
+        color: #475569
+    }
+
+        .t-toggle.empty {
+            visibility: hidden
+        }
+
+    .t-name {
+        font-weight: 700;
+        color: var(--dark);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+    }
+
+    .t-badge {
+        font-size: .72rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        padding: .05rem .45rem;
+        background: #fff;
+        color: #475569
+    }
+
+    .node-actions .btn {
+        padding: .1rem .35rem
+    }
+
+    .t-children {
+        margin-left: 0
+    }
+
+    .t-row::before {
+        content: "";
+        position: absolute;
+        left: calc(var(--pad) + .25rem);
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: #e9ebf3;
+        opacity: .9
+    }
+
+    .t-row.level-0::before {
+        display: none
+    }
+</style>
+
+<div class="card shadow mb-4">
+    <div class="card-header-lite d-flex align-items-center justify-content-between">
+        <h1 class="h5 h-title"><i class="fas fa-sitemap mr-2"></i>Permisos por Organización</h1>
+        <button id="btnRefrescar" class="btn btn-sm btn-outline-light"><i class="fas fa-sync-alt"></i> Refrescar usuarios</button>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <!-- IZQUIERDA: Usuarios -->
+            <div class="col-lg-6">
+                <div class="table-responsive" style="max-height:72vh">
+                    <table id="tblUsuarios" class="table table-bordered table-hover table-sm" width="100%">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:90px">Carnet</th>
+                                <th>Nombre</th>
+                                <th style="width:200px">Cargo</th>
+                                <th class="text-center" style="width:160px">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DERECHA: Árbol -->
+            <div class="col-lg-6">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="h6 mb-2">Usuario: <b id="lblUsuario">—</b></div>
+                    <div class="subtle">
+                        <small><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:.3rem"></span>Permitido</small>
+                        <small class="ml-2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:.3rem"></span>Denegado</small>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <input id="txtBuscar" type="search" class="form-control form-control-sm" placeholder="Buscar organización...">
+                    <button id="btnExpandir" class="btn btn-sm btn-outline-negro"><i class="fas fa-plus-square"></i> Expandir</button>
+                    <button id="btnColapsar" class="btn btn-sm btn-outline-negro"><i class="fas fa-minus-square"></i> Colapsar</button>
+                    <button id="btnSelRama" class="btn btn-sm btn-outline-negro"><i class="far fa-check-square"></i> Permitir rama</button>
+                    <button id="btnDenegarRama" class="btn btn-sm btn-outline-negro"><i class="far fa-square"></i> Denegar rama</button>
+                    <button id="btnLimpiarRama" class="btn btn-sm btn-outline-negro"><i class="far fa-window-close"></i> Limpiar rama</button>
+                    <div class="ml-auto">
+                        <button id="btnGuardar" class="btn btn-sm btn-rojo" disabled><i class="fas fa-save mr-1"></i> Guardar</button>
+                    </div>
+                </div>
+
+                <div class="tree" id="treeWrap" aria-label="Árbol de organización"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal empleados -->
+<div class="modal fade" id="mdEmps" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title"><i class="fas fa-users mr-1"></i> Empleados – <span id="mdOrgNombre"></span></h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-2">
+                <div class="table-responsive" style="max-height:65vh">
+                    <table class="table table-sm table-hover table-bordered" id="tblEmps">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width:90px">Carnet</th>
+                                <th>Nombre</th>
+                                <th style="width:220px">Cargo</th>
+                                <th>Org</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+    <script>
+  // ===== Endpoints =====
+  const EP = {
+    usuarios : "@Url.Action("GetUsuariosActivos","Rrhh")",
+    orgTree  : "@Url.Action("GetOrgTree","Rrhh")",
+    treeUser : "@Url.Action("GetOrgTreeUser","Rrhh")",
+    saveSet  : "@Url.Action("PermisoSaveSet","Rrhh")",
+    empsDir  : "@Url.Action("GetOrgEmpsDirect","Rrhh")",
+    empsAll  : "@Url.Action("GetOrgEmpsSubtree","Rrhh")",
+    empsVis  : "@Url.Action("GetEmpsVisible","Rrhh")" // bossId
+  };
+  console.log('[EP]', EP);
+
+  // ===== Estado árbol =====
+  let currentUser = null; // { carnet, nombre }
+  let treeData = [];      // OrgNode[]
+  const parentOf = new Map();
+  const childrenOf = new Map();
+  const nameOf = new Map(); // id -> nombre
+  const stateNow = new Map(); // id -> null|'A'|'N'
+  const stateOrig = new Map();
+  let lastFocusId = null;
+
+  // ===== Utils =====
+  const isArr=a=>Array.isArray(a);
+  const kids=n=>isArr(n?.Children)?n.Children:[];
+  function walk(ns, fn){ if(!isArr(ns)) return; for(const n of ns){ fn(n); const c=kids(n); if(c.length) walk(c, fn); } }
+  function debounce(fn,ms){ let t=null; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms||160); } }
+  function setsEqualMap(A,B){ if(A.size!==B.size) return false; for(const [k,v] of A){ if(B.get(k)!==v) return false; } return true; }
+
+  // ===== Indexar parentesco =====
+  function indexParents(nodes, parentId=null){
+    if(!isArr(nodes)) return;
+    for(const n of nodes){
+      const id = String(n.Id);
+      parentOf.set(id, parentId);
+      nameOf.set(id, n.Nombre || id);
+      if(!childrenOf.has(parentId||'__root__')) childrenOf.set(parentId||'__root__', []);
+      childrenOf.get(parentId||'__root__').push(id);
+      if(kids(n).length) indexParents(kids(n), id);
+    }
+  }
+
+  // ===== Render =====
+  function rowHtml(id, name, level, hasKids){
+    return `
+      <div class="t-row level-${level}" data-id="${id}" data-level="${level}" style="--pad:${level*18}px">
+        <button class="t-toggle ${hasKids?'':'empty'}" data-act="toggle" data-id="${id}">
+          <i class="fas fa-caret-right"></i>
+        </button>
+        <input type="checkbox" class="chk" data-id="${id}">
+        <div class="t-name flex-fill" title="${name}">${name}</div>
+        <div class="node-actions">
+          <button class="btn btn-outline-secondary btn-sm" title="Empleados directos" data-act="emps-dir" data-id="${id}">
+            <i class="fas fa-user-friends"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" title="Empleados de toda la rama" data-act="emps-all" data-id="${id}">
+            <i class="fas fa-users"></i>
+          </button>
+        </div>
+        ${hasKids?`<span class="t-badge ml-2">${childrenOf.get(id)?.length||0} hijos</span>`:''}
+      </div>
+      <div class="t-children d-none" data-parent="${id}"></div>`;
+  }
+
+  function renderBranch(nodes, level, $container){
+    if(!isArr(nodes)) return;
+    for(const n of nodes){
+      const id = String(n.Id), name = n.Nombre || id;
+      const hasKids = (childrenOf.get(id)||[]).length>0;
+      $container.append(rowHtml(id, name, level, hasKids));
+      const $kids = $container.children('.t-children').last();
+      renderBranch(kids(n), level+1, $kids);
+    }
+  }
+
+  function paintRow(id){
+    const st = stateNow.get(id)||null;
+    const $row = $(`#treeWrap .t-row[data-id="${id}"]`);
+    if(!$row.length) return;
+    const chk = $row.find('.chk').get(0);
+    if(st==='A'){ chk.checked=true; chk.indeterminate=false; $row.addClass('allow').removeClass('deny'); }
+    else if(st==='N'){ chk.checked=false; chk.indeterminate=true;  $row.removeClass('allow').addClass('deny'); }
+    else            { chk.checked=false; chk.indeterminate=false; $row.removeClass('allow deny'); }
+    const orig = stateOrig.get(id)||null;
+    $row.toggleClass('changed', st!==orig);
+  }
+  function applyAllPaint(){
+    $('#treeWrap .t-row').each(function(){ paintRow(String($(this).data('id'))); });
+    $('#btnGuardar').prop('disabled', setsEqualMap(stateNow, stateOrig));
+  }
+
+  function toggleRow(id, open){
+    const $row = $(`#treeWrap .t-row[data-id="${id}"]`);
+    const $ch  = $(`#treeWrap .t-children[data-parent="${id}"]`);
+    if(!$row.length) return;
+    const isOpen = !$ch.hasClass('d-none');
+    const go = (open===undefined)? !isOpen : open;
+    $ch.toggleClass('d-none', !go);
+    $row.find('.t-toggle i').toggleClass('fa-caret-right', !go).toggleClass('fa-caret-down', go);
+  }
+
+  function findNode(id){
+    let out=null; walk(treeData, n=>{ if(!out && String(n.Id)===String(id)) out=n; }); return out;
+  }
+
+  function buildTree(filterText){
+    const $wrap = $('#treeWrap').empty();
+    const roots = childrenOf.get('__root__') || [];
+    const pick = (ids)=>ids.map(id=>findNode(id)).filter(Boolean);
+    renderBranch(pick(roots), 0, $wrap);
+
+    // abrir 2 niveles
+    $('#treeWrap .t-row[data-level="0"], #treeWrap .t-row[data-level="1"]').each(function(){ toggleRow(String($(this).data('id')), true); });
+
+    // filtro
+    const q = (filterText||'').toLowerCase().trim();
+    if(q){
+      const vis = new Set();
+      walk(treeData, n=>{
+        if((n.Nombre||'').toLowerCase().includes(q)){
+          let cur = String(n.Id);
+          while(cur){ vis.add(cur); cur = parentOf.get(cur); }
+        }
+      });
+      $('#treeWrap .t-row').each(function(){
+        const id = String($(this).data('id'));
+        const show = vis.has(id);
+        $(this).toggleClass('d-none', !show);
+        $(`#treeWrap .t-children[data-parent="${id}"]`).toggleClass('d-none', !show);
+        if(show) toggleRow(id, true);
+      });
+    }
+    applyAllPaint();
+    console.log('[buildTree] rows:', $('#treeWrap .t-row').length);
+  }
+
+  // ===== Estados =====
+  function setState(id, newState){ stateNow.set(id, newState); paintRow(id); $('#btnGuardar').prop('disabled', setsEqualMap(stateNow, stateOrig)); }
+  function foreachDescendant(id, fn){ const stack=[id]; while(stack.length){ const cur=stack.pop(); fn(cur); (childrenOf.get(cur)||[]).forEach(x=>stack.push(x)); } }
+  function allowBranch(id){ foreachDescendant(id, x=> setState(x, 'A')); }
+  function denyBranch(id){ foreachDescendant(id, x=> setState(x, 'N')); }
+  function clearBranch(id){ foreachDescendant(id, x=> setState(x, null)); }
+
+  async function saveAll(){
+    if(!currentUser){ Swal.fire('Seleccione usuario','','info'); return; }
+    const allow=[], deny=[];
+    stateNow.forEach((v,k)=>{ if(v==='A') allow.push(k); else if(v==='N') deny.push(k); });
+    console.log('[save] allow:', allow.length, 'deny:', deny.length);
+
+    $.LoadingOverlay('show',{background:'rgba(255,255,255,.6)'});
+    try{
+      const res = await $.ajax({
+        url: EP.saveSet, type:'POST', dataType:'json', traditional:true,
+        data: { Carnet: currentUser.carnet, Usuario: currentUser.carnet, IdsAllow: allow, IdsDeny: deny }
+      });
+      console.log('[save] response:', res);
+      if(res && res.ok){
+        stateOrig.clear(); stateNow.forEach((v,k)=>stateOrig.set(k,v));
+        $('.t-row.changed').removeClass('changed');
+        $('#btnGuardar').prop('disabled', true);
+        Swal.fire('Éxito','Cambios guardados','success');
+      }else{
+        Swal.fire('Atención',(res&&res.msg)||'No se pudo guardar','warning');
+      }
+    }catch(err){
+      console.error('[save] error:', err);
+      Swal.fire('Error','Fallo al guardar','error');
+    }finally{
+      $.LoadingOverlay('hide');
+    }
+  }
+
+  function renderEmpsModal(titulo, rows){
+    $('#mdOrgNombre').text(titulo);
+    const $tb = $('#tblEmps tbody').empty();
+    rows.forEach(r=>{
+      $tb.append(`<tr>
+        <td>${r.carnet||''}</td>
+        <td>${r.nombre_completo||''}</td>
+        <td>${r.cargo||''}</td>
+        <td>${r.idorg||''}</td>
+      </tr>`);
+    });
+    $('#mdEmps').modal('show');
+  }
+
+  // ===== Init =====
+  $(async function(){
+    console.log('[init] start');
+
+    // 1) árbol base
+    $.LoadingOverlay('show');
+    try{
+      let full = await $.getJSON(EP.orgTree)
+        .fail((jq,x,e)=>console.error('[orgTree] fail', x, e));
+      treeData = Array.isArray(full) ? full : (full?.data||[]);
+      parentOf.clear(); childrenOf.clear(); nameOf.clear(); indexParents(treeData, null);
+      stateNow.clear(); stateOrig.clear(); walk(treeData, n=>{ const id=String(n.Id); stateNow.set(id,null); stateOrig.set(id,null); });
+      buildTree('');
+      console.log('[orgTree] ok, nodes:', stateNow.size);
+    }catch(err){
+      console.error('[orgTree] error', err);
+      $('#treeWrap').html('<div class="subtle p-2">Sin datos de organización</div>');
+    }finally{ $.LoadingOverlay('hide'); }
+
+    // 2) DataTable usuarios
+    const tbl = $('#tblUsuarios').DataTable({
+      ajax:{ url: EP.usuarios, dataSrc:'' },
+      columns:[
+        { data:'carnet', className:'text-center', render:v=> (v??'') },
+        { data:'nombre_completo' },
+        { data:'cargo' },
+        { data:null, orderable:false, className:'text-center',
+          render:r=>`
+            <div class="btn-group">
+              <button class="btn btn-sm btn-rojo btnPerm"
+                      data-id="${r.carnet}"
+                      data-nombre="${(r.nombre_completo||'').replace(/"/g,'&quot;')}">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-negro btnPuedeVer"
+                      title="Personas que puede ver (jerarquía/permisos)"
+                      data-id="${r.carnet}"
+                      data-nombre="${(r.nombre_completo||'').replace(/"/g,'&quot;')}">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>`
+        }
+      ],
+      dom:'<"row mb-2"<"col-sm-6"l><"col-sm-6 text-right"f>>rt<"row mt-2"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+      language:{ url:'@Url.Content("~/Scripts/datatable.es-ES.json")',
+                 searchPlaceholder:'Buscar...', search:'', lengthMenu:'Mostrar _MENU_', info:'Mostrando _START_ a _END_ de _TOTAL_' },
+      order:[[1,'asc']], stripeClasses:[]
+    });
+    $('#btnRefrescar').on('click', ()=> tbl.ajax.reload(null,false));
+
+    // 3) seleccionar usuario → cargar flags
+    $('#tblUsuarios tbody').on('click','.btnPerm', async function(){
+      currentUser = { carnet: $(this).data('id'), nombre: $(this).data('nombre') };
+      $('#lblUsuario').text(`${currentUser.nombre} (${currentUser.carnet})`);
+      $('#btnGuardar').prop('disabled', true);
+
+      $.LoadingOverlay('show');
+      try{
+        let res = await $.getJSON(EP.treeUser, { carnet: currentUser.carnet })
+          .fail((jq,x,e)=>console.error('[treeUser] fail', x, e));
+        const overlay = Array.isArray(res)? res : (res?.data||[]);
+        // reset
+        stateNow.clear(); stateOrig.clear(); walk(treeData, n=>{ const id=String(n.Id); stateNow.set(id,null); stateOrig.set(id,null); });
+        // aplicar flags
+        const mapA = new Map(); const mapN = new Map();
+        const collect = n => {
+          if(n.HasPerm)  mapA.set(String(n.Id), true);
+          if(n.IsDenied) mapN.set(String(n.Id), true);
+          kids(n).forEach(collect);
+        };
+        overlay.forEach(collect);
+        walk(treeData, n=>{
+          const id=String(n.Id);
+          if(mapN.has(id)) { stateNow.set(id,'N'); stateOrig.set(id,'N'); }
+          else if(mapA.has(id)) { stateNow.set(id,'A'); stateOrig.set(id,'A'); }
+          else { stateNow.set(id,null); stateOrig.set(id,null); }
+        });
+        applyAllPaint();
+        console.log('[user overlay] done for', currentUser.carnet);
+      }catch(err){
+        console.error('[treeUser] error:', err);
+        Swal.fire('Error','No se pudieron cargar permisos del usuario','error');
+      }finally{
+        $.LoadingOverlay('hide');
+      }
+    });
+
+    // 3.b) “Personas que puede ver”
+    $('#tblUsuarios tbody').on('click','.btnPuedeVer', async function(){
+      const carnet = String($(this).data('id'));
+      const nombre = $(this).data('nombre');
+      console.log('[puede ver] start', carnet);
+      $.LoadingOverlay('show');
+      try{
+        const rows = await $.getJSON(EP.empsVis, { bossId: carnet })
+          .fail((jq,x,e)=>{ console.error('[empsVis] fail', x, e, jq?.responseText); });
+        console.log('[empsVis] ok rows:', rows?.length);
+        renderEmpsModal(`${nombre} · Puede ver (${rows?.length||0})`, rows||[]);
+      }catch(err){
+        console.error('[puede ver] error', err);
+        Swal.fire('Error','No se pudo obtener la lista','error');
+      }finally{ $.LoadingOverlay('hide'); }
+    });
+
+    // 4) interacción del árbol
+    $('#treeWrap').on('click','.t-toggle', function(e){ e.stopPropagation(); toggleRow(String($(this).data('id'))); });
+    $('#treeWrap').on('focusin','.chk', function(){ lastFocusId=String($(this).data('id')); });
+    $('#treeWrap').on('change','.chk', function(){
+      const id=String($(this).data('id'));
+      const cur = stateNow.get(id)||null;
+      const next = (cur===null)?'A':(cur==='A'?'N':null);
+      setState(id,next);
+      console.log('[cycle]', id, cur,'=>',next);
+    });
+
+    // **NUEVO**: handlers para botones de empleados (directos / subárbol)
+    $('#treeWrap').on('click','[data-act="emps-dir"]', async function(e){
+      e.stopPropagation();
+      const id = String($(this).data('id'));
+      const nom = nameOf.get(id)||id;
+      console.log('[emps-dir] click', id);
+      $.LoadingOverlay('show');
+      try{
+        const rows = await $.getJSON(EP.empsDir, { idorg: id })
+          .fail((jq,x,e)=>{ console.error('[empsDir] fail', x, e, jq?.responseText); });
+        console.log('[empsDir] ok rows:', rows?.length);
+        renderEmpsModal(`${nom} · Empleados directos (${rows?.length||0})`, rows||[]);
+      }catch(err){
+        console.error('[emps-dir] error', err);
+        Swal.fire('Error','No se pudo obtener la lista','error');
+      }finally{ $.LoadingOverlay('hide'); }
+    });
+
+    $('#treeWrap').on('click','[data-act="emps-all"]', async function(e){
+      e.stopPropagation();
+      const id = String($(this).data('id'));
+      const nom = nameOf.get(id)||id;
+      console.log('[emps-all] click', id);
+      $.LoadingOverlay('show');
+      try{
+        const rows = await $.getJSON(EP.empsAll, { idorg: id })
+          .fail((jq,x,e)=>{ console.error('[empsAll] fail', x, e, jq?.responseText); });
+        console.log('[empsAll] ok rows:', rows?.length);
+        renderEmpsModal(`${nom} · Empleados en la rama (${rows?.length||0})`, rows||[]);
+      }catch(err){
+        console.error('[emps-all] error', err);
+        Swal.fire('Error','No se pudo obtener la lista','error');
+      }finally{ $.LoadingOverlay('hide'); }
+    });
+
+    // rama permisos
+    $('#btnSelRama').on('click', ()=>{ if(!lastFocusId) return; allowBranch(lastFocusId); });
+    $('#btnDenegarRama').on('click', ()=>{ if(!lastFocusId) return; denyBranch(lastFocusId); });
+    $('#btnLimpiarRama').on('click', ()=>{ if(!lastFocusId) return; clearBranch(lastFocusId); });
+
+    $('#btnExpandir').on('click', ()=>{ $('#treeWrap .t-children').removeClass('d-none'); $('#treeWrap .t-toggle i').removeClass('fa-caret-right').addClass('fa-caret-down'); });
+    $('#btnColapsar').on('click', ()=>{ $('#treeWrap .t-children').addClass('d-none'); $('#treeWrap .t-toggle i').removeClass('fa-caret-down').addClass('fa-caret-right'); });
+
+    $('#txtBuscar').on('input', debounce(function(){ buildTree(this.value); }, 180));
+    $('#btnGuardar').on('click', saveAll);
+  });
+    </script>
+}

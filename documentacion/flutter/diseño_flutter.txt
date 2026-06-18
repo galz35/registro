@@ -1,0 +1,234 @@
+================================================================================
+📄 DOCUMENTO: DISEÑO Y ESPECIFICACIÓN TÉCNICA DE MÓVIL (FLUTTER)
+================================================================================
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\flutter\diseño_flutter.txt
+Stack: Flutter SDK (Dart) | BLoC Pattern / Cubit
+Librerías Clave: mobile_scanner | flutter_image_compress | local_auth
+================================================================================
+
+Este documento contiene la estructura de carpetas de la aplicación móvil para
+despachadores en campo, el archivo pubspec.yaml de dependencias, y la estructura 
+de pantallas e integraciones con hardware de escáner y cámara.
+
+--------------------------------------------------------------------------------
+1. CONFIGURACIÓN DE DEPENDENCIAS (pubspec.yaml)
+--------------------------------------------------------------------------------
+Archivo base para inicializar el proyecto del cliente móvil:
+
+```yaml
+name: claro_despacho_juguetes
+description: Aplicación móvil para registro de asistencia y despacho del Día del Niño.
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Iconos adicionales de diseño premium
+  cupertino_icons: ^1.0.2
+
+  # Gestión de Estado e Inyección de Dependencias
+  flutter_bloc: ^8.1.3
+  get_it: ^7.6.0
+
+  # Conexión HTTP y Cliente REST
+  http: ^1.1.0
+
+  # Escáner de Código de Barras / QR con la Cámara
+  mobile_scanner: ^3.5.2
+
+  # Toma de Fotos con la Cámara del Celular
+  camera: ^0.10.5
+  path_provider: ^2.1.1
+
+  # Compresión y conversión a WebP de Imágenes
+  flutter_image_compress: ^2.1.0
+
+  # Almacenamiento Local para Soporte Offline / Base de datos rápida
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Notificaciones visuales premium (Badges y Toasts)
+  fluttertoast: ^8.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo_claro.png
+```
+
+--------------------------------------------------------------------------------
+2. ESTRUCTURA DE ARCHIVOS DE LA APLICACIÓN FLUTTER (CLEAN ARCHITECTURE)
+--------------------------------------------------------------------------------
+El proyecto del cliente móvil se estructurará bajo el estándar de Clean
+Architecture adaptado a características:
+
+/mobile
+  ├── assets/
+  │    └── images/                  # Logotipos corporativos Claro
+  ├── lib/
+  │    ├── core/                    # Módulos comunes del sistema
+  │    │    ├── network/            # Cliente HTTP y validaciones de señal
+  │    │    ├── database/           # Configuración de Hive para uso Offline
+  │    │    ├── theme/              # Paleta HSL Claro (Rojo/Blanco/Gris/Negro)
+  │    │    └── utils/              # Compresor de imágenes WebP
+  │    ├── models/                  # Modelos de datos
+  │    │    ├── colaborador.dart
+  │    │    ├── hijo.dart
+  │    │    └── juguete.dart
+  │    ├── bloc/                    # Gestor de Estados
+  │    │    ├── dispatch_bloc.dart
+  │    │    ├── dispatch_event.dart
+  │    │    └── dispatch_state.dart
+  │    ├── views/                   # Pantallas principales del sistema
+  │    │    ├── scan_screen.dart    # Escáner de Carnet por Cámara (mobile_scanner)
+  │    │    ├── detail_screen.dart  # Ficha de colaborador e hijos en campo
+  │    │    └── widgets/            # Mini Componentes visuales
+  │    │         ├── child_card.dart
+  │    │         ├── slide_confirm.dart
+  │    │         └── scanner_overlay.dart
+  │    └── main.dart                # Inicialización de la aplicación
+  └── pubspec.yaml
+
+--------------------------------------------------------------------------------
+3. PANTALLA PRINCIPAL DE ESCANEO POR CÁMARA (scan_screen.dart)
+--------------------------------------------------------------------------------
+Código fuente en Dart para la lectura automatizada del código de barras del
+carnet del colaborador utilizando `mobile_scanner` y dibujando el visor:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'detail_screen.dart';
+import 'widgets/scanner_overlay.dart';
+
+class ScanScreen extends StatefulWidget {
+  const ScanScreen({Key? key}) : super(key: key);
+
+  @override
+  _ScanScreenState createState() => _ScanScreenState();
+}
+
+class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  final MobileScannerController _scannerController = MobileScannerController();
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Animación de la línea láser del escáner (de 0.0 a 1.0 verticalmente)
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFDA291C), // Rojo Claro
+        title: const Text(
+          'Escáner Día del Niño',
+          style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flash_on),
+            onPressed: () => _scannerController.toggleTorch(),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Cámara escaneando de fondo
+          MobileScanner(
+            controller: _scannerController,
+            onDetect: (capture) {
+              if (_isProcessing) return;
+              final List<Barcode> barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+                setState(() {
+                  _isProcessing = true;
+                });
+                
+                final String carnet = barcodes.first.rawValue!;
+                
+                // Detiene temporalmente el escáner y navega
+                _scannerController.stop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DetailScreen(carnet: carnet),
+                  ),
+                ).then((_) {
+                  // Al regresar, rehabilita el escáner
+                  setState(() {
+                    _isProcessing = false;
+                  });
+                  _scannerController.start();
+                });
+              }
+            },
+          ),
+          
+          // Visor y línea láser roja pulsante animada sobre la cámara
+          AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              return CustomPaint(
+                size: Size.infinite,
+                painter: ScannerOverlayPainter(
+                  scanLinePosition: _animationController.value,
+                ),
+              );
+            },
+          ),
+          
+          // Indicaciones flotantes en la parte inferior
+          Positioned(
+            bottom: 60.0,
+            left: 20.0,
+            right: 20.0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(16.0),
+                border: Border.all(color: Colors.slate[800]!),
+              ),
+              child: const Text(
+                'Enfoque el código de barras del carnet de empleado en el recuadro central',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.medium,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+================================================================================

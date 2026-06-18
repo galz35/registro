@@ -1,0 +1,184 @@
+﻿@{
+    var estilodev = false;
+}
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold" style="color:#800 !important;">Lista de empleado para registra viático</h6>
+                    <!-- Botón: abrir popup de Viáticos sin rendir -->
+                    <button id="btnViaticosPend" class="btn btn-dark btn-sm">
+                        <i class="fas fa-file-invoice-dollar"></i> Viáticos sin rendir
+                    </button>
+                </div>
+
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <table id="employeeTable2" style="width:100%" class="table table-bordered table-hover display responsive nowrap">
+                            <thead>
+                                <tr>
+                                    <th>Acciones</th>
+                                    <th>No Empleado</th>
+                                    <th>Nombre del Empleado</th>
+                                    <th>Ubicación</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Viáticos sin rendir -->
+            <div class="modal fade" id="modalViaticos" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background:#111;color:#fff;">
+                            <h5 class="modal-title">Viáticos sin rendir</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <table id="viaticosTable" class="table table-bordered table-hover display nowrap" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Carnet</th>
+                                        <th>Nombre</th>
+                                        <th>Cargo</th>
+                                        <th>Gerencia</th>
+                                        <th>Fecha</th> 
+                                     
+                                        <th>Monto Total</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+
+    <script>
+    $(document).ready(function () {
+        // === Tabla de empleados ===
+        var tabla_persona = $('#employeeTable2').DataTable({
+            ajax: {
+                url: "@Url.Action("EmployeesListjson", "Expenses")",
+                type: "GET",
+                datatype: "json",
+                beforeSend: function(){ $.LoadingOverlay("show"); },
+                complete: function(){ $.LoadingOverlay("hide"); },
+                error: function (xhr, status, error) { console.error("Error al cargar los datos:", error); }
+            },
+            columns: [
+                               {
+                    data: "EmployeeNumber",
+                 render: function (data) {
+                        var url = '@Url.Action("RegisterDetail2", "Expenses", new {   carnet = "EmployeeNumber" })';
+                        url = url.replace("EmployeeNumber", data);
+                        return "<a href='" + url + "' class='btn btn-primary btn-sm'><i class='fas fa-pen'></i> Seleccione</a>";
+                    },
+                    orderable: true, searchable: true, width: "150px"
+                },
+                {
+                    data: "EmployeeNumber"
+
+                },
+
+                { data: "FullName" },
+                { data: "Location" }
+            ],
+            dom: 'Blfrtip',
+            lengthMenu: [10, 20, 50, 100],
+            pageLength: 10,
+            language: { url: "@Url.Content("~/Scripts/datatable.es-ES.json")" },
+            responsive: true
+        });
+
+        // === Botón: abrir modal y cargar viáticos filtrados por EmployeeNumber ===
+        $('#btnViaticosPend').on('click', function () {
+            $('#modalViaticos').modal('show');
+
+            // Capturar lista de EmployeeNumber visibles en la tabla de empleados
+            var numeros = new Set(
+                tabla_persona.column(1).data().toArray()  // col 1 = EmployeeNumber
+                    .map(function(x){ return (x || '').toString().trim(); })
+                    .filter(function(x){ return x.length > 0; })
+            );
+
+            // Llamar a tu action proxy que trae todos los viáticos
+            $.ajax({
+                url: '@Url.Action("GetViaticosSinRendir", "Expenses")',
+                type: 'GET',
+                beforeSend: function(){ $.LoadingOverlay("show"); }
+            })
+            .done(function (data) {
+                // Filtrar en cliente por lista de EmployeeNumber (Carnet)
+                var filtrado = (data || []).filter(function(v){
+                    return numeros.has(((v.Carnet)||'').toString().trim());
+                });
+
+                // Inicializar/recargar DataTable del modal
+                if ($.fn.DataTable.isDataTable('#viaticosTable')) {
+                    var dt = $('#viaticosTable').DataTable();
+                    dt.clear();
+                    dt.rows.add(filtrado);
+                    dt.draw();
+                } else {
+                    $('#viaticosTable').DataTable({
+                        data: filtrado,
+                        columns: [
+                            { data: 'Carnet' },
+                            { data: 'NombreCompleto' },
+                            { data: 'Cargo' },
+                            { data: 'Gerencia' },
+                            { data: 'StartDate', render: function(d){ return d ? moment(d).format('YYYY-MM-DD') : ''; } },
+
+                            { data: 'MontoTotal',
+                              render: $.fn.dataTable.render.number(',', '.', 2),
+                              className: 'text-right' }
+                        ],
+                        dom: 'Bfrtip',
+                        buttons: [
+                            { extend: 'excelHtml5', title: 'ViaticosSinRendir' } // exportar a Excel
+                        ],
+                        responsive: true,
+                        deferRender: true,
+                        pageLength: 10,
+                        language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' }
+                    });
+                }
+            })
+            .fail(function(xhr){ console.error(xhr.responseText); })
+            .always(function(){ $.LoadingOverlay("hide"); });
+        });
+    });
+    </script>
+}

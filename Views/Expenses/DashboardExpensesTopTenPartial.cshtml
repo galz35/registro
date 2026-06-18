@@ -1,0 +1,109 @@
+﻿@using System.Drawing
+
+@using DevExpress.Web.DemoUtils;
+
+
+
+
+@{
+        var grid = Html.DevExpress().GridView(settings =>
+        {
+            settings.Name = "gvExTopTen";
+            settings.CallbackRouteValues = new { Controller = "Expenses", Action = "DashboardExpensesTopTenPartial" };
+
+            settings.Styles.Header.ForeColor = Color.Red;
+            settings.Styles.Header.BackColor = Color.LightGray;
+            settings.Styles.Header.Font.Size = 10;
+            settings.Styles.Header.Font.Bold = true;
+            settings.Settings.ShowTitlePanel = true;
+            settings.SettingsText.Title = "Top 10 Viáticos";
+            settings.Styles.TitlePanel.Font.Bold = true;
+            settings.Styles.TitlePanel.Font.Size = 12;
+            settings.Styles.TitlePanel.Font.Name = "Tahoma";
+            settings.Styles.TitlePanel.ForeColor = Color.SteelBlue;
+
+
+            settings.SettingsEditing.Mode = GridViewEditingMode.EditFormAndDisplayRow;
+            settings.SettingsBehavior.ConfirmDelete = true;
+            //settings.Width = Unit.Percentage(100);
+            //settings.Height = 100;
+            settings.ControlStyle.Border.BorderWidth = 1;
+            settings.Width = Unit.Pixel(500);
+            settings.Height = Unit.Pixel(330);
+
+            #region Paging
+            settings.SettingsPager.Visible = true;
+            settings.SettingsPager.PageSizeItemSettings.Visible = true;
+            settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+            settings.SettingsPager.PageSize = 10;
+            #endregion
+            #region filtering
+            settings.Settings.ShowFilterRow = true;
+
+            settings.Settings.ShowHeaderFilterButton = true;
+            settings.SettingsPopup.HeaderFilter.Height = 200;
+            settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+            settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+            settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+            #endregion
+            #region Sorting
+            settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "FullName");
+            #endregion
+
+
+
+            settings.KeyFieldName = "PersonId";
+
+            settings.SettingsBehavior.AllowFocusedRow = true;
+
+
+            settings.EnableRowsCache = false;
+            settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+            settings.Settings.VerticalScrollableHeight = 250;
+            settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+            settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+            settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+            settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+            settings.Settings.ShowGroupPanel = false;
+            settings.SettingsBehavior.AllowSelectByRowClick = true;
+            settings.ControlStyle.Font.Size = 8;
+            settings.ControlStyle.ForeColor = System.Drawing.ColorTranslator.FromHtml("#8B0000");
+
+
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "FullName";
+
+                col.Caption = "Nombre";
+
+                col.Width = Unit.Percentage(100);
+                col.AdaptivePriority = 3;
+            });
+
+            settings.Columns.Add(col =>
+            {
+                col.FieldName = "TotalAmount";
+                col.Caption = "Monto";
+                col.Width = Unit.Percentage(100);
+                col.AdaptivePriority = 4;
+                col.PropertiesEdit.DisplayFormatString = "#.00";
+            });
+
+
+        });
+        if (ViewData["EditError"] != null)
+        {
+            grid.SetEditErrorText((string)ViewData["EditError"]);
+        }
+    }
+    @grid.Bind(Model).GetHtml()
+
+
+
+
+

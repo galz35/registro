@@ -1,0 +1,280 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingEventRegistration(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.ViewModels.EventRegistrationView();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@Html.DevExpress().GetStyleSheets(
+        new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" },
+
+        new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+           new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+    )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvEventRegistration";
+        settings.KeyFieldName = "EventRegistrationId";
+        settings.CallbackRouteValues = new { Controller = "EventRegistration", Action = "ListPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "EventRegistration", Action = "AddRegistration" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "EventRegistration", Action = "EditRegistration" };
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+        settings.Width = Unit.Percentage(100);
+
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.Settings.ShowFooter = true;
+        settings.KeyboardSupport = true;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+#region Configuracion del popup
+settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 400;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de inscripcion";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+#endregion
+
+
+#region Paging
+settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+#endregion
+#region filtering
+settings.Settings.ShowFilterRow = true;
+
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.SettingsPopup.HeaderFilter.Height = 200;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+#endregion
+#region Sorting
+settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "EventId");
+#endregion
+#region Personalizacion de Botones del GridView
+
+settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+
+
+
+
+
+        settings.CommandColumn.Width = Unit.Percentage(20);
+#endregion
+
+settings.Columns.Add(col =>
+        {
+            col.FieldName = "EventId";
+            col.Caption = "Evento";
+            col.AdaptivePriority = 1;
+            col.Width = Unit.Percentage(100);
+            col.ColumnType = MVCxGridViewColumnType.ComboBox;
+            var comboBoxProperties = col.PropertiesEdit as ComboBoxProperties;
+            comboBoxProperties.DataSource = slnRhonline.Data.Event.GetAllEvents();
+            comboBoxProperties.TextField = "EventName";
+            comboBoxProperties.ValueField = "EventId";
+            comboBoxProperties.ValueType = typeof(int);
+            comboBoxProperties.DropDownStyle = DropDownStyle.DropDownList;
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "EventDate";
+            col.Caption = "Fecha de Evento";
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 2;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "RegistrationStatus";
+            col.Caption = "Estado";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 3;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "DaysMissingEvent";
+            col.Caption = "Dias restantes al Evento";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 4;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+
+
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+
+                flSettings.Name = "FormLayoutUser";
+                flSettings.Width = Unit.Percentage(100);
+
+
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+
+                flSettings.ColCount = 1;
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "EventId";
+                    i.Caption = "Evento";
+                    i.NestedExtension().ComboBox(s =>
+                    {
+                        s.SelectedIndex = 1;
+
+                        s.Properties.TextField = "EventName";
+                        s.Properties.ValueField = "EventId";
+                        s.Properties.ValueType = typeof(int);
+                        s.Properties.DataSource = slnRhonline.Data.Event.GetAllEventsToRegistration();
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.DropDownStyle = DropDownStyle.DropDown;
+                        s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedEventIdChanged";
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "Description";
+                    i.Caption = "Descripcion";
+                    i.NestedExtension().Memo(s =>
+                    {
+
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ReadOnly = true;
+                        s.Properties.Rows = 7;
+
+                    });
+                });
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "Registration";
+                    i.Caption = "Seleccione ";
+                    i.NestedExtension().RadioButtonList(s =>
+                    {
+
+                        s.Properties.RepeatDirection = RepeatDirection.Vertical;
+                        s.Properties.Items.Add("Asistire", 1);
+                        s.Properties.Items.Add("No asistire", 2);
+                        s.ControlStyle.Border.BorderStyle = BorderStyle.None;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+
+
+
+                    });
+                });
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvEventRegistration.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvEventRegistration.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["EventRegistration"] ?? GetEditingEventRegistration(c.Grid))
+            .Render();
+        });
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+

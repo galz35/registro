@@ -1,0 +1,489 @@
+﻿@model Entities.ViewModels.AppointmentsView
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+<script src="~/Scripts/loadingoverlay.js"></script> 
+<script src="~/Content/plugin/sweetalert2/sweetalert3.js"></script>
+<script>
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvDetailAppointment.SetHeight(height - 100);
+    }
+
+
+
+    function GuardarCita5(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("GuardarCita")',
+            type: "POST",
+            data: $('#frmAppointment').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,  beforeSend : function () {
+                // Muestra el overlay antes de enviar la solicitud AJAX
+                $.LoadingOverlay("show");
+            },
+             complete : function () {
+                // Oculta el overlay una vez que la solicitud AJAX ha finalizado
+                $.LoadingOverlay("hide");
+            } ,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                $.LoadingOverlay("hide");
+                if (data.status != "Error") {
+
+
+                    swal.f({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditAppointment.Hide();
+                            }
+
+                        });
+                } else {
+                    swal.fire({
+                        title: "Advertencia!",
+                        text: data.message,
+                        icon: "warning",
+                        button: "Aceptar",
+                    })
+                    //swal.fire("ERROR!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+                }
+
+
+            },
+
+            beforeSend: function () {
+                $.LoadingOverlay("show");
+            },
+            error: function (error) {
+                $.LoadingOverlay("hide");
+                swal.fire("Error!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+            }
+        });
+    }
+
+    function GuardarCita(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("GuardarCita")',
+            type: "POST",
+            data: $('#frmAppointment').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    $.LoadingOverlay("hide");
+
+                    swal.fire({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditAppointment.Hide();
+                            }
+
+                        });
+                } else {
+                    $.LoadingOverlay("hide");
+                    swal.fire({
+                        title: "Advertencia!",
+                        text: data.message,
+                        icon: "warning",
+                        button: "Aceptar",
+                    })
+                    //swal.fire("ERROR!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+                }
+
+
+            },
+            beforeSend: function () {
+                $.LoadingOverlay("show");
+            },
+            error: function (error) {
+                $.LoadingOverlay("hide");
+                swal.fire("Error!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+            }
+        });
+    }
+//document.addEventListener('DOMContentLoaded', function() {
+//    document.getElementById('btnSendCode').addEventListener('click', function(e) {
+//        e.preventDefault();
+//        enviarCodigo();
+//    });
+//});
+
+function enviarCodigo() {
+
+    var celular = TelefonoClient.GetValue(); // Obtener el valor del control
+
+    if (!celular) {
+
+        swal.fire({
+            title: "Advertencia!",
+            text: "Por favor ingrese un número de teléfono válido.",
+            icon: "warning",
+            button: "Aceptar",
+        })
+        return;
+    }
+
+    $.ajax({
+        url: '@Url.Action("EnviarCodigoConfirmacion", "Appointments")',
+        type: "POST",
+        data: { celular: celular },
+        success: function (data) {
+            if (data.success) {
+                swal.fire("Éxito!", `El código de confirmación ha sido enviado al número ${celular}.`, "success");
+            } else {
+                swal.fire("Error!", data.message, "error");
+            }
+        },
+        error: function () {
+            swal.fire("Error!", "Ocurrió un error al enviar el código de confirmación.", "error");
+        }
+    });
+}
+
+
+     function generarCodigoAleatorio() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    function enviarCodigoConfirmacion(celular, codigoAleatorio) {
+        var celular = TelefonoClient.GetValue();
+        const mensaje = `Tu código de confirmación es: ${codigoAleatorio}`;
+        const url = `https://recursoshumanosni/apihcm/api/general/ssm?mensaje=${mensaje}&numero=${celular}`;
+
+        const requestOptions = {
+            method: "GET",
+            redirect: "follow"
+        };
+
+        return fetch(url, requestOptions)
+            .then(response => response.text())
+            .then(result => {
+                console.log(result);
+                return codigoAleatorio;
+            })
+            .catch(error => {
+                console.error('Error al enviar el código de confirmación', error);
+                return null;
+            });
+    }
+
+    function guardarCitaConConfirmacion() {
+        $.LoadingOverlay("show");
+
+        const celular = TelefonoClient.GetValue();
+        const codigoAleatorio = generarCodigoAleatorio();
+        $.LoadingOverlay("hide");
+
+    enviarCodigoConfirmacion(celular, codigoAleatorio).then(codigoEnviado => {
+    if (codigoEnviado) {
+        Swal.fire({
+            title: 'Introduce el código',
+            input: 'text',
+            inputLabel: 'Código',
+            inputPlaceholder: 'Escribe el código aquí',
+            showCancelButton: true
+        }).then(result => {
+            if (result !== "") {
+                const enteredCode = result.value;
+
+                // Asumo que 'codigoEnviado' es el código esperado
+                if (enteredCode === codigoEnviado) {
+                    // Enviar el formulario después de la validación del código
+                    return new Promise((resolve) => {
+                        const form = document.getElementById('frmAppointment');
+                        const formData = new FormData(form);
+
+                        fetch('@Url.Action("GuardarCita")', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status !== "Error") {
+                                Swal.fire({
+                                    title: "Éxito!",
+                                    text: data.message,
+                                    icon: "success",
+                                    confirmButtonText: "Aceptar"
+                                }).then(() => {
+                                    top.popEditAppointment.Hide();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: "Advertencia!",
+                                    text: data.message,
+                                    icon: "warning",
+                                    confirmButtonText: "Aceptar"
+                                });
+                            }
+                            resolve();
+                        })
+                        .catch(error => {
+                            Swal.fire("Error!", "Ocurrió un error en la transacción, por favor corrija.", "error");
+                            resolve();
+                        });
+                    });
+                } else {
+                    Swal.fire('Error', 'El código es incorrecto', 'error');
+                }
+            }
+        });
+    } else {
+        Swal.fire("Error!", "No se pudo enviar el código de confirmación. Inténtelo de nuevo más tarde.", "error");
+    }
+});
+    }
+
+    function guardarCitaConConfirmacionx() {
+    $.LoadingOverlay("show");
+
+    const celular = TelefonoClient.GetValue();
+ const form = document.getElementById('frmAppointment');
+                        const formData = new FormData(form);
+
+        $.ajax({
+            url: '@Url.Action("GuardarCita", "Cita")',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                $.LoadingOverlay("hide");
+                if (data.status !== "Error") {
+                    Swal.fire({
+                        title: "Éxito!",
+                        text: data.message,
+                        icon: "success",
+                        confirmButtonText: "Aceptar"
+                    }).then(() => {
+                        top.popEditAppointment.Hide();
+                    });
+                } else {
+                    Swal.fire({
+                        title: "Advertencia!",
+                        text: data.message,
+                        icon: "warning",
+                        confirmButtonText: "Aceptar"
+                    });
+                }
+            },
+            error: function () {
+                $.LoadingOverlay("hide");
+                Swal.fire("Error!", "Ocurrió un error en la transacción, por favor corrija.", "error");
+            }
+        });
+      @*$.ajax({
+        url: '@Url.Action("EnviarCodigoConfirmacion", "Cita")',
+        type: 'GET',
+        data: { celular: celular },
+        success: function (response) {
+            $.LoadingOverlay("hide");
+
+            if (response.success) {
+                Swal.fire({
+                    title: 'Introduce el código',
+                    input: 'text',
+                    inputLabel: 'Código',
+                    inputPlaceholder: 'Escribe el código aquí',
+                    showCancelButton: true
+                }).then(result => {
+                    const enteredCode = result.value;
+
+                    if (enteredCode === response.codigo) {
+                        const form = document.getElementById('frmAppointment');
+                        const formData = new FormData(form);
+
+                        $.ajax({
+                            url: '@Url.Action("GuardarCita", "Cita")',
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (data) {
+                                if (data.status !== "Error") {
+                                    Swal.fire({
+                                        title: "Éxito!",
+                                        text: data.message,
+                                        icon: "success",
+                                        confirmButtonText: "Aceptar"
+                                    }).then(() => {
+                                        top.popEditAppointment.Hide();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: "Advertencia!",
+                                        text: data.message,
+                                        icon: "warning",
+                                        confirmButtonText: "Aceptar"
+                                    });
+                                }
+                            },
+                            error: function () {
+                                Swal.fire("Error!", "Ocurrió un error en la transacción, por favor corrija.", "error");
+                            }
+                        });
+                    } else {
+                        Swal.fire('Error', 'El código es incorrecto', 'error');
+                    }
+                });
+            } else {
+                Swal.fire("Error!", response.message, "error");
+            }
+        },
+        error: function () {
+            $.LoadingOverlay("hide");
+            Swal.fire("Error!", "No se pudo enviar el código de confirmación. Inténtelo de nuevo más tarde.", "error");
+        }
+    });*@
+}
+
+</script>
+@using (Html.BeginForm("SaveAppointment", "Appointments", FormMethod.Post, new { id = "frmAppointment" }))
+{
+    @Html.DevExpress().FormLayout(settings =>
+{
+   settings.Name = "frmIndicator";
+   settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+   settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 650;
+   settings.ControlStyle.CssClass = "formLayout";
+
+   settings.Items.AddGroupItem(g =>
+   {
+       g.Caption = "";
+       g.ColCount = 3;
+
+       g.UseDefaultPaddings = false;
+       g.Paddings.PaddingTop = Unit.Pixel(10);
+       g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+       g.Items.Add(m => m.IdCita, i =>
+       {
+           i.Caption = "Id";
+           i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+           });
+       });
+
+       g.Items.Add(i =>
+       {
+           i.FieldName = "FechaCita";
+           i.Caption = "Fecha de Cita";
+           i.NestedExtension().DateEdit(s =>
+           {
+               s.Properties.NullText = "DD/MM/YYYY";
+               s.Properties.EditFormat = EditFormat.Date;
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+           });
+       });
+
+       g.Items.Add(i =>
+       {
+           i.FieldName = "Telefono";
+
+           i.Caption = "Celular";
+           i.NestedExtension().TextBox(s =>
+           {
+               s.Properties.NullText = "";
+               s.Properties.ClientInstanceName = "TelefonoClient";
+
+               s.Properties.MaskSettings.Mask = "0000-0000";
+               s.Properties.MaskSettings.IncludeLiterals = MaskIncludeLiteralsMode.None;
+
+               s.Properties.ValidationSettings.RequiredField.IsRequired = true;
+               s.Properties.ValidationSettings.RequiredField.ErrorText = "Por favor ingrese un número de teléfono.";
+               //s.Properties.ValidationSettings.RegularExpression.ValidationExpression = @"^\d{4}-\d{4}$";
+               s.Properties.ValidationSettings.RegularExpression.ErrorText = "Por favor ingrese un número de teléfono válido en el formato 0000-0000.";
+               s.ShowModelErrors = true;
+           });
+       });
+ 
+       g.Items.Add(i =>
+       {
+           i.FieldName = "KilometrajeActual";
+           i.Caption = "Km Actual";
+           i.NestedExtension().TextBox(s =>
+           {
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+           });
+       });
+
+       g.Items.Add(i =>
+       {
+           i.FieldName = "Observacion";
+           i.Caption = "Observaciones";
+           i.NestedExtension().Memo(s =>
+           {
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(460);
+               s.Properties.Rows = 3;
+               s.ControlStyle.CssClass = "memo";
+           });
+       });
+   });
+}).GetHtml()
+}
+
+<div id="goalGrid">
+    @Html.Action("EditPartial2")
+</div>
+
+<br />
+<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings =>
+    {
+       settings.Name = "btnDanger";
+       settings.Width = 164;
+       settings.Text = "Actualizar";
+       settings.RenderMode = ButtonRenderMode.Danger;
+       settings.ClientSideEvents.Click = "GuardarCita";
+    }).GetHtml()
+</div>

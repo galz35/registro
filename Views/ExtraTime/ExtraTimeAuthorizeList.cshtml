@@ -1,0 +1,89 @@
+﻿
+@Html.DevExpress().GetStyleSheets(
+      new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" })
+
+<script type="text/javascript">
+  var selectedIDs;
+  function onBeginCallback(s, e) {
+    // Pasamos los ids seleccionados al boton de autorizar
+    e.customArgs["selectedIDs"] = selectedIDs;
+    if (selectedIDs != "")
+      viewListExtraTime.PerformCallback;
+  }
+
+  function onSelectionChanged(s, e) {
+    s.GetSelectedFieldValues("Id", GetSelectedFieldValuesCallback);
+  }
+
+  function GetSelectedFieldValuesCallback(values) {
+    // Captura todas las llaves seleccionadas
+    selectedIDs = values.join(',');
+  }
+
+  function onAuthorizeButtonClick(s, e) {
+    $("#selectedIdsAP").val(selectedIDs);
+    selectedIDs = "";
+  }
+
+  function onDeniedButtonClick(s, e) {
+    $("#selectedIdsDN").val(selectedIDs);
+    selectedIDs = "";
+  }
+
+</script>
+
+
+
+<div class="form-h2 col-12 content" style="margin-top: 10px; background-color: transparent; padding:0; margin-bottom:5px; margin-left:30px;">
+    @using (Html.BeginForm("ExtraTimeAuthorize", "ExtraTime"))
+    {
+        <div style="width:90px; float:left;">
+            @Html.Hidden("selectedIdsAP")
+            @Html.DevExpress().Button(settings =>
+ {
+     settings.Name = "btnAutorizar";
+     settings.EncodeHtml = false;
+     settings.Text = "Autorizar";
+     settings.Width = 60;
+     settings.Height = 25;
+     settings.Theme = "Aqua";
+     settings.UseSubmitBehavior = true;
+     settings.ClientSideEvents.Click = "onAuthorizeButtonClick";
+ }).GetHtml()
+        </div>
+    }
+
+    @using (Html.BeginForm("ExtraTimeDenied", "ExtraTime"))
+    {
+        @Html.Hidden("selectedIdsDN");
+        @Html.DevExpress().Button(settings =>
+{
+    settings.Name = "btnDenegar";
+    settings.EncodeHtml = false;
+    settings.Text = "Denegar";
+    settings.Width = 60;
+    settings.Height = 25;
+    settings.Theme = "Aqua";
+    settings.UseSubmitBehavior = true;
+    settings.ClientSideEvents.Click = "onDeniedButtonClick";
+}).GetHtml()
+    }
+
+
+</div>
+
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="3" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+}
+
+@using (Html.BeginForm())
+{
+    
+    @Html.Action("ExtraTimeAuthorizeListPartial")
+}

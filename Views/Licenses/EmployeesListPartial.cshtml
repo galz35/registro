@@ -1,0 +1,132 @@
+﻿
+@Html.DevExpress().GridView(settings =>
+{
+    #region Configuración básica del gridview
+    settings.Name = "gvEmployees";
+    settings.KeyFieldName = "Idhrms";
+    settings.CallbackRouteValues = new { Controller = "Licenses", Action = "EmployeesListPartial" };
+    //settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Paging, new { Controller = "Licenses", Action = "GridPagingAction" });
+    //settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Filtering, new { Controller = "Licenses", Action = "GridFilteringAction" });
+
+
+    settings.SettingsBehavior.AllowFocusedRow = true;
+
+    settings.Width = Unit.Percentage(100);
+
+
+    settings.SettingsBehavior.AllowSelectByRowClick = true;
+    settings.ControlStyle.Border.BorderWidth = 1;
+    settings.Settings.ShowFooter = true;
+    settings.KeyboardSupport = true;
+
+    settings.EnableRowsCache = false;
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+    settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+    settings.SettingsBehavior.AllowEllipsisInText = true;
+    settings.ClientSideEvents.Init = "OnInit";
+    settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+    #endregion
+
+
+    #region Paging
+    settings.SettingsPager.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+    settings.SettingsPager.PageSize = 10;
+    #endregion
+    #region filtering
+    settings.SettingsSearchPanel.CustomEditorName = "search";
+    settings.Settings.ShowHeaderFilterButton = false;
+    
+
+    settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+    settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+    #endregion
+    #region Sorting
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "EmployeeNumber");
+    #endregion
+
+    settings.Toolbars.Add(t =>
+    {
+        t.Enabled = true;
+        t.Position = GridToolbarPosition.Top;
+        t.EnableAdaptivity = true;
+
+        
+
+        t.Items.Add(i =>
+        {
+            i.BeginGroup = true;
+            i.Alignment = MenuItemAlignment.Right;
+            i.SetTemplateContent(c =>
+            {
+                Html.DevExpress().ButtonEdit(s =>
+                {
+                    s.Name = "search";
+                    s.Properties.NullText = "Buscar..";
+                    s.Properties.Buttons
+                        .Add()
+                        .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+                }).Render();
+            });
+        });
+
+    });
+
+   
+
+    #region Configuracion de las columnas
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "No Empleado";
+
+        col.Width = 200;
+        col.AdaptivePriority = 1;
+        col.FieldName = "EmployeeNumber";
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "Nombre del Empleado";
+        col.FieldName = "FullName";
+
+        col.Width = 200;
+        col.AdaptivePriority = 2;
+
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "Ubicación";
+
+        col.FieldName = "Location";
+        col.Width = 200;
+        col.AdaptivePriority = 3;
+    });
+
+    settings.CommandColumn.Caption = "Acciones";
+    settings.CommandColumn.Width = 80; //System.Web.UI.WebControls.Unit.Pixel(100);
+    settings.CommandColumn.Visible = true;
+    settings.CommandColumn.ButtonRenderMode = DevExpress.Web.GridCommandButtonRenderMode.Button;
+    settings.CommandColumn.CustomButtons.Add(new GridViewCommandColumnCustomButton() { ID = "btnSelectEmployee", Text = "Seleccionar" });
+    settings.ClientSideEvents.CustomButtonClick = "function(s, e) { document.location='" + DevExpressHelper.GetUrl(new { Controller = "Licenses", Action = "RegisterDetail" }) + "/' + s.GetRowKey(e.visibleIndex); }";
+    #endregion
+
+    settings.CustomColumnDisplayText = (sender, e) =>
+    {
+        e.DisplayText = (Convert.ToString(e.Value)).ToUpper();
+    };
+
+
+}).Bind(Model).GetHtml()
+
+
+
+
+

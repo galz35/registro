@@ -1,0 +1,137 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.ViewModels.ExtraPlanDetailView>(settings =>
+    {
+        settings.Name = "gvDetailExtraPlan";
+
+        settings.CallbackRouteValues = new { Controller = "Consumo", Action = "EditDetailExtraPlan" };
+        settings.SettingsEditing.BatchUpdateRouteValues = new { Controller = "Consumo", Action = "BatchUpdateDetailExtraPlan" };
+        settings.SettingsEditing.Mode = GridViewEditingMode.Batch;
+        settings.SettingsEditing.BatchEditSettings.StartEditAction = GridViewBatchStartEditAction.Click;
+        settings.Settings.ShowFooter = true;
+        settings.SettingsText.CommandBatchEditPreviewChanges = "Cambios Pendientes";
+
+
+
+//settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "KmsRecorrer");
+//settings.SettingsEditing.BatchEditSettings.HighlightDeletedRows = BatchEditingOptions.HighlightDeletedRows;
+//settings.SettingsEditing.BatchEditSettings.KeepChangesOnCallbacks = GridViewCallbackCommand. KeepChangesOnCallbacks ? DefaultBoolean.True : DefaultBoolean.False;
+
+//Configuracion de funciones javascript
+settings.ClientSideEvents.BatchEditEndEditing = "OnBatchEditEndEditing";
+        settings.ClientSideEvents.BatchEditRowDeleting = "OnBatchEditRowDeleting";
+        settings.ClientSideEvents.BatchEditChangesCanceling = "OnChangesCanceling";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+//Configuracion de botones
+
+settings.Width = 800;
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ShowDeleteButton = true;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+
+//Configuracion de columnas
+
+settings.KeyFieldName = "IdCombustibleDetalleExtraPlan";
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "FechaActividad";
+            col.Caption = "Fecha de Actividad";
+            col.ColumnType = MVCxGridViewColumnType.DateEdit;
+            col.AdaptivePriority = 1;
+            col.Width = Unit.Percentage(20);
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Actividad";
+            col.Caption = "Actividad";
+            col.Width = Unit.Percentage(60);
+            col.AdaptivePriority = 2;
+            col.EditorProperties().Memo(p =>
+            {
+                p.Style.CssClass = "memo";
+            });
+
+
+        });
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "Localizacion";
+            col.Caption = "Localización";
+            col.Width = Unit.Percentage(60);
+            col.AdaptivePriority = 2;
+            col.EditorProperties().Memo(p =>
+            {
+                p.Style.CssClass = "memo";
+            });
+
+        });
+        settings.Columns.Add(c =>
+        {
+            c.FieldName = "IdDepartamento";
+            c.Caption = "Departamento";
+            c.Width = Unit.Percentage(100);
+            c.AdaptivePriority = 1;
+            c.EditorProperties().ComboBox(p =>
+            {
+                p.TextField = "Descripcion";
+                p.ValueField = "IdCatalogo";
+                p.ValueType = typeof(string);
+                p.DataSource = slnRhonline.Data.CatalogoSiaf.GetDepartmentById("02");
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+            });
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "KmsRecorrer";
+            col.Caption = "Kms a Recorrer";
+            col.Width = Unit.Percentage(20);
+            col.AdaptivePriority = 3;
+            col.ColumnType = MVCxGridViewColumnType.SpinEdit;
+            ASPxSummaryItem summaryItem = new ASPxSummaryItem(col.FieldName, DevExpress.Data.SummaryItemType.Sum);
+            summaryItem.Tag = col.FieldName + "_Sum";
+            summaryItem.DisplayFormat = "{0}";
+            settings.TotalSummary.Add(summaryItem);
+
+            col.SetFooterTemplateContent(c =>
+            {
+                Html.DevExpress().Label(lbSettings =>
+                {
+                    string fieldName = (c.Column as GridViewDataColumn).FieldName;
+                    lbSettings.Name = "labelSum";
+                    lbSettings.Properties.EnableClientSideAPI = true;
+                    ASPxSummaryItem summaryItem1 = c.Grid.TotalSummary.First(i => i.Tag == (fieldName + "_Sum"));
+                    lbSettings.Text = c.Grid.GetTotalSummaryValue(summaryItem1).ToString();
+                }).Render();
+            });
+
+
+        });
+
+
+
+        settings.CellEditorInitialize = (s, e) =>
+        {
+            ASPxEdit editor = (ASPxEdit)e.Editor;
+            editor.ValidationSettings.Display = Display.Dynamic;
+        };
+
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+
+
+

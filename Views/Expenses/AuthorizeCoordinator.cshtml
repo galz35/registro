@@ -1,0 +1,609 @@
+﻿@model List<Entities.ViewModels.ExpenseDetailView>
+@{
+    ViewBag.Title = "Autorizacion Coordinador";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+
+}
+
+@Html.DevExpress().GetStyleSheets(
+            new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+            new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+
+            new StyleSheet { ExtensionSuite = ExtensionSuite.GridView }
+
+
+        )
+
+
+@section scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/Scripts/js/sb-admin-2.min.js"></script>
+    <script type="text/javascript">
+    var selectedIDs;
+    function getSelectedIDs() {
+        var selectedIDs = '';
+        $('.checkItem:checked').each(function () {
+            var id = $(this).data('expenseid');
+             if (selectedIDs !== '') {
+                selectedIDs += ',';
+            }
+            selectedIDs += id;
+        });
+        return selectedIDs;
+    }
+
+     $(document).ready(function () {
+
+              tablaExpenses = $('#dataTable').DataTable({
+    processing: true,
+    deferRender: true,
+    ajax: {
+      url: "@Url.Action("AuthorizeCoordinatorPartialjson","Expenses")",
+      type: "GET",
+      dataType: "json",          // ← correcto
+      dataSrc: "data",           // ← espera { data: [...] }
+      beforeSend: function(){ $.LoadingOverlay("show"); },
+      complete:   function(){ $.LoadingOverlay("hide"); },
+      error: function(xhr,s,e){ console.error("Error al cargar:", s, e, xhr && xhr.status); Swal.fire("Error","No se pudo cargar la lista.","error"); }
+    },
+    columnDefs: [
+      { targets: 0, data: null, defaultContent: '', orderable: false } // numeración
+    ],
+    columns: [
+      { data: null }, // #
+      { // check
+        data: null, orderable:false, searchable:false, width:"10px",
+        render: function (row) {
+          const id = row && row.ExpenseId != null ? row.ExpenseId : "";
+          return "<input type='checkbox' class='checkItem' data-expenseid='"+ id +"'>";
+        }
+      },
+      { // acciones
+        data: "ExpenseId",
+        render: function (id) {
+          return `
+<div class="btn-group">
+  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="fas fa-cogs"></i> Solicitudes
+  </button>
+  <div class="dropdown-menu">
+    <a class="dropdown-item btn btn-warning" href="javascript:void(0);" onclick="verDetalle(${id})"><i class="fas fa-eye"></i> Ver Detalle</a>
+    <a class="dropdown-item btn btn-warning" href="javascript:void(0);" onclick="EditExpensex(${id})"><i class="fas fa-receipt"></i> Ver viático</a>
+    <a class="dropdown-item btn btn-danger"  href="javascript:void(0);" onclick="verPDF(${id})"><i class="fas fa-file-pdf"></i> PDF</a>
+  </div>
+</div>`;
+        }
+      },
+      { data: "EmployeeNumber" },                        // col 3 (Carnet)
+      { data: "FullName" },
+      { data: "ExpenseDate", render: fFecha },           // col 5 (Fecha)
+      { data: "ClassName", createdCell: function(td,val){ $(td).css("color", colorClase(val)); } },
+      { data: "TotalAmount", render: fMoneda },
+      { data: "ExpenseStatus" },
+      { data: "VehicleNumber" },
+      { data: "ExpenseId", visible:false }               // oculto
+    ],
+    order: [[3,'asc'], [5,'desc']],                      // ← orden inicial: Carnet ASC + Fecha DESC
+    dom: 'Blfrtip',
+    lengthMenu: [[10,20,50,100],[10,20,50,100]],
+    pageLength: 10,
+    language: { url: "@Url.Content("~/Scripts/datatable.es-ES.json")" },
+    responsive: true,
+    drawCallback: function(){
+      const api=this.api(), rows=api.rows({page:'current'}).nodes();
+      let i=1; $.each(rows, function(_, r){ r.cells[0].innerHTML = i++; });
+    }
+  });
+            $('#checkAll').click(function () {
+                $('.checkItem').prop('checked', this.checked);
+            });
+
+            $('.checkItem').change(function () {
+                var allChecked = true;
+                $('.checkItem').each(function () {
+                    if (!this.checked) {
+                        allChecked = false;
+                    }
+                });
+                $('#checkAll').prop('checked', allChecked);
+            });
+
+    $('#selectAll').on('change', function () {
+        var isChecked = $(this).prop('checked');
+        $('.checkItem').prop('checked', isChecked);
+    });
+    $('.checkItem').on('change', function () {
+        var id = $(this).closest('tr').find('td:last').text();
+        if (this.checked) {
+            selectedIDs.push(id);
+        } else {
+            selectedIDs = selectedIDs.filter(function (value) {
+                return value !== id;
+            });
+        }
+        console.log(selectedIDs); // Verificar IDs seleccionados en la consola
+    });
+    // Control para enviar los IDs seleccionados al hacer clic en el botón
+
+
+    $('.checkItem:checked').each(function () {
+        selectedIDs.push($(this).closest('tr').find('td:first').text()); // Ajusta esta línea según la estructura de tu tabla
+    });
+            // Check Todo
+          // Check Todo
+
+
+
+     });
+        function fFecha(v) { if (!v) return "-"; if (typeof v === "string" && v.indexOf("/Date(") === 0) { const ms = parseInt(v.substring(6), 10); return moment(ms).format("DD/MM/YYYY"); } return moment(v).isValid() ? moment(v).format("DD/MM/YYYY") : "-"; }
+        function fMoneda(v) { const n = Number(v); return "C$" + (isFinite(n) ? n.toFixed(2) : "0.00"); }
+        function colorClase(t) { t = (t || "").toLowerCase(); if (t.includes("reembolso")) return "green"; if (t.includes("anticipo")) return "#FFD700"; if (t.includes("emergencia") || t.includes("ejecut")) return "#FF6B6B"; return "#FFB300"; }
+
+
+        function EditExpensex(idExpense) {
+            // Url.Action("EditExpense", "Expenses", new { expenseId
+            var currentUrl = window.location.href;
+
+            // Codifica la URL actual en Base64 para pasarlo como parámetro 'returnUrl'
+            var encodedUrl = btoa(currentUrl);
+
+            var key = idExpense;
+            var optionName = "editar"
+            $.ajax({
+                url: '@Url.Action("ValidateExpense2")',
+                type: "POST",
+                data: { expenseId: key, option: optionName, url: encodedUrl },
+                dataType: "json",
+                traditional: true,
+                cache: false,
+                //contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    if (data.status != "Error") {
+                        var url = '@Url.Action("EditExpense2", "Expenses", new { expenseId = "0" })'.replace("0", idExpense);
+
+                        window.location.href = url;
+                    } else {
+                        swal.fire("Advertencia!", data.message, "warning");
+                    }
+
+
+                },
+                error: function () {
+                    alert("An error has occured!!!");
+                }
+            });
+        }
+ function verDetalle(idExpense) {
+                 var url = '@Url.Action("AuthorizeConsultPartial", "Expenses", new { _expenseId = "0" })'.replace("0", idExpense);
+                popup.SetContentUrl(url);
+         /*       popup.ShowAtElementByID(idExpense);*/
+
+    $.ajax({
+        url: '@Url.Action("AuthorizeConsultPartial", "Expenses")',
+        type: 'GET',
+        data: { _expenseId: idExpense },
+        success: function (data) {
+            // Cargar la vista parcial en el contenido del PopupControl
+            $('#popup').html(data);
+
+            // Mostrar el PopupControl
+            popup.Show();
+        },
+        error: function () {
+            // Manejar errores si es necesario
+        }
+    });
+            }
+
+            function verPDF(idExpense) {
+                     var url = '@Url.Action("LoadYield", "Expenses", new { expenseId = "0" })'.replace("0", idExpense);
+                popImage.SetContentUrl(url);
+                popImage.ShowAtElementByID(idExpense);
+
+}
+    function clickrefresh() {
+        tablaExpenses.ajax.reload();
+
+    }
+    function clickdenegar() {
+        debugger;
+        var selectedIDsx = getSelectedIDs();
+        if (selectedIDsx != null) {
+            Swal.fire({
+                title: 'Procesando solicitud...',
+                html: '<div class="loader"></div><br><b style="color:#e74c3c;">Por favor espere</b>',
+                allowOutsideClick: false,
+                showConfirmButton: false
+            });
+                 $.ajax({
+             url: '@Url.Action("DeniedCoordinator")',
+             type: "POST",
+                     data: { ids: selectedIDsx },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+
+                 success: function (data) {
+                     Swal.close();
+                     //$.LoadingOverlay("hide");
+                     if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                         confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+
+                                 LoadPartial();
+                             }
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+                 },
+                 beforeSend: function () {
+                     //$.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     //$.LoadingOverlay("hide");
+                     Swal.Close();
+                     alert("An error has occured!!!");
+                 }
+
+                 });
+            clickrefresh();
+        }
+    }
+
+    function clickautorizar() {
+        debugger;
+        var selectedIDsx = getSelectedIDs();
+        if (selectedIDsx != null)
+        {
+            Swal.fire({
+                title: 'Procesando solicitud...',
+                html: '<div class="loader"></div><br><b style="color:#e74c3c;">Por favor espere</b>',
+                allowOutsideClick: false,
+                showConfirmButton: false
+            });
+             $.ajax({
+             url: '@Url.Action("AuthorizeCoordinator")',
+             type: "POST",
+                 data: { ids: selectedIDsx },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+                 success: function (data) {
+                     Swal.close();
+
+                     //$.LoadingOverlay("hide");
+                 if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                         confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                              //   LoadPartial();
+                                 setTimeout(
+                                     function () {
+                                         location.reload(true);
+                                     }, 0001);
+
+                             }
+                         //    history.go(0);
+                             //$.LoadingOverlay("show" );
+                             window.location.href = window.location.href;
+
+                         });
+                 } else {
+                     Swal.close();
+
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+
+                 beforeSend: function () {
+                     //$.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     //$.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+        });
+            clickrefresh();
+        }
+    }
+    function onBeginCallback(s, e) {
+        // Pasamos los ids seleccionados al boton de autorizar
+        e.customArgs["selectedIDs"] = selectedIDs;
+        if (selectedIDs != "")
+            gvAuthorizeCoordinator.PerformCallback;
+    }
+
+    function onSelectionChanged(s, e) {
+        s.GetSelectedFieldValues("ExpenseId", GetSelectedFieldValuesCallback);
+    }
+
+    function GetSelectedFieldValuesCallback(values) {
+        // Captura todas las llaves seleccionadas
+        selectedIDs = values.join(',');
+    }
+
+    function onAuthorizeButtonClick(s, e) {
+        $("#selectedIdsAP").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function onDeniedButtonClick(s, e) {
+        $("#selectedIdsDN").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvAuthorizeCoordinator.SetHeight(height - 150);
+    }
+
+    function ShowDetailPopup(elementID, url) {
+        popImage.SetContentUrl(url);
+        popImage.ShowAtElementByID(elementID);
+    }
+     function onToolbarItemClick(s, e) {
+
+        if (e.item.name == "Authorize") {
+             $.ajax({
+             url: '@Url.Action("AuthorizeCoordinator")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+             success: function (data) {
+                 if (data.status != "Error") {
+                     $.LoadingOverlay("hide");
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                         confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                              //   LoadPartial();
+                                 setTimeout(
+                                     function () {
+                                         location.reload(true);
+                                     }, 0001);
+                                 $.LoadingOverlay("show");
+                                 window.location.href = window.location.href;
+
+                             }
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+
+                 beforeSend: function () {
+                     $.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     $.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+        });
+
+        }
+
+
+        if (e.item.name == "Denied") {
+             $.ajax({
+             url: '@Url.Action("DeniedCoordinator")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+
+             success: function (data) {
+                 if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                         confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+
+                                 LoadPartial();
+                             }
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+                 beforeSend: function () {
+                     $.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     $.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+        });
+        }
+         @*if (e.item.name == "Refresh") {
+             $.ajax({
+             url: '@Url.Action("RefreshPartial")',
+             type: "GET",
+             data: { },
+            //dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+
+                $('#authorizePartial').html(data);
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });*@
+       // }
+    }
+
+
+    </script>
+}
+@Html.DevExpress().GetScripts(
+       new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+       new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+       new Script { ExtensionSuite = ExtensionSuite.GridView }
+
+    )
+
+<link href="~/onlinecss/loamensaje.css" rel="stylesheet" />
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Autorización</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button class="btn btn-primary" onclick="clickautorizar()" id="btnAuthorize">Autorizar</button>
+                        <button class="btn btn-danger ml-2" onclick="clickdenegar()" id="btnDeny">Denegar</button>
+                        <button class="btn btn-secondary ml-2" onclick="clickrefresh()" id="btnRefresh">Refrescar</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th><input type="checkbox" id="checkAll"></th>
+                                    <th>Solicitud</th>
+                                    <th>Carnet</th>
+
+                                    <th>Nombre Completo</th>
+                                    <th>Fecha</th>
+                                    <th>Clase</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Vehiculo</th>
+                                     <th class="d-none">ExpenseId</th>
+
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@Html.DevExpress().PopupControl(settings =>
+{
+settings.Name = "popup";
+settings.ShowHeader = true;
+settings.HeaderText = "Detalle de viático";
+settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+settings.ShowOnPageLoad = false;
+settings.Width = 850;
+settings.Height = 300; // Configura la altura automática
+
+settings.CloseAction = CloseAction.CloseButton;
+settings.CloseOnEscape = true;
+settings.SetContent(() =>
+{
+    //Html.RenderAction("AuthorizeConsultPartial");
+
+    Html.RenderPartial("AuthorizeConsultPartial", null);
+});
+}).GetHtml()
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Imagen de archivo de rendición";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 800;
+    settingsPopup.Height = 600;
+    //settingsPopup.Modal = true;
+
+
+}).GetHtml()

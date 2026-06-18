@@ -1,0 +1,153 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.ExpenseDetail>(settings =>
+    {
+        settings.Name = "gvAuthorizeConsult";
+        settings.KeyFieldName = "ExpenseDetailId";
+        settings.CallbackRouteValues = new { Controller = "Expenses", Action = "AuthorizeConsultPartial" };
+        settings.ClientSideEvents.BeginCallback = "OnDetailGridBeginCallback";
+        settings.ClientSideEvents.EndCallback = "OnDetailGridEndCallback";
+        settings.Settings.ShowFooter = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.Width = Unit.Percentage(100);
+
+
+        //Configuracion de Columnas
+
+        settings.Columns.Add(m => m.ClasificationId, column =>
+        {
+            column.Caption = "Clasificacion";
+            column.ReadOnly = true;
+            column.Width = 80;
+            column.EditorProperties().ComboBox(p =>
+            {
+
+
+                p.TextField = "ClasificationName";
+                p.ValueField = "ClasificationId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.Concepts.GetAllClasification();
+                //p.ClientSideEvents.SelectedIndexChanged = "OnSelectedClasificationChanged";
+            });
+        });
+        settings.Columns.Add(m => m.CategoryId, column =>
+        {
+            column.Caption = "Categoria";
+            column.ReadOnly = true;
+            column.Width = 80;
+            column.EditorProperties().ComboBox(p =>
+            {
+
+                p.TextField = "CategoryName";
+                p.ValueField = "CategoryId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.Concepts.GetAllCategories();
+
+            });
+        });
+
+        settings.Columns.Add(m => m.SubCategoryId, column =>
+        {
+            column.Caption = "Sub Categoria";
+            column.ReadOnly = true;
+            column.Width = 80;
+            column.EditorProperties().ComboBox(p =>
+            {
+
+                p.IncrementalFilteringMode = IncrementalFilteringMode.StartsWith;
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.TextFormatString = "{0}";
+                p.TextField = "SubCategoryName";
+                p.ValueField = "SubCategoryId";
+                p.ValueType = typeof(int);
+                p.DataSource = slnRhonline.Models.Concepts.GetAllSubCategories();
+                p.Columns.Add("SubCategoryName", "SubCategoria", 130);
+                p.Columns.Add("Amount", "Monto", 130);
+            });
+        });
+
+
+        settings.Columns.Add(m => m.Amount, column =>
+        {
+            column.Caption = "Monto";
+            column.ReadOnly = true;
+            column.Width = 80;
+            column.EditorProperties().SpinEdit(p =>
+            {
+                p.DisplayFormatString = "c";
+                p.DisplayFormatInEditMode = true;
+                p.MinValue = 0;
+                p.MaxValue = 1000000;
+                p.SpinButtons.ShowLargeIncrementButtons = true;
+
+            });
+        });
+        settings.Columns.Add(m => m.HourStart, column =>
+        {
+            column.Caption = "Hora";
+            column.ReadOnly = true;
+            column.Width = 80;
+            column.EditorProperties().TimeEdit(p =>
+            {
+
+                p.NullText = "hh:mm tt";
+                p.DisplayFormatString = "hh:mm tt";
+                p.EditFormat = EditFormat.Custom;
+                p.EditFormatString = "hh:mm tt";
+
+
+            });
+        });
+        settings.Columns.Add(m => m.YieldAmount, column =>
+        {
+            column.Caption = "Monto a Rendir";
+            column.Width = 80;
+            column.EditorProperties().SpinEdit(p =>
+            {
+                p.DisplayFormatString = "c";
+                p.DisplayFormatInEditMode = true;
+                p.MinValue = 0;
+                p.MaxValue = 1000000;
+                p.SpinButtons.ShowLargeIncrementButtons = true;
+            });
+        });
+
+        settings.Columns.Add(m => m.ExpenseDetailNotes, column =>
+        {
+            column.Caption = "Nota";
+            column.AdaptivePriority = 7;
+            column.EditorProperties().Memo(p =>
+            {
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+                p.Width = 200;
+                p.Height = 50;
+
+            });
+        });
+
+
+
+
+        //Sub Totales
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "Amount");
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "YieldAmount");
+
+
+    });
+
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+
+@grid.Bind(Model).GetHtml()
+
+
+
+
+

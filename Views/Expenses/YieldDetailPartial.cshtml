@@ -1,0 +1,134 @@
+﻿@model IEnumerable<Entities.ExpenseDetail>
+<div class="table-responsive">
+    <table id="expenseTable" class="table table-bordered table-hover">
+        <thead style="background-color: #343a40; color: white;">
+            <tr>
+                <th>Clasificación</th>
+                <th>Categoría</th>
+                <th>Sub Categoría</th>
+                <th>Monto</th>
+                <th>Hora</th>
+                <th>Monto a Rendir</th>
+                <th>Nota</th>
+            </tr>
+        </thead>
+        <tbody style="background-color: #f8f9fa; color: #343a40;">
+            @foreach (var item in Model)
+            {
+            <tr>
+                <td>@slnRhonline.Models.Concepts.GetAllClasification().Where(x => x.ClasificationId == item.ClasificationId).FirstOrDefault().ClasificationName</td>
+                <td>@slnRhonline.Models.Concepts.GetAllCategories().Where(x => x.CategoryId == item.CategoryId).FirstOrDefault().CategoryName</td>
+                <td>@slnRhonline.Models.Concepts.GetAllSubCategories().Where(x => x.SubCategoryId == item.SubCategoryId).FirstOrDefault().SubCategoryName</td>
+                <td id="amount_@item.ExpenseDetailId">@item.Amount.ToString("C")</td> <!-- Ahora el Amount es mostrado aquí -->
+
+                <td>@item.HourStart.ToString("hh:mm tt")</td>
+                <td class="input-container">
+                    <input type="number" id="yieldAmount_@item.ExpenseDetailId"
+                           class="form-control yield-input"
+                           value="@item.YieldAmount" min="0" max="1000000"
+                           oninput="showUpdateButton(@item.ExpenseDetailId)">
+                    <button class="btn btn-outline-success btn-sm update-btn"
+                            id="updateBtn_@item.ExpenseDetailId"
+                            style="display: none;"
+                            onclick="updateYieldAmount(@item.ExpenseDetailId)">
+                        OK
+                    </button>
+                </td>
+                <td>@item.ExpenseDetailNotes</td>
+            </tr>
+       }
+        </tbody>
+    </table>
+</div>
+<style>
+    #expenseTable {
+        border: 1px solid #6c757d; /* Gris suave */
+    }
+
+        /* Encabezado */
+        #expenseTable thead {
+            background-color: #343a40; /* Negro */
+            color: white;
+        }
+
+        /* Filas del cuerpo */
+        #expenseTable tbody tr {
+            background-color: #f8f9fa; /* Blanco grisáceo */
+            color: #343a40; /* Negro */
+        }
+
+    /* Entrada */
+    .input-container {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .form-control {
+        background-color: white;
+        border-color: #6c757d; /* Gris suave */
+        color: #343a40; /* Negro */
+        width: 100px;
+    }
+
+    /* Botón OK */
+    .update-btn {
+        margin-left: 5px;
+        padding: 5px 10px;
+        border-color: #28a745; /* Verde */
+        color: #28a745; /* Verde */
+        display: inline-block;
+    }
+
+        .update-btn:hover {
+            background-color: #28a745;
+            color: white;
+        }
+
+    .form-control:focus {
+        border-color: #dc3545; /* Rojo cuando se enfoca */
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+</style>
+
+<script type="text/javascript">
+
+  function showUpdateButton(expenseDetailId) {
+        const updateBtn = document.getElementById(`updateBtn_${expenseDetailId}`);
+        updateBtn.style.display = 'inline-block';
+    }
+
+    function updateYieldAmount(expenseDetailId) {
+        // Obtener el valor del input de "Monto a Rendir"
+        var yieldAmount = document.getElementById('yieldAmount_' + expenseDetailId).value;
+        var amount      = document.getElementById('amount_' + expenseDetailId).value;
+
+        // Validación simple
+        if (yieldAmount === "" || yieldAmount <= 0) {
+            alert("El monto a rendir debe ser mayor a 0.");
+            return;
+        }
+        if (amount === "" || amount <= 0) {
+            alert("El monto debe ser mayor a 0.");
+            return;
+        }
+
+        // Realizar una petición AJAX al controlador para actualizar el monto
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("UpdateYieldAmount", "Expenses")',
+            data: {
+                ExpenseDetailId: expenseDetailId,
+                YieldAmount: yieldAmount,
+                Amount: amount
+            },
+            success: function (response) {
+                const updateBtn = document.getElementById('updateBtn_' + expenseDetailId);
+                updateBtn.style.display = 'none';                // Opcional: Actualizar la página o los datos.
+            },
+            error: function () {
+                const updateBtn = document.getElementById('updateBtn_' + expenseDetailId);
+                updateBtn.style.display = 'none';            }
+        });
+    }
+</script>

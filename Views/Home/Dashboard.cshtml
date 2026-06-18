@@ -1,0 +1,98 @@
+﻿@using DevExpress.DashboardWeb
+<!DOCTYPE HTML>
+@{ Layout = "~/Views/Shared/_mainLayout.cshtml"; }
+@model Entities.Employees
+
+@Html.DevExpress().GetStyleSheets(
+   new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+      new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@{
+    //var base64 = Convert.ToBase64String(Model.Picture);
+
+    //var imgSrc = String.Format("data:image/jpg;base64,{0}", base64);
+}
+
+<head>
+
+    <meta name="viewport" content="width=device-width,  user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+
+    <style>
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2
+        }
+    </style>
+</head>
+
+<script type="text/javascript">
+
+    function ExportChart(s, e) {
+        chart2.SaveToDisk("pdf");
+    }
+
+
+</script>
+
+<body>
+    <h2>Dashboard Recursos Humanos</h2>
+
+    <div style="overflow-x:auto;">
+        <table>
+
+            <tr>
+                <td>@{Html.RenderAction("DashboardExecutedPlannedPartial", "Expenses"); }</td>
+                <td>@{Html.RenderAction("DashboardExecutedPlannedPartial", "ExtraTime");}</td>
+
+            </tr>
+            <tr>
+
+                <td>@{Html.RenderAction("DashboardExpensesTopTenPartial", "Expenses"); }</td>
+                <td>@{Html.RenderAction("DashboardExtraTimeTopTenPartial", "ExtraTime"); }</td>
+
+
+            </tr>
+            <tr>
+
+                <td>@{Html.RenderAction("DashboardTopTenPartial", "Licenses"); }</td>
+                @*<td>@{Html.RenderAction("BalanceDashboardPartial", "Licenses");}</td>*@
+
+
+            </tr>
+
+        </table>
+    </div>
+</body>
+

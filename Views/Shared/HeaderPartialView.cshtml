@@ -1,0 +1,98 @@
+@model HeaderViewRenderMode?
+@using Entities
+<style>
+    .empty {
+        width: 20%;
+        visibility: hidden;
+    }
+
+    .dxnb-banner {
+        background: firebrick;
+    }
+
+    .dxnb-round {
+        border-radius: 10px;
+        border: 2px solid #ffffff;
+    }
+</style>
+
+@if (Model == HeaderViewRenderMode.Title)
+{
+    <div class="templateTitle">
+        @*Sistema de Registro de Horas Extras*@
+        @*@Html.ActionLink("Sistema de Registro de Horas Extras", "Index", "Home")*@
+    </div>
+}
+else
+{
+    if (Model == HeaderViewRenderMode.Full)
+    {
+        <div class="headerTop">
+            <div class="templateTitle">
+
+
+
+            </div>
+        </div>
+    }
+
+
+    string url = Url.Action("Index", "Home");
+
+    string url2 = Url.Action("Logout", "Login");
+    @*<div class="menuClose">
+           <img src="~/Content/Icons/menu.png" />
+        </div>*@
+
+
+
+    <div style="padding-left:5%">
+        <a href="@url" title="Ir al inicio" style="float:left;">
+            <img src="~/Content/Images/LogoOnline.png" alt="Logo" style="width:300px; height:100px;" />
+
+        </a>
+    </div>
+
+
+
+    if (Session["User"] == null)
+    {
+        return;
+    }
+    Entities.Employees employee = null;
+    employee = (Employees)Session["User"];
+    string imgPic = null;
+    if (employee.Picture == null)
+    {
+        imgPic = "~/Content/Icons/Add.png";
+    }
+    else
+    {
+        var base64 = Convert.ToBase64String(employee.Picture);
+        imgPic = String.Format("data:image/jpg;base64,{0}", base64);
+    }
+    var imgSrc = imgPic;
+    //var base64 = Convert.ToBase64String(employee.Picture);
+    //var imgSrc = String.Format("data:image/jpg;base64,{0}", base64);
+
+    <br />
+    <br />
+    <div style="width:45px;margin-right:50px;float:right;">
+        <a href="@url2" title="Cerrar Sesion">
+            <img src="~/Content/Icons/exit2.png" alt="Logo" />
+
+        </a>
+    </div>
+    <div style="width:80px;margin-right:0px;float:right;">
+        <font face="arial" size="1" color="white">
+            Hola:@employee.Names
+        </font>
+    </div>
+    <div style="width:40px;margin-right:0px;float:right;">
+        <img src="@imgSrc" style="width:30px; height:30px; border-radius:20px;solid #8B0000" />
+
+    </div>
+
+}
+
+

@@ -1,0 +1,43 @@
+﻿@model Entities.Employees
+@{
+    ViewBag.Title = "Bienvenidos";
+}
+<script>
+
+    //window.onload = voz("Bienvenido a la plataforma en línea de Recursos Humanos.")
+    function voz(mensaje) {
+        // vozHablar = new SpeechSynthesisUtterance(mensaje);
+        //window.speechSynthesis.speak(vozHablar);
+
+    }
+</script>
+
+<div class="divMain" align="center">
+    <div class="col-12">
+        <h2>Bienvenido(a)... @Html.DisplayFor(x => x.Names)</h2>
+    </div>
+    @*<div class="col-3 divContent">
+                <img src="@imgSrc" style="padding:30px 5px 5px 5px" />
+        </div>*@
+    <div class="col-9 divContent">
+        <p>
+            <strong>Estimado Usuario...</strong>
+        </p>
+
+        <p>
+            Toda la información registrada en nuestro sistema debe ser fidedigna
+            y será validada contra sistemas y registros correspondiente.
+        </p>
+
+        <p>
+            Tener en cuenta que la información debe ser real y debe contar con
+            los soportes correspondientes.
+        </p>
+        <p>
+            Equipo de Recursos Humanos.
+        </p>
+    </div>*
+</div>
+
+
+

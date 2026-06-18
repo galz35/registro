@@ -1,0 +1,105 @@
+﻿
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.AppointmentsDetail>(settings =>
+    {
+        settings.Name = "gvDetailAppointment";
+        settings.KeyFieldName = "IdCitaDetalle";
+        settings.CallbackRouteValues = new { Controller = "Appointments", Action = "ConsultAppointmentPartial" };
+
+
+
+        //Configuracion basica del grid
+        settings.Width = Unit.Percentage(100);
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+        settings.Settings.ShowFilterRow = false;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+        //settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 0;
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+
+        settings.SettingsEditing.Mode = GridViewEditingMode.Batch;
+        settings.SettingsEditing.BatchEditSettings.EditMode = GridViewBatchEditMode.Cell;
+        settings.SettingsEditing.BatchEditSettings.StartEditAction = GridViewBatchStartEditAction.Click;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+
+
+        settings.CommandColumn.Visible = false;
+        settings.CommandColumn.ShowCancelButton = false;
+        settings.CommandColumn.ShowDeleteButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = false;
+        settings.CommandColumn.ShowCancelButton = true;
+        settings.CommandColumn.Width = Unit.Pixel(120);
+
+
+
+        //Configuracion de Columnas
+
+        settings.Columns.Add(m => m.IdTipoServicio, column =>
+        {
+            column.Caption = "Tipo de Servicio";
+            column.AdaptivePriority = 1;
+            column.Width = Unit.Percentage(100);
+            column.ReadOnly = true;
+            column.EditorProperties().ComboBox(p =>
+            {
+
+                p.DropDownStyle = DropDownStyle.DropDownList;
+                p.TextField = "NombreTipoServicio";
+                p.ValueField = "IdTipoServicio";
+                p.ValueType = typeof(string);
+                p.DataSource = slnRhonline.Data.TipoServicio.ObtenerTipoServicios();
+                p.ValidationSettings.Display = Display.Dynamic;
+                p.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+
+
+
+            });
+        });
+
+
+
+        settings.Columns.Add(m => m.Observacion, column =>
+        {
+            column.Caption = "Observación";
+            column.AdaptivePriority = 2;
+            column.Width = Unit.Percentage(100);
+            column.ReadOnly = true;
+            column.EditorProperties().Memo(p =>
+            {
+                p.Style.CssClass = "memo";
+            });
+        });
+
+
+
+        settings.CellEditorInitialize = (s, e) =>
+        {
+            ((ASPxEdit)e.Editor).ValidationSettings.Display = Display.Dynamic;
+        };
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+
+
+
+
+
+

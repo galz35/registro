@@ -1,0 +1,594 @@
+﻿@model List<Entities.ExtraTime>
+@{
+    ViewBag.Title = "Autorizacion Jefe";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@section scripts {
+    <!-- Script específico para esta vista -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+
+
+
+
+    <script type="text/javascript">
+            var tablaExpenses;
+                     $(document).ready(function () {
+        $.LoadingOverlay("show");
+        tablaExpenses = $('#dataTable').DataTable({
+
+                "ajax": {
+                    "url": "@Url.Action("AuthorizeBossPartialjson", "Extratime")",
+                    "type": "GET",
+                    "datatype": "json"
+                }, "columnDefs": [
+                    {
+                        "targets": 0,
+                        "data": null,
+                        "defaultContent": '',
+                        "orderable": false
+                    }
+                ],
+                "columns": [
+                    {
+                        "data": null,
+
+                    },
+                    {
+                        "data": null,
+                        "render": function (data) {
+                            return "<input type='checkbox' class='checkItem' data-expenseid='" + data.Id + "'>";
+                        },
+                        "orderable": true,
+                        "searchable": true,
+                        "width": "10px"
+                    },
+
+
+
+                    { "data": "EmployeeNumber" },
+                    { "data": "Employee" },
+                    { "data": "ExecutionDate", "render": function (data) { return moment(data).format("DD/MM/YYYY"); } },
+
+                    { "data": "HourStart", "render": function (data) { return moment(data).format("HH:mm:ss"); } },
+                    { "data": "HourEnd", "render": function (data) { return moment(data).format("HH:mm:ss"); } },
+                    { "data": "Reasons" },
+                    { "data": "Service" },
+
+
+
+                    { "data": "Status" },
+                    { "data": "Notes" },
+
+
+                    {
+                        "data": "Id", "visible": false // Oculta visualmente la columna
+ },
+
+
+                ],
+                 "dom": 'Blfrtip',
+           "lengthMenu": [10, 20, 50, 100], // Opciones de selección de registros por página
+           "pageLength": 10, // Número de registros por página por defecto
+             "language": {
+                "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+            "responsive": true,
+
+                "drawCallback": function (settings) {
+                    var api = this.api();
+                    var rows = api.rows({ page: 'current' }).nodes();
+                    var counter = 1;
+
+                    $.each(rows, function (index, row) {
+                        row.cells[0].innerHTML = counter;
+                        counter++;
+                    });
+                },
+
+
+
+            });
+        $.LoadingOverlay("hide");
+
+        $('#checkAll').click(function () {
+                $('.checkItem').prop('checked', this.checked);
+            });
+
+            $('.checkItem').change(function () {
+                var allChecked = true;
+                $('.checkItem').each(function () {
+                    if (!this.checked) {
+                        allChecked = false;
+                    }
+                });
+                $('#checkAll').prop('checked', allChecked);
+            });
+        $('#exportExcel').click(function () {
+            var exportButton = new $.fn.dataTable.Buttons(tablaExpenses, {
+                buttons: ['excel']
+            });
+            exportButton.container().appendTo($('.dataTables_length')); // Agregar el botón en el mismo contenedor que la barra de herramientas
+            exportButton.trigger();
+        });
+    $('#selectAll').on('change', function () {
+        var isChecked = $(this).prop('checked');
+        $('.checkItem').prop('checked', isChecked);
+    });
+    $('.checkItem').on('change', function () {
+        var id = $(this).closest('tr').find('td:last').text();
+        if (this.checked) {
+            selectedIDs.push(id);
+        } else {
+            selectedIDs = selectedIDs.filter(function (value) {
+                return value !== id;
+            });
+        }
+        console.log(selectedIDs); // Verificar IDs seleccionados en la consola
+    });
+    // Control para enviar los IDs seleccionados al hacer clic en el botón
+
+
+    $('.checkItem:checked').each(function () {
+        selectedIDs.push($(this).closest('tr').find('td:first').text()); // Ajusta esta línea según la estructura de tu tabla
+    });
+            // Check Todo
+          // Check Todo
+            $('#btnDeny').on('click', function () {
+                // Lógica para el botón "Denegar"
+            });
+
+            $('#btnRefresh').on('click', function () {
+                tablaExpenses.ajax.reload();
+            });
+
+
+         });
+
+    function getSelectedIDs() {
+        var selectedIDs = '';
+        $('.checkItem:checked').each(function () {
+            var id = $(this).data('expenseid');
+             if (selectedIDs !== '') {
+                selectedIDs += ',';
+            }
+            selectedIDs += id;
+        });
+        return selectedIDs;
+
+
+    }
+
+
+
+        function clickrefresh() {
+            $.LoadingOverlay("show");
+        tablaExpenses.ajax.reload();
+            $.LoadingOverlay("hide");
+    }
+    function clickdenegar() {
+        debugger;
+        var selectedIDsx = getSelectedIDs();
+        if (selectedIDsx != null) {
+                 $.ajax({
+             url: '@Url.Action("DeniedBoss")',
+             type: "POST",
+                     data: { ids: selectedIDsx },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+
+                 success: function (data) {
+                     $.LoadingOverlay("hide");
+                     //$.LoadingOverlay("hide");
+                     if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+
+                                 tablaExpenses.ajax.reload();
+                             }
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+                 },
+                 beforeSend: function () {
+                     $.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     $.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+
+                 });
+            clickrefresh();
+        }
+    }
+    function clickautorizar() {
+        debugger;
+        var selectedIDsx = getSelectedIDs();
+        if (selectedIDsx != null)
+        {
+             $.ajax({
+             url: '@Url.Action("AuthorizeBoss")',
+             type: "POST",
+                 data: { ids: selectedIDsx },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+                 success: function (data) {
+                     $.LoadingOverlay("hide");
+                 if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                                 tablaExpenses.ajax.reload();
+
+                              //   LoadPartial();
+                                 //setTimeout(
+                                 //    function () {
+                                 //        location.reload(true);
+                                 //    }, 0001);
+
+                             }
+                             //    history.go(0);
+                             clickrefresh();
+                             //window.location.href = window.location.href;
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+                     clickrefresh();
+                 }
+
+
+             },
+
+                 beforeSend: function () {
+                  $.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     $.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+        });
+            clickrefresh();
+        }
+    }
+
+
+
+
+
+
+    function onBeginCallback(s, e) {
+        // Pasamos los ids seleccionados al boton de autorizar
+        e.customArgs["selectedIDs"] = selectedIDs;
+        if (selectedIDs != "")
+            gvAuthorizeBoss.PerformCallback;
+    }
+
+    function onSelectionChanged(s, e) {
+        s.GetSelectedFieldValues("ExpenseId", GetSelectedFieldValuesCallback);
+    }
+
+    function GetSelectedFieldValuesCallback(values) {
+        // Captura todas las llaves seleccionadas
+        selectedIDs = values.join(',');
+    }
+
+    function onAuthorizeButtonClick(s, e) {
+        $("#selectedIdsAP").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function onDeniedButtonClick(s, e) {
+        $("#selectedIdsDN").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvAuthorizeBoss.SetHeight(height - 150);
+    }
+
+    function ShowDetailPopup(elementID, url) {
+        popImage.SetContentUrl(url);
+        popImage.ShowAtElementByID(elementID);
+    }
+
+        var currentExpenseId;
+        function OnHyperLinkClick(expenseId) {
+            currentExpenseId = expenseId;
+            gvAuthorizeConsult.PerformCallback();
+        }
+
+        function OnDetailGridEndCallback(s, e) {
+            if (!popup.IsVisible())
+                popup.Show();
+        }
+     function onToolbarItemClick(s, e) {
+
+        if (e.item.name == "Authorize") {
+             $.ajax({
+             url: '@Url.Action("AuthorizeBoss")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+                 success: function (data) {
+                     //$.LoadingOverlay("hide");
+                 if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                              //   LoadPartial();
+                                 //setTimeout(
+                                 //    function () {
+                                 //        location.reload(true);
+                                 //    }, 0001);
+                                 tablaExpenses.ajax.reload();
+
+                             }
+                         //    history.go(0);
+                             //$.LoadingOverlay("show" );
+                             window.location.href = window.location.href;
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+
+                 beforeSend: function () {
+                     //$.LoadingOverlay("show" );
+                 },
+                 error: function (error) {
+                     //$.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+        });
+
+        }
+
+
+        if (e.item.name == "Denied") {
+             $.ajax({
+             url: '@Url.Action("DeniedBoss")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+
+                 success: function (data) {
+
+                     //$.LoadingOverlay("hide");
+                     if (data.status != "Error") {
+                     swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             confirmButtonText: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+
+                                 tablaExpenses.ajax.reload();
+
+                             }
+
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+                 },
+                 beforeSend: function () {
+                     ////$.LoadingOverlay("show");
+                 },
+                 error: function (error) {
+                     //$.LoadingOverlay("hide");
+                     alert("An error has occured!!!");
+                 }
+
+        });
+        }
+         if (e.item.name == "Refresh") {
+             $.ajax({
+             url: '@Url.Action("RefreshPartial")',
+             type: "GET",
+             data: { },
+            //dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+                 success: function (data) {
+
+                $('#authorizePartial').html(data);
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+    }
+
+     @*function LoadPartial(s, e) {
+        $.ajax({
+            url: '@Url.Action("AuthorizeBossPartial","Expenses")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#authorizePartial').html(result);
+        });
+        }*@
+
+            function verDetalle(idExpense) {
+                 var url = '@Url.Action("AuthorizeConsultPartial", "Expenses", new { _expenseId = "0" })'.replace("0", idExpense);
+                popup.SetContentUrl(url);
+         /*       popup.ShowAtElementByID(idExpense);*/
+
+    $.ajax({
+        url: '@Url.Action("AuthorizeConsultPartial", "Expenses")',
+        type: 'GET',
+        data: { _expenseId: idExpense },
+        success: function (data) {
+            // Cargar la vista parcial en el contenido del PopupControl
+            $('#popup').html(data);
+
+            // Mostrar el PopupControl
+            popup.Show();
+        },
+        error: function () {
+            // Manejar errores si es necesario
+        }
+    });
+            }
+
+            function verPDF(idExpense) {
+          var url = '@Url.Action("LoadYield", "Expenses", new { expenseId = "0" })'.replace("0", idExpense);
+                    popImage.SetContentUrl(url);
+                    popImage.ShowAtElementByID(idExpense);
+}
+
+
+    </script>
+}
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.GridView }
+
+ )
+
+
+
+
+
+
+
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary" style="color: #800 !important;">Autorización</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button class="btn btn-primary" onclick="clickautorizar()" id="btnAuthorize">Autorizar</button>
+                        <button class="btn btn-danger ml-2" onclick="clickdenegar()" id="btnDeny">Denegar</button>
+                        <button class="btn btn-secondary ml-2" onclick="clickrefresh()" id="btnRefresh">Refrescar</button>
+
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th><input type="checkbox" id="checkAll"></th>
+                                    <th>Carnet</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Fecha</th>
+                                    <th>Hora Inicio</th>
+                                    <th>Hora Fin</th>
+                                    <th>Servicio</th>
+                                    <th>Razon</th>
+                                    <th>Estatus</th>
+
+                                    <th>Notas</th>
+
+                                    <th class="d-none">ExpenseId</th>
+
+
+
+
+
+
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

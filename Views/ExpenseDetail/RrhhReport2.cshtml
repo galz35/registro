@@ -1,0 +1,391 @@
+﻿@{
+    ViewBag.Title = "Dashboard de Viáticos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml"; // Ajusta si usas otro layout
+}
+
+<br />
+<div class="form-group row">
+    <div class="col-md-12 d-flex">
+        <button type="button" class="btn btn-secondary mr-2" onclick="location.href='@Url.Action("FinancialParameters", "Expenses")'">
+            <i class="fas fa-arrow-left"></i> Volver
+        </button>
+        <button type="button" class="btn btn-info mr-2" id="btnExportarOriginal">
+            <i class="fas fa-envelope"></i> Enviar Excel (Correo)
+        </button>
+        <button type="button" class="btn btn-success font-weight-bold" id="btnDescargarExcelGlobal">
+            <i class="fas fa-file-excel"></i> Descargar Todo (Excel Completo)
+        </button>
+    </div>
+</div>
+
+<div class="container-fluid mt-3">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <label class="font-weight-bold">Seleccione fecha de pago:</label>
+            <input type="text" id="fechafin" class="form-control" placeholder="DD/MM/YYYY" autocomplete="off">
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button class="btn btn-primary btn-block" id="btnBuscar">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+        </div>
+    </div>
+
+    <div id="kpiRow" class="row mb-4"></div>
+</div>
+
+<div class="container-fluid">
+    <div class="card shadow mb-4 border-left-primary">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Resumen por Gerencia</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tablaResumen" class="table table-bordered table-hover" width="100%">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Gerencia</th>
+                            <th class="text-center">Cant. de Viáticos</th>
+                            <th class="text-right">Monto Total</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot>
+                        <tr class="font-weight-bold bg-light">
+                            <td>TOTAL GENERAL</td>
+                            <td class="text-center" id="lblTotalConteo">0</td>
+                            <td class="text-right" id="lblTotalMonto">C$ 0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalles" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="max-width: 95%;">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="modalTitle">Detalle de Gerencia</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="tablaViaticosDetalle" class="table table-bordered table-hover table-sm" width="100%">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Carnet</th>
+                                <th>Empleado</th>
+                                <th>Departamento</th>
+                                <th>Fecha viático</th>
+                                <th>Justificación</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="position: absolute; top: -9999px; left: -9999px;">
+    <table id="tablaExportGlobal">
+        <thead>
+            <tr>
+                <th>Carnet</th>
+                <th>Empleado</th>
+                <th>Empresa</th>
+                <th>Gerencia</th>
+                <th>Subgerencia</th>
+                <th>Área</th>
+                <th>Departamento</th>
+                <th>Depto. Traslado</th>
+                <th>Ruta</th>
+                <th>Fecha Viático</th>
+                <th>Fecha Pago</th>
+                <th>Tipo Viático</th>
+                <th>Periodo</th>
+                <th>Justificación</th>
+                <th>Clasificación</th>
+                <th>Categoría</th>
+                <th>Subcategoría</th>
+                <th>Monto</th>
+                <th>Monto Rendir</th>
+                <th>Monto Retornar</th>
+                <th>Estado</th>
+                <th>Método Pago</th>
+                <th>Banco</th>
+                <th>Cuenta</th>
+                <th>Cta. Contable</th>
+                <th>CC</th>
+                <th>Actividad</th>
+                <th>Negocio</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet" />
+
+    <script>
+        let dataGlobal = [];
+        let tablaDetalle;
+        let tablaExportacionGlobal;
+
+        const paleta = ["#6c757d", "#007bff", "#dc3545", "#28a745", "#17a2b8", "#ffc107", "#6610f2", "#fd7e14"];
+
+        function formatFecha(d) {
+            if (!d) return "";
+            if (typeof d === 'string' && d.indexOf('/Date(') !== -1) {
+                return moment(parseInt(d.substr(6))).format("DD/MM/YYYY");
+            }
+            return moment(d).format("DD/MM/YYYY");
+        }
+
+        $(document).ready(function() {
+            $("#fechafin").datepicker({ dateFormat: 'dd/mm/yy', changeMonth: true, changeYear: true });
+
+            // 1. DataTable Detalles (Modal)
+            tablaDetalle = $('#tablaViaticosDetalle').DataTable({
+                language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                responsive: true,
+                columns: [
+                    { data: "numeroEmpleado", defaultContent: '' },
+                    { data: "colaborador", defaultContent: '' },
+                    { data: "Departamento", defaultContent: '' },
+                    { data: "fecha_pagado", render: formatFecha },
+                    { data: "justificacion", defaultContent: '' },
+                    { data: "monto", className: "text-right", render: d => "C$" + (+d).toFixed(2) },
+                    {
+                        data: "estado",
+                        render: function (d) {
+                            let status = d || "Sin Estado";
+                            return `<span class="badge badge-secondary">${status}</span>`;
+                        }
+                    }
+                ]
+            });
+
+            // 2. DataTable Excel Global (con Tipo y Periodo robustos)
+            tablaExportacionGlobal = $('#tablaExportGlobal').DataTable({
+                dom: 'B',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Reporte_Global_Viaticos',
+                        exportOptions: { columns: '*' }
+                    }
+                ],
+                columns: [
+                    { data: "numeroEmpleado", defaultContent: '' },
+                    { data: "colaborador", defaultContent: '' },
+                    { data: "empresa", defaultContent: '' },
+                    { data: "gerencia", defaultContent: '' },
+                    { data: "subgerencia", defaultContent: '' },
+                    { data: "areaName", defaultContent: '' },
+                    { data: "Departamento", defaultContent: '' },
+                    { data: "Departamentotraslado", defaultContent: '' },
+                    { data: "Ruta", defaultContent: '' },
+                    { data: "fecha_pagado", render: formatFecha },
+                    { data: "fecha_pago", render: formatFecha },
+                    // TRUCO PARA TIPO: Lee "tipo" y si viene nulo busca "ClassName"
+                    { data: function(row) { return row.tipo || row.ClassName || ''; } },
+                    // TRUCO PARA PERIODO: Lee "periodo" y si viene nulo busca "PeriodNotes"
+                    { data: function(row) { return row.periodo || row.PeriodNotes || ''; } },
+                    { data: "justificacion", defaultContent: '' },
+                    { data: "Clasification", defaultContent: '' },
+                    { data: "Category", defaultContent: '' },
+                    { data: "SubCategory", defaultContent: '' },
+                    { data: "monto", defaultContent: '0' },
+                    { data: "monto_rendir", defaultContent: '0' },
+                    { data: "monto_retornar", defaultContent: '0' },
+                    { data: "estado", defaultContent: '' },
+                    { data: "ORG_PAYMENT_METHOD_NAME", defaultContent: '' },
+                    { data: "Banco", defaultContent: '' },
+                    { data: "cuenta", defaultContent: '' },
+                    { data: "cuentacontable", defaultContent: '' },
+                    { data: "cc", defaultContent: '' },
+                    { data: "act", defaultContent: '' },
+                    { data: "negocio", defaultContent: '' }
+                ]
+            });
+
+            // 3. Descargar Excel
+            $('#btnDescargarExcelGlobal').click(function() {
+                if (dataGlobal.length === 0) {
+                    Swal.fire('Atención', 'No hay datos para exportar. Por favor, realice una búsqueda primero.', 'warning');
+                    return;
+                }
+                tablaExportacionGlobal.button(0).trigger();
+            });
+
+            // 4. Buscar Datos
+            $("#btnBuscar").click(function() {
+                const fecha = $("#fechafin").val();
+                if (!fecha) { Swal.fire('Atención', 'Seleccione una fecha válida.', 'warning'); return; }
+
+                $.ajax({
+                    url: '@Url.Action("GetReportDataJson", "ExpenseDetail")',
+                    type: 'POST',
+                    data: { fechafin: fecha },
+                    beforeSend: () => $.LoadingOverlay("show"),
+                    success: function(response) {
+                        dataGlobal = response.data;
+                        generarResumenGerencias(dataGlobal);
+                        renderKPI(dataGlobal);
+                        tablaExportacionGlobal.clear().rows.add(dataGlobal).draw();
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'Ocurrió un error al cargar los datos.', 'error');
+                    },
+                    complete: () => $.LoadingOverlay("hide")
+                });
+            });
+
+            // 5. Generar Resumen
+            function generarResumenGerencias(dataArr) {
+                const tbody = $('#tablaResumen tbody').empty();
+                let resumen = {};
+                let granTotalConteo = 0;
+                let granTotalMonto = 0;
+
+                dataArr.forEach(item => {
+                    let g = item.gerencia || "Sin Gerencia Especificada";
+                    if (!resumen[g]) { resumen[g] = { conteo: 0, total: 0 }; }
+                    resumen[g].conteo++;
+                    resumen[g].total += (item.monto || 0);
+
+                    granTotalConteo++;
+                    granTotalMonto += (item.monto || 0);
+                });
+
+                for (const [gerencia, valores] of Object.entries(resumen)) {
+                    tbody.append(`
+                        <tr>
+                            <td class="font-weight-bold text-primary">${gerencia}</td>
+                            <td class="text-center">${valores.conteo}</td>
+                            <td class="text-right">C$ ${valores.total.toFixed(2)}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-info btn-ver-detalle" data-gerencia="${gerencia}">
+                                    <i class="fas fa-eye"></i> Ver Detalles
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                }
+
+                $('#lblTotalConteo').text(granTotalConteo);
+                $('#lblTotalMonto').text("C$ " + granTotalMonto.toFixed(2));
+            }
+
+            // 6. Ver Detalles (Modal)
+            $('#tablaResumen').on('click', '.btn-ver-detalle', function() {
+                let gerenciaSeleccionada = $(this).data('gerencia');
+                let dataFiltrada = dataGlobal.filter(x => (x.gerencia || "Sin Gerencia Especificada") === gerenciaSeleccionada);
+
+                $('#modalTitle').text('Detalles: ' + gerenciaSeleccionada);
+                tablaDetalle.clear().rows.add(dataFiltrada).draw();
+                $('#modalDetalles').modal('show');
+
+                setTimeout(() => { tablaDetalle.columns.adjust().responsive.recalc(); }, 200);
+            });
+
+            // 7. LÓGICA KPI ACTUALIZADA (Ahora con conteo y MONTOS)
+            function renderKPI(dataArr) {
+                const stats = {};
+                let granTotalMonto = 0;
+
+                // Agrupar por estado sumando conteo y monto
+                dataArr.forEach(x => {
+                    let est = x.estado || "Desconocido";
+                    if (!stats[est]) { stats[est] = { count: 0, monto: 0 }; }
+                    stats[est].count++;
+                    stats[est].monto += (x.monto || 0);
+                    granTotalMonto += (x.monto || 0);
+                });
+
+                stats["Total"] = { count: dataArr.length, monto: granTotalMonto };
+
+                const $row = $('#kpiRow').empty();
+                const estados = Object.keys(stats).filter(e => e !== "Total");
+
+                [...estados, "Total"].forEach((estado, index) => {
+                    const bg = (estado === "Total") ? "#343a40" : paleta[index % paleta.length];
+                    const data = stats[estado];
+
+                    // Formato de moneda con comas
+                    const montoFormateado = "C$ " + data.monto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    // Cambié a col-md-3 para dar más espacio a las tarjetas con la plata
+                    $row.append(`
+                        <div class="col-md-3 mb-3">
+                          <div class="card text-white shadow-sm" style="background:${bg};">
+                            <div class="card-body p-3 text-center">
+                              <h6 class="font-weight-bold text-uppercase mb-1">${estado}</h6>
+                              <div class="h4 mb-0 font-weight-bold">${data.count} <span style="font-size: 0.5em; font-weight: normal;">viáticos</span></div>
+                              <div class="mt-2 text-white-50" style="font-size: 0.9em; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px;">
+                                 ${montoFormateado}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                    `);
+                });
+            }
+
+            // 8. Exportar por Correo
+            $('#btnExportarOriginal').on('click', function () {
+                Swal.fire({
+                    title: 'Enviando...',
+                    text: 'Generando reporte y enviándolo al correo.',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                $.ajax({
+                    url: '@Url.Action("ExportDetailAllUsersv2", "ExpenseDetail")',
+                    type: 'GET',
+                    success: function (data) {
+                        Swal.close();
+                        if (data === "exito") {
+                            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El detalle fue enviado a su correo.' });
+                        } else {
+                            Swal.fire({ icon: 'info', title: 'Sin resultados', text: 'No se encontraron datos.' });
+                        }
+                    },
+                    error: function () {
+                        Swal.close();
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Error al exportar los datos.' });
+                    }
+                });
+            });
+        });
+    </script>
+}

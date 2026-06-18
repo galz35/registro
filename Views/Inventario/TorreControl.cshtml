@@ -1,0 +1,563 @@
+﻿@{
+    ViewBag.Title = "Torre de Control · Logística RRHH";
+    string carnetBodeguero = User.Identity.Name;
+}
+
+<style>
+    :root {
+        --primario: #2c3e50;
+        --acento: #e1251b;
+        --bg-color: #f8f9fc;
+        --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    }
+
+    body {
+        background-color: var(--bg-color);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Hero Dashboard */
+    .hero {
+        background: linear-gradient(135deg, var(--acento), #8a0000);
+        color: #fff;
+        border-radius: 16px;
+        padding: 25px 30px;
+        box-shadow: 0 10px 25px rgba(225, 37, 27, 0.2);
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero::before {
+            content: '\f4d3';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: -20px;
+            top: -30px;
+            font-size: 150px;
+            opacity: 0.1;
+        }
+
+    /* Tarjetas KPI como Filtros */
+    .kpi-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: 0.2s;
+        cursor: pointer;
+        min-width: 130px;
+        border: 2px solid transparent;
+        text-align: center;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .kpi-card.active-filter {
+            border-color: #fff;
+            background: var(--primario);
+            color: white !important;
+        }
+
+            .kpi-card.active-filter .n, .kpi-card.active-filter small {
+                color: white !important;
+            }
+
+        .kpi-card .n {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primario);
+            line-height: 1.1;
+        }
+
+        .kpi-card small {
+            color: #888;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+        }
+
+    /* Panel Lateral (Drawer) Mejorado */
+    .side-panel {
+        position: fixed;
+        right: -650px;
+        top: 0;
+        width: 650px;
+        height: 100vh;
+        background: #f8f9fc;
+        z-index: 1060;
+        transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: -10px 0 40px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+    }
+
+        .side-panel.active {
+            right: 0;
+        }
+
+    .side-panel-header {
+        padding: 20px 25px;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+    }
+
+    .side-panel-body {
+        padding: 25px;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+
+    .side-panel-footer {
+        padding: 20px 25px;
+        background: #fff;
+        border-top: 1px solid #eee;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.02);
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        z-index: 1050;
+        display: none;
+        backdrop-filter: blur(2px);
+    }
+
+    /* Tabla Principal */
+    .shell {
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: var(--card-shadow);
+        padding: 25px;
+        border: none;
+    }
+
+    .table-custom thead th {
+        border-bottom: 2px solid #eee;
+        border-top: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+    }
+
+    .table-custom tbody td {
+        vertical-align: middle;
+    }
+
+    .avatar-circle {
+        width: 35px;
+        height: 35px;
+        background: var(--gris2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: var(--primario);
+        margin-right: 10px;
+    }
+
+    /* Badges de Estado */
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.75rem;
+    }
+
+    .status-pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-aprobada {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-parcial {
+        background: #e0f2f1;
+        color: #00695c;
+    }
+
+    .status-atendida {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    /* Tabla interna de Despacho */
+    .table-despacho input {
+        border: 2px solid var(--gris2);
+        border-radius: 6px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+        .table-despacho input:focus {
+            border-color: var(--acento);
+            outline: none;
+        }
+
+    .inp-lote {
+        font-size: 0.8rem;
+        font-weight: normal !important;
+        text-align: left !important;
+    }
+</style>
+
+<div class="container-fluid mt-3 mb-5">
+
+    <div class="hero d-flex flex-wrap justify-content-between align-items-center">
+        <div class="mb-3 mb-lg-0">
+            <h2 class="font-weight-bold mb-1">Torre de Control</h2>
+            <p class="mb-0 opacity-75" style="font-size: 1.05rem;">Gestión centralizada de dotación y despachos.</p>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2" style="gap: 15px;">
+            <div class="kpi-card text-dark" id="filtroPendiente" onclick="filtrar('Pendiente', this)">
+                <div class="n" id="kpiPend">0</div>
+                <small>En Revisión Jefe</small>
+            </div>
+            <div class="kpi-card text-dark" id="filtroAprobada" onclick="filtrar('Aprobada', this)">
+                <div class="n text-primary" id="kpiAprob">0</div>
+                <small>Para Despachar</small>
+            </div>
+            <div class="kpi-card text-dark" id="filtroParcial" onclick="filtrar('Parcial', this)">
+                <div class="n text-info" id="kpiParcial">0</div>
+                <small>Entregas Parciales</small>
+            </div>
+
+            <div class="ml-2 pl-3 border-left" style="border-color: rgba(255,255,255,0.3) !important;">
+                <label class="small font-weight-bold text-white mb-1 d-block opacity-75">BODEGA ACTIVA</label>
+                <select id="selAlm" class="form-control form-control-sm font-weight-bold shadow-sm" style="width:180px; border-radius: 8px;"></select>
+            </div>
+        </div>
+    </div>
+
+    <div class="shell">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="font-weight-bold m-0 text-dark">Monitor de Solicitudes</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-danger font-weight-bold rounded-pill px-3" onclick="Swal.fire('Próximamente','El módulo de Salidas por Evento Masivo está en construcción.','info')">
+                    <i class="fas fa-gift mr-1"></i> Salida Evento
+                </button>
+                <button class="btn btn-sm btn-light border rounded-pill px-3 ml-2" onclick="recargarTabla()" title="Actualizar Datos">
+                    <i class="fas fa-sync-alt text-muted"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="tblTorre" class="table table-custom w-100">
+                <thead>
+                    <tr>
+                        <th style="width: 10%">Fecha</th>
+                        <th style="width: 25%">Colaborador</th>
+                        <th style="width: 20%">Ubicación</th>
+                        <th style="width: 15%">Estado</th>
+                        <th style="width: 20%">Comentario RRHH</th>
+                        <th style="width: 10%" class="text-right">Acción</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="cerrarPanel()"></div>
+
+<div class="side-panel" id="sidePanel">
+
+    <div class="side-panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <span id="txtEstadoLabel" class="badge-status mb-1 d-inline-block"></span>
+            <h4 class="font-weight-bold mb-0 text-dark">Gestión de Solicitud <span id="txtIdSol" class="text-danger"></span></h4>
+        </div>
+        <button class="btn btn-light rounded-circle shadow-sm" onclick="cerrarPanel()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="side-panel-body">
+
+        <div class="d-flex align-items-center p-3 mb-4 bg-white shadow-sm" style="border-radius: 12px; border-left: 4px solid var(--acento);">
+            <div class="avatar-circle" style="width: 50px; height: 50px; font-size: 1.5rem;" id="txtAvatarEmp">?</div>
+            <div class="ml-2">
+                <h6 class="font-weight-bold mb-0 text-dark" id="txtNombreEmp">Cargando...</h6>
+                <small class="text-muted d-block" id="txtDeptoEmp">...</small>
+                <small class="text-primary font-weight-bold" id="txtCarnetEmp">...</small>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="small font-weight-bold text-muted text-uppercase mb-2"><i class="fas fa-history mr-1"></i> Entregas Recientes a este empleado</label>
+            <div id="divHistorial" class="bg-white rounded p-2 shadow-sm border">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <label class="small font-weight-bold text-dark text-uppercase m-0">Artículos a Despachar</label>
+                <small class="text-muted"><i class="fas fa-info-circle"></i> Ajusta cantidad y lote</small>
+            </div>
+
+            <div class="table-responsive bg-white rounded shadow-sm border p-2">
+                <table class="table table-sm table-despacho mb-0" id="tblDespacho">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th style="width:40%">Artículo</th>
+                            <th class="text-center" style="width:15%">Aprob.</th>
+                            <th class="text-center" style="width:15%">Falta</th>
+                            <th class="text-center" style="width:30%">Entregar / Lote</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="small font-weight-bold text-muted"><i class="fas fa-comment-dots mr-1"></i> RESPUESTA AL EMPLEADO</label>
+                    <textarea id="txtRespuesta" class="form-control" rows="3" placeholder="Mensaje visible en el portal del colaborador..."></textarea>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="small font-weight-bold text-muted"><i class="fas fa-lock mr-1"></i> NOTA INTERNA (PRIVADA)</label>
+                    <textarea id="txtNotaInterna" class="form-control bg-light" rows="3" placeholder="Solo visible para RRHH y Bodega..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="side-panel-footer">
+        <div class="row">
+            <div class="col-5">
+                <button class="btn btn-light btn-block font-weight-bold border" onclick="guardarComentarios()">
+                    <i class="fas fa-save mr-1"></i> Guardar Notas
+                </button>
+            </div>
+            <div class="col-7">
+                <button class="btn btn-danger btn-block font-weight-bold shadow" onclick="procesarDespacho()">
+                    <i class="fas fa-box-open mr-1"></i> PROCESAR DESPACHO
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const CARNET_BODEGA = "@carnetBodeguero";
+        let DT_Torre = null;
+        let ID_ACTIVO = null;
+
+        $(document).ready(function() {
+            initAlmacenes();
+            initTablaTorre();
+        });
+
+        // 1. Selector de Almacén
+        function initAlmacenes() {
+            $.get('/Inventario/Almacenes', function(res) {
+                if(res.ok && res.data.length > 0) {
+                    let html = res.data.map(a => `<option value="${a.IdAlmacen}">${a.Nombre}</option>`).join('');
+                    $('#selAlm').html(html);
+                }
+            });
+        }
+
+        // 2. DataTables con Diseño Limpio
+        function initTablaTorre() {
+            DT_Torre = $('#tblTorre').DataTable({
+                ajax: '/Inventario/TorreControlListado',
+                order: [[0, 'desc']], // Más recientes primero
+                dom: 't<"d-flex justify-content-between mt-3"ip>', // Sin barra de búsqueda nativa por defecto
+                columns: [
+                    {
+                        data: 'FechaCreacion',
+                        render: d => `<span class="small text-muted">${moment(d).format('DD/MMM/YY HH:mm')}</span><br><b>#${DT_Torre ? DT_Torre.row(this).data().IdSolicitud : ''}</b>` // Hack visual rápido
+                    },
+                    {
+                        data: 'Empleado',
+                        render: (d, t, r) => `
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle shadow-sm" style="width:30px; height:30px; font-size:0.9rem;">${d.charAt(0)}</div>
+                                <div><b class="text-dark">${d}</b><br><small class="text-muted">${r.EmpleadoCarnet}</small></div>
+                            </div>`
+                    },
+                    { data: 'Gerencia', render: (d, t, r) => `<small class="font-weight-bold text-dark">${d}</small><br><small class="text-muted">${r.Departamento}</small>` },
+                    { data: 'Estado', render: s => `<span class="badge-status status-${s.toLowerCase()}">${s}</span>` },
+                    {
+                        data: 'RespuestaRRHH',
+                        render: r => r ? `<small class="d-block text-truncate" style="max-width:200px; background:#f0f2f5; padding:4px 8px; border-radius:6px; border-left:2px solid var(--acento)">${r}</small>` : '<small class="text-muted opacity-50">Sin comentarios</small>'
+                    },
+                    {
+                        data: 'IdSolicitud',
+                        className: 'text-right',
+                        render: (id, t, r) => `<button class="btn btn-sm btn-dark font-weight-bold px-3 rounded-pill shadow-sm" onclick="abrirGestion(${id}, '${r.EmpleadoCarnet}')">Gestionar</button>`
+                    }
+                ],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json" },
+                initComplete: function(settings, json) {
+                    actualizarKPIs(json.data);
+                }
+            });
+        }
+
+        // 3. Abrir Panel Lateral
+        function abrirGestion(id, carnet) {
+            ID_ACTIVO = id;
+            $('#txtIdSol').text('#' + id);
+
+            // Contexto Cabecera
+            const data = DT_Torre.rows().data().toArray().find(x => x.IdSolicitud == id);
+            $('#txtNombreEmp').text(data.Empleado);
+            $('#txtAvatarEmp').text(data.Empleado.charAt(0));
+            $('#txtDeptoEmp').text(data.Gerencia + " / " + data.Departamento);
+            $('#txtCarnetEmp').text(carnet);
+            $('#txtRespuesta').val(data.RespuestaRRHH);
+            $('#txtNotaInterna').val(data.NotaInternaRRHH);
+            $('#txtEstadoLabel').text(data.Estado).attr('class', 'badge-status status-' + data.Estado.toLowerCase());
+
+            // A. Insight: Historial
+            $.get('/Inventario/HistorialDotacionEmpleado', { carnet: carnet }, function(res) {
+                let html = res.data.slice(0, 3).map(h => `
+                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                        <div>
+                            <span class="d-block font-weight-bold text-dark" style="font-size:0.85rem">${h.Nombre}</span>
+                            <small class="text-muted">${moment(h.Fecha).format('DD MMM YYYY')} &bull; Entregó: ${h.EntregadoPor}</small>
+                        </div>
+                        <span class="badge badge-light border align-self-center text-primary font-weight-bold">x${h.Cantidad}</span>
+                    </div>
+                `).join('');
+                $('#divHistorial').html(html || '<div class="text-muted small text-center p-2">No hay entregas registradas.</div>');
+            });
+
+            // B. Líneas a Despachar
+            $.get('/Inventario/SolicitudDetalle', { idSolicitud: id }, function(res) {
+                let h = '';
+                res.data.forEach(d => {
+                    let pend = d.CantidadAprobada - d.CantidadEntregada;
+                    // Solo mostramos input de lote si es medicamento (esto lo sabemos por el Tipo)
+                    let inputLote = d.Tipo === 'MEDICAMENTO' ? `<input type="text" class="form-control form-control-sm inp-lote mt-1" placeholder="Lote (Opcional)">` : '';
+
+                    h += `<tr data-id="${d.IdDetalle}" data-tipo="${d.Tipo}">
+                        <td><strong class="d-block text-dark" style="font-size:0.9rem">${d.Nombre}</strong><small class="text-muted">${d.Talla} | ${d.Sexo}</small></td>
+                        <td class="text-center align-middle">${d.CantidadAprobada}</td>
+                        <td class="text-center align-middle font-weight-bold text-danger">${pend}</td>
+                        <td class="align-middle">
+                            <input type="number" class="form-control form-control-sm text-primary inp-entrega w-100" value="${pend}" min="0" max="${pend}">
+                            ${inputLote}
+                        </td>
+                    </tr>`;
+                });
+                $('#tblDespacho tbody').html(h);
+
+                $('#sidePanel').addClass('active');
+                $('#overlay').fadeIn();
+            });
+        }
+
+        // 4. Ejecutar Despacho
+        function procesarDespacho() {
+            const despacho = [];
+
+            $('#tblDespacho tbody tr').each(function() {
+                const cant = parseInt($(this).find('.inp-entrega').val());
+                const lote = $(this).find('.inp-lote').length ? $(this).find('.inp-lote').val() : null;
+
+                if(cant > 0) {
+                    despacho.push({
+                        IdDetalle: $(this).data('id'),
+                        Entregar: cant,
+                        LoteCodigo: lote
+                    });
+                }
+            });
+
+            if(despacho.length == 0) {
+                return Swal.fire('Atención', 'No has indicado ninguna cantidad a entregar.', 'warning');
+            }
+
+            Swal.fire({
+                title: '¿Procesar Salida de Bodega?',
+                text: "Esto descontará el stock físico permanentemente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e1251b',
+                confirmButtonText: 'Sí, Despachar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    $.post('/Inventario/BodegaDespachar', {
+                        idAlmacen: $('#selAlm').val(),
+                        idSolicitud: ID_ACTIVO,
+                        carnetBodeguero: CARNET_BODEGA,
+                        despachoJson: JSON.stringify(despacho)
+                    }, function(res) {
+                        if(res.ok) {
+                            cerrarPanel();
+                            DT_Torre.ajax.reload(function(json) { actualizarKPIs(json.data); });
+
+                            // Guardar notas silenciosamente si las escribieron
+                            if($('#txtRespuesta').val() || $('#txtNotaInterna').val()) {
+                                guardarComentarios(true);
+                            }
+
+                            Swal.fire('¡Despachado!', 'El Kardex ha sido actualizado.', 'success');
+                        } else {
+                            Swal.fire('Error de Inventario', res.msg, 'error'); // Mostrará error de Stock o FEFO
+                        }
+                    });
+                }
+            });
+        }
+
+        // 5. Guardar Textos
+        function guardarComentarios(silencioso = false) {
+            $.post('/Inventario/BodegaGuardarComentarios', {
+                idSolicitud: ID_ACTIVO,
+                respuestaRRHH: $('#txtRespuesta').val(),
+                notaInterna: $('#txtNotaInterna').val()
+            }, function(res) {
+                if(res.ok && !silencioso) {
+                    Swal.fire({ icon: 'success', title: 'Notas Guardadas', timer: 1500, showConfirmButton: false });
+                    DT_Torre.ajax.reload();
+                }
+            });
+        }
+
+        function cerrarPanel() { $('#sidePanel').removeClass('active'); $('#overlay').fadeOut(); }
+
+        // Utils
+        function actualizarKPIs(data) {
+            $('#kpiPend').text(data.filter(x => x.Estado == 'Pendiente').length);
+            $('#kpiAprob').text(data.filter(x => x.Estado == 'Aprobada').length);
+            $('#kpiParcial').text(data.filter(x => x.Estado == 'Parcial').length);
+        }
+
+        function recargarTabla() {
+            $('.kpi-card').removeClass('active-filter');
+            DT_Torre.column(3).search('').draw();
+            DT_Torre.ajax.reload(function(json) { actualizarKPIs(json.data); });
+        }
+
+        function filtrar(estado, el) {
+            $('.kpi-card').removeClass('active-filter');
+            $(el).addClass('active-filter');
+            // La columna 3 es el Estado (0:Fecha, 1:Emp, 2:Ubic, 3:Estado)
+            DT_Torre.column(3).search(estado).draw();
+        }
+    </script>
+}

@@ -1,0 +1,215 @@
+﻿@model List<Entities.ViewModels.VistaExtraPlan>
+@{
+    ViewBag.Title = "Autorizacion Jefe";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@Html.DevExpress().GetStyleSheets(
+      new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" })
+
+<script type="text/javascript">
+    var selectedIDs;
+    function onBeginCallback(s, e) {
+        // Pasamos los ids seleccionados al boton de autorizar
+        e.customArgs["selectedIDs"] = selectedIDs;
+        if (selectedIDs != "")
+            gvAuthorizeBoss.PerformCallback;
+    }
+
+    function onSelectionChanged(s, e) {
+        s.GetSelectedFieldValues("IdCombustibleExtraPlan", GetSelectedFieldValuesCallback);
+    }
+
+    function GetSelectedFieldValuesCallback(values) {
+        // Captura todas las llaves seleccionadas
+        selectedIDs = values.join(',');
+    }
+
+    function onAuthorizeButtonClick(s, e) {
+        $("#selectedIdsAP").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function onDeniedButtonClick(s, e) {
+        $("#selectedIdsDN").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvAuthorizeBoss.SetHeight(height - 180);
+    }
+
+
+
+    function onToolbarItemClick(s, e) {
+
+        if (e.item.name == "Authorize") {
+             $.ajax({
+             url: '@Url.Action("AuthorizeBoss")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+             success: function (data) {
+                 if (data.status != "Error") {
+                     swal({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             button: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+                                 LoadPartial();
+                                 //$('#authorizePartial').html(data);
+                             }
+
+                         });
+                 } else {
+                     swal({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         button: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+
+        }
+
+
+        if (e.item.name == "Denied") {
+             $.ajax({
+             url: '@Url.Action("DeniedBoss")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+
+             success: function (data) {
+                 if (data.status != "Error") {
+                     swal({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             button: "Aceptar",
+                         })
+                         .then((willSaved) => {
+                             if (willSaved) {
+
+                                 LoadPartial();
+                             }
+
+                         });
+                 } else {
+                     swal({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         button: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+         if (e.item.name == "Refresh") {
+             $.ajax({
+             url: '@Url.Action("RefreshPartial")',
+             type: "GET",
+             data: { },
+            //dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+
+                $('#authorizePartial').html(data);
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+    }
+
+    function LoadPartial(s, e) {
+        $.ajax({
+            url: '@Url.Action("AuthorizeBossExtraPlanPartial","Consumo")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#authorizePartial').html(result);
+        });
+    }
+
+    function VerDetalleExtraPlan(elementID, url) {
+        popDetalle.SetContentUrl(url);
+        popDetalle.ShowAtElementByID(elementID);
+    }
+
+</script>
+
+
+
+
+
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="3" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+
+}
+
+<div id="authorizePartial">
+
+    @Html.Partial("AuthorizeBossExtraPlanPartial", Model);
+</div>
+
+@Html.DevExpress().PopupControl(settings =>
+{
+    settings.Theme = "Mulberry";
+    settings.Name = "popDetalle";
+    settings.ShowHeader = true;
+    settings.HeaderText = "Detalle de Extra Plan";
+    settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settings.Width = 800;
+    settings.Height = 400;
+    settings.CloseAction = CloseAction.CloseButton;
+    settings.CloseOnEscape = true;
+
+}).GetHtml()

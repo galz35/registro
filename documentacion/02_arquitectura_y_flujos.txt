@@ -1,0 +1,150 @@
+================================================================================
+📄 DOCUMENTO 02: ARQUITECTURA GENERAL DEL NUEVO SISTEMA Y FLUJOS DE DATOS
+================================================================================
+Stack de Migración: React | NestJS | Flutter | SQL Server
+================================================================================
+
+Este documento describe la arquitectura de software del nuevo sistema, la
+estrategia de red, el flujo detallado de datos e imágenes, y la optimización
+avanzada de archivos WebP para garantizar el alto rendimiento del VPS.
+
+--------------------------------------------------------------------------------
+1. ARQUITECTURA GENERAL (TRES CAPAS DESACOPLADAS)
+--------------------------------------------------------------------------------
+
+La migración reemplaza la arquitectura acoplada ASP.NET MVC por una solución 
+desacoplada que divide el trabajo de forma eficiente:
+
+1. Capa de Cliente Web (React + Vite + Tailwind CSS):
+   - Hospedada de manera estática en el servidor web del VPS (IIS o Nginx).
+   - Se encarga de la administración del catálogo de juguetes, asignaciones del
+     censo, dashboard con gráficas de rendimiento e historial de reversiones.
+   - Consume la API REST de NestJS mediante peticiones HTTP asíncronas con Axios.
+
+2. Capa de Cliente Móvil (Flutter para Android/iOS):
+   - Instalada directamente en los dispositivos de los despachadores en campo.
+   - Utiliza la cámara para el escaneo de códigos de barra (carnet) y captura de 
+     evidencia fotográfica de entrega.
+   - Cuenta con una base de datos local ligera (SQLite o Hive) para almacenamiento 
+     en caché de datos en caso de pérdida temporal de conexión.
+
+3. Capa de API y Lógica (NestJS en Node.js):
+   - Corre como servicio de segundo plano en el VPS administrado mediante PM2.
+   - Centraliza las reglas de negocio, el control transaccional del inventario
+     de juguetes y la integración segura con bases de datos y APIs externas.
+   - Mapea el acceso físico a las imágenes WebP.
+
+4. Capa de Datos (SQL Server + Sistema de Archivos Local):
+   - SQL Server almacena las tablas relacionales con sus índices optimizados.
+   - El sistema de archivos del VPS almacena los archivos binarios (.webp).
+
+--------------------------------------------------------------------------------
+2. ESTRATEGIA AVANZADA DE IMÁGENES WEBP
+--------------------------------------------------------------------------------
+Para cumplir con la directiva de ahorrar el máximo espacio posible sin perder la
+foto y con la mayor facilidad de uso, se implementa una canalización (pipeline)
+de doble compresión:
+
+A. Compresión Local en Flutter (Optimización de Ancho de Banda)
+   Cuando el despachador toma la foto de evidencia en el móvil:
+   - La app utiliza la librería `flutter_image_compress`.
+   - Redimensiona la foto a una resolución máxima de 1024px en su lado más largo.
+   - Comprime y convierte el archivo original (JPG/PNG) a formato WebP con calidad 80%.
+   - Esto reduce el tamaño de transmisión de ~4 MB a menos de ~60 KB.
+   - Beneficio: Peticiones HTTP ultraligeras, ideal para redes móviles inestables
+     en campo abierto.
+
+B. Verificación y Limpieza en el Servidor (NestJS + Sharp)
+   Cuando la API recibe la foto:
+   - Utiliza la librería de alto rendimiento `sharp` de Node.js.
+   - Si la imagen por alguna razón no viene en WebP, `sharp` la convierte.
+   - Asigna un identificador único (UUID) al nombre del archivo para evitar 
+     duplicados o sobreescritura (ej: `a4b67f10-e221-4bcf.webp`).
+   - Escribe el archivo directamente en la carpeta física del VPS:
+     `D:\PROYECTOS_PORTAL\asistencia_uploads\fotos_evidencia\`
+   - La API guarda en la tabla `tblEntregasJuguetes` el path relativo:
+     `/uploads/fotos_evidencia/entrega_a4b67f10.webp`
+
+C. Servido Eficiente de Archivos Estáticos
+   - En lugar de que NestJS lea el archivo del disco y lo devuelva por HTTP (lo
+     cual consume CPU y memoria de Node), la carpeta del VPS se monta en el
+     servidor web (IIS o Nginx) como un directorio virtual público.
+   - La aplicación React carga las imágenes mediante URLs directas servidas a 
+     nivel de infraestructura web (ej: `https://portal.com/uploads/fotos_evidencia/entrega_a4b67f10.webp`).
+   - Esto libera de carga al backend de NestJS.
+
+--------------------------------------------------------------------------------
+3. FLUJO COMPLETO DE CONTROL DE ASISTENCIA Y DESPACHO
+--------------------------------------------------------------------------------
+
+El siguiente diagrama en formato texto describe el ciclo de vida del flujo de datos
+desde la llegada del colaborador al evento del Día del Niño:
+
+```
+[ Colaborador ]
+       │
+       ▼ (Presenta Carnet)
+[ Despachador con Móvil ] ──► (Escanea Carnet) ──► [ App Flutter ]
+                                                         │
+                                                         ▼ (Petición GET)
+                                                   [ NestJS API ]
+                                                         │
+                                                         ▼ (Consulta SQL Server)
+                                                   [ SQL Server ]
+                                                         │
+                                                         ▼ (Responde Datos)
+                                                   [ NestJS API ]
+                                                         │
+                                                         ▼ (Retorna Censo e Hijos)
+                                                   [ App Flutter ]
+                                                         │
+       ┌─────────────────────────────────────────────────┴──────────────────────────────┐
+       ▼ (Caso: NO Asistió)                                                             ▼ (Caso: SÍ Asistió)
+[ Botón: Registrar Asistencia ]                                                 [ Render de Hijos en Tarjetas ]
+       │                                                                                │
+       ▼ (Presiona Registrar)                                                           ▼
+  POST /api/v1/attendance ──────────────────────────────────────────────► [ Selecciona Hijo para entregar ]
+       │                                                                                │
+       ▼                                                                                ▼
+[ SQL Server: Guarda Asistencia ]                                               [ Cajón de Despacho (Drawer) ]
+       │                                                                                │
+       ▼                                                                                ▼ (Ingresa Datos Receptor)
+[ UI Actualiza Habilitando Despacho ]                                           [ Captura Foto Evidencia ]
+                                                                                        │
+                                                                                        ▼ (Comprime WebP local)
+                                                                                [ Petición POST Multipart/Form ]
+                                                                                POST /api/v1/dispatch/deliver
+                                                                                        │
+                                                                                        ▼
+                                                                                [ NestJS Backend ]
+                                                                                   ├─► Guarda Foto en Disco VPS (.webp)
+                                                                                   └─► Transacción ACID en SQL Server
+                                                                                         ├─► Bloquea fila Juguete (FOR UPDATE)
+                                                                                         ├─► Valida Stock > 0
+                                                                                         ├─► Inserta registro en tblEntregas
+                                                                                         └─► Decrementa Stock (-1)
+                                                                                        │
+                                                                                        ▼ (Respuesta 201)
+                                                                                [ App Flutter: Vibración Éxito ]
+                                                                                [ Tarjeta de Hijo Cambia a Verde ]
+```
+
+--------------------------------------------------------------------------------
+4. SEGURIDAD Y ENTORNO
+--------------------------------------------------------------------------------
+
+- Autenticación: Implementación de JWT (JSON Web Tokens) firmados por NestJS
+  tras la validación de credenciales. La aplicación React y la app móvil de
+  Flutter adjuntan este token en la cabecera `Authorization: Bearer <TOKEN>` 
+  en cada petición HTTP.
+- Roles de Acceso:
+  * `Despachador`: Rol asignado a los dispositivos móviles. Permite leer censo,
+    registrar asistencia y realizar despacho de juguetes de los hijos.
+  * `Supervisor`: Permite realizar despacho, registrar asistencia y ejecutar
+    reversiones de entregas en caso de errores en campo.
+  * `Administrador`: Acceso total a la web React. Permite CRUD del catálogo de 
+    juguetes, reportes, logs de auditoría y configuración global.
+- Variables de Entorno: Toda la configuración del sistema (puertos de la API,
+  claves de base de datos SQL Server, credenciales de Oracle HCM y llaves secretas
+  de JWT) se centralizarán en el archivo `.env` del backend de NestJS en el VPS.
+================================================================================

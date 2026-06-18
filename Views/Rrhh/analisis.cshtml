@@ -1,0 +1,59 @@
+﻿@model slnRhonline.Models.ExcelFileModel
+
+<section class="content-header">
+    <h1>Subir Archivo Excel</h1>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Subir y Analizar</h3>
+                </div>
+                @using (Html.BeginForm("Upload", "Rrhh", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label for="file">Seleccionar Archivo Excel</label>
+                            <input type="file" name="File" class="form-control" id="file" />
+                        </div>
+                        <div class="form-group">
+                            <label for="columnName">Columna para Consulta (dejar en blanco para análisis general)</label>
+                            <input type="text" name="ColumnName" class="form-control" id="columnName" />
+                        </div>
+                        <div class="form-group">
+                            <label for="userQuery">Consulta del Usuario</label>
+                            <textarea name="UserQuery" class="form-control" id="userQuery"></textarea>
+                        </div>
+                    </div>
+                    <div class="box-footer">
+                        <button type="submit" class="btn btn-primary">Subir y Analizar</button>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="box box-info">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Progreso</h3>
+                </div>
+                <div class="box-body">
+                    <p>Progreso: <span id="progressText">Esperando...</span></p>
+                    <button id="cancelButton" class="btn btn-danger" onclick="cancelProcess()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function cancelProcess() {
+        // Implementar lógica para cancelar el proceso aquí
+        alert('Proceso cancelado');
+    }
+
+    function updateProgress(text) {
+        document.getElementById('progressText').innerText = text;
+    }
+</script>

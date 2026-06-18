@@ -1,0 +1,78 @@
+﻿
+
+
+<script>
+    function onButtonClick(s, e) {
+        e.processOnServer = confirm('Seguro que desea borrar el registro?');
+    }
+
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvUserList.SetHeight(height - 150);
+    }
+
+
+    function ShowProfileUser(s, e, url) {
+        var key = s.GetRowKey(e.visibleIndex);
+       
+
+        var destUrl = null;
+
+        if (e.buttonID == "btnAddProfileId") {
+            var destUrl = url + "/" + key;
+            //alert("Destination Url is: " + destUrl);
+
+            popImage.SetContentUrl(destUrl);
+            popImage.Show();
+            //window.location.href = destUrl;
+        }
+
+
+    }
+
+</script>
+<style type="text/css">
+
+
+    .upperCase * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Lista de perfiles";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 500;
+    settingsPopup.Height = 400;
+
+
+
+}).GetHtml()
+
+
+@using (Html.BeginForm())
+{
+    @*@Html.Action("ListPartial", "SystemUsers", new { personId = Model.UserName })*@
+    @Html.Action("ListPartial", "SystemUsers")
+}
+
+
+
+

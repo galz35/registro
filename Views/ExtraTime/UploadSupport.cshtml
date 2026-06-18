@@ -1,0 +1,21 @@
+﻿
+@Html.DevExpress().UploadControl(settings =>
+{
+    settings.Name = "ucExtraTimeSupport";
+    settings.Width = 250;
+    settings.ShowUploadButton = true;
+    settings.ShowProgressPanel = true;
+    settings.CallbackRouteValues = new { Controller = "ExtraTime", Action = "SupportUpload" };
+    settings.ClientSideEvents.FileUploadComplete = "OnSupportUploadComplete";
+    settings.ValidationSettings.Assign(slnRhonline.Data.ExtraTime.SupportUploadValidationSettings);
+
+
+}).GetHtml()
+@Html.DevExpress().Label(
+          settings =>
+          {
+              settings.Name = "AllowedFileExtensionsLabel";
+              settings.Text = "Extensiones permitidas para ambos campos: .pdf y tamaño maximo del archivo 700kb";
+              settings.ControlStyle.Font.Size = FontUnit.Point(8);
+          }).GetHtml()
+<br />

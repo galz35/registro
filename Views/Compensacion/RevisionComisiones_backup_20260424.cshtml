@@ -1,0 +1,574 @@
+﻿@{
+    ViewBag.Title = "Revision de Comisiones RRHH";
+}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root { --primary: #424242; --accent: #9E9E9E; --dark: #1e1e2d; --glass: rgba(255, 255, 255, 0.05); }
+    body { background-color: #f4f7f6; font-family: 'Outfit', sans-serif; }
+    
+    .header-premium { 
+        background: linear-gradient(135deg, var(--primary), #212121); 
+        padding: 30px; border-radius: 0 0 30px 30px; color: white; margin-bottom: 30px; 
+        box-shadow: 0 10px 30px rgba(66, 66, 66, 0.2);
+    }
+
+    .kpi-card { 
+        background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); 
+        border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; 
+        padding: 20px; transition: 0.3s; height: 100%;
+    }
+    .kpi-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.15); }
+    .kpi-val { font-size: 2rem; font-weight: 700; line-height: 1; margin: 10px 0; }
+    .kpi-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+
+    .min-card { border-radius: 25px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.05); overflow: hidden; }
+    .min-card .card-header { background: white; border-bottom: 1px solid #eee; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .table thead th { 
+        background: #f8f9fa; color: #555; text-transform: uppercase; 
+        font-size: 0.75rem; letter-spacing: 1px; border: none; padding: 15px; 
+        position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .table tbody td { vertical-align: middle; padding: 15px; border-color: #f1f1f1; font-size: 0.9rem; }
+    
+    .status-badge { padding: 6px 12px; border-radius: 12px; font-weight: 600; font-size: 0.75rem; }
+    .badge-borrador { background: #fff3cd; color: #856404; }
+    .badge-enviado { background: #e0e0e0; color: #424242; box-shadow: 0 0 10px rgba(158, 158, 158, 0.2); }
+    .badge-aprobado { background: #d4edda; color: #155724; }
+    
+    .validador-row { background: #f8f9fc !important; font-weight: 700; color: var(--primary); }
+    .changed { background-color: #fff3cd !important; border-left: 3px solid #ffc107 !important; position: relative; }
+    .changed::after { content: 'CAMBIO'; position: absolute; top: 2px; right: 5px; font-size: 8px; color: #f59e0b; font-weight: 900; }
+    .text-decoration-line-through { text-decoration: line-through !important; color: #adb5bd !important; font-size: 0.85em; display: block; }
+
+    .btn-action { width: 32px; height: 32px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .btn-approve { background: #10b981; color: white; }
+    .btn-approve:hover { background: #059669; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3); }
+    .btn-reject { background: #ef4444; color: white; }
+    .btn-reject:hover { background: #dc2626; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); }
+</style>
+
+<div class="header-premium">
+    <div class="continer-fluid">
+        <div class="row align-items-center">
+            <div class="col-lg-5">
+                <h2 class="font-weight-bold m-0"><i class="fas fa-coins mr-2"></i> Revision de Comisiones</h2>
+                <p class="m-0 opacity-75">Panel de Especialista RRHH | <span id="lblPeriodoActivo">...</span></p>
+            </div>
+            <div class="col-lg-7">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Avance Global</span>
+                            <div class="kpi-val" id="txtKPIPerc">0%</div>
+                            <div class="progress" style="height: 4px; background: rgba(255,255,255,0.2);"><div id="barKPI" class="progress-bar bg-white" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Validadores Pendientes</span>
+                            <div class="kpi-val" id="txtKPIPlazas">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="kpi-card" style="border-color: var(--accent)">
+                            <span class="kpi-label">Discrepancias</span>
+                            <div class="kpi-val text-warning" id="txtKPICambios">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="continer-fluid px-4">
+    <!-- PANEL DE DIAGNOSTICO POR VALIDADOR -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card min-card">
+                <div class="card-header bg-white">
+                    <h5 class="m-0 font-weight-bold text-muted"><i class="fas fa-clipboard-check mr-2"></i> Diagnostico de Validadores</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 250px;">
+                        <table class="table table-hover mb-0" id="tbDashboard">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Validador / Jefe</th>
+                                    <th>Departamento</th>
+                                    <th class="text-center">Integrantes</th>
+                                    <th class="text-center">Cambios Realizados</th>
+                                    <th class="text-center">Estado</th>
+                                    <th class="text-right">Accion Especialista</th>
+                                </tr>
+                                <tr class="bg-light border-0">
+                                    <th><input type="text" class="form-control form-control-sm border-0 bg-white dash-filter" placeholder="Buscar jefe..." onkeyup="renderizarDashboard()"></th>
+                                    <th><input type="text" class="form-control form-control-sm border-0 bg-white dash-filter" placeholder="Buscar departamento..." onkeyup="renderizarDashboard()"></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th>
+                                        <select class="form-control form-control-sm border-0 bg-white dash-filter" onchange="renderizarDashboard()">
+                                            <option value="">[Estado]</option>
+                                            <option value="Enviado">Enviado</option>
+                                            <option value="Aprobado">Aprobado</option>
+                                            <option value="Borrador">Falta Validar</option>
+                                            <option value="No ha revisado">No ha revisado</option>
+                                        </select>
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbDashCuerpo">
+                                <tr><td colspan="6" class="text-center p-4 text-muted">Cargando diagnostico...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card min-card">
+        <div class="card-header">
+            <div>
+                <span class="badge badge-dark p-2 mr-2" id="btnVerTodo" style="cursor:pointer" onclick="filtrarPorJefe(null)">VER TODO EL UNIVERSO</span>
+                <select id="ddlPeriodo" class="form-control-sm border-0 bg-light" style="border-radius: 10px; padding: 5px 15px;" onchange="actualizarVista()"></select>
+                <button class="btn btn-sm btn-light ml-2" onclick="actualizarVista()" style="border-radius: 10px;"><i class="fas fa-sync"></i></button>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="input-group input-group-sm mr-3" style="width: 250px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-light border-0"><i class="fas fa-search"></i></span>
+                    </div>
+                    <input type="text" id="txtBusqueda" class="form-control border-0 bg-light" style="border-radius: 0 10px 10px 0;" placeholder="Buscar carnet/nombre..." onkeyup="renderizar()">
+                </div>
+                <div class="custom-control custom-switch mr-4">
+                    <input type="checkbox" class="custom-control-input" id="chkSoloCambios" onchange="renderizar()">
+                    <label class="custom-control-label font-weight-bold small text-muted" for="chkSoloCambios">SOLO DISCREPANCIAS</label>
+                </div>
+                <button class="btn btn-danger btn-sm border-0 font-weight-bold mr-2" style="border-radius: 8px;" onclick="notificarCorreos()">
+                    <i class="fas fa-envelope mr-1"></i> Notificar Pendientes
+                </button>
+                <button class="btn btn-outline-success btn-sm border-0 font-weight-bold" style="border-radius: 8px;" onclick="descargarExcel()">
+                    <i class="fas fa-file-excel mr-1"></i> Reporte Excel
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 55vh; overflow-y: auto;">
+                <table class="table mb-0" id="tbMaestro">
+                    <thead>
+                        <tr>
+                            <th>Colaborador</th>
+                            <th>Departamento</th>
+                            <th>Cargo (Ofic / Rep)</th>
+                            <th>Jefe (Ofic / Rep)</th>
+                            <th>Ubicacion (Ofic / Rep)</th>
+                            <th class="text-center">Comisiona</th>
+                            <th class="text-center">Evid.</th>
+                            <th>Observaciones</th>
+                            <th>Estado</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                        <tr class="bg-light border-0">
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Carnet/Nom..." onkeyup="renderizar()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Departamento..." onkeyup="renderizar()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Cargo..." onkeyup="renderizar()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Jefe..." onkeyup="renderizar()"></th>
+                            <th><input type="text" class="form-control form-control-sm border-0 bg-white filter-input" placeholder="Ubi..." onkeyup="renderizar()"></th>
+                            <th class="text-center">
+                                <select class="form-control form-control-sm border-0 bg-white filter-input" onchange="renderizar()">
+                                    <option value="">[Todos]</option>
+                                    <option value="S">Si</option>
+                                    <option value="N">No</option>
+                                </select>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th>
+                                <select class="form-control form-control-sm border-0 bg-white filter-input" onchange="renderizar()">
+                                    <option value="">[Todos]</option>
+                                    <option value="Enviado">Enviado</option>
+                                    <option value="Aprobado">Aprobado</option>
+                                    <option value="Borrador">Falta Validar</option>
+                                    <option value="Pendiente">Sin Iniciar</option>
+                                </select>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbCuerpo"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Devolucion Premium -->
+<div class="modal fade" id="modalDevolver" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 25px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-danger-light d-inline-block p-3 rounded-circle" style="background:#fff5f5; color:#ef4444; font-size: 2rem;">
+                        <i class="fas fa-undo-alt"></i>
+                    </div>
+                    <h4 class="mt-3 font-weight-bold">Devolver a Validador</h4>
+                    <p class="text-muted">Indique el motivo para que el jefe pueda realizar la correccion.</p>
+                </div>
+                <input type="hidden" id="txtIdDevolver">
+                <textarea id="txtComentarioDevolver" class="form-control border-0 bg-light" rows="4" style="border-radius: 15px;" placeholder="Escriba aqui el motivo..."></textarea>
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-light btn-block font-weight-bold py-3" style="border-radius: 15px;" data-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger btn-block font-weight-bold py-3" style="border-radius: 15px; background:#ef4444;" onclick="ejecutarDevolucion()">Confirmar Devolucion</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+    .select2-continer--default .select2-selection--single { height: 35px; border-radius: 10px; border: none; background: #f8f9fa; }
+    .select2-continer--default .select2-selection--single .select2-selection__rendered { line-height: 35px; font-weight: 600; font-size: 0.85rem; color: #444; }
+    .select2-continer--default .select2-selection--single .select2-selection__arrow { height: 35px; }
+</style>
+<script>
+    var g_Detalles = [];
+    var g_Dashboard = [];
+    var g_FiltroJefe = null;
+    var g_FiltroGerencia = null;
+
+    $(document).ready(function() {
+        // Inicializar Select2
+        $('select').select2({ width: 'resolve' });
+        
+        // Fix para modales
+        $('.modal').on('shown.bs.modal', function () {
+            $(this).find('select').select2({ dropdownParent: $(this) });
+        });
+
+        inicializarPeriodos();
+    });
+
+    function inicializarPeriodos() {
+        $.get('@Url.Action("ObtenerPeriodos", "Compensacion")', function(res) {
+            if(res.success && res.data.length > 0) {
+                var html = '';
+                res.data.forEach(function(p) {
+                    var sel = (p.Estado === 'Activo' || p.PeriodoID === res.activoID ? 'selected' : '');
+                    if(sel) $('#lblPeriodoActivo').text(p.NombrePeriodo);
+                    html += '<option value="' + p.PeriodoID + '" ' + sel + '>' + p.NombrePeriodo + '</option>';
+                });
+                $('#ddlPeriodo').html(html).trigger('change');
+                actualizarVista();
+            }
+        });
+    }
+
+
+    function actualizarVista() {
+        let idPer = $('#ddlPeriodo').val();
+        $('#tbDashCuerpo').html('<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-danger"></div> Generando diagnostico...</td></tr>');
+        $('#tbCuerpo').html('<tr><td colspan="10" class="text-center p-5"><div class="spinner-border text-danger"></div> Consolidando universo de datos...</td></tr>');
+        
+        // 1. Cargar Dashboard de Jefes
+        $.get('@Url.Action("ObtenerDashboardRevision", "Compensacion")', { periodoId: idPer, tipo: 1 })
+        .done(function(res) {
+            if(res.success) {
+                console.log("Datos Dashboard:", res.data); // <--- DEPURACION
+                g_Dashboard = res.data;
+                renderizarDashboard();
+            } else {
+                $('#tbDashCuerpo').html('<tr><td colspan="6" class="text-center text-danger p-4">Error: '+res.message+'</td></tr>');
+            }
+        }).fail(function() {
+            $('#tbDashCuerpo').html('<tr><td colspan="6" class="text-center text-danger p-4">Fallo al cargar Dashboard.</td></tr>');
+        });
+
+        // 2. Cargar Detalle de Empleados
+        $.get('@Url.Action("ObtenerTodosDetallesRevision", "Compensacion")', { periodoId: idPer, tipo: 1 })
+        .done(function(res) {
+            if(res.success) {
+                g_Detalles = res.data;
+                renderizar();
+            } else {
+                $('#tbCuerpo').html('<tr><td colspan="10" class="text-center text-danger p-5">Error: '+res.message+'</td></tr>');
+            }
+        }).fail(function() {
+            $('#tbCuerpo').html('<tr><td colspan="10" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-3"></i><br>Fallo al cargar el universo de registros.</td></tr>');
+        });
+    }
+
+    function renderizarDashboard() {
+        let filters = [];
+        $('.dash-filter').each(function() { 
+            let v = $(this).val();
+            filters.push(v ? v.toLowerCase() : ''); 
+        });
+
+        let filtradosDashboard = g_Dashboard.filter(d => {
+            let match = true;
+            // Validador (Indice 0)
+            if(filters[0] && !(d.NombreGerente + ' ' + d.CarnetGerente).toLowerCase().includes(filters[0])) match = false;
+            // Gerencia (Indice 1)
+            if(filters[1] && !(d.OGERENCIA || '').toLowerCase().includes(filters[1])) match = false;
+            // Estado (Indice 2)
+            if(filters[2] && (d.Estado || 'No ha revisado').toLowerCase() !== filters[2].toLowerCase()) match = false;
+            return match;
+        });
+
+        let h = '';
+        filtradosDashboard.forEach(d => {
+            let badgeCls = d.Estado === 'Aprobado' ? 'badge-aprobado' : (d.Estado === 'Enviado' ? 'badge-enviado' : 'badge-borrador');
+            let discCls = d.TotalDiscrepancias > 0 ? 'text-danger font-weight-bold' : 'text-success';
+            
+            // Logica de nombre de estado amigable para el usuario
+            let estadoTxt = d.Estado;
+            if(d.Estado === 'Borrador') estadoTxt = 'Falta Validar';
+            if(d.Estado === 'No ha revisado') estadoTxt = 'No ha revisado';
+            
+            h += '<tr style="cursor:pointer" onclick="filtrarPorJefe(\''+d.CarnetGerente+'\')">' +
+                '<td><div class="font-weight-bold">'+d.NombreGerente+'</div><small class="text-muted">'+d.CarnetGerente+'</small></td>' +
+                '<td>'+(d.OGERENCIA || '-')+'</td>' +
+                '<td class="text-center">'+d.TotalColaboradores+'</td>' +
+                '<td class="text-center '+discCls+'">'+d.TotalDiscrepancias+'</td>' +
+                '<td class="text-center"><span class="status-badge '+badgeCls+'">'+(estadoTxt || 'Pendiente')+'</span></td>' +
+                '<td class="text-right">' +
+                    (d.Estado === 'Enviado' ? '<button class="btn btn-sm btn-success" onclick="event.stopPropagation(); aprobar('+d.PlantilliD+')"><i class="fas fa-check-circle mr-1"></i> DAR OK</button>' : '') +
+                    (d.Estado === 'Aprobado' ? '<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); reabrirPlantilla('+d.PlantilliD+')"><i class="fas fa-unlock mr-1"></i> REABRIR</button>' : '') +
+                '</td>' +
+            '</tr>';
+        });
+        $('#tbDashCuerpo').html(h || '<tr><td colspan="6" class="text-center p-4">No hay datos para este periodo.</td></tr>');
+    }
+
+    function filtrarPorJefe(carnet) {
+        g_FiltroJefe = carnet;
+        
+        // Buscar la gerencia asociada a este validador en el dashboard para filtrar correctamente
+        let dashRow = g_Dashboard.find(x => x.CarnetGerente === carnet);
+        g_FiltroGerencia = dashRow ? dashRow.OGERENCIA : null;
+
+        $('#btnVerTodo').toggle(carnet !== null);
+        renderizar();
+    }
+
+    function renderizar() {
+        let soloCambios = $('#chkSoloCambios').is(':checked');
+        
+        // Obtener valores de filtros por columna
+        let filters = [];
+        $('.filter-input').each(function() { filters.push($(this).val()); });
+
+        let normGers = g_FiltroGerencia ? g_FiltroGerencia.split(',').map(x => x.replace('NI ', '').trim().toLowerCase()) : [];
+
+        let filtrados = g_Detalles.filter(d => {
+            // Filtro por Jefe (Normalizando 'NI ' para evitar discrepancias)
+            let dGer = (d.OGERENCIA_SIGHO || '').replace('NI ', '').trim().toLowerCase();
+            let coincideJefe = g_FiltroJefe ? (normGers.includes(dGer) || d.CarnetGerente === g_FiltroJefe) : true;
+            
+            let esCambio = d.EsDiscrepancia === 1;
+            
+            // Filtros por columna (Insensibles a mayusculas)
+            let matchCol = true;
+            
+            // Col 1: Colaborador
+            if (filters[0] && !(d.NombreCompleto + ' ' + d.CarnetEmpleado).toLowerCase().includes(filters[0].toLowerCase())) matchCol = false;
+            // Col 2: Departamento
+            if (filters[1] && !(d.Departamento_SIGHO || '').toLowerCase().includes(filters[1].toLowerCase())) matchCol = false;
+            // Col 3: Cargo
+            if (filters[2] && !(d.Cargo_Reportado || d.Cargo_SIGHO || '').toLowerCase().includes(filters[2].toLowerCase())) matchCol = false;
+            // Col 4: Jefe
+            if (filters[3] && !(d.Jefe_Reportado || d.Jefe_SIGHO || '').toLowerCase().includes(filters[3].toLowerCase())) matchCol = false;
+            // Col 5: Ubicacion
+            if (filters[4] && !(d.Ubicacion_Reportada || d.Ubicacion_SIGHO || '').toLowerCase().includes(filters[4].toLowerCase())) matchCol = false;
+            // Col 6: Comisiona
+            if (filters[5] && d.Comisiona !== filters[5]) matchCol = false;
+            // Col 8: Estado
+            if (filters[7] && (d.Estado || 'Pendiente').toLowerCase() !== filters[7].toLowerCase()) matchCol = false;
+
+            return coincideJefe && (soloCambios ? esCambio : true) && matchCol;
+        });
+
+        let h = '', currValidador = '';
+        
+        // Determinar el nombre del validador para el encabezado (si hay filtro activo)
+        let nombreValidadorFiltro = g_FiltroJefe ? (g_Dashboard.find(x => x.CarnetGerente === g_FiltroJefe)?.NombreGerente || 'Sin Asignar') : null;
+
+        filtrados.forEach(d => {
+            let nombreMostrar = nombreValidadorFiltro || d.NombreGerente;
+            let carnetMostrar = g_FiltroJefe || d.CarnetGerente;
+
+            if(nombreMostrar !== currValidador) {
+                h += '<tr class="validador-row"><td colspan="9"><i class="fas fa-user-tie mr-2"></i> Gestionado por Validador: ' + nombreMostrar + ' ('+carnetMostrar+')</td></tr>';
+                currValidador = nombreMostrar;
+            }
+            
+            // Logica de deteccion de cambios ultra-sensible (Trim e ignore case)
+            function diff(a, b) { return (a || '').toString().trim().toLowerCase() !== (b || '').toString().trim().toLowerCase(); }
+
+            let clsCargo = (d.Cargo_Reportado && diff(d.Cargo_Reportado, d.Cargo_SIGHO)) ? 'changed' : '';
+            let clsJefe = (d.Jefe_Reportado && diff(d.Jefe_Reportado, d.Jefe_SIGHO)) ? 'changed' : '';
+            let clsUbi = (d.Ubicacion_Reportada && diff(d.Ubicacion_Reportada, d.Ubicacion_SIGHO)) ? 'changed' : '';
+            let clsDepto = (d.Departamento_Reportado && diff(d.Departamento_Reportado, d.Departamento_SIGHO)) ? 'changed' : '';
+            let clsCom = (d.Comisiona !== 'S') ? 'changed' : ''; // En comisiones el original siempre es S
+            
+            h += '<tr>' +
+                '<td><div class="font-weight-bold">'+d.NombreCompleto+'</div><small class="text-muted">'+d.CarnetEmpleado+'</small></td>' +
+                '<td class="'+clsDepto+'">' + 
+                    (clsDepto ? '<div class="small text-muted text-decoration-line-through">'+(d.Departamento_SIGHO || '-')+'</div>' : '') +
+                    '<div>'+(d.Departamento_Reportado || d.Departamento_SIGHO)+'</div></td>' +
+                '<td class="'+clsCargo+'">' + 
+                    (clsCargo ? '<div class="small text-muted text-decoration-line-through">'+d.Cargo_SIGHO+'</div>' : '') +
+                    '<div>'+(d.Cargo_Reportado || d.Cargo_SIGHO)+'</div></td>' +
+                '<td class="'+clsJefe+'">' + 
+                    (clsJefe ? '<div class="small text-muted text-decoration-line-through">'+(d.Jefe_SIGHO || '-')+'</div>' : '') +
+                    '<div>'+(d.Jefe_Reportado || d.Jefe_SIGHO)+'</div></td>' +
+                '<td class="'+clsUbi+'">' + 
+                    (clsUbi ? '<div class="small text-muted text-decoration-line-through">'+(d.Ubicacion_SIGHO || '-')+'</div>' : '') +
+                    '<div>'+(d.Ubicacion_Reportada || d.Ubicacion_SIGHO)+'</div></td>' +
+                '<td class="text-center '+clsCom+'">' +
+                    (clsCom ? '<span class="badge badge-pill badge-light mr-1 text-decoration-line-through">S</span> <i class="fas fa-arrow-right small text-muted mx-1"></i> ' : '') +
+                    '<span class="badge badge-pill '+ (d.Comisiona === 'S' ? 'badge-dark' : 'badge-danger') +'">'+d.Comisiona+'</span>' +
+                '</td>' +
+                '<td class="text-center">' +
+                    (d.HasEvidencia ? '<button class="btn btn-sm btn-outline-danger font-weight-bold" onclick="descargarEvidencia('+d.DetalleID+')"><i class="fas fa-file-download mr-1"></i> Ver Adjunto</button>' : '<span class="text-muted small">-</span>') + 
+                '</td>' +
+                '<td><small class="text-muted">'+(d.Observacion || '-')+'</small></td>' +
+                '<td><span class="status-badge badge-'+(d.Estado||'Borrador').toLowerCase()+'">'+(d.Estado||'Borrador')+'</span></td>' +
+                '<td>' +
+                    '<div class="d-flex justify-content-end gap-2">' +
+                        (d.Estado === 'Enviado' ? 
+                          '<button class="btn btn-sm btn-outline-danger" onclick="abrirDevolver('+d.PlantilliD+')" title="Devolver"><i class="fas fa-undo"></i></button>' : '') +
+                    '</div>' +
+                '</td>' +
+            '</tr>';
+        });
+        
+        if(h==='') h = '<tr><td colspan="8" class="text-center p-5 text-muted">No se encontraron registros en este criterio.</td></tr>';
+        $('#tbCuerpo').html(h);
+        
+        actualizarKPIs(filtrados);
+    }
+
+    function actualizarKPIs(filtrados) {
+        let disc = filtrados.filter(x => x.EsDiscrepancia === 1).length;
+        let cTotal = [...new Set(g_Dashboard.map(x => x.PlantilliD))].length;
+        let cHechas = g_Dashboard.filter(x => x.Estado === 'Aprobado' || x.Estado === 'Enviado').length;
+        let avance = cTotal > 0 ? Math.round((cHechas / cTotal) * 100) : 0;
+
+        $('#txtKPIPerc').text(avance + '%');
+        $('#barKPI').css('width', avance + '%');
+        $('#txtKPIPlazas').text(g_Dashboard.filter(x => x.Estado !== 'Aprobado' && x.Estado !== 'Enviado').length);
+        $('#txtKPICambios').text(g_Dashboard.reduce((a, b) => a + b.TotalDiscrepancias, 0));
+    }
+
+    function aprobar(id) {
+        Swal.fire({
+            title: 'Confirmar OK de Especialista',
+            text: "Se cerrara definitivamente la plantilla de este jefe. Solo RRHH podra volver a abrirla si es necesario.",
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'Si, dar OK',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("AprobarPlantilla", "Compensacion")', { plantillid: id }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Aprobado', 'La plantilla ha sido cerrada exitosamente.', 'success');
+                        actualizarVista();
+                    }
+                });
+            }
+        });
+    }
+
+    function abrirDevolver(id) { $('#txtIdDevolver').val(id); $('#modalDevolver').modal('show'); }
+    function ejecutarDevolucion() {
+        let id = $('#txtIdDevolver').val(), com = $('#txtComentarioDevolver').val();
+        if(!com) return Swal.fire('Atencion', 'Debe indicar un motivo para la devolucion.', 'warning');
+        
+        $.post('@Url.Action("DevolverPlantilla", "Compensacion")', { plantillid: id, comentario: com }, function(res) {
+            if(res.success) {
+                $('#modalDevolver').modal('hide');
+                Swal.fire('Devuelto', 'Se ha solicitado correccion al validador.', 'info');
+                actualizarVista();
+                $('#txtComentarioDevolver').val('');
+            }
+        });
+    }
+
+    function reabrirPlantilla(id) {
+        Swal.fire({
+            title: "Reabrir Plantilla?",
+            text: "El validador podra volver a editar sus datos. La plantilla regresara a estado 'Borrador'.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            confirmButtonText: 'Si, reabrir',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("ReabrirPlantilla", "Compensacion")', { plantillid: id }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Reabierta', 'La plantilla esta disponible para el validador.', 'success');
+                        actualizarVista();
+                    }
+                });
+            }
+        });
+    }
+
+    function descargarExcel() {
+        var id = $('#ddlPeriodo').val(); if(!id) return;
+        window.open('@Url.Action("ExportarExcel", "Compensacion")?periodoId=' + id + '&tipo=1', '_blank');
+    }
+
+    function descargarPDF() {
+        var id = $('#ddlPeriodo').val(); if(!id) return;
+        window.open('@Url.Action("ExportarPDF", "Compensacion")?periodoId=' + id + '&tipo=1', '_blank');
+    }
+
+    function notificarCorreos() {
+        var id = $('#ddlPeriodo').val(); if(!id) return;
+        Swal.fire({
+            title: 'Notificar a Validadores',
+            text: 'Se enviara un recordatorio por correo a todos los Jefes/Validadores que tienen su reporte en Borrador o Devuelto.',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Si, Enviar',
+            confirmButtonColor: '#DA291C',
+            cancelButtonText: 'Cancelar'
+        }).then(r => {
+            if(r.isConfirmed) {
+                Swal.fire({ title: 'Enviando Correos...', text: 'Por favor espere, esto puede tomar unos segundos.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                $.post('@Url.Action("NotificarValidadores", "Compensacion")', { periodoId: id }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Enviado', 'Se han notificado ' + res.notificados + ' jefes.', 'success');
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+    function diff(a, b) {
+        if (!a && !b) return false;
+        if (!a || !b) return true;
+        return a.trim().toLowerCase() !== b.trim().toLowerCase();
+    }
+    function descargarEvidencia(id) {
+        window.location.href = '@Url.Action("DescargarEvidencia", "Compensacion")?detalleId=' + id;
+    }
+</script>
+}
+
+
+

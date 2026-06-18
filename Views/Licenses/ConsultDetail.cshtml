@@ -1,0 +1,100 @@
+﻿
+@{
+    ViewBag.Title = "Consulta de detalle de licencias";
+
+}
+
+
+<script>
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvConsult.SetHeight(height - 180);
+    }
+</script>
+
+@*@using (Html.BeginForm())
+    {
+        @Html.DevExpress().FormLayout(settings =>
+    {
+        settings.Name = "formLayout";
+
+        settings.Items.AddGroupItem(g =>
+        {
+            g.Caption = "Opciones";
+            g.GroupBoxDecoration = GroupBoxDecoration.Box;
+            g.ColCount = 2;
+
+            g.Items.Add(i =>
+            {
+                i.ShowCaption = DefaultBoolean.False;
+                i.Paddings.PaddingLeft = 0;
+                i.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+                i.NestedExtension().Button(b =>
+                {
+                    b.Name = "btnBack";
+                    b.Text = "";
+                    b.UseSubmitBehavior = false;
+                    b.RouteValues = new { Controller = "Licenses", Action = "ConsultDetailParameters" };
+                    b.Width = Unit.Pixel(100);
+                    b.Images.Image.Url  = Url.Content("~/Content/Icons/back.png");
+                    b.ImagePosition = ImagePosition.Right;
+                });
+            });
+
+
+            g.Items.Add(i =>
+            {
+                i.ShowCaption = DefaultBoolean.False;
+                i.Paddings.PaddingLeft = 0;
+                i.HorizontalAlign = FormLayoutHorizontalAlign.Left;
+                i.NestedExtension().Button(b =>
+                {
+                    b.Name = "btnDetailPreviewXls";
+                    b.Text = "";
+                    b.UseSubmitBehavior = false;
+                    b.RouteValues = new { Controller = "Licenses", Action = "ExportConsultToXls" };
+                    b.Width = Unit.Pixel(100);
+                    b.Images.Image.IconID = IconID.ExportExporttoxls32x32;
+                    b.ImagePosition = ImagePosition.Right;
+                });
+            });
+
+        });
+    }).GetHtml()
+    }
+
+    <br />*@
+
+@using (Html.BeginForm())
+{
+
+    @Html.Action("ConsultDetailPartial")
+}
+
+    @using (Html.BeginForm())
+    {
+        if (ViewData["EditError"] != null)
+        {
+            <font face="univers" size="4" color="red">
+                @ViewData["EditError"]
+            </font>
+        }
+    }
+
+
+
+
+
+
+
+

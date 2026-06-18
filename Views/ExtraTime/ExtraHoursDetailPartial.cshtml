@@ -1,0 +1,109 @@
+﻿
+@Html.DevExpress().GridView(
+    settings =>
+    {
+        settings.Name = "gvDetail" + ViewData["CustomerID"];
+        settings.SettingsDetail.MasterGridName = "gvSummary";
+        //settings.Caption = "Detalle de horas extras aprobadas entre" + " " + Session["startDate"] + " " + "y" + " " + Session["EndDate"];
+
+        settings.CallbackRouteValues = new { Controller = "ExtraTime", Action = "ExtraHoursDetailPartial", CustomerID = ViewData["CustomerID"] };
+        settings.Width = Unit.Percentage(100);
+        settings.ControlStyle.Border.BorderWidth = 0;
+
+
+
+        settings.KeyFieldName = "Person_Id";
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.Settings.VerticalScrollableHeight = 150;
+        settings.SettingsBehavior.AllowFocusedRow = true;
+        //settings.SettingsPager.Mode = GridViewPagerMode.ShowAllRecords;
+
+        settings.EnableRowsCache = false;
+        
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "ExecutionDate";
+            col.Caption = "Fecha";
+            //col.MinWidth = 70;
+            //col.Width = 100;
+            col.PropertiesEdit.DisplayFormatString = "d";
+            col.Width = 100;
+            col.AdaptivePriority = 1;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "HourStart";
+            col.Caption = "Hora de Inicio";
+            //col.MinWidth = 70;
+            //col.Width = 100;
+            col.PropertiesEdit.DisplayFormatString = "hh:mm:ss tt";
+            col.Width = 100;
+            col.AdaptivePriority = 2;
+
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "HourEnd";
+            col.Caption = "Hora de Fin";
+            //col.MinWidth = 70;
+            //col.Width = 100;
+            col.PropertiesEdit.DisplayFormatString = "hh:mm:ss tt";
+            col.Width = 100;
+            col.AdaptivePriority = 3;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.Caption = "Total de Horas";
+            //col.MinWidth = 60;
+            //col.Width = 70;
+            col.FieldName = "Hours";
+            col.Width = 100;
+            col.AdaptivePriority = 4;
+        });
+        settings.Columns.Add(col =>
+        {
+            col.Caption = "Motivo";
+            //col.MinWidth = 70;
+            //col.Width = 100;
+            col.FieldName = "Reasons";
+            col.Width = 100;
+            col.AdaptivePriority = 5;
+        });
+
+        settings.Columns.Add(col =>
+        {
+            col.Caption = "Estado";
+            //col.MinWidth = 70;
+            //col.Width = 100;
+            col.FieldName = "Status";
+            col.Width = 100;
+            col.AdaptivePriority = 6;
+        });
+
+        settings.CustomBindingRouteValuesCollection.Add(
+            GridViewOperationType.Sorting,
+            new { Controller = "ExtraTime", Action = "DetailGridViewSortingAction", CustomerID = ViewData["CustomerID"] }
+        );
+        settings.CustomBindingRouteValuesCollection.Add(
+            GridViewOperationType.Paging,
+            new { Controller = "ExtraTime", Action = "DetailGridViewPagingAction", CustomerID = ViewData["CustomerID"] }
+        );
+
+
+
+        settings.Settings.ShowFooter = true;
+
+
+
+
+    }).BindToCustomData(Model).GetHtml()
+
+

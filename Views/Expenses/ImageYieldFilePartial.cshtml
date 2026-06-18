@@ -1,0 +1,46 @@
+﻿
+@model Entities.Expenses
+
+@Html.DevExpress().GetStyleSheets(
+         new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.GridView }
+
+
+     )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.GridView }
+
+ )
+<!DOCTYPE html>
+
+<html>
+
+@{
+    var imgSrc = "";
+    if (Model.YieldFile != null)
+    {
+        var base64 = Convert.ToBase64String(Model.YieldFile);
+        imgSrc = String.Format("data:image/jpg;base64,{0}", base64);
+    }
+
+}
+<body>
+    <div>
+
+        <div style="text-align: center; margin-top: 10px;">
+            <img src="@imgSrc" alt="No hay imagen que mostrar" style="border: 1px solid #C5C5C5; padding: 4px; box-shadow: 0 1px 3px 0.5px #C5C5C5; width: 600px; height:600px;" />
+
+
+        </div>
+
+
+    </div>
+</body>
+</html>
+
+

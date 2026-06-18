@@ -1,0 +1,152 @@
+﻿@{
+    ViewBag.Title = "Lista de accidentes";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<link rel="stylesheet" href="http://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+
+
+@section scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+  $(document).ready(function () {
+            // DataTable for myTable
+       var tabla_persona = $('#tablaIncidentes').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("Listjson", "Accidente")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+
+                    { "data": "CARNET" },
+                    { "data": "NOMBRE" },
+                    { "data": "GERENCIA" },
+                    { "data": "EDIFICIO" },
+                    { "data": "FACCID" },
+                    { "data": "HACCID" },
+                    { "data": "t2" },
+                    { "data": "LACCID" },
+                    { "data": "FORACCID" },
+                    { "data": "NATLESION" },
+                    { "data": "UBILESION" },
+                    { "data": "DIAS" },
+                    { "data": "AGMAT" },
+                    { "data": "t1" },
+                    { "data": "CONDSEG" },
+                    { "data": "UBTRAB" },
+                    { "data": "GENERO" },
+
+                ],
+                "dom": 'Blfrtip', // Incluye el componente de selección de registros por página
+                "lengthMenu": [10, 20, 50, 100], // Opciones de selección de registros por página
+                "pageLength": 10, // Número de registros por página por defecto
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                responsive: true,
+       });
+
+      //tabla_persona.on('xhr', function () {
+      //    var data = tabla_persona.ajax.json();
+      //    var generos = data.data.map(accidente => accidente.GENERO);
+
+      //    // Filtrar los géneros por M (masculino) y F (femenino)
+      //    var generoMasculino = generos.filter(genero => genero === 'M');
+      //    var generoFemenino = generos.filter(genero => genero === 'F');
+
+      //    // Contar la cantidad de cada género
+      //    var generoCounts = {
+      //        'Masculino': generoMasculino.length,
+      //        'Femenino': generoFemenino.length
+      //    };
+
+      //    // Obtener datos para el gráfico de barras
+      //    var etiquetas = Object.keys(generoCounts);
+      //    var datos = etiquetas.map(etiqueta => generoCounts[etiqueta]);
+
+      //    // Configuración del gráfico de barras con Chartist.js
+      //    new Chartist.Bar('#chartGenero', {
+      //        labels: etiquetas,
+      //        series: [datos]
+      //    }, {
+      //        seriesBarDistance: 10, // Ajusta esta opción para controlar el ancho de las barras
+      //        height: 400,
+      //        axisY: {
+      //            onlyInteger: true
+      //        },
+      //        plugins: [
+      //            Chartist.plugins.ctBarLabels({
+      //                labelOffset: {
+      //                    y: -10, // Ajusta la posición vertical de las etiquetas
+      //                },
+      //                textAlign: 'center' // Ajusta la alineación del texto de la etiqueta
+      //            })
+
+      //        ]
+      //    });
+      //});
+        });
+    </script>
+}
+
+<!--<div id="chartGenero" class="ct-chart ct-golden-section" style="width: auto; height: 400px;">
+    <div class="ct-series ct-series-a">
+        <div class="ct-bar ct-bar-0"></div>-->
+ <!-- Barra para 'Masculino' -->
+<!--<div class="ct-bar ct-bar-1"></div>--> <!-- Barra para 'Femenino' -->
+<!--</div>
+</div>-->
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h3 class="m-0 font-weight-bold text-primary text-center" style="color: #800 !important;">Lista de accidentes</h3>
+                </div>
+                <div class="card-body p-3">
+                    <table id="tablaIncidentes" style="width:100%" class="table table-bordered table-hover display responsive nowrap">
+                        <thead>
+                            <tr>
+                                <th>Carnet</th>
+                                <th>Nombre</th>
+                                <th>Gerencia</th>
+                                <th>Edificio</th>
+                                <th>Fecha Accidente</th>
+                                <th>Hora Accidente</th>
+                                <th>Trayectoria</th>
+                                <th>Lugar</th>
+                                <th>Forma</th>
+                                <th>DX</th>
+                                <th>Ubi.LEsion</th>
+                                <th>Dias subsideo</th>
+                                <th>Material</th>
+                                <th>Nivel</th>
+                                <th>Condicion</th>
+                                <th>Departamento</th>
+                                <th>Genero</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

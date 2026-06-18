@@ -1,0 +1,91 @@
+﻿@model List<Entities.Events>
+@{
+    ViewBag.Title = "Lista de Eventos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+@Html.DevExpress().GetStyleSheets(
+        new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+              new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Aqua" },
+
+        new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+        new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+           new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+    )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+<script>
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvEvent.SetHeight(height - 150);
+    }
+
+    function ShowEditForm(elementID, url) {
+        popImage.SetContentUrl(url);
+        popImage.ShowAtElementByID(elementID);
+    }
+
+
+      function LoadEventList(s, e) {
+        $.ajax({
+            url: '@Url.Action("ListPartial","Events")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+                }).done(function(result) {
+                        $('#ListPartial').html(result);
+                });
+    }
+
+</script>
+<div id="ListPartial">
+
+
+    @Html.Action("EventListPartial")
+
+
+</div>
+
+
+
+
+@*//temporalmente fuera*@
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+settingsPopup.Name = "popImage";
+settingsPopup.ShowOnPageLoad = false;
+settingsPopup.HeaderText = "Edicion de Evento";
+settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+settingsPopup.CloseOnEscape = true;
+settingsPopup.Width = 700;
+settingsPopup.Height = 400;
+
+
+}).GetHtml()

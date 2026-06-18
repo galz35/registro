@@ -1,0 +1,65 @@
+﻿@using System.Drawing;
+@Html.DevExpress().Chart(settings =>
+{
+    // Specify the obligatory chart name.
+    settings.Name = "balanceChart";
+    settings.Width = Unit.Pixel(500);
+    settings.Height = Unit.Pixel(390);
+ 
+    settings.Titles.Add(s =>
+    {
+        s.Font = new Font("Tahoma", 12, FontStyle.Bold);
+        s.Text = "Asignación vs Ejecución Viáticos";
+        s.TextColor = Color.SteelBlue;
+
+    });
+
+
+
+    settings.BorderOptions.Visibility = DefaultBoolean.True;
+    settings.EmptyChartText.Text = "No se encontraron registros";
+    settings.ToolTipEnabled = DefaultBoolean.True;
+    settings.Legends.Default(l =>
+    {
+        l.AlignmentHorizontal = LegendAlignmentHorizontal.Center;
+        l.AlignmentVertical = LegendAlignmentVertical.BottomOutside;
+        l.Direction = LegendDirection.LeftToRight;
+        l.MaxHorizontalPercentage = 50;
+        l.Border.Visibility = DefaultBoolean.False;
+    });
+    settings.Series.Add(s =>
+    {
+        s.Name = "sBalance";
+        s.ArgumentDataMember = "LevelName";
+        s.ValueDataMembers[0] = "Balance";
+        s.LegendTextPattern = "{VP:P0}";
+        s.LabelsVisibility = DefaultBoolean.True;
+        s.ToolTipSeriesPattern = "{S}\n{HINT} : {VP:##.##%}"; ;
+
+        s.Views().PieSeriesView(v =>
+        {
+
+
+            v.SeriesLabel(l =>
+            {
+                l.TextPattern = "{A} : {V:##.##0}";
+                l.Position = PieSeriesLabelPosition.Outside;
+                l.LineVisibility = DefaultBoolean.True;
+                l.Border.Visibility = DefaultBoolean.False;
+            });
+        });
+    });
+
+
+    //settings.Series.Add(s =>
+    //{
+    //    s.Name = "My Data";
+    //    s.SetDataMembers("ManagementName", "AssignmentAmount");
+    //    //s.Label.TextPattern = "{A}: {V:n0}";
+    //    s.Views().PieSeriesView(v => { });
+    //    s.LabelsVisibility = DefaultBoolean.False;
+    //    s.LegendTextPattern = "{A} { V: n0}";
+
+    //});
+}).Bind(Model).GetHtml()
+

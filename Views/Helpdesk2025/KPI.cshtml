@@ -1,0 +1,906 @@
+﻿@{
+    ViewBag.Title = "Dashboard KPI – Helpdesk";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/onlinecss/dataTables.bootstrap4.min.css" />
+
+<style>
+    /* ===== Estilo aislado de esta página ===== */
+    #kpiPage * {
+        color: #111 !important;
+    }
+
+    /* ---------- Header / acciones rápidas ---------- */
+    .k-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin: 14px 0 20px 0;
+    }
+
+    .k-left h1.k-title {
+        font-weight: 800;
+        color: #111;
+        font-size: 1.4rem;
+        margin: 0 0 .25rem 0;
+        line-height: 1.2;
+    }
+
+    .k-left .k-sub {
+        font-size: .8rem;
+        color: #6b7280 !important;
+        font-weight: 500;
+    }
+
+    .k-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+        .k-actions .btn {
+            margin-left: .5rem;
+            margin-bottom: .5rem;
+        }
+
+    /* ---------- Card filtros ---------- */
+    .k-filters.card {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+    }
+
+    .k-filters .card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        color: #374151 !important;
+        padding: .75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+        .k-filters .card-header .range-hints button {
+            margin-left: .5rem;
+            margin-bottom: .5rem;
+        }
+
+    .k-filters .card-body {
+        padding: 1rem;
+    }
+
+    .k-filters label {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6b7280 !important;
+        margin-bottom: .35rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .k-filters .form-control,
+    .k-filters .custom-select {
+        border-radius: 10px;
+        font-size: .9rem;
+        line-height: 1.2;
+        height: calc(2rem + 2px);
+        padding: .4rem .6rem;
+    }
+
+    /* Bloque Tipo/Subtipo */
+    .subtipo-hint.badge {
+        font-weight: 500;
+        font-size: .6rem;
+        line-height: 1.1rem;
+        border-radius: 999px;
+        margin-left: .5rem;
+    }
+
+    /* ---------- Tarjetas KPI ---------- */
+    .k-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        height: 100%;
+    }
+
+        .k-card .kpi {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+        }
+
+    .kpi .label {
+        text-transform: uppercase;
+        font-size: .7rem;
+        color: #6b7280 !important;
+        font-weight: 600;
+        margin-bottom: .15rem;
+    }
+
+    .kpi .value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #111 !important;
+        line-height: 1.2;
+    }
+
+    .k-badge {
+        font-size: 2rem;
+        opacity: .9;
+        line-height: 1;
+    }
+
+    /* Colores de borde izquierdo por estado */
+    .k-total {
+        border-left: .35rem solid #64748b;
+    }
+
+    .k-pend {
+        border-left: .35rem solid #e11d48;
+    }
+
+    .k-proc {
+        border-left: .35rem solid #f59e0b;
+    }
+
+    .k-cerr {
+        border-left: .35rem solid #10b981;
+    }
+
+    .k-canc {
+        border-left: .35rem solid #6b7280;
+    }
+
+    /* ---------- Cards contenedor de gráficos / tablas ---------- */
+    .chart-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+        .chart-card .card-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 700;
+            font-size: .9rem;
+            color: #111 !important;
+            padding: .6rem .75rem;
+            line-height: 1.2;
+        }
+
+        .chart-card .card-body-inner {
+            flex: 1 1 auto;
+            padding: .75rem;
+        }
+
+    /* ---------- Top Usuarios tabla scrollable ---------- */
+    .top-users-wrapper {
+        max-height: 260px; /* mantiene altura pareja con las otras tarjetas */
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+    }
+
+    #tblTopUsers {
+        margin-bottom: 0;
+        font-size: .85rem;
+    }
+
+        #tblTopUsers thead th {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        #tblTopUsers tbody td {
+            vertical-align: middle;
+        }
+
+    /* DataTables wrapper: evitar overflow raro */
+    #tblTopUsers_wrapper .row {
+        overflow: visible;
+    }
+
+    /* ---------- SweetAlert por encima ---------- */
+    .swal2-container {
+        z-index: 5000 !important;
+    }
+
+    /* ---------- Responsive tweaks ---------- */
+    @@media (max-width: 767.98px) {
+        .kpi .value {
+            font-size: 1.1rem;
+        }
+
+        .k-left h1.k-title {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+
+<div id="kpiPage" class="container-fluid">
+
+    <!-- HEADER / ACCIONES -->
+    <div class="k-head">
+        <div class="k-left">
+            <h1 class="k-title">Dashboard de KPIs</h1>
+            <div class="k-sub">Estado operativo y tiempos de respuesta del Helpdesk</div>
+        </div>
+
+        <div class="k-actions">
+            <button id="btnMesActual" class="btn btn-light border">
+                <i class="fas fa-calendar-alt mr-1"></i> Mes actual
+            </button>
+            <button id="btnUltimos30" class="btn btn-light border">
+                <i class="fas fa-history mr-1"></i> Últimos 30 días
+            </button>
+            <button id="btnExportCsv" class="btn btn-success">
+                <i class="fas fa-file-excel mr-1"></i> Descargar Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="k-filters card mb-4">
+        <div class="card-header">
+            <div>Filtros</div>
+            <div class="range-hints text-right">
+                <!-- damos accesos rápidos también acá si quieren usarlos desde mobile -->
+                <button id="btnMesActual2" class="btn btn-sm btn-outline-secondary">
+                    Mes actual
+                </button>
+                <button id="btnUltimos302" class="btn btn-sm btn-outline-secondary">
+                    Últimos 30
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="form-row">
+                <!-- Rango fechas -->
+                <div class="form-group col-lg-3 col-md-6">
+                    <label>Rango de fechas</label>
+                    <div class="form-row">
+                        <div class="col-6 pr-1">
+                            <input type="date" id="fDesde" class="form-control" />
+                        </div>
+                        <div class="col-6 pl-1">
+                            <input type="date" id="fHasta" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gerencia -->
+                <div class="form-group col-lg-3 col-md-6">
+                    <label>Gerencia</label>
+                    <select id="fGerencia" class="custom-select">
+                        <option value="">(Todas)</option>
+                    </select>
+                </div>
+
+                <!-- Tipo -->
+                <div class="form-group col-lg-3 col-md-6">
+                    <label>Tipo de caso</label>
+                    <select id="fTipo" class="custom-select">
+                        <option value="">(Todos)</option>
+                    </select>
+                </div>
+
+                <!-- Subtipo -->
+                <div class="form-group col-lg-3 col-md-6">
+                    <label>
+                        Subtipo
+                        <span id="subtipoHint" class="badge badge-secondary subtipo-hint">Seleccione tipo</span>
+                    </label>
+                    <select id="fSubtipo" class="custom-select" disabled>
+                        <option value="">(Todos)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button id="btnAplicar" class="btn btn-danger">
+                    <i class="fas fa-sync mr-1"></i> Aplicar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs GLOBALES -->
+    <div class="row">
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="k-card k-total">
+                <div class="kpi">
+                    <div>
+                        <div class="label">Total</div>
+                        <div id="kTotal" class="value">0</div>
+                    </div>
+                    <div class="k-badge">
+                        <i class="fas fa-layer-group" style="color:#64748b"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="k-card k-pend">
+                <div class="kpi">
+                    <div>
+                        <div class="label">Pendiente</div>
+                        <div id="kPend" class="value">0</div>
+                    </div>
+                    <div class="k-badge">
+                        <i class="fas fa-book-open" style="color:#e11d48"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="k-card k-proc">
+                <div class="kpi">
+                    <div>
+                        <div class="label">Trabajando</div>
+                        <div id="kProc" class="value">0</div>
+                    </div>
+                    <div class="k-badge">
+                        <i class="fas fa-tasks" style="color:#f59e0b"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="k-card k-cerr">
+                <div class="kpi">
+                    <div>
+                        <div class="label">Cerrado</div>
+                        <div id="kCerr" class="value">0</div>
+                    </div>
+                    <div class="k-badge">
+                        <i class="fas fa-check-circle" style="color:#10b981"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-3">
+            <div class="k-card k-canc">
+                <div class="kpi">
+                    <div>
+                        <div class="label">Cancelado</div>
+                        <div id="kCanc" class="value">0</div>
+                    </div>
+                    <div class="k-badge">
+                        <i class="fas fa-ban" style="color:#6b7280"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRÁFICOS FILA 1 -->
+    <div class="row">
+        <div class="col-lg-6 mb-3">
+            <div class="chart-card">
+                <div class="card-header">Tendencia (Creados vs Cerrados)</div>
+                <div class="card-body-inner">
+                    <canvas id="chTrend" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-3">
+            <div class="chart-card">
+                <div class="card-header">Casos por Tipo/Subtipo</div>
+                <div class="card-body-inner">
+                    <canvas id="chTipos" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRÁFICOS / TABLAS FILA 2 -->
+    <div class="row">
+        <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+                <div class="card-header">Distribución por Gerencia</div>
+                <div class="card-body-inner">
+                    <canvas id="chGerencia" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+                <div class="card-header">Top Usuarios (Solicitantes)</div>
+                <div class="card-body-inner">
+                    <div class="top-users-wrapper">
+                        <table id="tblTopUsers" class="table table-sm table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th style="width:110px;">Casos</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        * Usuarios que más han creado casos en el rango filtrado.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+                <div class="card-header">Tiempos (prom/mediana)</div>
+                <div class="card-body-inner">
+                    <div class="mb-2">
+                        <strong>Prom. primera atención:</strong>
+                        <span id="tPrimeraAtencion">–</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Prom. cierre:</strong>
+                        <span id="tPromCierre">–</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Mediana cierre:</strong>
+                        <span id="tMedCierre">–</span>
+                    </div>
+                    <div class="text-muted small">
+                        * En horas (minutos/60 con 1 decimal)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div> <!-- /#kpiPage -->
+
+
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/responsive.bootstrap4.min.js"></script>
+
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="~/onlinejs/chart.js"></script>
+
+    <script>
+    // ============================== Helpers ==============================
+    function minToHorasText(min){
+        if(min===null || min===undefined) return '–';
+        var h = Math.round((min/60)*10)/10;
+        return h.toFixed(1) + ' h';
+    }
+
+    function defaultMesActual(){
+        var i = moment().startOf('month');
+        var f = moment().endOf('day');
+        $('#fDesde').val(i.format('YYYY-MM-DD'));
+        $('#fHasta').val(f.format('YYYY-MM-DD'));
+    }
+
+    function defaultUltimos30(){
+        var i = moment().add(-29,'days').startOf('day');
+        var f = moment().endOf('day');
+        $('#fDesde').val(i.format('YYYY-MM-DD'));
+        $('#fHasta').val(f.format('YYYY-MM-DD'));
+    }
+
+    function cargarGerencias(){
+        $.getJSON('@Url.Action("KPI_ListarGerencias","Helpdesk2025")', function(r){
+            if(r && r.success){
+                var $g = $('#fGerencia').empty().append(new Option('(Todas)',''));
+                $.each(r.data, function(_,g){
+                    $g.append(new Option(g, g));
+                });
+            }
+        });
+    }
+        var _tiposCache = []; // [{TipoCasoID, Nombre, Subtipos:[{SubtipoCasoID,Nombre},...]}, ...]
+function cargarTipos() {
+    var $t = $('#fTipo');
+    var $s = $('#fSubtipo');
+    var $hint = $('#subtipoHint');
+
+    // estado inicial UI
+    $t.empty().append(new Option('(Todos)',''));
+    $s.empty().append(new Option('(Todos)','')).prop('disabled', true);
+
+    $hint
+        .text('Cargando tipos...')
+        .removeClass('badge-secondary badge-success badge-danger')
+        .addClass('badge-info')
+        .show();
+
+    // Llamamos SOLO UNA VEZ al servidor
+    $.getJSON('@Url.Action("KPI_ListarTiposYSubtipos","Helpdesk2025")', function(r){
+        if (!(r && r.success)) {
+            _tiposCache = [];
+            $hint
+                .text('Error')
+                .removeClass('badge-info badge-success badge-secondary')
+                .addClass('badge-danger');
+            return;
+        }
+
+        _tiposCache = r.data || [];
+
+        // Llenar combo Tipo
+        $t.empty().append(new Option('(Todos)',''));
+        $.each(_tiposCache, function(_, tp){
+            $t.append(new Option(tp.Nombre, tp.TipoCasoID));
+        });
+
+        // Subtipo vuelve bloqueado hasta que usuario elija algo
+        $s.empty()
+          .append(new Option('(Todos)',''))
+          .prop('disabled', true);
+
+        $hint
+            .text('Seleccione tipo')
+            .removeClass('badge-info badge-success badge-danger')
+            .addClass('badge-secondary')
+            .show();
+    })
+    .fail(function(){
+        _tiposCache = [];
+        $hint
+            .text('Error de red')
+            .removeClass('badge-info badge-success badge-secondary')
+            .addClass('badge-danger')
+            .show();
+    });
+}
+    // Manejo cascada Tipo -> Subtipo con feedback visual
+
+// Cuando cambian el Tipo, llenamos Subtipo desde memoria SIN ir al server
+$('#fTipo').on('change', function(){
+    var tipoSel = $(this).val();        // ej "4"
+    var $s = $('#fSubtipo');
+    var $hint = $('#subtipoHint');
+
+    // reset subtipo siempre
+    $s.empty().append(new Option('(Todos)',''));
+
+    // si el usuario eligió "(Todos)", bloqueamos subtipo
+    if(!tipoSel){
+        $s.prop('disabled', true);
+        $hint
+            .text('Seleccione tipo')
+            .removeClass('badge-info badge-success badge-danger')
+            .addClass('badge-secondary')
+            .show();
+        return;
+    }
+
+    // buscamos el objeto tipo dentro del cache
+    var match = _tiposCache.find(function(x){
+        return String(x.TipoCasoID) === String(tipoSel);
+    });
+
+    if(!match){
+        // raro: no lo encontró
+        $s.prop('disabled', true);
+        $hint
+            .text('Sin datos')
+            .removeClass('badge-info badge-success badge-secondary')
+            .addClass('badge-danger')
+            .show();
+        return;
+    }
+
+    // tenemos subtipos de ese tipo
+    if(match.Subtipos && match.Subtipos.length){
+        match.Subtipos.forEach(function(st){
+            $s.append(new Option(st.Nombre, st.SubtipoCasoID));
+        });
+
+        $s.prop('disabled', false);
+
+        $hint
+            .text('Listo')
+            .removeClass('badge-info badge-secondary badge-danger')
+            .addClass('badge-success')
+            .show();
+    } else {
+        // tipo sin subtipos (puede pasar si hay algún tipo "genérico")
+        $s.prop('disabled', true);
+
+        $hint
+            .text('Sin subtipos')
+            .removeClass('badge-info badge-secondary badge-success')
+            .addClass('badge-danger')
+            .show();
+    }
+});
+    // ============================== Charts ==============================
+    var chTrend, chTipos, chGerencia;
+
+    function renderTrend(labels, c1, c2){
+        var ctx = document.getElementById('chTrend').getContext('2d');
+        if(chTrend) chTrend.destroy();
+        chTrend = new Chart(ctx, {
+            type:'line',
+            data:{
+                labels: labels,
+                datasets:[
+                    {
+                        label:'Creados',
+                        data:c1,
+                        tension:.2,
+                        borderWidth:2,
+                        borderColor:'#e11d48',
+                        backgroundColor:'rgba(225,17,72,.08)',
+                        pointRadius:2
+                    },
+                    {
+                        label:'Cerrados',
+                        data:c2,
+                        tension:.2,
+                        borderWidth:2,
+                        borderColor:'#10b981',
+                        backgroundColor:'rgba(16,185,129,.08)',
+                        pointRadius:2
+                    }
+                ]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{ legend:{ position:'bottom' } },
+                scales:{
+                    x:{ grid:{ display:false } },
+                    y:{ beginAtZero:true }
+                }
+            }
+        });
+    }
+
+    function renderTipos(labels, data){
+        var ctx = document.getElementById('chTipos').getContext('2d');
+        if(chTipos) chTipos.destroy();
+        chTipos = new Chart(ctx, {
+            type:'bar',
+            data:{
+                labels:labels,
+                datasets:[{
+                    label:'Casos',
+                    data:data,
+                    backgroundColor:'#f59e0b'
+                }]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{ legend:{ display:false } },
+                scales:{
+                    x:{ grid:{ display:false } },
+                    y:{ beginAtZero:true }
+                }
+            }
+        });
+    }
+
+    function renderGerencia(labels, data){
+        var ctx = document.getElementById('chGerencia').getContext('2d');
+        if(chGerencia) chGerencia.destroy();
+        chGerencia = new Chart(ctx, {
+            type:'doughnut',
+            data:{
+                labels:labels,
+                datasets:[{
+                    data:data,
+                    backgroundColor:[
+                        '#e11d48','#10b981','#6b7280','#f59e0b',
+                        '#9ca3af','#ef4444','#22c55e'
+                    ]
+                }]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{ legend:{ position:'bottom' } }
+            }
+        });
+    }
+
+    // ============================== Top Usuarios (mini DataTable sin paginación global) ==============================
+    var dtTop = null;
+    function renderTopUsers(rows){
+        if(!dtTop){
+            dtTop = $('#tblTopUsers').DataTable({
+                data: rows || [],
+                columns: [
+                    { data:'Usuario' },
+                    { data:'Total', className:'text-right' }
+                ],
+                paging:false,
+                searching:false,
+                info:false,
+                ordering:true,
+                order:[[1,'desc']]
+            });
+        } else {
+            dtTop.clear().rows.add(rows||[]).draw();
+        }
+    }
+
+    // ============================== Params de filtros ==============================
+    function params(){
+        return {
+            desde: $('#fDesde').val(),
+            hasta: $('#fHasta').val(),
+            gerencia: $('#fGerencia').val(),
+            tipoId: $('#fTipo').val() || null,
+            subtipoId: $('#fSubtipo').val() || null
+        };
+    }
+
+    // ============================== Cargar dashboard completo ==============================
+    function cargarTodo(){
+        var p = params();
+        $.LoadingOverlay("show",{image:"", text:"Cargando KPIs..."});
+
+        // KPIs resumen
+        $.getJSON('@Url.Action("KPIResumen","Helpdesk2025")', p, function(r){
+            if(r && r.success && r.data){
+                $('#kTotal').text(r.data.Total || 0);
+                $('#kPend').text(r.data.Pendiente || 0);
+                $('#kProc').text(r.data.EnProceso || 0);
+                $('#kCerr').text(r.data.Cerrado || 0);
+                $('#kCanc').text(r.data.Cancelado || 0);
+            }
+        });
+
+        // Tendencia por día
+        $.getJSON('@Url.Action("KPIPorDia","Helpdesk2025")', p, function(r){
+            if(r && r.success){
+                var labels=[], cread=[], cerr=[];
+                $.each(r.data, function(_,x){
+                    labels.push(moment(x.Dia).format('DD/MM'));
+                    cread.push(x.Creados||0);
+                    cerr.push(x.Cerrados||0);
+                });
+                renderTrend(labels, cread, cerr);
+            }
+        });
+
+        // Casos por Tipo/Subtipo
+        $.getJSON('@Url.Action("KPIPorTipo","Helpdesk2025")', p, function(r){
+            if(r && r.success){
+                var labels=[], vals=[];
+                $.each(r.data, function(_,x){
+                    var lbl = (x.TipoNombre||'(Tipo)') + ' - ' + (x.SubtipoNombre||'(Subtipo)');
+                    labels.push(lbl);
+                    vals.push(x.Total||0);
+                });
+                renderTipos(labels, vals);
+            }
+        });
+
+        // Distribución por Gerencia
+        $.getJSON('@Url.Action("KPIPorGerencia","Helpdesk2025")', p, function(r){
+            if(r && r.success){
+                var labels=[], vals=[];
+                $.each(r.data, function(_,x){
+                    labels.push(x.Gerencia||'(N/D)');
+                    vals.push(x.Total||0);
+                });
+                renderGerencia(labels, vals);
+            }
+        });
+
+        // Tiempos
+        $.getJSON('@Url.Action("KPITiempos","Helpdesk2025")', p, function(r){
+            if(r && r.success && r.data){
+                $('#tPrimeraAtencion').text( minToHorasText(r.data.PromedioMinPrimeraAtencion) );
+                $('#tPromCierre').text( minToHorasText(r.data.PromedioMinCierre) );
+                $('#tMedCierre').text( minToHorasText(r.data.MedianaMinCierre) );
+            } else {
+                $('#tPrimeraAtencion, #tPromCierre, #tMedCierre').text('–');
+            }
+        });
+
+        // Top usuarios
+        $.getJSON('@Url.Action("KPITopUsuarios","Helpdesk2025")', p, function(r){
+            if(r && r.success){
+                renderTopUsers(r.data||[]);
+            }else{
+                renderTopUsers([]);
+            }
+            $.LoadingOverlay("hide");
+        }).fail(function(){
+            $.LoadingOverlay("hide");
+        });
+    }
+
+    // ============================== Descargar Excel ==============================
+    function buildCsvUrl(){
+        var d = $('#fDesde').val();
+        var h = $('#fHasta').val();
+        var g = $('#fGerencia').val();
+        var t = $('#fTipo').val();
+        var s = $('#fSubtipo').val();
+
+        var qs = [];
+        if(d) qs.push('desde=' + encodeURIComponent(d));
+        if(h) qs.push('hasta=' + encodeURIComponent(h));
+        if(g) qs.push('gerencia=' + encodeURIComponent(g));
+        if(t) qs.push('tipoCasoId=' + encodeURIComponent(t));
+        if(s) qs.push('subtipoCasoId=' + encodeURIComponent(s));
+        // si tu acción soporta "soloAtendidos", lo puedes sumar acá
+
+        var url = '@Url.Action("ExportKpiCsv","Helpdesk2025")';
+        if(qs.length>0) url += '?' + qs.join('&');
+        return url;
+    }
+
+    // ============================== Init ==============================
+    $(function(){
+        // Rango por defecto = Mes actual
+        defaultMesActual();
+
+        // Cargar selects iniciales
+        cargarGerencias();
+        cargarTipos();
+
+        // Primera carga de todo
+        cargarTodo();
+
+        // Botones rango rápido (header)
+        $('#btnMesActual').on('click', function(){
+            defaultMesActual();
+            cargarTodo();
+        });
+        $('#btnUltimos30').on('click', function(){
+            defaultUltimos30();
+            cargarTodo();
+        });
+
+        // Botones rango rápido (dentro filtros card)
+        $('#btnMesActual2').on('click', function(){
+            defaultMesActual();
+            cargarTodo();
+        });
+        $('#btnUltimos302').on('click', function(){
+            defaultUltimos30();
+            cargarTodo();
+        });
+
+        // Aplicar filtros
+        $('#btnAplicar').on('click', function(){
+            cargarTodo();
+        });
+
+        // Exportar Excel
+        $('#btnExportCsv').on('click', function(){
+            window.location = buildCsvUrl();
+        });
+    });
+    </script>
+}

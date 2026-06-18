@@ -1,0 +1,317 @@
+================================================================================
+📋 PLAN REACT: CENTRO DE MANDO EN 1 SOLA PÁGINA + POPUPS
+================================================================================
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\react\plan_react.txt
+Stack: React 18 | Vite | TypeScript | Vanilla CSS | Radix UI | Recharts | Lucide
+Colores: Rojo Claro (#DA291C) | Blanco | Gris | Negro | Verde (éxito) | SIN AZUL
+Filosofía UX: 2 páginas totales (Login + Centro de Mando)
+================================================================================
+
+ARQUITECTURA DE PÁGINAS (SOLO 2):
+  Página 1: /login → Pantalla de Login corporativo
+  Página 2: / → Centro de Mando (TODO aquí con popups)
+
+Todo lo que antes eran páginas separadas (Censo, Catálogo, Reportes) ahora 
+son POPUPS (modales, drawers y dialogs) que se abren sobre el Centro de Mando.
+
+================================================================================
+FASE 1: PROYECTO VITE + ESTRUCTURA + ESTILOS GLOBALES
+================================================================================
+Tiempo: 4-6 horas
+
+--- 1.1 Crear proyecto ---
+Directorio: d:\PROYECTOS_PORTAL\asistencia\frontend
+Comando: npx -y create-vite@latest ./ -- --template react-ts
+
+--- 1.2 Dependencias ---
+npm install
+npm install @radix-ui/react-tooltip @radix-ui/react-dialog
+npm install @radix-ui/react-dropdown-menu @radix-ui/react-tabs
+npm install axios lucide-react recharts react-router-dom@6 clsx
+
+--- 1.3 Estructura de carpetas ---
+src/
+  assets/             → Logo Claro, avatares
+  components/
+    layout/
+      MiniSidebar.tsx        → Barra lateral colapsable (solo iconos)
+      Header.tsx             → Header con búsqueda global + KPIs inline
+    popups/
+      CollaboratorDrawer.tsx → Drawer lateral: ficha completa del colaborador
+      DeliverModal.tsx       → Modal: formulario de entrega con validación
+      CatalogModal.tsx       → Modal grande: CRUD catálogo de juguetes
+      RevertDialog.tsx       → Dialog: confirmación de reversión
+      ReportsDrawer.tsx      → Drawer: gráficas + exportación PDF/Excel
+      ImportModal.tsx        → Modal: drag & drop del Excel de censo
+    shared/
+      MetricCard.tsx         → Tarjeta KPI animada
+      RadialProgress.tsx     → Gráfica circular SVG
+      Badge.tsx              → Badge de estado (Entregado/Pendiente/Reversado)
+      SlideToConfirm.tsx     → Deslizador de confirmación (también para web)
+      TooltipFoto.tsx        → Tooltip con foto evidencia al hover
+      SearchInput.tsx        → Input de búsqueda con debounce 300ms
+      DataTable.tsx          → Tabla reutilizable con paginación
+  context/
+    AuthContext.tsx           → Login/Logout + JWT en localStorage
+  hooks/
+    useDebounce.ts           → Debounce para búsqueda
+    usePolling.ts            → Polling cada 30s para KPIs en tiempo real
+  pages/
+    LoginPage.tsx            → PÁGINA 1: Login corporativo
+    CommandCenter.tsx        → PÁGINA 2: Centro de Mando (TODA la app)
+  services/
+    api.ts                   → Cliente Axios con interceptores JWT
+  types/
+    index.ts                 → Interfaces TypeScript
+  index.css                  → Estilos globales corporativos (de css.txt)
+  App.tsx                    → Router: solo 2 rutas
+
+--- 1.4 Estilos globales (index.css) ---
+Copiar variables CSS completas de css.txt:
+  - :root con --claro-red, --white, --grey-*, --success-green, --alert-orange
+  - @media (prefers-color-scheme: dark) para modo oscuro
+  - Google Fonts: Outfit (títulos) e Inter (cuerpo)
+  - Clases: .card-claro, .btn-claro-primary, .btn-claro-secondary
+  - Clases: .claro-table, .badge-delivered, .badge-pending, .badge-reverted
+  - Clase .drawer-overlay, .modal-overlay, .drawer-panel (animaciones de entrada)
+Criterio: npm run dev carga sin errores con fuentes cargadas.
+
+================================================================================
+FASE 2: TIPOS TYPESCRIPT + CLIENTE API + AUTH
+================================================================================
+Tiempo: 3-4 horas
+
+--- 2.1 Interfaces (src/types/index.ts) ---
+Interfaces completas para: Colaborador, Hijo, Juguete, Entrega, LoginResponse,
+ColaboradorFicha (respuesta completa del endpoint /full que incluye hijos +
+estado entregas + juguete sugerido + stock + foto HCM).
+
+--- 2.2 Cliente Axios (src/services/api.ts) ---
+- baseURL → http://VPS_IP:3000/api/v1
+- Interceptor request: inyecta Bearer token
+- Interceptor response: 401 → redirige a /login
+- Métodos:
+  * login(carnet, password)
+  * getColaboradorFull(carnet) → endpoint /attendance/collaborator/:carnet/full
+  * registrarAsistencia(carnet, eventId)
+  * registrarEntrega(FormData) → multipart con foto
+  * reversarEntrega(id, motivo)
+  * getCatalogo() / createJuguete() / updateJuguete() / deactivateJuguete()
+  * getSummary() → métricas dashboard
+  * getAuditoria(filtros) → tabla principal
+  * validateDelivery(hijoId, jugueteId) → validación pre-entrega
+  * downloadReportPDF() → blob download
+  * importCenso(file) → multipart Excel
+
+--- 2.3 AuthContext (src/context/AuthContext.tsx) ---
+  - login(carnet, password): guarda JWT + user en localStorage
+  - logout(): limpia y redirige
+  - isAuthenticated: booleano
+  - user: { carnet, nombre, rol }
+
+--- 2.4 App.tsx (Solo 2 rutas) ---
+  /login → LoginPage (público)
+  / → CommandCenter (protegido, requiere JWT)
+  * → redirige a /
+Criterio: Sin JWT redirige a /login. Con JWT muestra CommandCenter.
+
+================================================================================
+FASE 3: LOGIN PAGE (PÁGINA 1 DE 2)
+================================================================================
+Tiempo: 2 horas
+
+Archivo: src/pages/LoginPage.tsx
+Diseño:
+  - Fondo negro carbón con textura sutil
+  - Tarjeta centrada con logo Claro (círculo rojo)
+  - Input carnet (icono User) + Input contraseña (icono Lock)
+  - Botón rojo redondeado "Iniciar Sesión"
+  - Error en rojo translúcido si credenciales fallan
+  - Animación de entrada (fade-in + slide-up)
+Criterio: Aspecto premium. Al loguearse navega al Centro de Mando.
+
+================================================================================
+FASE 4: CENTRO DE MANDO (PÁGINA 2 DE 2 — LA PÁGINA PRINCIPAL)
+================================================================================
+Tiempo: 8-10 horas
+
+--- 4.1 Layout del Centro de Mando (CommandCenter.tsx) ---
+Estructura:
+  ┌──────────┬─────────────────────────────────────────┐
+  │ Mini     │ Header: Logo + KPIs + Búsqueda Global    │
+  │ Sidebar  ├───────────────────────────────────────────┤
+  │ (56px)   │ Tabla Principal (contexto según sidebar)  │
+  │          │ Paginación                                 │
+  └──────────┴───────────────────────────────────────────┘
+
+La mini-sidebar tiene 4 iconos:
+  [📊] Dashboard/Censo (vista por defecto) — Tabla de colaboradores + hijos
+  [📦] Catálogo — Abre CatalogModal (popup grande)
+  [📋] Reportes — Abre ReportsDrawer (drawer lateral)
+  [📥] Importar — Abre ImportModal (drag & drop Excel)
+
+El icono activo cambia de color a rojo Claro.
+Al hacer clic en [📦], [📋] o [📥] se abre el popup correspondiente 
+SIN abandonar la página. La tabla principal sigue visible detrás.
+
+--- 4.2 Header con KPIs en línea ---
+Componente: src/components/layout/Header.tsx
+Contenido:
+  - Logo Claro (izquierda)
+  - 4 MetricCards compactas en línea:
+    * Total Niños (número)
+    * Entregados (número + badge verde)
+    * Pendientes (número + badge gris)
+    * ⚠️ Stock Crítico (número + badge naranja, clic abre tooltip con lista)
+  - SearchInput global (derecha)
+  - Avatar usuario + dropdown logout (extremo derecho)
+Los KPIs se actualizan cada 30 segundos (usePolling).
+Criterio: Los números se actualizan en vivo sin recargar la página.
+
+--- 4.3 Tabla Principal del Censo ---
+Tabla que muestra la vista consolidada de todos los colaboradores y sus hijos.
+Columnas: Carnet | Colaborador | Gerencia | Hijos (ratio) | Estado | Acciones
+Filtros inline:
+  - Búsqueda global (debounce 300ms, busca en carnet, nombre, hijo)
+  - Filtro de estado: Todos | Completos | Pendientes | Sin Asistir
+  - Paginación: 50 por página
+Acción por fila: [👁️ Ver] → Abre CollaboratorDrawer
+
+--- 4.4 CollaboratorDrawer (Drawer Lateral Derecho - 480px) ---
+Archivo: src/components/popups/CollaboratorDrawer.tsx
+Trigger: Clic en [Ver] en la tabla o búsqueda directa de carnet.
+Animación: Slide-in desde la derecha (300ms ease-out).
+Contenido:
+  A. Cabecera:
+    - Foto HCM del colaborador (redonda, borde rojo) o avatar genérico
+    - Nombre, carnet, gerencia, ubicación
+    - Badge de asistencia: ✅ "Asistió 10:32 AM" o botón [Registrar Asistencia]
+  B. Lista de Hijos (tarjetas apiladas):
+    Para cada hijo:
+    - Icono de género (👧/👦) + nombre + edad + categoría
+    - Juguete sugerido + stock actual en tiempo real
+    - Estado visual:
+      * PENDIENTE: Fondo gris claro, borde gris, botón [🎁 Entregar →]
+      * ENTREGADO: Fondo verde claro, borde verde, hora + [📷 Foto] + [↺ Reversar]
+      * REVERSADO: Fondo naranja claro, borde naranja, botón [🎁 Re-entregar →]
+    - Botón [Entregar] abre DeliverModal
+    - Botón [Reversar] abre RevertDialog
+  C. Pie:
+    - Foto evidencia general (si existe): thumbnail con tooltip al hover
+    - Botón [📸 Subir Foto Evidencia] si no hay foto
+Criterio: El drawer se puede cerrar con Escape, clic fuera, o botón ✕.
+La tabla principal sigue visible (oscurecida) detrás del drawer.
+
+--- 4.5 DeliverModal (Modal Centrado) ---
+Archivo: src/components/popups/DeliverModal.tsx
+Trigger: Clic en [Entregar] dentro del CollaboratorDrawer.
+Se abre ENCIMA del drawer (z-index superior). El drawer permanece abierto detrás.
+Contenido:
+  - Info del hijo: nombre, edad, género, categoría
+  - Juguete sugerido con stock en tiempo real
+    * Si stock = 0: Muestra "⚠️ Agotado" + selector de alternativas
+    * Botón [Cambiar juguete ▾] para elegir otro
+  - Selector de receptor: (●) Colaborador (○) Cónyuge (○) Tercero
+    * Si Tercero: Input nombre (validación >= 3 chars en tiempo real)
+  - Zona de foto: [📸 Subir Foto] con preview instantáneo
+  - Panel de validación en tiempo real:
+    * ✅ Stock disponible (o 🔴 Agotado)
+    * ✅ Hijo sin entrega previa (o 🔴 Ya entregado)
+    * ✅ Colaborador asistió (o 🔴 Sin asistencia)
+  - Botón de confirmación: SlideToConfirm o botón rojo grande
+  - Al confirmar exitosamente:
+    * Modal se cierra
+    * La tarjeta del hijo en el drawer cambia instantáneamente a verde
+    * KPIs del header se actualizan
+    * Toast de éxito: "✅ Hot Wheels entregado a Lucas Pérez"
+Criterio: Al abrir, re-valida stock y estado en tiempo real contra la API.
+
+--- 4.6 RevertDialog (Dialog Compacto) ---
+Archivo: src/components/popups/RevertDialog.tsx
+Trigger: Clic en [Reversar] en la tarjeta de un hijo entregado.
+Contenido:
+  - Pregunta "¿Reversar entrega de [Hijo] → [Juguete]?"
+  - Input de motivo (obligatorio, min 10 chars, validación en tiempo real)
+  - Botones: [Cancelar] [🔴 Confirmar Reversión]
+  - Al confirmar:
+    * Tarjeta del hijo cambia de verde a gris oscuro
+    * KPIs se actualizan
+    * Stock del juguete +1
+    * Toast: "↺ Entrega de Muñeca Barbie reversada"
+
+--- 4.7 CatalogModal (Modal Grande — 80% viewport) ---
+Archivo: src/components/popups/CatalogModal.tsx
+Trigger: Clic en icono [📦] de la mini-sidebar.
+Contenido:
+  - Búsqueda de juguetes + filtros (categoría, género, stock)
+  - Tabla CRUD: Foto | Nombre | Categoría | Género | Stock | Acciones
+  - Stock bajo se resalta en rojo
+  - Botón [+ Nuevo Juguete] abre sub-dialog con formulario
+  - Editar juguete: sub-dialog con campos + subida de foto
+  - Barras de progreso por categoría (porcentaje despachado)
+Criterio: Crear un juguete con foto, verificar que aparece en la tabla.
+
+--- 4.8 ReportsDrawer (Drawer Lateral) ---
+Archivo: src/components/popups/ReportsDrawer.tsx
+Trigger: Clic en icono [📋] de la mini-sidebar.
+Contenido:
+  - Gráfica RadialProgress (porcentaje global)
+  - Gráfica de barras Recharts por categoría
+  - Métricas: entregas/hora, tiempo promedio, reversiones
+  - Botones de exportación: [📄 PDF] [📊 Excel]
+
+--- 4.9 ImportModal (Modal con Drag & Drop) ---
+Archivo: src/components/popups/ImportModal.tsx
+Trigger: Clic en icono [📥] de la mini-sidebar.
+Contenido:
+  - Zona de arrastre para archivo .xlsx
+  - Barra de progreso durante procesamiento
+  - Resultado: "✅ 892 registros importados"
+
+================================================================================
+FASE 5: COMPONENTES COMPARTIDOS
+================================================================================
+Tiempo: 4-5 horas
+
+--- 5.1 MetricCard.tsx ---
+Tarjeta compacta con icono + título + valor + variante de color.
+Variantes: default (gris), success (verde), alert (naranja), danger (rojo).
+Animación: Números que hacen transición suave al cambiar.
+
+--- 5.2 RadialProgress.tsx ---
+Gráfica SVG circular con stroke rojo Claro.
+Props: total, completados. Calcula porcentaje automáticamente.
+Código completo documentado en 05_frontend_react_y_mobile_flutter.txt.
+
+--- 5.3 Badge.tsx ---
+3 variantes: delivered (verde), pending (gris oscuro), reverted (naranja).
+Usa las clases de css.txt (.badge-delivered, .badge-pending, .badge-reverted).
+
+--- 5.4 TooltipFoto.tsx ---
+Al hacer hover sobre [📷 Ver Foto] muestra la imagen WebP en un tooltip.
+Sin clics extra. Usa @radix-ui/react-tooltip.
+
+--- 5.5 SearchInput.tsx ---
+Input con icono de lupa, placeholder dinámico, debounce de 300ms.
+Emite onChange solo tras los 300ms de inactividad.
+
+--- 5.6 DataTable.tsx ---
+Tabla genérica con: columnas configurables, ordenamiento, paginación,
+filas con hover highlight, skeleton loader mientras carga.
+
+================================================================================
+FASE 6: COMPILACIÓN Y DESPLIEGUE IIS
+================================================================================
+Tiempo: 2-3 horas
+
+1. npm run build → carpeta /dist
+2. Crear Sitio Web en IIS apuntando a /dist
+3. Crear web.config con URL Rewrite para SPA
+4. Proxy inverso /api → http://localhost:3000/api
+5. Verificar:
+   - Login funciona
+   - Centro de Mando carga KPIs
+   - Todos los popups abren/cierran correctamente
+   - CERO elementos azules en toda la interfaz
+   - Fotos WebP cargan correctamente
+================================================================================

@@ -1,0 +1,122 @@
+﻿
+@using System.Web.Mvc
+@using DevExpress.Web.Mvc
+
+@Html.DevExpress().GetStyleSheets(
+   new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+   new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+      new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+
+@Html.DevExpress().GridView(settings =>
+{
+    // Settings
+    settings.Name = "gvConsultDetail";
+    settings.CallbackRouteValues = new { Controller = "ExtraTime", Action = "ExtraHoursConsultDetailPartial" };
+    settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Paging, new { Controller = "ExtraTime", Action = "GridExtraTimeConsultPagingAction" });
+    settings.CustomBindingRouteValuesCollection.Add(GridViewOperationType.Filtering, new { Controller = "ExtraTime", Action = "GridExtraTimeConsultFilteringAction" });
+
+    settings.Settings.ShowGroupPanel = false;
+    settings.Settings.ShowFilterRow = true;
+    settings.Width = Unit.Percentage(100);
+    settings.ControlStyle.Border.BorderWidth = 1;
+    settings.Settings.ShowFooter = true;
+    settings.SettingsBehavior.AllowSelectByRowClick = true;
+    settings.CommandColumn.ShowClearFilterButton = true;
+
+
+    // Columns
+    settings.KeyFieldName = "PersonId";
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.Settings.VerticalScrollableHeight = 250;
+    settings.SettingsBehavior.AllowFocusedRow = true;
+
+
+    settings.EnableRowsCache = false;
+
+    settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+    settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "No Empleado";
+        //col.MinWidth = 70;
+        //col.Width = 100;
+        col.FieldName = "EmployeeNumber";
+        col.Width = 100;
+        col.AdaptivePriority = 1;
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "Nombre del Empleado";
+        col.FieldName = "EmployeeName";
+
+        col.Width = 100;
+        col.AdaptivePriority = 2;
+    });
+
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "Ubicación";
+
+        col.FieldName = "AreaName";
+        col.Width = 100;
+        col.AdaptivePriority = 3;
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "Horas";
+        col.FieldName = "Hours";
+
+        col.Width = 100;
+        col.AdaptivePriority = 4;
+    });
+    settings.Columns.Add(col =>
+    {
+        col.Caption = "Estado";
+        col.FieldName = "Status";
+
+        col.Width = 100;
+        col.AdaptivePriority = 5;
+    });
+
+
+
+
+
+
+}).BindToCustomData(Model).GetHtml()
+
+
+
+
+
+
+
+

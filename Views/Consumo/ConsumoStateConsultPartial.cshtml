@@ -1,0 +1,92 @@
+﻿@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView<Entities.ViewModels.VistaConsumoEstados>(settings =>
+    {
+        settings.Name = "gvConsumoStateConsult";
+        settings.KeyFieldName = "IdCombustibleConsumo";
+        settings.CallbackRouteValues = new { Controller = "Consumo", Action = "ConsumoStateConsultPartial" };
+
+        settings.Settings.ShowFooter = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.Width = Unit.Percentage(100);
+
+
+//Configuracion de Columnas
+
+
+
+
+        settings.Columns.Add(m => m.NumeroEmpleado, column =>
+        {
+            column.Caption = "No Empleado";
+            column.ReadOnly = true;
+            column.Width = 20;
+
+        });
+        settings.Columns.Add(m => m.NombreEmpleado, column =>
+        {
+            column.Caption = "Empleado";
+            column.ReadOnly = true;
+            column.Width = 20;
+
+        });
+        settings.Columns.Add(m => m.Estado, column =>
+        {
+            column.Caption = "Estado";
+            column.ReadOnly = true;
+            column.Width = 20;
+
+        });
+        settings.Columns.Add(m => m.FechaInsercion, column =>
+        {
+            column.Caption = "Fecha";
+            column.ReadOnly = true;
+            column.Width = 20;
+            column.EditorProperties().DateEdit(p =>
+            {
+
+
+                p.DisplayFormatString = "dd/MM/yyyy";
+
+
+
+            });
+        });
+        settings.Columns.Add(m => m.Hora, column =>
+        {
+            column.Caption = "Hora";
+            column.ReadOnly = true;
+            column.Width = 20;
+
+        });
+
+
+
+
+
+
+
+
+
+
+
+    });
+
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+
+@grid.Bind(Model).GetHtml()
+
+
+
+
+
+
+
+

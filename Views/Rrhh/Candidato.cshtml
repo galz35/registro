@@ -1,0 +1,326 @@
+﻿@{
+    var estilodev = false;
+}
+
+<style>
+    :root {
+        --rojo: #d62828;
+        --rojo-osc: #b71d1d;
+        --negro: #111;
+        --gris: #f6f7f9;
+        --borde: #e5e7eb;
+        --verde: #8bd3a3;
+        --blanco: #fff;
+    }
+
+    .card {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 8px 22px rgba(0,0,0,.08);
+    }
+
+    .card-header {
+        border: 0;
+        border-radius: 18px 18px 0 0;
+        background: linear-gradient(90deg,var(--rojo),#ff4d4d);
+        color: var(--blanco);
+    }
+
+    .toolbar {
+        display: flex;
+        gap: .75rem;
+        align-items: center;
+        flex-wrap: wrap
+    }
+
+    .segmented {
+        display: inline-flex;
+        border: 1px solid var(--borde);
+        border-radius: 12px;
+        background: var(--blanco);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06)
+    }
+
+        .segmented button {
+            padding: .55rem 1rem;
+            border: 0;
+            background: transparent;
+            font-weight: 600
+        }
+
+            .segmented button.active {
+                background: var(--rojo);
+                color: var(--blanco)
+            }
+
+    .badge-pill {
+        padding: .25rem .6rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 700
+    }
+
+    .badge-candidato {
+        background: #f1d0d0;
+        color: #7a1a1a;
+        border: 1px solid #e6b1b1
+    }
+
+    .badge-contratado {
+        background: var(--verde);
+        color: #0b5d2a;
+        border: 1px solid #6bc28a
+    }
+
+    .dataTables_wrapper .dt-buttons .btn {
+        border: 1px solid var(--borde) !important;
+        border-radius: 10px !important;
+        background: var(--blanco) !important;
+        color: var(--negro) !important;
+        font-weight: 600
+    }
+
+    .dataTables_filter input {
+        border-radius: 10px;
+        border: 1px solid var(--borde);
+        padding: .45rem .8rem
+    }
+
+    table.dataTable tbody tr:hover {
+        background: #fff6f6
+    }
+
+    .d-none {
+        display: none !important
+    }
+</style>
+
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+        <div class="container-fluid">
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Candidatos & Empleados</h6>
+                    <div class="toolbar">
+                        <!-- Toggle: solo 2 opciones -->
+                        <div class="segmented" id="segOrigen">
+                            <button type="button" data-target="#wrapCandidatos" class="active">Candidatos</button>
+                            <button type="button" data-target="#wrapContratados">Nuevo Empleados</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Tabla Candidatos (sin CARNET) -->
+                    <div id="wrapCandidatos">
+                        <div class="table-responsive">
+                            <table id="tablaCandidatos" class="table table-bordered table-hover display nowrap" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Nombre Contacto</th>
+
+                                        <th>Relación</th>
+                                        <th>Género</th>
+                                        <th>Fecha Nac.</th>
+                                        <th>Fecha Actualización</th>
+                                        <th>Primer Nombre</th>
+                                        <th>Segundo Nombre</th>
+                                        <th>Apellidos</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabla Contratados (con CARNET) -->
+                    <div id="wrapContratados" class="d-none">
+                        <div class="table-responsive">
+                            <table id="tablaContratados" class="table table-bordered table-hover display nowrap" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Nombre Contacto</th>
+                                        <th>Relación</th>
+                                        <th>Fecha Ingreso</th>
+                                        <th>Carnet</th> <!-- SOLO aquí -->
+                                        <th>
+                                            PrimerNombre                                        </th>
+                                        <th>
+                                            SegundoNombre
+                                        </th>
+                                        <th>
+                                            PrimerApellido
+                                        </th>
+                                        <th>
+                                            SegundoApellido
+                                        </th>
+                                        <th>
+                                            FechaNacimiento
+                                        </th>
+                                        <th>
+                                            Genero
+                                        </th>
+                                        <th>
+                                            TipoRelacion
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+
+    <script>
+    $(function () {
+        // --- común: badge ORIGEN ---
+        function renderOrigen(row){
+            var o = row.ORIGEN || row.origen || 'CANDIDATO';
+            var cls = (o === 'CONTRATADO') ? 'badge-contratado' : 'badge-candidato';
+            return '<span class="badge-pill '+cls+'">'+o+'</span>';
+        }
+
+        // --- DataTable: Candidatos (filtra ORIGEN='CANDIDATO') ---
+        var dtCandidatos = $('#tablaCandidatos').DataTable({
+            ajax:{
+                url:'@Url.Action("ListaCandidatosJson","Rrhh")',
+                type:'GET',
+                dataType:'json',
+                beforeSend: function(){ $.LoadingOverlay("show"); },
+                dataSrc: function (json) {
+                    var arr = Array.isArray(json) ? json : (json.data || []);
+                    // filtro cliente
+                    return arr.filter(function(r){ return (r.ORIGEN || r.origen) === 'CANDIDATO'; });
+                },
+                complete: function(){ $.LoadingOverlay("hide"); },
+                error: function(x){ console.error('Error AJAX Candidatos', x); }
+            },
+            columns:[
+                { data:null, render:function(d,t,row){ return renderOrigen(row); } }, // ORIGEN
+                { data:'CODIGO_PADRE' },
+                { data:'NOMBRE_PADRE' },
+                { data:'NOMBRE_CONTACTO' },
+
+                { data:'TIPO_RELACION' },
+                { data:'SEXO_CONTACTO' },
+                { data:function(r){ return r.FECHA_NACIMIENTO_CONTACTO || r.fecha_nacimiento_contacto || null; },
+                  render:function(v){ return v ? moment(v).format('YYYY-MM-DD') : ''; } },
+                { data:function(r){ return r.FECHA_ACTUALIZACION || r.fecha_actualizacion || null; },
+                    render: function (v) { return v ? moment(v).format('YYYY-MM-DD') : ''; }
+                }, { data: 'NOMBRE_CONTACTO_1' },
+                { data: 'SEGUNDO_NOMBRE_CONTACTO' },
+                { data: 'APELLIDO_CONTACTO' }
+              // vacío en candidatos
+            ],
+            columnDefs:[ { targets:[0], className:'text-center' } ],
+            order:[[7,'desc']], // por FECHA_ACTUALIZACION
+            dom:'Blfrtip',
+            buttons:[
+                { extend:'excelHtml5', text:'Exportar Excel', title:'Candidatos'  }
+            ],
+            lengthMenu:[10,20,50,100],
+            pageLength:10,
+            language:{ url:'@Url.Content("~/Scripts/datatable.es-ES.json")' },
+            responsive:true,
+            processing:true
+        });
+
+        // --- DataTable: Contratados (filtra ORIGEN='CONTRATADO') ---
+        var dtContratados = $('#tablaContratados').DataTable({
+            ajax:{
+                url:'@Url.Action("ListaCandidatosJson","Rrhh")',
+                type:'GET',
+                dataType:'json',
+                beforeSend: function(){ $.LoadingOverlay("show"); },
+                dataSrc: function (json) {
+                    var arr = Array.isArray(json) ? json : (json.data || []);
+                    return arr.filter(function(r){ return (r.ORIGEN || r.origen) === 'CONTRATADO'; });
+                },
+                complete: function(){ $.LoadingOverlay("hide"); },
+                error: function (x) { console.error('Error AJAX Empleados', x); }
+            },
+            columns:[
+                { data:null, render:function(d,t,row){ return renderOrigen(row); } }, // ORIGEN
+                { data:'EMPLOYEE_NUMBER' },
+
+                { data:'NOMBRE_PADRE' },   { data: 'NOMBRE_CONTACTO' },
+                { data: 'TIPO_RELACION' },
+
+
+
+                { data:function(r){ return r.FECHA_INGRESO || r.fecha_ingreso || ''; },
+                    render: function (v) { return v || ''; }
+                },
+              {
+                  data:null,
+                  render:function(d,t,row){
+                      return row.CARNET || row.carnet || row.EMPLOYEE_NUMBER || row.employee_number || '';
+                  } },
+                { data: 'NOMBRE_CONTACTO_1' },
+                { data: 'SEGUNDO_NOMBRE_CONTACTO' },
+				{ data: 'APELLIDO_CONTACTO' },{ data: 'APELLIDO_CONTACTO2' },
+				 { data:function(r){ return r.FECHA_NACIMIENTO_CONTACTO || r.fecha_nacimiento_contacto || null; },
+                  render:function(v){ return v ? moment(v).format('YYYY-MM-DD') : ''; } },
+                { data:'SEXO_CONTACTO' },
+		{ data: 'TIPO_RELACION_2' },
+                // con fecha para contratados
+            ],
+            columnDefs:[ { targets:[0,2], className:'text-center' } ],
+            order:[[8,'desc']],
+            dom:'Blfrtip',
+            buttons:[
+                { extend: 'excelHtml5', text: 'Exportar Excel', title:'Nueva_Empleados'  }
+            ],
+            lengthMenu:[10,20,50,100],
+            pageLength:10,
+            language:{ url:'@Url.Content("~/Scripts/datatable.es-ES.json")' },
+            responsive:true,
+            processing:true
+        });
+
+        // --- Toggle simple: muestra/oculta contenedores ---
+        $('#segOrigen button').on('click', function(){
+            $('#segOrigen button').removeClass('active');
+            $(this).addClass('active');
+
+            var target = $(this).data('target');
+            $('#wrapCandidatos, #wrapContratados').addClass('d-none');
+            $(target).removeClass('d-none');
+
+            // Ajuste de columnas al mostrar
+            if(target === '#wrapContratados'){ dtContratados.columns.adjust().responsive.recalc(); }
+            else{ dtCandidatos.columns.adjust().responsive.recalc(); }
+        });
+    });
+    </script>
+}

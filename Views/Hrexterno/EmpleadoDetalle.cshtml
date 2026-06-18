@@ -1,0 +1,289 @@
+﻿@{
+    ViewBag.Title = "Horas Extras - Detalle";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<link href="~/onlinejs/dataTables.bootstrap4.min.css" rel="stylesheet" />
+
+<div class="card shadow mb-3">
+    <div class="card-body">
+        <h5 id="empTitle" style="color:#800"></h5>
+        <div id="empSub" class="text-muted"></div>
+        <hr />
+        <button id="btnNuevo" class="btn btn-success">Nuevo</button>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header"><b>Registros de Hora Extra</b></div>
+    <div class="card-body">
+        <table id="tblHE" class="table table-bordered table-hover display nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Acciones</th>
+                    <th>Fecha</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Min</th>
+                    <th>Servicio</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                    <th>Notas</th>
+                    <th>Soporte</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal CRUD -->
+<div id="mdl" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hora Extra</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="frmHE" enctype="multipart/form-data">
+                    <input type="hidden" id="IdHE">
+                    <input type="hidden" id="Carnet">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Fecha</label>
+                            <input type="date" id="Fecha" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Hora Inicio</label>
+                            <input type="time" id="HoraInicio" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Hora Fin</label>
+                            <input type="time" id="HoraFin" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Servicio</label>
+                            <input type="text" id="Servicio" class="form-control" maxlength="200">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Motivo</label>
+                            <input type="text" id="Motivo" class="form-control" maxlength="200">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea id="Notas" class="form-control" rows="3" maxlength="500"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Soporte (PDF opcional)</label>
+                        <input type="file" id="SoportePdf" accept="application/pdf" class="form-control" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="btnGuardar" class="btn btn-primary">Guardar</button>
+                <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal visor PDF -->
+<div id="mdlPdf" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Soporte PDF</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="pdfFrame" src="" style="border:0;width:100%;height:80vh;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <!-- Libs existentes -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+
+    <script>
+    // Token antiforgery
+    $('body').append('@Html.Raw(System.Web.Helpers.AntiForgery.GetHtml().ToHtmlString())');
+    function token(){ return $('input[name="__RequestVerificationToken"]').val(); }
+
+    var carnet = (new URLSearchParams(window.location.search)).get('carnet') || '';
+    var grid;
+
+    function cargarInfoEmpleado(){
+      // Endpoint opcional; si no existe, muestra solo el carnet
+      $.get('@Url.Content("~/")api/emp2024/by-carnet', { carnet:carnet })
+       .done(function(r){
+          r = r || {};
+          $('#empTitle').text((r.nombre||'Empleado') + ' - ' + (r.numero||carnet));
+          $('#empSub').text([(r.depto||''),(r.ubicacion||'')].filter(Boolean).join(' - '));
+       })
+       .fail(function(){
+          $('#empTitle').text('Empleado - ' + carnet);
+       });
+    }
+
+    function renderBtnAcciones(row){
+      var bEdit = "<button class='btn btn-sm btn-primary act-edit' data-id='"+row.Id+"'>Editar</button>";
+      var bDen  = "<button class='btn btn-sm btn-danger act-cancel' data-id='"+row.Id+"'>Denegar</button>";
+      return bEdit + " " + bDen;
+    }
+
+    function renderSoporte(row){
+      if(!row.TieneSoporte) return '';
+      // Abre visor PDF en modal (endpoint debe devolver FileStreamResult)
+      return "<button class='btn btn-sm btn-secondary act-pdf' data-id='"+row.Id+"'>Ver PDF</button>";
+    }
+
+    function loadGrid(){
+      $.LoadingOverlay("show");
+      grid = $('#tblHE').DataTable({
+        destroy:true,
+        ajax:{ url:'@Url.Action("HEListJson","Hrexterno")', data:{ carnet:carnet }, type:'GET', datatype:'json' },
+        columns:[
+          { data:null, render:renderBtnAcciones, orderable:false, searchable:false, width:"150px" },
+          { data:'Fecha', render:function(v){ return moment(v).format('DD/MM/YYYY'); } },
+          { data:'HoraInicio' },
+          { data:'HoraFin' },
+          { data:'Minutos' },
+          { data:'Servicio' },
+          { data:'Motivo' },
+          { data:'Estado' },
+          { data:'Notas' },
+          { data:null, render:renderSoporte, orderable:false, searchable:false, width:"100px" }
+        ],
+        order:[[1,'desc']],
+        responsive:true,
+        dom:'Blfrtip',
+        buttons:[ { extend:'excelHtml5', text:'Exportar', title:'HE_'+carnet } ],
+        initComplete:function(){ $.LoadingOverlay("hide"); }
+      });
+    }
+
+    // Nuevo
+    $('#btnNuevo').on('click', function(){
+      $('#IdHE').val('');
+      $('#Carnet').val(carnet);
+      $('#Fecha').val(moment().format('YYYY-MM-DD'));
+      $('#HoraInicio').val('18:00');
+      $('#HoraFin').val('20:00');
+      $('#Servicio,#Motivo,#Notas').val('');
+      $('#SoportePdf').val('');
+      $('#mdl').modal('show');
+    });
+
+    // Editar
+    $('#tblHE').on('click','.act-edit', function(){
+      var row = grid.row($(this).closest('tr')).data();
+      $('#IdHE').val(row.Id);
+      $('#Carnet').val(carnet);
+      $('#Fecha').val(moment(row.Fecha).format('YYYY-MM-DD'));
+      $('#HoraInicio').val(row.HoraInicio);
+      $('#HoraFin').val(row.HoraFin);
+      $('#Servicio').val(row.Servicio||'');
+      $('#Motivo').val(row.Motivo||'');
+      $('#Notas').val(row.Notas||'');
+      $('#SoportePdf').val('');
+      $('#mdl').modal('show');
+    });
+
+    // Ver PDF
+    $('#tblHE').on('click','.act-pdf', function(){
+      var id = $(this).data('id');
+      var url='@Url.Action("HEGetPdf","Hrexterno")' + '?id=' + id; // <- endpoint File()
+      $('#pdfFrame').attr('src', url);
+      $('#mdlPdf').modal('show');
+    });
+
+    // Denegar/cancelar desde solicitante
+    $('#tblHE').on('click','.act-cancel', function(){
+      var id = $(this).data('id');
+      Swal.fire({
+        title: 'Denegar registro',
+        input: 'text',
+        inputLabel: 'Motivo',
+        showCancelButton: true,
+        confirmButtonText: 'Denegar',
+        cancelButtonText: 'Cancelar'
+      }).then(function(r){
+        if(!r.isConfirmed) return;
+        $.ajax({
+          url:'@Url.Action("HECancel","Hrexterno")',
+          type:'POST',
+          data:{ __RequestVerificationToken: token(), id:id, comentario:r.value||'' },
+          success:function(res){
+            if(res.status==='OK'){ grid.ajax.reload(null,false); Swal.fire('Listo',res.message,'success'); }
+            else{ Swal.fire('Error',res.message||'No procesado','error'); }
+          },
+          error:function(){ Swal.fire('Error','Fallo de red/servidor','error'); }
+        });
+      });
+    });
+
+    // Guardar (create/update) con FormData para PDF
+    $('#btnGuardar').on('click', function(){
+      var fd = new FormData();
+      fd.append('__RequestVerificationToken', token());
+      fd.append('Id', $('#IdHE').val());
+      fd.append('Carnet', $('#Carnet').val() || carnet);
+      fd.append('Fecha', $('#Fecha').val());
+      fd.append('HoraInicio', $('#HoraInicio').val());
+      fd.append('HoraFin', $('#HoraFin').val());
+      fd.append('Servicio', $('#Servicio').val());
+      fd.append('Motivo', $('#Motivo').val());
+      fd.append('Notas', $('#Notas').val());
+      if($('#SoportePdf')[0].files.length>0){
+        fd.append('SoportePdf', $('#SoportePdf')[0].files[0]);
+      }
+
+      $.ajax({
+        url:'@Url.Action("HESave","Hrexterno")',
+        type:'POST',
+        data:fd,
+        processData:false,
+        contentType:false,
+        beforeSend:function(){ $.LoadingOverlay('show'); },
+        complete:function(){ $.LoadingOverlay('hide'); },
+        success:function(res){
+          if(res.status==='OK'){
+            $('#mdl').modal('hide');
+            grid.ajax.reload(null,false);
+            Swal.fire('Listo', res.message, 'success');
+          }else{
+            Swal.fire('Error', res.message||'No procesado', 'error');
+          }
+        },
+        error:function(){ Swal.fire('Error','Fallo de red/servidor','error'); }
+      });
+    });
+
+    // Init
+    cargarInfoEmpleado();
+    loadGrid();
+    </script>
+}

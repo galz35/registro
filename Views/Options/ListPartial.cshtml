@@ -1,0 +1,198 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingOption(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.Options();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvOption";
+        settings.KeyFieldName = "OptionId";
+        settings.CallbackRouteValues = new { Controller = "Options", Action = "ListPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Options", Action = "AddOption" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Options", Action = "EditOption" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Options", Action = "DeleteOption" };
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+        settings.Width = Unit.Percentage(100);
+
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.Settings.ShowFooter = true;
+        settings.KeyboardSupport = true;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+#region Configuracion del popup
+settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 700;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de opción";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+#endregion
+
+
+#region Paging
+settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+#endregion
+#region filtering
+settings.Settings.ShowFilterRow = true;
+
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.SettingsPopup.HeaderFilter.Height = 200;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+#endregion
+#region Sorting
+settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "OptionName");
+#endregion
+#region Personalizacion de Botones del GridView
+
+settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.SettingsText.ConfirmDelete = "Seguro quiere borrar el registro?";
+        settings.CommandColumn.ShowDeleteButton = true;
+        settings.SettingsCommandButton.DeleteButton.Image.Url = Url.Content("~/Content/Icons/trash.png");
+
+
+
+        settings.CommandColumn.Width = Unit.Percentage(30);
+#endregion
+
+
+settings.Columns.Add(col =>
+        {
+            col.FieldName = "OptionName";
+            col.Caption = "Opcion";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 1;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+       
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "StatusName";
+            col.Caption = "Estado";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 4;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+
+                flSettings.Name = "FormLayoutUser";
+                flSettings.Width = Unit.Percentage(100);
+
+
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+
+
+                flSettings.ColCount = 1;
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "OptionName";
+                    i.Caption = "Opcion";
+                    i.NestedExtension().TextBox(s =>
+                    {
+
+
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.Text;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+                        s.ControlStyle.CssClass = "upperCase";
+                        s.TabIndex = 1;
+                        
+
+                    });
+                });
+                
+               
+
+
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvOption.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvOption.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["Option"] ?? GetEditingOption(c.Grid))
+            .Render();
+        });
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+
+
+

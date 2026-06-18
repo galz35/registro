@@ -1,0 +1,40 @@
+﻿@model  List<Entities.ViewModels.VistaTrasladosEstados>
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+
+<script>
+
+    //function OnInit(s, e) {
+    //    AdjustSize();
+    //    ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+    //        AdjustSize();
+    //    });
+    //}
+    //function OnEndCallback(s, e) {
+    //    AdjustSize();
+    //}
+    //function AdjustSize() {
+    //    var height = document.documentElement.clientHeight;
+    //    gvDetailExtraPlan.SetHeight(height - 100);
+    //}
+
+
+
+</script>
+
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+<div id="authorizePartial">
+
+    @Html.Partial("TrasladosStateConsultPartial", Model)
+</div>
+
+

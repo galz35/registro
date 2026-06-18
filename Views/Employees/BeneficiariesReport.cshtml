@@ -1,0 +1,14 @@
+﻿
+@model DevExpress.XtraReports.UI.XtraReport
+
+@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@Html.DevExpress().WebDocumentViewer(settings =>
+{
+    settings.Name = "documentViewer";
+
+}).Bind(Model).GetHtml()
+
+

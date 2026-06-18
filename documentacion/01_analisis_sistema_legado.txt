@@ -1,0 +1,164 @@
+================================================================================
+📄 DOCUMENTO 01: ANÁLISIS DETALLADO DEL SISTEMA LEGADO (ASP.NET MVC)
+================================================================================
+Ruta Original: d:\PROYECTOS_PORTAL\asistencia\
+================================================================================
+
+Este documento detalla el análisis exhaustivo realizado al sistema legado de
+Asistencia y Despacho de Juguetes integrado en la aplicación monolítica MVC.
+El objetivo es identificar las dependencias, funcionamiento y debilidades del
+sistema original para garantizar una migración fluida.
+
+--------------------------------------------------------------------------------
+1. MAPEO DE ARCHIVOS Y CARPETAS DEL SISTEMA LEGADO
+--------------------------------------------------------------------------------
+
+El sistema legado de entrega de juguetes se ejecuta sobre la estructura del
+portal corporativo. Los archivos y recursos involucrados son:
+
+A. Interfaz Frontend (Vistas ASP.NET MVC en \Views\EventRegistration\)
+   - DespachoDiaNino.cshtml (981 líneas):
+     Vista y pantalla principal del despacho. Administra el catálogo de juguetes,
+     renderiza las fotos en Base64, cambia visualmente el estado de las entregas
+     y provee el botón para la exportación del reporte consolidado en PDF.
+   - EventoLiga.cshtml (565 líneas):
+     Vista de registro de asistencia al evento general. Está sincronizada para
+     redirigir o abrir dinámicamente la vista de despacho si el evento activo
+     corresponde al Día del Niño (IDs de evento 193 o 194).
+   - List.cshtml (213 líneas):
+     Vista de listado de eventos generales. Contiene el acceso directo (botón)
+     para la vista de despacho para los eventos IDs 193 y 194.
+
+B. Lógica Backend (Controlador y Modelos C#)
+   - EventRegistrationController.cs (\Controllers\):
+     Controlador principal (706KB). Define las acciones de API, consultas Dapper,
+     guardado de fotos en base de datos y la exportación a PDF con iTextSharp.
+   - Modelos Relacionados (Definidos inline al final del controlador):
+     * DespachoHijoModel: Datos del hijo, edad, género, categoría y sugerencia.
+     * CatalogoJugueteModel: Datos del juguete, existencias y foto Base64.
+     * ResumenInventarioModel: Estructura del inventario para la estadística de avance.
+
+C. Scripts de Carga e Inicialización (Python)
+   - db_setup.py:
+     Script de automatización en Python encargado de leer el censo del archivo Excel
+     y cargar la lista inicial de los 892 niños a la base de datos SQL Server.
+   - add_photo_column.py:
+     Script de base de datos en Python utilizado para alterar la estructura de la
+     base de datos agregando la columna FotoBase64 al catálogo de juguetes.
+
+D. Documentación de Implementación Original
+   - task.md: Lista de tareas y requerimientos del desarrollo inicial.
+   - walkthrough.md: Resumen del funcionamiento general e indicaciones de uso.
+
+--------------------------------------------------------------------------------
+2. DISEÑO DE LAS TABLAS DE BASE DE DATOS ORIGINALES (SQL Server)
+--------------------------------------------------------------------------------
+Ubicación de BD: Servidor SQL Server `DIA_NINO2013` en IP `192.168.8.234`
+
+A. Tabla de Despacho (Censo e Historial de Entrega)
+   Nombre: `dbo.tblDespachoJuguetesDiaNino`
+   Almacena el censo completo de hijos y el estado de la entrega del juguete:
+   * Id INT IDENTITY(1,1) NOT NULL                      (Llave Primaria)
+   * CarnetColaborador VARCHAR(50) NOT NULL             (Carnet para búsqueda rápida)
+   * NombreColaborador VARCHAR(250) NOT NULL            (Nombre del empleado)
+   * NombreHijo VARCHAR(250) NOT NULL                   (Nombre del niño)
+   * EdadHijo DECIMAL(18,2) NOT NULL                    (Edad exacta del niño)
+   * GeneroHijo VARCHAR(10) NOT NULL                    (Género del niño: M / F)
+   * Categoria VARCHAR(100) NOT NULL                    (Rango de edad, ej: 'ENTRE 03.1-4')
+   * GerenciaColaborador VARCHAR(250) NULL               (Gerencia/Área de trabajo)
+   * UbicacionColaborador VARCHAR(250) NULL              (Ubicación física del empleado)
+   * Entregado BIT NOT NULL                             (Estado: 0 = Pendiente, 1 = Entregado)
+   * FechaEntrega DATETIME NULL                         (Fecha y hora del despacho)
+   * UsuarioDespacho VARCHAR(100) NULL                  (Usuario que realizó la entrega)
+
+B. Tabla de Catálogo de Juguetes
+   Nombre: `dbo.tblCatalogoJuguetesDiaNino`
+   Almacena los juguetes clasificados por edad y género junto con su stock y fotos:
+   * Id INT IDENTITY(1,1) NOT NULL                      (Llave Primaria)
+   * Categoria VARCHAR(100) NOT NULL                    (Rango de edad al que pertenece)
+   * Genero VARCHAR(10) NOT NULL                        (Género asignado: M / F / TODOS)
+   * NombreJuguete VARCHAR(250) NOT NULL                (Nombre del juguete)
+   * StockInicial INT NOT NULL                          (Cantidad inicial de juguetes cargados)
+   * StockActual INT NOT NULL                           (Cantidad disponible física)
+   * FotoBase64 VARCHAR(MAX) NULL                       (Imagen del juguete codificada en Base64)
+
+--------------------------------------------------------------------------------
+3. CONTROLADOR Y MÉTODOS DEL SISTEMA LEGADO
+--------------------------------------------------------------------------------
+Todos los métodos se encuentran definidos en `EventRegistrationController.cs`:
+
+1. DespachoDiaNino() -> ActionResult (GET)
+   - Carga la interfaz principal y retorna la vista de despacho (`DespachoDiaNino.cshtml`).
+   - Sin filtros de rol ni restricciones de acceso.
+
+2. GetHijosParaDespacho(string carnet) -> JsonResult (GET)
+   - Retorna los hijos de un colaborador cruzados dinámicamente con su regalo 
+     sugerido del catálogo de juguetes.
+   - El SQL clave realiza un JOIN dinámico por Categoría y Género. Si no existe 
+     un juguete específico, realiza un fallback para buscar el juguete unisex ('TODOS').
+
+3. RegistrarEntregaJuguete(int id, bool entregado) -> JsonResult (POST)
+   - Registra el despacho del juguete (cambia el campo `Entregado` a 1, guarda la
+     fecha actual y el usuario en sesión) o revierte el despacho (vuelve a poner 
+     los campos en NULL y `Entregado` en 0).
+   - No actualiza físicamente la columna `StockActual` del catálogo de juguetes.
+
+4. ObtenerResumenInventario() -> JsonResult (GET)
+   - Genera el conteo de juguetes entregados, pendientes y totales clasificados
+     por rango de edad y género en tiempo real para renderizar las barras de 
+     progreso en el dashboard.
+
+5. ObtenerCatalogoCompleto() -> JsonResult (GET)
+   - Retorna el listado completo de juguetes con sus stocks e imágenes para la 
+     tabla CRUD de administración en la ventana modal de catálogo.
+
+6. GuardarJugueteCatalogo(...) -> JsonResult (POST)
+   - Inserta un nuevo juguete o edita uno existente en la tabla `tblCatalogoJuguetesDiaNino`.
+   - Controla que no existan registros duplicados con la misma Categoría y Género.
+   - Recibe la foto en el POST directo como string Base64.
+
+7. EliminarJugueteCatalogo(int id) -> JsonResult (POST)
+   - Elimina permanentemente del catálogo un registro de juguete por su ID. No 
+     implementa borrado lógico (soft-delete).
+
+8. DescargarReporteDespachoPDF() -> ActionResult (GET)
+   - Genera en memoria y descarga un reporte en formato PDF horizontal mediante 
+     iTextSharp. Incluye la auditoría completa de entregas, quién recibió y quién 
+     despachó cada regalo.
+
+--------------------------------------------------------------------------------
+4. AUDITORÍA DE SEGURIDAD Y PUNTOS DÉBILES DETECTADOS
+--------------------------------------------------------------------------------
+Durante la auditoría del controlador y las vistas, se encontraron las
+siguientes vulnerabilidades de seguridad y problemas de diseño:
+
+1. Ausencia de Filtros de Autorización [Severidad: RIESGO CRÍTICO]
+   Ninguno de los métodos (GetHijosParaDespacho, RegistrarEntregaJuguete, etc.)
+   cuenta con la etiqueta de autorización de ASP.NET (`[Authorize]`). Cualquier
+   usuario que inicie sesión en el portal puede alterar la base de datos de juguetes.
+
+2. Credenciales de API en Texto Plano [Severidad: RIESGO CRÍTICO]
+   La integración con la API REST de Oracle HCM Cloud expone credenciales de 
+   servicio en texto plano directamente en el controlador C# (Líneas 2524-2525):
+   - Usuario: "Claro_RhOnline_WS_SS"
+   - Contraseña: "HCM-RH0nl1ne@#3"
+
+3. Almacenamiento Ineficiente de Fotos del Catálogo [Severidad: RIESGO ALTO]
+   Las fotos de los juguetes se cargan y guardan en base de datos como strings
+   de Base64 (`VARCHAR(MAX)`). Esto provoca:
+   - Que el tamaño de la base de datos SQL Server aumente innecesariamente.
+   - Respuestas JSON extremadamente pesadas que incrementan el tiempo de carga
+     de la página web de administración y colapsan la red móvil de los
+     despachadores en campo.
+
+4. Desincronización del Stock Físico (Inventario) [Severidad: RIESGO MEDIO]
+   Al registrar una entrega o una reversión, la tabla `tblCatalogoJuguetesDiaNino`
+   no decrementa ni incrementa su columna `StockActual`. El control de inventario
+   actual se hace por cálculo dinámico mediante agrupaciones, lo cual expone el
+   sistema a inconsistencias si hay entregas manuales o errores de digitación.
+
+5. Monolito Difícil de Mantener [Severidad: RIESGO BAJO]
+   La mezcla de lógicas de Asistencia de Ligas, Accidentes de Trabajo y el módulo
+   del Día del Niño en un único archivo controlador (706 KB) de más de 3,300 líneas
+   aumenta considerablemente el coste de mantenimiento.
+================================================================================

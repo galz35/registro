@@ -1,0 +1,17 @@
+﻿@Html.DevExpress().BinaryImage(settings =>
+{
+    settings.Name = "LicenseFile";
+
+    settings.Width = 180;
+    settings.Height = 160;
+
+    settings.Properties.EditingSettings.Enabled = true;
+
+    settings.Properties.EnableServerResize = true;
+    settings.Properties.ImageSizeMode = ImageSizeMode.FitProportional;
+    settings.Properties.EditingSettings.UploadSettings.UploadMode = UploadControlUploadMode.Advanced;
+    settings.Properties.EditingSettings.UploadSettings.TemporaryFolder = "~/Content/Images/";
+    settings.Properties.EditingSettings.UploadSettings.UploadValidationSettings.MaxFileSize = 4194304;
+    settings.CallbackRouteValues = new { Controller = "Licenses", Action = "ImageColumnPhotoUpload" };
+
+}).Bind(Model).GetHtml()

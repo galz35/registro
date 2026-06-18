@@ -1,0 +1,147 @@
+﻿
+@{
+    ViewBag.Title = "Productos";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+
+}
+@*<link href="@System.Web.Optimization.BundleTable.Bundles.ResolveBundleUrl("~/vendor/fontawesome-free/css")" rel="stylesheet" type="text/css" />*@
+
+    
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h5 class="card-title font-weight-bold text-primary">Exportar</h5>
+            <hr />
+            <div class="row">
+                <div class="col-md-6">
+                    @using (Html.BeginForm(null, null, FormMethod.Post, new { id = "exportForm", @class = "form-horizontal" }))
+                    {
+                        <div class="form-group">
+                            <label for="fechafin" class="font-weight-bold">Seleccione una fecha de pago:</label>
+                            <input type="text" id="fechafin" name="fechafin" class="form-control" placeholder="DD/MM/YYYY" required />
+                        </div>
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fas fa-cloud-download-alt"></i> Generar Excel
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts{
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+
+    <!-- Asegúrate de tener jQuery incluido antes de este script -->
+    <!-- Incluye el script de jQuery UI para el Datepicker si aún no lo has hecho -->
+    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet" />
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Configuración del Datepicker con formato DD/MM/YYYY
+            $("#fechafin").datepicker({
+                dateFormat: 'dd/mm/yy',
+                changeMonth: true,
+                changeYear: true
+            }).datepicker('setDate', new Date());
+
+            // Manejar el evento de envío del formulario
+            $("#exportForm").on("submit", function (e) {
+                e.preventDefault(); // Evita el envío por defecto
+
+                // Mostrar la superposición de carga
+                $.LoadingOverlay("show", {
+                    image: "",
+                    fontawesome: "fas fa-spinner fa-spin",
+                    text: "Generando el reporte...",
+                    maxSize: "50px",
+                    textColor: "#ffffff",
+                    background: "rgba(0, 0, 0, 0.7)"
+                });
+
+                // Iniciar el cronómetro de 1 minuto y 30 segundos (90 segundos)
+                var totalTime = 90; // en segundos
+                var remainingTime = totalTime;
+
+                // Crear un elemento para el cronómetro
+                var timerElement = $('<div id="timer" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; z-index: 9999;">' +
+                                    'Tiempo restante: <span id="time">01:30</span></div>');
+                $("body").append(timerElement);
+
+                var timerInterval = setInterval(function () {
+                    remainingTime--;
+                    var minutes = Math.floor(remainingTime / 60);
+                    var seconds = remainingTime % 60;
+                    $("#time").text(
+                        (minutes < 10 ? "0" : "") + minutes + ":" +
+                        (seconds < 10 ? "0" : "") + seconds
+                    );
+
+                    if (remainingTime <= 0) {
+                        clearInterval(timerInterval);
+                        $("#timer").remove();
+                        $.LoadingOverlay("hide");
+                    }
+                }, 1000);
+
+                // Realizar la solicitud AJAX para descargar el archivo
+                $.ajax({
+                    url: '@Url.Action("Reportefinanza2", "Rrhh")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (data, status, xhr) {
+                        // Obtener el nombre del archivo desde los encabezados
+                        var disposition = xhr.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                fileName = matches[1].replace(/['"]/g, ''); var fileName = "";
+
+                            }
+                        }
+
+                        // Crear un enlace para descargar el archivo
+                        var blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        // Ocultar el LoadingOverlay y el cronómetro
+                        clearInterval(timerInterval);
+                        $("#timer").remove();
+                        $.LoadingOverlay("hide");
+                    },
+                    error: function () {
+                        // Manejar errores
+                        clearInterval(timerInterval);
+                        $("#timer").remove();
+                        $.LoadingOverlay("hide");
+                        alert("Ocurrió un error al generar el reporte.");
+                    }
+                });
+            });
+        });
+    </script>
+}

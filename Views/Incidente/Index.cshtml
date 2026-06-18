@@ -1,0 +1,607 @@
+﻿@{
+    ViewBag.Title = "Incidentes";
+}
+
+<style>
+    .btn-accent {
+        background: #e53935;
+        color: #fff
+    }
+
+        .btn-accent:hover {
+            background: #c62828;
+            color: #fff
+        }
+
+    .card {
+        border-radius: 14px
+    }
+
+    .btn-accion {
+        border-radius: 12px
+    }
+
+    .badge-estado {
+        font-size: .8rem;
+        border-radius: 10px
+    }
+
+    .estado-0 {
+        background: #6c757d
+    }
+
+    .estado-1 {
+        background: #17a2b8
+    }
+
+    .estado-2 {
+        background: #ffc107;
+        color: #000
+    }
+
+    .estado-3 {
+        background: #2ecc71;
+        color: #000
+    }
+
+    .modal-header {
+        background: #111;
+        color: #fff
+    }
+
+    .is-invalid {
+        border: 2px solid #dc3545 !important;
+        background: #f8d7da
+    }
+
+    #tbl tbody td {
+        overflow: visible
+    }
+
+    #tbl .btn-group {
+        position: relative
+    }
+</style>
+
+<div class="card shadow">
+    <div class="card-header d-flex align-items-center justify-content-end">
+        <button id="btnNuevo" class="btn btn-accent btn-accion">Nuevo registro</button>
+        <button id="btnExportarExcel" class="btn btn-outline-dark btn-accion mr-2">
+            Exportar Excel (todo)
+        </button>
+    </div>
+
+    <div class="card-body">
+        <table id="tbl" class="table table-striped table-bordered nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Acción</th>
+                    <th>Id</th>
+                    <th>Empleado</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Carnet</th>
+                    <th>Departamento</th>
+                    <th>Sub-tipo</th>
+                    <th>Días baja</th>
+                    <th>Gravedad</th>
+                    <th>Acto/Condición</th>
+                    <th>Docs</th>
+                    <th>Edificio</th>
+                    <th>Lugar</th>
+                    <th>Parte cuerpo</th>
+                    <th>Agente material</th>
+                    <th>Causa raíz</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <th></th>
+                    @for (int i = 0; i < 17; i++)
+                    {
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." /></th>
+                    }
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar -->
+<div id="mdlIncidente" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Incidente</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+
+            </div>
+            <div class="modal-body">
+                <form id="frmIncidente">
+                    <input type="hidden" id="IdIncidente" />
+                    <input type="hidden" id="Carnet" />
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Empleado (activos)</label>
+                            <input list="dlEmpleados" id="EmpleadoDisplay" class="form-control" placeholder="Nombre (carnet)" autocomplete="off">
+                            <datalist id="dlEmpleados"></datalist>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Fecha</label>
+                            <input id="Fecha" type="date" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Hora</label>
+                            <input id="Hora" type="time" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Departamento</label>
+                            <select id="Departamento_Accidente" class="form-control"></select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Edificio</label>
+                            <input id="Edificio" list="dlEdificios" class="form-control" placeholder="Seleccione edificio" autocomplete="off">
+                            <datalist id="dlEdificios"></datalist>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Lugar</label>
+                            <input id="Lugar" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>Sub-tipo</label>
+                            <select id="Sub_Tipo" class="form-control">
+                                <option value="">-- Seleccione --</option>
+                                <option value="TRABAJO">TRABAJO</option>
+                                <option value="TRAYECTO">TRAYECTO</option>
+                                <option value="INCIDENTE">INCIDENTE</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Días de baja</label>
+                            <input id="Dias_Baja" type="number" step="0.25" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Gravedad (auto)</label>
+                            <input id="Gravedad" class="form-control" readonly>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Responsable</label>
+                            <select id="IdResponsable" class="form-control">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Parte del cuerpo</label>
+                            <input id="Parte_Cuerpo" list="dlPartes" class="form-control" placeholder="Seleccione parte...">
+                            <datalist id="dlPartes">
+                                <option value="Cabeza" />
+                                <option value="Ojos" />
+                                <option value="Oídos" />
+                                <option value="Cara" />
+                                <option value="Boca / Dientes" />
+                                <option value="Cuello" />
+                                <option value="Hombro" />
+                                <option value="Brazo derecho" />
+                                <option value="Brazo izquierdo" />
+                                <option value="Mano derecha" />
+                                <option value="Mano izquierda" />
+                                <option value="Dedos" />
+                                <option value="Pecho / Tórax" />
+                                <option value="Abdomen" />
+                                <option value="Espalda" />
+                                <option value="Cadera" />
+                                <option value="Pierna derecha" />
+                                <option value="Pierna izquierda" />
+                                <option value="Rodilla derecha" />
+                                <option value="Rodilla izquierda" />
+                                <option value="Pie derecho" />
+                                <option value="Pie izquierdo" />
+                                <option value="Dedos del pie" />
+                                <option value="Columna vertebral" />
+                                <option value="General" />
+                            </datalist>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Agente material</label>
+                            <input id="Agente_Material" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Acto/Condición insegura</label>
+                            <select id="Acto_Condicion" class="form-control">
+                                <option value="">-- Seleccione --</option>
+                                <option>Acto inseguro</option>
+                                <option>Condición insegura</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Causa raíz</label>
+                        <input id="Causa_Raiz" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="Descripcion" rows="3" class="form-control"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="btnGuardar" class="btn btn-success btn-accion">Guardar</button>
+                <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Documentos (igual que antes) -->
+<div id="mdlDoc" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Documentos del Incidente</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="Doc_IdIncidente" />
+                <div class="mb-2">
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                        <div><b>Tipo 1</b> — Inicio</div>
+                        <div><span id="estado_t1" class="badge badge-estado estado-0">Sin doc</span><button class="btn btn-sm btn-outline-dark ml-2" onclick="verDocTipo(1)">Ver</button></div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                        <div><b>Tipo 2</b> — Proceso</div>
+                        <div><span id="estado_t2" class="badge badge-estado estado-0">Sin doc</span><button class="btn btn-sm btn-outline-dark ml-2" onclick="verDocTipo(2)">Ver</button></div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2">
+                        <div><b>Tipo 3</b> — Completo</div>
+                        <div><span id="estado_t3" class="badge badge-estado estado-0">Sin doc</span><button class="btn btn-sm btn-outline-dark ml-2" onclick="verDocTipo(3)">Ver</button></div>
+                    </div>
+                </div>
+                <hr />
+                <div class="form-group">
+                    <label>Tipo a guardar/reemplazar</label>
+                    <select id="Doc_Tipo" class="form-control"><option>1</option><option>2</option><option>3</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Archivo</label>
+                    <input id="Doc_File" type="file" class="form-control-file">
+                    <small class="form-text text-muted">Guardar reemplaza el existente del mismo tipo.</small>
+                </div>
+                <div id="Doc_Info" class="small text-muted"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnSubirDoc" class="btn btn-primary btn-accion">Guardar/Reemplazar</button>
+                <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+ 
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script>
+// ===== helpers =====
+function badgeEstado(n){ n=+n||0; var label=['Sin docs','Iniciado','En proceso','Completo'][n]; return '<span class="badge badge-estado estado-'+n+'">'+label+'</span>'; }
+function setInvalid($el,msg){ $el.addClass('is-invalid').attr('title',msg); }
+function clrInvalid($el){ $el.removeClass('is-invalid').removeAttr('title'); }
+function toHHmm(h){ if(!h) return ''; if(typeof h==='string') return h.substring(0,5); if(typeof h==='object'&&h.Hours!=null){ var hh=('0'+h.Hours).slice(-2),mm=('0'+h.Minutes).slice(-2); return hh+':'+mm; } try{ return h.toString().substring(0,5);}catch(e){return '';} }
+function fechaDisplay(d){ return d?moment(d).format('YYYY-MM-DD'):''; }
+function fechaSortKey(d){ return d?moment(d).format('YYYYMMDD'):''; }
+function menuAcciones(id){
+  return '<div class="btn-group">'
+    +'<button class="btn btn-sm btn-outline-dark btn-accion dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Acción</button>'
+    +'<div class="dropdown-menu">'
+    +  '<a class="dropdown-item" href="javascript:;" onclick="abrirEditar('+id+')">Editar</a>'
+    +  '<a class="dropdown-item" href="javascript:;" onclick="abrirDocs('+id+')">Documentos</a>'
+    +  '<div class="dropdown-divider"></div>'
+    +  '<a class="dropdown-item text-danger" href="javascript:;" onclick="desactivar('+id+')">Desactivar</a>'
+    +'</div></div>';
+}
+// ===== Exportar Excel (todo) =====
+function exportarExcelTodo(){
+  $.LoadingOverlay("show");
+
+  // Importante: este endpoint debe devolver TODOS los registros
+  // (sin paginación) en { data: [...] } o directamente [...]
+  $.get('@Url.Action("Listar", "Incidente")', function(r){
+
+    var filas = (r && r.data) ? r.data : (Array.isArray(r) ? r : []);
+    if(!filas.length){
+      $.LoadingOverlay("hide");
+      Swal.fire("Sin datos","No hay registros para exportar","info");
+      return;
+    }
+
+    // Mapeo a columnas "bonitas" para Excel (nombres en español)
+    var dataExcel = filas.map(function(x){
+      return {
+        "Id": x.IdIncidente,
+        "Empleado": x.NombreEmpleado || "(desvinculado)",
+        "Fecha": x.Fecha ? moment(x.Fecha).format("YYYY-MM-DD") : "",
+        "Hora": toHHmm(x.Hora),
+        "Carnet": x.Carnet,
+        "Departamento": x.Departamento_Accidente,
+        "Sub-tipo": x.Sub_Tipo,
+        "Días baja": x.Dias_Baja,
+        "Gravedad": x.Gravedad,
+        "Acto/Condición": x.Acto_Condicion,
+        "Docs": ["Sin docs","Iniciado","En proceso","Completo"][+x.EstadoDocs || 0],
+        "Edificio": x.Edificio,
+        "Lugar": x.Lugar,
+        "Parte cuerpo": x.Parte_Cuerpo,
+        "Agente material": x.Agente_Material,
+        "Causa raíz": x.Causa_Raiz,
+        "Descripción": x.Descripcion
+      };
+    });
+
+    // Crear libro y hoja
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.json_to_sheet(dataExcel);
+
+    // Ajuste simple de ancho (opcional)
+    ws["!cols"] = [
+      { wch: 8 },  { wch: 28 }, { wch: 12 }, { wch: 7 },  { wch: 10 },
+      { wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 16 },
+      { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 16 },
+      { wch: 18 }, { wch: 40 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Incidentes");
+
+    var nombre = "Incidentes_" + moment().format("YYYYMMDD_HHmm") + ".xlsx";
+    XLSX.writeFile(wb, nombre);
+
+    $.LoadingOverlay("hide");
+  }).fail(function(){
+    $.LoadingOverlay("hide");
+    Swal.fire("Error","No se pudo exportar (fallo de red)","error");
+  });
+}
+
+$("#btnExportarExcel").on("click", exportarExcelTodo);
+
+// gravedad auto
+function calcularGravedad(){ var v=parseFloat($("#Dias_Baja").val()); $("#Gravedad").val(isNaN(v)?'':(v<8?'Leve':'Grave')); }
+$("#Dias_Baja").on("input change", calcularGravedad);
+
+// datalist empleados
+function cargarEmpleados(){
+  $.get('@Url.Action("EmpleadoActivosDatalist","Incidente")', function(r){
+    var $dl=$("#dlEmpleados").empty(), arr=(r&&r.data)||[];
+    arr.forEach(function(e){ $dl.append('<option value="'+e.NombreCompleto+' ('+e.Carnet+')" data-carnet="'+e.Carnet+'"></option>'); });
+  });
+}
+$("#EmpleadoDisplay").on("blur", function(){
+  var val=$(this).val().trim();
+  var carnet=(val.match(/\((\d+)\)$/)||[,''])[1];
+  if(!carnet){
+    $("#dlEmpleados option").each(function(){ if($(this).val()===val){ carnet=$(this).data("carnet"); return false; }});
+  }
+  if(!carnet){ setInvalid($(this),"Seleccione un empleado válido"); $("#Carnet").val(''); return; }
+  $("#Carnet").val(carnet); clrInvalid($(this));
+});
+
+// departamentos
+function cargarDepartamentos(){
+  $.get('@Url.Action("Departamentos","Incidente")', function(rows){
+    var $c=$("#Departamento_Accidente").empty(); $c.append('<option value="">-- Seleccione --</option>');
+    (rows||[]).forEach(function(x){ $c.append('<option value="'+x+'">'+x+'</option>'); });
+  });
+}
+
+// edificios
+function cargarEdificios(){
+  $.get('@Url.Action("Edificios","Incidente")', function(r){
+    var $dl=$("#dlEdificios").empty(), arr=(r&&r.data)||[];
+    arr.forEach(function(n){ $dl.append('<option value="'+n+'"></option>'); });
+  });
+}
+
+// responsables
+function cargarResponsables(){
+  $.get('@Url.Action("Responsables","Incidente")', function(r){
+    var $s=$("#IdResponsable").empty();
+    $s.append('<option value="">-- Seleccione --</option>');
+    ((r&&r.data)||[]).forEach(function(x){
+      $s.append('<option value="'+x.IdResponsable+'">'+x.Nombre+'</option>');
+    });
+  });
+}
+
+// DataTable (tu configuración, sin dependencias de filtros superiores)
+var tabla=null;
+// Solo cambio pedido: quitar la columna "Ubicacion_Lesion" de la DataTable
+var tabla = null;
+function cargarTabla(){
+  if(tabla){ tabla.ajax.reload(); return; }
+
+  tabla = $('#tbl').DataTable({
+    ajax:{
+      url:'@Url.Action("Listar","Incidente")',
+      type:'GET', datatype:'json', dataSrc:'data',
+      data:function(d){ /* sin filtros superiores */ }
+    },
+    columns:[
+      { data:'IdIncidente', orderable:false, searchable:false, render:function(d){ return menuAcciones(d); } },
+      { data:'IdIncidente', title:'Id', width:'60px' },
+      { data:'NombreEmpleado', title:'Empleado', render:function(d){ return d||'(desvinculado)'; } },
+      { data:'Fecha', title:'Fecha', render:function(d,t){ return (t==='display')?fechaDisplay(d):fechaSortKey(d); } },
+      { data:'Hora', title:'Hora', render:function(d){ return toHHmm(d); }, width:'70px' },
+      { data:'Carnet', title:'Carnet', width:'80px' },
+      { data:'Departamento_Accidente', title:'Departamento' },
+      { data:'Sub_Tipo', title:'Sub-tipo', width:'100px' },
+      { data:'Dias_Baja', title:'Días baja', className:'text-right', width:'90px' },
+      { data:'Gravedad', title:'Gravedad', width:'90px' },
+      { data:'Acto_Condicion', title:'Acto/Condición', width:'140px' },
+      { data:'EstadoDocs', title:'Docs', render:function(d){ return badgeEstado(d); }, width:'100px' },
+      { data:'Edificio', title:'Edificio', visible:false },
+      { data:'Lugar', title:'Lugar', visible:false },
+      /* (columna Ubicacion_Lesion eliminada) */
+      { data:'Parte_Cuerpo', title:'Parte cuerpo', visible:false },
+      { data:'Agente_Material', title:'Agente material', visible:false },
+      { data:'Causa_Raiz', title:'Causa raíz', visible:false },
+      { data:'Descripcion', title:'Descripción' }
+    ],
+    dom:'Blfrtip',
+    lengthMenu:[10,20,50,100],
+    pageLength:10,
+    language:{ url:'@Url.Content("~/Scripts/datatable.es-ES.json")' },
+    responsive:true,
+      order: [[1, 'desc']], // 0=Acción, 1=Id
+
+    initComplete:function(){
+      var api=this.api();
+      api.columns().every(function(idx){
+        if(idx===0) return;
+        var th=$('#tbl tfoot th').eq(idx);
+        $('input', th).on('keyup change clear', function(){
+          if(api.column(idx).search()!==this.value){ api.column(idx).search(this.value).draw(); }
+        });
+      });
+      $('#tbl tbody').on('click','.dropdown-toggle',function(e){
+        e.stopPropagation(); $('#tbl .dropdown-menu.show').removeClass('show');
+        $(this).siblings('.dropdown-menu').toggleClass('show');
+      });
+      $(document).on('click',function(e){
+        if (!$('.dropdown-toggle').is(e.target) && $('.dropdown-toggle').has(e.target).length===0 && $('.dropdown-menu').has(e.target).length===0){
+          $('#tbl .dropdown-menu').removeClass('show');
+        }
+      });
+    }
+  });
+}
+
+// CRUD
+function limpiarForm(){
+  $("#frmIncidente")[0].reset();
+  $("#IdIncidente").val(''); $("#Carnet").val('');
+  $("#IdResponsable").val(''); // limpia select
+  clrInvalid($("#EmpleadoDisplay"));
+}
+
+$("#btnGuardar").on('click', function(){
+  if(!$("#Carnet").val()){ setInvalid($("#EmpleadoDisplay"),"Seleccione un empleado"); return; }
+  calcularGravedad();
+  var m={
+    IdIncidente: $("#IdIncidente").val()||null,
+    Carnet: +$("#Carnet").val(),
+    Fecha: $("#Fecha").val()||null,
+    Hora: $("#Hora").val()||null,
+    Departamento_Accidente: $("#Departamento_Accidente").val(),
+    Edificio: $("#Edificio").val(),
+    Lugar: $("#Lugar").val(),
+    Sub_Tipo: $("#Sub_Tipo").val(),
+    Dias_Baja: $("#Dias_Baja").val()||null,
+    Gravedad: $("#Gravedad").val(),
+    Parte_Cuerpo: $("#Parte_Cuerpo").val(),
+    Agente_Material: $("#Agente_Material").val(),
+    Acto_Condicion: $("#Acto_Condicion").val(),
+    Causa_Raiz: $("#Causa_Raiz").val(),
+    Descripcion: $("#Descripcion").val(),
+    IdResponsable: $("#IdResponsable").val() || null
+  };
+  var url = m.IdIncidente ? '@Url.Action("Editar","Incidente")' : '@Url.Action("Guardar","Incidente")';
+  $.LoadingOverlay("show");
+  $.post(url, m, function(r){
+    $.LoadingOverlay("hide");
+    if(r&&r.success){ Swal.fire("OK","Guardado","success"); $("#mdlIncidente").modal("hide"); if(tabla) tabla.ajax.reload(); }
+    else{ Swal.fire("Error",(r&&r.msg)||"No se pudo guardar","error"); }
+  }).fail(function(){ $.LoadingOverlay("hide"); Swal.fire("Error","Fallo de red","error"); });
+});
+
+function abrirEditar(id){
+  $.get('@Url.Action("Obtener","Incidente")',{id:id},function(r){
+    if(!r||!r.success){ Swal.fire("Error","No encontrado","error"); return; }
+    var m=r.data;
+    $("#IdIncidente").val(m.IdIncidente);
+    $("#Carnet").val(m.Carnet);
+    $("#EmpleadoDisplay").val(m.NombreEmpleado ? (m.NombreEmpleado+' ('+m.Carnet+')') : '');
+    $("#Fecha").val(m.Fecha?moment(m.Fecha).format('YYYY-MM-DD'):'');
+    $("#Hora").val(toHHmm(m.Hora));
+    $("#Departamento_Accidente").val(m.Departamento_Accidente);
+    $("#Edificio").val(m.Edificio);
+    $("#Lugar").val(m.Lugar);
+    $("#Sub_Tipo").val((m.Sub_Tipo||'').toUpperCase());
+    $("#Dias_Baja").val(m.Dias_Baja);
+    $("#Parte_Cuerpo").val(m.Parte_Cuerpo);
+    $("#Agente_Material").val(m.Agente_Material);
+    $("#Acto_Condicion").val(m.Acto_Condicion);
+    $("#Causa_Raiz").val(m.Causa_Raiz);
+    $("#Descripcion").val(m.Descripcion);
+    $("#IdResponsable").val(m.IdResponsable || '');
+    calcularGravedad();
+    $("#mdlIncidente").modal("show");
+  });
+}
+
+function desactivar(id){
+  Swal.fire({title:"Confirmar",text:"¿Desactivar registro?",icon:"warning",showCancelButton:true}).then(function(x){
+    if(!x.isConfirmed) return;
+    $.LoadingOverlay("show");
+    $.post('@Url.Action("Desactivar","Incidente")',{id:id},function(r){
+      $.LoadingOverlay("hide");
+      if(r&&r.success){ Swal.fire("OK","Desactivado","success"); if(tabla) tabla.ajax.reload(); }
+      else{ Swal.fire("Error","No se pudo desactivar","error"); }
+    }).fail(function(){ $.LoadingOverlay("hide"); Swal.fire("Error","Fallo de red","error"); });
+  });
+}
+
+// Documentos
+function abrirDocs(id){ $("#Doc_IdIncidente").val(id); $("#Doc_File").val(null); $("#Doc_Info").text(''); refrescarDocs(); $("#mdlDoc").modal("show"); }
+function refrescarDocs(){
+  var id=$("#Doc_IdIncidente").val();
+  actualizarBadgeTipo(1,false); actualizarBadgeTipo(2,false); actualizarBadgeTipo(3,false);
+  $.get('@Url.Action("Documentos","Incidente")',{idIncidente:id},function(r){
+    if(!r||!r.data) return;
+    var tipos={}; r.data.forEach(function(x){ tipos[(x.TipoDocumento||'').toString()]=true; });
+    actualizarBadgeTipo(1,!!tipos['1']); actualizarBadgeTipo(2,!!tipos['2']); actualizarBadgeTipo(3,!!tipos['3']);
+  });
+}
+function actualizarBadgeTipo(t,existe){
+  var el=$("#estado_t"+t); el.removeClass("estado-0 estado-1 estado-2 estado-3");
+  if(!existe){ el.addClass("estado-0").text("Sin doc"); return; }
+  el.addClass("estado-"+t).text(t==1?"Iniciado":t==2?"En proceso":"Completo");
+}
+$("#btnSubirDoc").on('click',function(){
+  var id=$("#Doc_IdIncidente").val(), tipo=$("#Doc_Tipo").val(), file=($("#Doc_File")[0].files||[])[0];
+  if(!file){ Swal.fire("Validación","Seleccione un archivo","warning"); return; }
+  var fd=new FormData(); fd.append('idIncidente',id); fd.append('tipo',tipo); fd.append('archivo',file);
+  $("#Doc_Info").text("Subiendo...");
+  $.ajax({url:'@Url.Action("SubirDocumento","Incidente")',type:'POST',data:fd,processData:false,contentType:false})
+  .done(function(r){ if(r&&r.success){ $("#Doc_Info").text("Guardado."); refrescarDocs(); } else{ $("#Doc_Info").text("Error al guardar"); Swal.fire("Error","No se pudo guardar","error"); } })
+  .fail(function(){ $("#Doc_Info").text("Error de red"); Swal.fire("Error","Fallo de red","error"); });
+});
+function verDocTipo(t){ var id=$("#Doc_IdIncidente").val(); window.open('@Url.Action("VerDocumento","Incidente")'+'?idIncidente='+encodeURIComponent(id)+'&tipo='+encodeURIComponent(t),'_blank'); }
+
+// init
+$(function(){
+  cargarTabla();
+  cargarEmpleados();
+  cargarDepartamentos();
+  cargarEdificios();
+  cargarResponsables();       // << nuevo
+  $("#btnNuevo").on('click', function(){ limpiarForm(); $("#mdlIncidente").modal("show"); });
+});
+    </script>
+}

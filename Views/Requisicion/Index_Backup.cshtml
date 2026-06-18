@@ -1,0 +1,1536 @@
+﻿@{
+    ViewBag.Title = "Requisiciones de Personal";
+    bool esAnalista = false;
+}
+
+<style>
+    :root {
+        --claro-red: #d32f2f;
+        --claro-red-hover: #b71c1c;
+        --dark-bg: #0f172a;
+        --border-color: #cbd5e1;
+        --light-bg: #f8fafc;
+        --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 12px -5px rgba(0, 0, 0, 0.02);
+        --transition-soft: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        background-color: #f1f5f9;
+        color: #334155;
+    }
+
+    .main-container {
+        padding: 24px;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        background: #ffffff;
+        padding: 20px 24px;
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .header-info h2 {
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin: 0;
+        font-size: 26px;
+        letter-spacing: -0.5px;
+    }
+
+    .header-info p {
+        color: #64748b;
+        margin: 4px 0 0 0;
+        font-size: 14px;
+    }
+
+    /* Vacantes Section (Jefe Solicitante) */
+    .vacantes-section {
+        margin-bottom: 24px;
+        display: none;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--claro-red);
+        margin-bottom: 16px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .vacantes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .vacante-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition-soft);
+    }
+
+    .vacante-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .vacante-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--claro-red);
+    }
+
+    .vacante-card-header {
+        margin-bottom: 12px;
+    }
+
+    .vacante-card-header .emp-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .vacante-card-header .emp-carnet {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+        display: block;
+    }
+
+    .vacante-card-body p {
+        font-size: 13px;
+        margin: 4px 0;
+        color: #475569;
+    }
+
+    .vacante-card-body p strong {
+        color: #1e293b;
+    }
+
+    .vacante-card-footer {
+        margin-top: 16px;
+        display: flex;
+        gap: 8px;
+    }
+
+    /* KPIs */
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        display: flex;
+        align-items: center;
+        transition: var(--transition-soft);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background-color: #cbd5e1;
+    }
+
+    .kpi-card.kpi-borrador::before { background-color: #64748b; }
+    .kpi-card.kpi-pendiente::before { background-color: #2563eb; }
+    .kpi-card.kpi-devuelta::before { background-color: #ea580c; }
+    .kpi-card.kpi-aprobada::before { background-color: #10b981; }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-right: 16px;
+    }
+
+    .kpi-borrador .kpi-icon { color: #64748b; background-color: #f1f5f9; }
+    .kpi-pendiente .kpi-icon { color: #2563eb; background-color: #dbeafe; }
+    .kpi-devuelta .kpi-icon { color: #ea580c; background-color: #ffedd5; }
+    .kpi-aprobada .kpi-icon { color: #059669; background-color: #d1fae5; }
+
+    .kpi-info h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .kpi-info p {
+        font-size: 12px;
+        color: #64748b;
+        margin: 2px 0 0 0;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    /* Buttons */
+    .btn-claro {
+        background-color: var(--claro-red);
+        color: #ffffff !important;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        transition: var(--transition-soft);
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.15);
+    }
+
+    .btn-claro:hover {
+        background-color: var(--claro-red-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(211, 47, 47, 0.25);
+    }
+
+    .btn-secondary-custom {
+        background-color: #e2e8f0;
+        color: #334155 !important;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+        transition: var(--transition-soft);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-secondary-custom:hover {
+        background-color: #cbd5e1;
+    }
+
+    .btn-success-custom {
+        background-color: #10b981;
+        color: #ffffff !important;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: var(--transition-soft);
+    }
+
+    .btn-success-custom:hover {
+        background-color: #059669;
+    }
+
+    /* Cards generic */
+    .content-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        margin-bottom: 24px;
+    }
+
+    /* Badges */
+    .badge-custom {
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-borrador { background-color: #f1f5f9; color: #475569; }
+    .badge-enviada { background-color: #dbeafe; color: #1d4ed8; }
+    .badge-reenviada { background-color: #eff6ff; color: #2563eb; }
+    .badge-devuelta { background-color: #ffedd5; color: #c2410c; }
+    .badge-aprobada { background-color: #d1fae5; color: #047857; }
+    .badge-cancelada { background-color: #fee2e2; color: #b91c1c; }
+
+    /* Action icons */
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        cursor: pointer;
+        transition: var(--transition-soft);
+        border: none;
+        margin-right: 4px;
+    }
+
+    .action-view { background-color: #eff6ff; color: #2563eb; }
+    .action-view:hover { background-color: #2563eb; color: #ffffff; }
+    .action-edit { background-color: #fff7ed; color: #ea580c; }
+    .action-edit:hover { background-color: #ea580c; color: #ffffff; }
+    .action-cancel { background-color: #fee2e2; color: #dc2626; }
+    .action-cancel:hover { background-color: #dc2626; color: #ffffff; }
+
+    /* Form Styles in Modals */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .form-grid-full {
+        grid-column: span 2;
+    }
+
+    .form-group-custom {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group-custom label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control-custom {
+        height: 38px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        transition: var(--transition-soft);
+    }
+
+    .form-control-custom:focus {
+        border-color: var(--claro-red);
+        box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
+    }
+
+    .form-control-custom:disabled {
+        background-color: #f1f5f9;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    /* Drag & Drop */
+    .upload-box {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        background-color: #f8fafc;
+        cursor: pointer;
+        transition: var(--transition-soft);
+    }
+
+    .upload-box:hover {
+        border-color: var(--claro-red);
+        background-color: #fef2f2;
+    }
+
+    .upload-box i {
+        font-size: 28px;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-pendiente { background-color: #fee2e2; color: #dc2626; }
+    .status-cargado { background-color: #d1fae5; color: #065f46; }
+
+    /* Modals Design */
+    .modal-content-custom {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+
+    .modal-header-custom {
+        background-color: var(--dark-bg);
+        color: #ffffff;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        padding: 20px 24px;
+    }
+
+    .modal-header-custom .modal-title {
+        font-weight: 700;
+        font-size: 20px;
+        letter-spacing: -0.5px;
+    }
+
+    .modal-body-custom {
+        padding: 24px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer-custom {
+        padding: 16px 24px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    #pageLoader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        font-weight: 500;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--claro-red);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div id="pageLoader">
+    <div class="spinner"></div>
+    <span id="loader-text">Cargando Requisiciones...</span>
+</div>
+
+<div class="main-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-info">
+            <h2>Módulo de Requisiciones</h2>
+            <p>Solicitudes de reposición de vacantes y traslados de personal.</p>
+        </div>
+        <div>
+            <button type="button" class="btn-claro" onclick="abrirFormulario(0, '')">
+                <i class="fas fa-plus-circle"></i> Nueva Solicitud Manual
+            </button>
+        </div>
+    </div>
+
+    <!-- Bloque de Vacantes Pendientes (Jefe Solicitante) -->
+    <div class="vacantes-section" id="vacantes-jefe-container">
+        <h4 class="section-title"><i class="fas fa-exclamation-circle"></i> Vacantes Pendientes de Reponer (Bajas de su equipo)</h4>
+        <div class="vacantes-grid" id="vacantes-jefe-grid">
+            <!-- Se poblará vía AJAX -->
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+        <div class="kpi-card kpi-borrador">
+            <div class="kpi-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-borradores">0</h3>
+                <p>Borradores</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-pendiente">
+            <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-pendientes">0</h3>
+                <p>En Revisión</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-devuelta">
+            <div class="kpi-icon"><i class="fas fa-undo"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-devueltas">0</h3>
+                <p>Devueltas</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-aprobada">
+            <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-aprobadas">0</h3>
+                <p>Aprobadas</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros (Visible para el Jefe) -->
+    <div class="content-card filter-card">
+        <div class="filter-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+            <div class="form-group-custom">
+                <label for="filtro-estado">Estado</label>
+                <select id="filtro-estado" class="form-control-custom">
+                    <option value="">-- Todos los Estados --</option>
+                    <option value="BORRADOR">Borrador</option>
+                    <option value="ENVIADA">Enviada</option>
+                    <option value="REENVIADA">Reenviada</option>
+                    <option value="DEVUELTA">Devuelta</option>
+                    <option value="APROBADA">Aprobada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                </select>
+            </div>
+            <div class="form-group-custom">
+                <label for="filtro-desde">Desde</label>
+                <input type="date" id="filtro-desde" class="form-control-custom" />
+            </div>
+            <div class="form-group-custom">
+                <label for="filtro-hasta">Hasta</label>
+                <input type="date" id="filtro-hasta" class="form-control-custom" />
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-filtrar" class="btn-claro" style="height: 38px; width: 100%; justify-content: center;">Filtrar</button>
+                <button type="button" id="btn-limpiar" class="btn-secondary-custom" style="height: 38px;"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado Principal (Tabla para Jefes) -->
+    <div class="content-card table-card">
+        <h4 class="section-title"><i class="fas fa-list"></i> Requisiciones Tramitadas</h4>
+        <table id="tabla-requisiciones" class="table-custom table table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Folio</th>
+                    <th>Tipo</th>
+                    <th>Colaborador Saliente</th>
+                    <th>Cargo Vacante</th>
+                    <th>Posición</th>
+                    <th>Gerencia</th>
+                    <th>Solicitante</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL: FORMULARIO CREAR / EDITAR REQUISICIÓN -->
+<!-- ======================================================= -->
+<div class="modal fade" id="modalFormulario" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title" id="form-modal-title">Formulario de Requisición</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body modal-body-custom">
+                <!-- Banner de Devolución -->
+                <div class="alert alert-warning" id="obs-analista-container" style="display: none;">
+                    <h5 style="margin:0 0 5px 0; font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Observaciones de Devolución:</h5>
+                    <p id="obs-analista-text" style="margin: 0; font-size:14px;"></p>
+                </div>
+
+                <form id="requisicion-form">
+                    <input type="hidden" id="RequisicionID" name="RequisicionID" value="0" />
+                    
+                    <div class="section-title" style="margin-top:0;">1. Tipo de Trámite</div>
+                    <div class="form-group-custom mb-3">
+                        <label>Tipo de Requisición</label>
+                        <div style="display: flex; gap: 20px; margin-top: 5px;">
+                            <label style="font-weight: 500; text-transform:none; cursor:pointer;">
+                                <input type="radio" name="TipoRequisicion" value="NORMAL" checked onclick="toggleTipoRequisicion('NORMAL')" /> Reposición de Plaza (Vacante)
+                            </label>
+                            <label style="font-weight: 500; text-transform:none; cursor:pointer;">
+                                <input type="radio" name="TipoRequisicion" value="TRASLADO" onclick="toggleTipoRequisicion('TRASLADO')" /> Traslado Horizontal de Personal
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="section-title">2. Búsqueda y Autocompletado del Puesto</div>
+                    <div class="form-grid">
+                        <div class="form-group-custom">
+                            <label>Carnet del Empleado Saliente <strong>*</strong></label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="CarnetEmpleadoBaja" name="CarnetEmpleadoBaja" class="form-control-custom" style="flex-grow:1;" required />
+                                <button type="button" class="btn-secondary-custom" onclick="buscarEmpleadoSigho()" title="Buscar y Autocompletar"><i class="fas fa-search"></i> Buscar</button>
+                            </div>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Nombre Colaborador Saliente</label>
+                            <input type="text" id="NombreEmpleadoBaja" name="NombreEmpleadoBaja" class="form-control-custom" readonly />
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Fecha de Baja</label>
+                            <input type="text" id="FechaBaja" name="FechaBaja" class="form-control-custom" readonly />
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Código Posición (SIGHO) / Puesto</label>
+                            <input type="text" id="PositionCode" name="PositionCode" class="form-control-custom" readonly />
+                        </div>
+                        <div class="form-group-custom form-grid-full">
+                            <label>Nombre del Puesto</label>
+                            <input type="text" id="NombrePuesto" name="NombrePuesto" class="form-control-custom" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Campos Internos de Control Organizacional (Ocultos) -->
+                    <input type="hidden" id="PositionId" name="PositionId" />
+                    <input type="hidden" id="Empresa" name="Empresa" />
+                    <input type="hidden" id="BusinessUnitId" name="BusinessUnitId" />
+                    <input type="hidden" id="BusinessUnitName" name="BusinessUnitName" />
+                    <input type="hidden" id="CostCenter" name="CostCenter" />
+                    <input type="hidden" id="CostCenterName" name="CostCenterName" />
+                    <input type="hidden" id="Gerencia" name="Gerencia" />
+                    <input type="hidden" id="SubGerencia" name="SubGerencia" />
+                    <input type="hidden" id="CarnetJefeInmediato" name="CarnetJefeInmediato" />
+                    <input type="hidden" id="NombreJefeInmediato" name="NombreJefeInmediato" />
+                    <input type="hidden" id="TerminationDate" name="TerminationDate" />
+                    <input type="hidden" id="ActionCode" name="ActionCode" />
+                    <input type="hidden" id="ActionMeaning" name="ActionMeaning" />
+                    <input type="hidden" id="TerminationType" name="TerminationType" />
+
+                    <div class="section-title">3. Condiciones del Contrato</div>
+                    <div class="form-grid">
+                        <div class="form-group-custom">
+                            <label>Tipo de Contrato <strong>*</strong></label>
+                            <select id="TipoContrato" name="TipoContrato" class="form-control-custom" required>
+                                <option value="">-- Seleccionar --</option>
+                                <option value="INDEFINIDO">Indefinido</option>
+                                <option value="DEFINIDO">Definido</option>
+                                <option value="TEMPORAL">Temporal</option>
+                            </select>
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Horario Laboral <strong>*</strong></label>
+                            <input type="text" id="HorarioLaboral" name="HorarioLaboral" class="form-control-custom" placeholder="Ej: Lunes a Viernes 8:00 AM - 5:00 PM" required />
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Sueldo Base Mensual</label>
+                            <input type="number" step="0.01" id="Sueldo" name="Sueldo" class="form-control-custom" />
+                        </div>
+                        <div class="form-group-custom">
+                            <label>Comisiones / Bonos Estimados</label>
+                            <input type="number" step="0.01" id="Comisiones" name="Comisiones" class="form-control-custom" value="0" />
+                        </div>
+                    </div>
+
+                    <!-- Campos de Traslado (Se muestran dinámicamente) -->
+                    <div id="seccion-traslado" style="display: none;">
+                        <div class="section-title">4. Detalles del Traslado Horizontal</div>
+                        <div class="form-grid">
+                            <div class="form-group-custom">
+                                <label>Gerencia Destino <strong>*</strong></label>
+                                <select id="GerenciaDestino" name="GerenciaDestino" class="form-control-custom">
+                                    <option value="">-- Seleccionar --</option>
+                                </select>
+                            </div>
+                            <div class="form-group-custom">
+                                <label>SubGerencia Destino</label>
+                                <input type="text" id="SubGerenciaDestino" name="SubGerenciaDestino" class="form-control-custom" />
+                            </div>
+                            <div class="form-group-custom">
+                                <label>Puesto Destino <strong>*</strong></label>
+                                <input type="text" id="PuestoDestino" name="PuestoDestino" class="form-control-custom" />
+                            </div>
+                            <div class="form-group-custom">
+                                <label>Edificio Destino</label>
+                                <input type="text" id="EdificioDestino" name="EdificioDestino" class="form-control-custom" />
+                            </div>
+                            <div class="form-group-custom">
+                                <label>Carnet Jefe Destino <strong>*</strong></label>
+                                <input type="text" id="CarnetJefeDestino" name="CarnetJefeDestino" class="form-control-custom" />
+                            </div>
+                            <div class="form-group-custom">
+                                <label>Nombre Jefe Destino <strong>*</strong></label>
+                                <input type="text" id="NombreJefeDestino" name="NombreJefeDestino" class="form-control-custom" />
+                            </div>
+                            <div class="form-group-custom">
+                                <label>Duración del Traslado <strong>*</strong></label>
+                                <select id="DuracionTraslado" name="DuracionTraslado" class="form-control-custom">
+                                    <option value="PERMANENTE">Permanente</option>
+                                    <option value="TEMPORAL_3_MESES">Temporal (3 meses)</option>
+                                    <option value="TEMPORAL_6_MESES">Temporal (6 meses)</option>
+                                    <option value="OTRO">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group-custom">
+                                <label>Fecha Propuesta de Traslado <strong>*</strong></label>
+                                <input type="date" id="FechaTrasladoPropuesta" name="FechaTrasladoPropuesta" class="form-control-custom" />
+                            </div>
+                            <div class="form-group-custom form-grid-full">
+                                <label>Justificación del Traslado <strong>*</strong></label>
+                                <textarea id="JustificacionTraslado" name="JustificacionTraslado" class="form-control-custom" style="height:80px;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">5. Documentos Requeridos</div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding:16px; border-radius:12px; margin-bottom:15px; font-size:13px; color:#475569;">
+                        <i class="fas fa-info-circle text-primary"></i> <strong>Instrucción para Oficinistas:</strong> Debe guardar la requisición como Borrador primero para poder habilitar la carga de descriptores y solicitud de traslado.
+                    </div>
+
+                    <!-- Fichas de archivos -->
+                    <div class="form-grid" id="documentos-container" style="opacity: 0.5; pointer-events: none;">
+                        <div class="form-group-custom">
+                            <label id="lbl-doc-editable">Descriptor del Puesto (Word Editable) <strong>*</strong></label>
+                            <div class="upload-box" onclick="seleccionarArchivo('DESCRIPTOR_EDITABLE')">
+                                <i class="far fa-file-word"></i>
+                                <p style="font-size:12px; margin:0;">Haga clic aquí para subir descriptor (.doc, .docx)</p>
+                                <span class="status-badge status-pendiente" id="badge-doc-editable">Pendiente</span>
+                                <input type="file" id="file-doc-editable" style="display:none;" accept=".doc,.docx" onchange="subirArchivo(this, 'DESCRIPTOR_EDITABLE')" />
+                            </div>
+                            <p id="sub-doc-editable" style="font-size:11px; margin-top:5px; color:#64748b;"></p>
+                        </div>
+                        <div class="form-group-custom">
+                            <label id="lbl-doc-firmado">Descriptor del Puesto (PDF Firmado) <strong>*</strong></label>
+                            <div class="upload-box" onclick="seleccionarArchivo('DESCRIPTOR_FIRMADO')">
+                                <i class="far fa-file-pdf"></i>
+                                <p style="font-size:12px; margin:0;">Haga clic aquí para subir descriptor (.pdf)</p>
+                                <span class="status-badge status-pendiente" id="badge-doc-firmado">Pendiente</span>
+                                <input type="file" id="file-doc-firmado" style="display:none;" accept=".pdf" onchange="subirArchivo(this, 'DESCRIPTOR_FIRMADO')" />
+                            </div>
+                            <p id="sub-doc-firmado" style="font-size:11px; margin-top:5px; color:#64748b;"></p>
+                        </div>
+                        <div class="form-group-custom form-grid-full" id="file-traslado-container" style="display:none;">
+                            <label id="lbl-doc-traslado">Solicitud de Traslado Horizontal (PDF) <strong>*</strong></label>
+                            <div class="upload-box" onclick="seleccionarArchivo('SOLICITUD_TRASLADO')">
+                                <i class="far fa-file-pdf"></i>
+                                <p style="font-size:12px; margin:0;">Haga clic aquí para subir formato firmado (.pdf)</p>
+                                <span class="status-badge status-pendiente" id="badge-doc-traslado">Pendiente</span>
+                                <input type="file" id="file-doc-traslado" style="display:none;" accept=".pdf" onchange="subirArchivo(this, 'SOLICITUD_TRASLADO')" />
+                            </div>
+                            <p id="sub-doc-traslado" style="font-size:11px; margin-top:5px; color:#64748b;"></p>
+                        </div>
+                    </div>
+
+                    <div class="section-title">6. Observaciones del Jefe Solicitante</div>
+                    <div class="form-group-custom mb-3">
+                        <textarea id="ObservacionesJefe" name="ObservacionesJefe" class="form-control-custom" style="height:70px;" placeholder="Ingrese cualquier detalle adicional relevante para el equipo de Compensaciones..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer-custom">
+                <button type="button" class="btn-secondary-custom" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn-secondary-custom text-danger" id="btn-eliminar-borrador" style="display:none;" onclick="eliminarRequisicion()">Eliminar Borrador</button>
+                <button type="button" class="btn-success-custom" onclick="guardarFormulario(false)">Guardar Borrador</button>
+                <button type="button" class="btn-claro" onclick="guardarFormulario(true)">Enviar a Revisión</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL: REVISAR SOLICITUD (JEFE) -->
+<!-- ======================================================= -->
+<div class="modal fade" id="modalRevisar" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-custom" style="background-color: #1e293b;">
+                <h5 class="modal-title">Detalles de Requisición</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body modal-body-custom" style="background-color:#f8fafc;">
+                <!-- Detalles -->
+                <div class="content-card" style="padding: 20px; margin-bottom: 20px; border-top: 4px solid #1e293b;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p style="margin:5px 0;"><strong>Número Requisición:</strong> <span id="rev-numero" class="text-primary font-weight-bold"></span></p>
+                            <p style="margin:5px 0;"><strong>Tipo Trámite:</strong> <span id="rev-tipo"></span></p>
+                            <p style="margin:5px 0;"><strong>Solicitante:</strong> <span id="rev-solicitante"></span></p>
+                            <p style="margin:5px 0;"><strong>Gerencia:</strong> <span id="rev-gerencia"></span></p>
+                            <p style="margin:5px 0;"><strong>Estado:</strong> <span id="rev-estado"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p style="margin:5px 0;"><strong>Colaborador Baja:</strong> <span id="rev-baja"></span></p>
+                            <p style="margin:5px 0;"><strong>Puesto Vacante:</strong> <span id="rev-puesto"></span></p>
+                            <p style="margin:5px 0;"><strong>Contrato / Horario:</strong> <span id="rev-contrato"></span></p>
+                            <p style="margin:5px 0;"><strong>Sueldo / Comisiones:</strong> <span id="rev-sueldo"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div id="rev-traslado-box" style="display:none; background-color:#f1f5f9; padding: 12px; border-radius: 8px; margin-top:10px;">
+                        <h6 style="font-weight:700; margin:0 0 5px 0; color:#1e293b;">Datos de Traslado:</h6>
+                        <p style="margin:2px 0; font-size:13px;"><strong>Gerencia / Puesto Destino:</strong> <span id="rev-t-destino"></span></p>
+                        <p style="margin:2px 0; font-size:13px;"><strong>Jefe Destino:</strong> <span id="rev-t-jefe"></span></p>
+                        <p style="margin:2px 0; font-size:13px;"><strong>Fecha / Duración:</strong> <span id="rev-t-fecha"></span></p>
+                        <p style="margin:2px 0; font-size:13px;"><strong>Justificación:</strong> <span id="rev-t-justif"></span></p>
+                    </div>
+                </div>
+
+                <!-- Documentos Adjuntos -->
+                <div class="content-card" style="padding: 20px; margin-bottom: 20px;">
+                    <h5 class="section-title" style="margin-top:0;"><i class="fas fa-paperclip"></i> Archivos Digitales Adjuntos</h5>
+                    <div class="list-group" id="rev-documentos-list">
+                        <!-- Carga dinámica -->
+                    </div>
+                </div>
+
+                <!-- Historial y Bitácora -->
+                <div class="content-card" style="padding: 20px; margin-bottom: 0;">
+                    <h5 class="section-title" style="margin-top:0;"><i class="fas fa-history"></i> Bitácora de Aprobaciones e Historial</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" style="font-size:13px;" id="tabla-historial">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Estado Anterior</th>
+                                    <th>Nuevo Estado</th>
+                                    <th>Usuario</th>
+                                    <th>Observaciones / Comentario</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer-custom" style="background-color:#f1f5f9;">
+                <button type="button" class="btn-secondary-custom" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    var reqId = 0;
+    var esAnalista = false;
+    var documentosSubidos = {
+        DESCRIPTOR_EDITABLE: false,
+        DESCRIPTOR_FIRMADO: false,
+        SOLICITUD_TRASLADO: false
+    };
+
+    $(document).ready(function () {
+        // Cargar Catálogos para Filtros y Formulario
+        $.get('@Url.Action("ObtenerCatalogos", "Requisicion")', function (res) {
+            if (res.success) {
+                var selectForm = $('#GerenciaDestino');
+                $.each(res.gerencias, function (i, val) {
+                    selectForm.append($('<option>', { value: val, text: val }));
+                });
+            }
+        });
+
+        // Cargar vacantes
+        cargarVacantesJefe();
+
+        // Tabla de Requisiciones
+        var table = $('#tabla-requisiciones').DataTable({
+            processing: true,
+            serverSide: false,
+            ajax: {
+                url: '@Url.Action("ListarMisRequisiciones", "Requisicion")',
+                type: 'GET',
+                data: function (d) {
+                    d.estado = $('#filtro-estado').val();
+                    d.fechaDesde = $('#filtro-desde').val();
+                    d.fechaHasta = $('#filtro-hasta').val();
+                },
+                dataSrc: 'data'
+            },
+            columns: [
+                { data: 'NumeroRequisicion' },
+                { 
+                    data: 'TipoRequisicion',
+                    render: function (data) {
+                        return data === 'TRASLADO' ? 'TRASLADO HORIZ.' : 'REPOSICIÓN';
+                    }
+                },
+                { 
+                    data: 'NombreEmpleadoBaja',
+                    render: function (data, type, row) {
+                        return '<strong>' + row.CarnetEmpleadoBaja + '</strong> - ' + data;
+                    }
+                },
+                { data: 'NombrePuesto' },
+                { data: 'PositionCode' },
+                { data: 'Gerencia' },
+                { data: 'NombreSolicitante' },
+                { 
+                    data: 'Estado',
+                    render: function (data) {
+                        var css = 'badge-borrador';
+                        if (data === 'ENVIADA') css = 'badge-enviada';
+                        else if (data === 'REENVIADA') css = 'badge-reenviada';
+                        else if (data === 'DEVUELTA') css = 'badge-devuelta';
+                        else if (data === 'APROBADA') css = 'badge-aprobada';
+                        else if (data === 'CANCELADA') css = 'badge-cancelada';
+                        return '<span class="badge-custom ' + css + '">' + data + '</span>';
+                    }
+                },
+                { 
+                    data: 'FechaCreacion',
+                    render: function (data) {
+                        if (!data) return '';
+                        var milli = data.replace(/\/Date\((-?\d+)\)\//, '$1');
+                        var d = new Date(parseInt(milli));
+                        return d.toLocaleDateString('es-NI') + ' ' + d.toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' });
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function (data, type, row) {
+                        var btns = '';
+                        btns += '<button type="button" class="action-btn action-view" onclick="abrirRevision(' + row.RequisicionID + ')" title="Ver Detalles"><i class="fas fa-eye"></i></button>';
+                        
+                        if (row.Estado === 'BORRADOR' || row.Estado === 'DEVUELTA') {
+                            btns += '<button type="button" class="action-btn action-edit" onclick="abrirFormulario(' + row.RequisicionID + ', \'\')" title="Editar"><i class="fas fa-edit"></i></button>';
+                        }
+                        if (row.Estado === 'BORRADOR') {
+                            btns += '<button type="button" class="action-btn action-cancel" onclick="cancelarRequisicion(' + row.RequisicionID + ')" title="Cancelar"><i class="fas fa-trash-alt"></i></button>';
+                        }
+                        return btns;
+                    }
+                }
+            ],
+            language: {
+                url: '@Url.Content("~/Scripts/datatable.es-ES.json")'
+            },
+            initComplete: function () {
+                $('#pageLoader').fadeOut();
+            }
+        });
+
+        // KPIs
+        function cargarKPIs() {
+            $.get('@Url.Action("Dashboard", "Requisicion")', function (res) {
+                if (res.success && res.data) {
+                    $('#kpi-borradores').text(res.data.Borradores);
+                    $('#kpi-pendientes').text(res.data.Pendientes);
+                    $('#kpi-devueltas').text(res.data.Devueltas);
+                    $('#kpi-aprobadas').text(res.data.Aprobadas);
+                }
+            });
+        }
+        cargarKPIs();
+
+        // Filtros
+        $('#btn-filtrar').click(function () {
+            $('#pageLoader').fadeIn();
+            table.ajax.reload(function () {
+                $('#pageLoader').fadeOut();
+            });
+            cargarKPIs();
+        });
+
+        $('#btn-limpiar').click(function () {
+            $('#filtro-estado').val('');
+            $('#filtro-desde').val('');
+            $('#filtro-hasta').val('');
+            $('#pageLoader').fadeIn();
+            table.ajax.reload(function () {
+                $('#pageLoader').fadeOut();
+            });
+            cargarKPIs();
+        });
+    });
+
+    function cargarVacantesJefe() {
+        $.get('@Url.Action("ListarVacantes", "Requisicion")', { estado: "PENDIENTE" }, function (res) {
+            if (res.success && res.data && res.data.length > 0) {
+                var container = $('#vacantes-jefe-container');
+                var grid = $('#vacantes-jefe-grid');
+                grid.empty();
+                
+                var vacantesPorJefe = {};
+                $.each(res.data, function (i, v) {
+                    var jefe = v.NombreJefe || 'Sin Jefe Asignado';
+                    if (!vacantesPorJefe[jefe]) {
+                        vacantesPorJefe[jefe] = [];
+                    }
+                    vacantesPorJefe[jefe].push(v);
+                });
+                
+                $.each(vacantesPorJefe, function (jefe, vacantes) {
+                    var totalGrupo = vacantes.length;
+                    
+                    var sectionHtml = `
+                        <div class="jefe-grupo-container" style="grid-column: 1 / -1; margin-top:15px; margin-bottom:10px;">
+                            <div class="jefe-grupo-header" style="background:#f1f5f9; padding: 10px 16px; border-radius: 8px; font-weight:700; color:#334155; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid var(--claro-red);">
+                                <span><i class="fas fa-user-tie text-muted mr-2"></i> Reportes de: <strong>${jefe}</strong></span>
+                                <span class="badge badge-secondary" style="background:#64748b; color:#fff; border-radius:50px; padding:4px 10px; font-size:11px;">${totalGrupo} vacante(s)</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.append(sectionHtml);
+                    
+                    $.each(vacantes, function (j, v) {
+                        var dateBaja = '';
+                        if (v.FechaBaja) {
+                            var milli = v.FechaBaja.replace(/\/Date\((-?\d+)\)\//, '$1');
+                            dateBaja = new Date(parseInt(milli)).toLocaleDateString('es-NI');
+                        }
+                        
+                        var card = `
+                            <div class="vacante-card">
+                                <div class="vacante-card-header">
+                                    <h5 class="emp-name">${v.NombreEmpleado}</h5>
+                                    <span class="emp-carnet">Carnet: ${v.CarnetEmpleado}</span>
+                                </div>
+                                <div class="vacante-card-body">
+                                    <p><strong>Cargo Vacante:</strong> ${v.PuestoEmpleado}</p>
+                                    <p><strong>Fecha Baja:</strong> ${dateBaja}</p>
+                                    <p><strong>Días sin reponer:</strong> <span class="text-danger font-weight-bold">${v.DiasSinRequisicion} días</span></p>
+                                </div>
+                                <div class="vacante-card-footer">
+                                    <button type="button" class="btn-claro btn-sm w-100" onclick="abrirFormulario(0, '${v.CarnetEmpleado}')">
+                                        <i class="fas fa-file-signature"></i> Reponer Vacante
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        grid.append(card);
+                    });
+                });
+                
+                container.fadeIn();
+            } else {
+                $('#vacantes-jefe-container').hide();
+            }
+        });
+    }
+
+    function abrirFormulario(id, carnetBaja) {
+        reqId = id;
+        documentosSubidos = { DESCRIPTOR_EDITABLE: false, DESCRIPTOR_FIRMADO: false, SOLICITUD_TRASLADO: false };
+        $('#requisicion-form')[0].reset();
+        $('#RequisicionID').val(id);
+        
+        resetBadge('#badge-doc-editable', '#lbl-doc-editable', 'DESCRIPTOR EDITABLE', '#sub-doc-editable');
+        resetBadge('#badge-doc-firmado', '#lbl-doc-firmado', 'DESCRIPTOR FIRMADO', '#sub-doc-firmado');
+        resetBadge('#badge-doc-traslado', '#lbl-doc-traslado', 'SOLICITUD TRASLADO', '#sub-doc-traslado');
+        
+        if (id === 0) {
+            $('#form-modal-title').text("Nueva Requisición de Personal");
+            $('#btn-eliminar-borrador').hide();
+            $('#documentos-container').css({ 'opacity': '0.5', 'pointer-events': 'none' });
+            $('#obs-analista-container').hide();
+            
+            toggleTipoRequisicion('NORMAL');
+            
+            if (carnetBaja !== '') {
+                $('#CarnetEmpleadoBaja').val(carnetBaja);
+                buscarEmpleadoSigho();
+            }
+            
+            $('#modalFormulario').modal('show');
+        } else {
+            $('#form-modal-title').text("Editar Requisición - Folio Borrador");
+            $('#pageLoader').fadeIn();
+            $('#loader-text').text("Cargando borrador...");
+            
+            $.get('@Url.Action("ObtenerRequisicion", "Requisicion")', { id: id }, function (res) {
+                if (res.success && res.data) {
+                    var data = res.data;
+                    
+                    $('input[name="TipoRequisicion"][value="' + data.TipoRequisicion + '"]').prop('checked', true);
+                    toggleTipoRequisicion(data.TipoRequisicion);
+                    
+                    $('#CarnetEmpleadoBaja').val(data.CarnetEmpleadoBaja);
+                    $('#NombreEmpleadoBaja').val(data.NombreEmpleadoBaja);
+                    $('#PositionCode').val(data.PositionCode);
+                    $('#NombrePuesto').val(data.NombrePuesto);
+                    
+                    if (data.FechaBaja) {
+                        var milli = data.FechaBaja.replace(/\/Date\((-?\d+)\)\//, '$1');
+                        var d = new Date(parseInt(milli));
+                        $('#FechaBaja').val(d.toLocaleDateString('es-NI'));
+                    }
+                    
+                    $('#PositionId').val(data.PositionId);
+                    $('#Empresa').val(data.Empresa);
+                    $('#BusinessUnitId').val(data.BusinessUnitId);
+                    $('#BusinessUnitName').val(data.BusinessUnitName);
+                    $('#CostCenter').val(data.CostCenter);
+                    $('#CostCenterName').val(data.CostCenterName);
+                    $('#Gerencia').val(data.Gerencia);
+                    $('#SubGerencia').val(data.SubGerencia);
+                    $('#CarnetJefeInmediato').val(data.CarnetJefeInmediato);
+                    $('#NombreJefeInmediato').val(data.NombreJefeInmediato);
+                    
+                    $('#TipoContrato').val(data.TipoContrato);
+                    $('#HorarioLaboral').val(data.HorarioLaboral);
+                    $('#Sueldo').val(data.Sueldo);
+                    $('#Comisiones').val(data.Comisiones);
+                    
+                    if (data.TipoRequisicion === 'TRASLADO') {
+                        $('#GerenciaDestino').val(data.GerenciaDestino);
+                        $('#SubGerenciaDestino').val(data.SubGerenciaDestino);
+                        $('#PuestoDestino').val(data.PuestoDestino);
+                        $('#EdificioDestino').val(data.EdificioDestino);
+                        $('#CarnetJefeDestino').val(data.CarnetJefeDestino);
+                        $('#NombreJefeDestino').val(data.NombreJefeDestino);
+                        $('#DuracionTraslado').val(data.DuracionTraslado);
+                        
+                        if (data.FechaTrasladoPropuesta) {
+                            var milliT = data.FechaTrasladoPropuesta.replace(/\/Date\((-?\d+)\)\//, '$1');
+                            var dT = new Date(parseInt(milliT));
+                            var dayT = ("0" + dT.getDate()).slice(-2);
+                            var monthT = ("0" + (dT.getMonth() + 1)).slice(-2);
+                            var dateStrT = dT.getFullYear() + "-" + (monthT) + "-" + (dayT);
+                            $('#FechaTrasladoPropuesta').val(dateStrT);
+                        }
+                        $('#JustificacionTraslado').val(data.JustificacionTraslado);
+                    }
+                    
+                    $('#ObservacionesJefe').val(data.ObservacionesJefe);
+                    
+                    if (data.Estado === 'DEVUELTA') {
+                        $('#obs-analista-container').show();
+                        $('#obs-analista-text').text(data.ObservacionesAnalista);
+                    } else {
+                        $('#obs-analista-container').hide();
+                    }
+                    
+                    if (data.Estado === 'BORRADOR') {
+                        $('#btn-eliminar-borrador').show();
+                    } else {
+                        $('#btn-eliminar-borrador').hide();
+                    }
+                    
+                    $('#documentos-container').css({ 'opacity': '1', 'pointer-events': 'auto' });
+                    
+                    cargarDocumentosSubidos();
+                    $('#modalFormulario').modal('show');
+                } else {
+                    $('#pageLoader').fadeOut();
+                }
+            });
+        }
+    }
+
+    function resetBadge(badgeId, labelId, labelName, subId) {
+        $(badgeId).text("Pendiente").removeClass("status-cargado").addClass("status-pendiente");
+        $(labelId).text(labelName + " *");
+        $(subId).empty();
+    }
+
+    function toggleTipoRequisicion(tipo) {
+        if (tipo === 'TRASLADO') {
+            $('#seccion-traslado').slideDown();
+            $('#file-traslado-container').slideDown();
+            $('#GerenciaDestino').prop('required', true);
+            $('#PuestoDestino').prop('required', true);
+            $('#CarnetJefeDestino').prop('required', true);
+            $('#NombreJefeDestino').prop('required', true);
+            $('#FechaTrasladoPropuesta').prop('required', true);
+            $('#JustificacionTraslado').prop('required', true);
+        } else {
+            $('#seccion-traslado').slideUp();
+            $('#file-traslado-container').slideUp();
+            $('#GerenciaDestino').prop('required', false);
+            $('#PuestoDestino').prop('required', false);
+            $('#CarnetJefeDestino').prop('required', false);
+            $('#NombreJefeDestino').prop('required', false);
+            $('#FechaTrasladoPropuesta').prop('required', false);
+            $('#JustificacionTraslado').prop('required', false);
+        }
+    }
+
+    function buscarEmpleadoSigho() {
+        var carnet = $('#CarnetEmpleadoBaja').val();
+        if (carnet.trim() === '') {
+            Swal.fire('Carnet Requerido', 'Debe proporcionar el carnet del empleado.', 'warning');
+            return;
+        }
+        
+        $('#pageLoader').fadeIn();
+        $('#loader-text').text("Buscando empleado en SIGHO...");
+        
+        $.get('@Url.Action("BuscarEmpleado", "Requisicion")', { carnet: carnet }, function (res) {
+            $('#pageLoader').fadeOut();
+            if (res.success && res.data) {
+                var emp = res.data;
+                $('#NombreEmpleadoBaja').val(emp.nombre_completo);
+                $('#PositionCode').val(emp.PositionCode + " - " + emp.NombrePosicion);
+                $('#NombrePuesto').val(emp.cargo);
+                
+                if (emp.fechabaja) {
+                    var milli = emp.fechabaja.replace(/\/Date\((-?\d+)\)\//, '$1');
+                    var d = new Date(parseInt(milli));
+                    $('#FechaBaja').val(d.toLocaleDateString('es-NI'));
+                } else {
+                    $('#FechaBaja').val('Fecha no registrada');
+                }
+                
+                $('#PositionId').val(emp.PositionId);
+                $('#Empresa').val(emp.empresa);
+                $('#BusinessUnitId').val(emp.BusinessUnitId);
+                $('#BusinessUnitName').val(emp.BusinessUnitName);
+                $('#CostCenter').val(emp.CostCenter);
+                $('#CostCenterName').val(emp.CostCenterName);
+                $('#Gerencia').val(emp.OGERENCIA);
+                $('#SubGerencia').val(emp.oSUBGERENCIA);
+                $('#CarnetJefeInmediato').val(emp.carnet_jefe1);
+                $('#NombreJefeInmediato').val(emp.nom_jefe1);
+                
+                $('#TerminationDate').val(emp.TERMINATION_DATE);
+                $('#ActionCode').val(emp.ACTION_CODE);
+                $('#ActionMeaning').val(emp.ACTION_MEANING);
+                $('#TerminationType').val(emp.TERMINATION_TYPE);
+            } else {
+                Swal.fire('No encontrado', res.message, 'error');
+            }
+        });
+    }
+
+    function cargarDocumentosSubidos() {
+        $.get('@Url.Action("ObtenerDocumentos", "Requisicion")', { id: reqId }, function (res) {
+            $('#pageLoader').fadeOut();
+            if (res.success && res.data) {
+                $.each(res.data, function (i, doc) {
+                    marcarDocumentoCargado(doc.TipoDocumento, doc.NombreArchivo, doc.DocumentoID);
+                });
+            }
+        });
+    }
+
+    function seleccionarArchivo(tipo) {
+        if (reqId === 0) {
+            Swal.fire('Guardado Obligatorio', 'Debe Guardar el Borrador con los datos del puesto antes de adjuntar los descriptores.', 'warning');
+            return;
+        }
+        if (tipo === 'DESCRIPTOR_EDITABLE') $('#file-doc-editable').click();
+        else if (tipo === 'DESCRIPTOR_FIRMADO') $('#file-doc-firmado').click();
+        else if (tipo === 'SOLICITUD_TRASLADO') $('#file-doc-traslado').click();
+    }
+
+    function subirArchivo(input, tipo) {
+        if (input.files.length === 0) return;
+        var file = input.files[0];
+        
+        var formData = new FormData();
+        formData.append("file", file);
+        formData.append("requisicionId", reqId);
+        formData.append("tipoDocumento", tipo);
+        
+        $('#pageLoader').fadeIn();
+        $('#loader-text').text("Guardando archivo...");
+        
+        $.ajax({
+            url: '@Url.Action("SubirDocumento", "Requisicion")',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (res) {
+                $('#pageLoader').fadeOut();
+                if (res.success) {
+                    Swal.fire('Cargado', res.message, 'success');
+                    marcarDocumentoCargado(tipo, file.name, res.documentoId);
+                } else {
+                    Swal.fire('Error al cargar', res.message, 'error');
+                }
+            },
+            error: function () {
+                $('#pageLoader').fadeOut();
+                Swal.fire('Error', 'Ocurrió un error inesperado al subir el archivo.', 'error');
+            }
+        });
+    }
+
+    function marcarDocumentoCargado(tipo, filename, docId) {
+        var badgeId, labelId, subId;
+        if (tipo === 'DESCRIPTOR_EDITABLE') {
+            badgeId = '#badge-doc-editable';
+            labelId = '#lbl-doc-editable';
+            subId = '#sub-doc-editable';
+            documentosSubidos.DESCRIPTOR_EDITABLE = true;
+        } else if (tipo === 'DESCRIPTOR_FIRMADO') {
+            badgeId = '#badge-doc-firmado';
+            labelId = '#lbl-doc-firmado';
+            subId = '#sub-doc-firmado';
+            documentosSubidos.DESCRIPTOR_FIRMADO = true;
+        } else if (tipo === 'SOLICITUD_TRASLADO') {
+            badgeId = '#badge-doc-traslado';
+            labelId = '#lbl-doc-traslado';
+            subId = '#sub-doc-traslado';
+            documentosSubidos.SOLICITUD_TRASLADO = true;
+        }
+
+        $(badgeId).text("Cargado").removeClass("status-pendiente").addClass("status-cargado");
+        $(labelId).html(tipo.replace('_', ' ') + ' <i class="fas fa-check-circle text-success"></i>');
+        $(subId).html('Archivo subido: <a href="@Url.Action("DescargarDocumento", "Requisicion")/' + docId + '" target="_blank"><strong>' + filename + '</strong></a>');
+    }
+
+    function guardarFormulario(enviarRevision) {
+        var form = $('#requisicion-form')[0];
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (enviarRevision) {
+            if (reqId === 0) {
+                Swal.fire('Atención', 'Primero debe guardar el borrador antes de enviar a revisión.', 'warning');
+                return;
+            }
+            if (!documentosSubidos.DESCRIPTOR_EDITABLE || !documentosSubidos.DESCRIPTOR_FIRMADO) {
+                Swal.fire('Documentos Faltantes', 'Debe adjuntar el Descriptor en Word y PDF firmado digitalmente antes de enviar.', 'warning');
+                return;
+            }
+            var tipoReq = $('input[name="TipoRequisicion"]:checked').val();
+            if (tipoReq === 'TRASLADO' && !documentosSubidos.SOLICITUD_TRASLADO) {
+                Swal.fire('Documento Faltante', 'Debe subir la Solicitud de Traslado Horizontal en PDF.', 'warning');
+                return;
+            }
+        }
+
+        var data = $('#requisicion-form').serialize();
+        
+        $('#pageLoader').fadeIn();
+        $('#loader-text').text("Guardando borrador de requisición...");
+        
+        $.post('@Url.Action("Guardar", "Requisicion")', data, function (res) {
+            if (res.success) {
+                reqId = res.requisicionId;
+                $('#RequisicionID').val(reqId);
+                
+                if (enviarRevision) {
+                    $('#loader-text').text("Enviando al Especialista...");
+                    $.post('@Url.Action("Enviar", "Requisicion")', { requisicionId: reqId }, function (envRes) {
+                        $('#pageLoader').fadeOut();
+                        if (envRes.success) {
+                            Swal.fire('Enviada', envRes.message, 'success').then(function () {
+                                $('#modalFormulario').modal('hide');
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error al enviar', envRes.message, 'error');
+                        }
+                    });
+                } else {
+                    $('#pageLoader').fadeOut();
+                    Swal.fire('Guardado', res.message, 'success').then(function () {
+                        $('#documentos-container').css({ 'opacity': '1', 'pointer-events': 'auto' });
+                        cargarDocumentosSubidos();
+                    });
+                }
+            } else {
+                $('#pageLoader').fadeOut();
+                Swal.fire('Error', res.message, 'error');
+            }
+        });
+    }
+
+    function eliminarRequisicion() {
+        Swal.fire({
+            title: '¿Eliminar borrador?',
+            text: "Se descartará la requisición de forma definitiva.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d32f2f',
+            cancelButtonColor: '#cbd5e1',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#pageLoader').fadeIn();
+                $.post('@Url.Action("Cancelar", "Requisicion")', { requisicionId: reqId, observaciones: 'Borrador descartado por el solicitante' }, function (res) {
+                    $('#pageLoader').fadeOut();
+                    if (res.success) {
+                        Swal.fire('Descartado', 'El borrador fue eliminado.', 'success').then(function () {
+                            $('#modalFormulario').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function cancelarRequisicion(id) {
+        Swal.fire({
+            title: '¿Cancelar solicitud?',
+            text: "Esta acción anulará el proceso por completo.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d32f2f',
+            cancelButtonColor: '#cbd5e1',
+            confirmButtonText: 'Sí, cancelar requisición'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#pageLoader').fadeIn();
+                $.post('@Url.Action("Cancelar", "Requisicion")', { requisicionId: id, observaciones: 'Cancelada por el solicitante' }, function (res) {
+                    $('#pageLoader').fadeOut();
+                    if (res.success) {
+                        Swal.fire('Cancelada', res.message, 'success').then(function () {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function abrirRevision(id) {
+        reqId = id;
+        
+        $('#pageLoader').fadeIn();
+        $('#loader-text').text("Cargando detalles...");
+        
+        $.get('@Url.Action("ObtenerRequisicion", "Requisicion")', { id: id }, function (res) {
+            if (res.success && res.data) {
+                var r = res.data;
+                
+                $('#rev-numero').text(r.NumeroRequisicion);
+                $('#rev-tipo').text(r.TipoRequisicion === 'TRASLADO' ? 'TRASLADO HORIZONTAL' : 'REPOSICIÓN DE VACANTE');
+                $('#rev-solicitante').text(r.NombreSolicitante + ' (Carnet: ' + r.CarnetSolicitante + ')');
+                $('#rev-gerencia').text(r.Gerencia + ' / ' + r.SubGerencia);
+                $('#rev-estado').html('<span class="badge-custom badge-borrador">' + r.Estado + '</span>');
+                
+                $('#rev-baja').text(r.CarnetEmpleadoBaja + ' - ' + r.NombreEmpleadoBaja);
+                $('#rev-puesto').text(r.PositionCode + ' - ' + r.NombrePuesto);
+                $('#rev-contrato').text(r.TipoContrato + ' | ' + r.HorarioLaboral);
+                
+                var sueldoStr = '$' + (r.Sueldo ? r.Sueldo.toFixed(2) : '0.00');
+                var comisionStr = '$' + (r.Comisiones ? r.Comisiones.toFixed(2) : '0.00');
+                $('#rev-sueldo').text(sueldoStr + ' (Comisiones: ' + comisionStr + ')');
+                
+                if (r.TipoRequisicion === 'TRASLADO') {
+                    $('#rev-t-destino').text(r.GerenciaDestino + ' - Puesto: ' + r.PuestoDestino);
+                    $('#rev-t-jefe').text(r.CarnetJefeDestino + ' - ' + r.NombreJefeDestino);
+                    
+                    var dateProp = '';
+                    if (r.FechaTrasladoPropuesta) {
+                        var milli = r.FechaTrasladoPropuesta.replace(/\/Date\((-?\d+)\)\//, '$1');
+                        dateProp = new Date(parseInt(milli)).toLocaleDateString('es-NI');
+                    }
+                    $('#rev-t-fecha').text(dateProp + ' | Duración: ' + r.DuracionTraslado);
+                    $('#rev-t-justif').text(r.JustificacionTraslado);
+                    $('#rev-traslado-box').show();
+                } else {
+                    $('#rev-traslado-box').hide();
+                }
+
+                var listGroup = $('#rev-documentos-list');
+                listGroup.empty();
+                
+                $.get('@Url.Action("ObtenerDocumentos", "Requisicion")', { id: id }, function (docRes) {
+                    if (docRes.success && docRes.data) {
+                        $.each(docRes.data, function (i, doc) {
+                            var icon = doc.Extension === '.pdf' ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
+                            var sizeKb = doc.TamanioBytes ? (doc.TamanioBytes / 1024).toFixed(1) + ' KB' : 'N/A';
+                            
+                            var item = `
+                                <a href="@Url.Action("DescargarDocumento", "Requisicion")/${doc.DocumentoID}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
+                                    <div>
+                                        <i class="far ${icon} mr-2" style="font-size:16px;"></i>
+                                        <strong>${doc.TipoDocumento.replace('_', ' ')}:</strong> ${doc.NombreArchivo}
+                                    </div>
+                                    <span class="badge badge-light badge-pill">${sizeKb}</span>
+                                </a>
+                            `;
+                            listGroup.append(item);
+                        });
+                    }
+                });
+
+                var tbody = $('#tabla-historial tbody');
+                tbody.empty();
+                
+                $.get('@Url.Action("ObtenerHistorial", "Requisicion")', { id: id }, function (histRes) {
+                    if (histRes.success && histRes.data) {
+                        $.each(histRes.data, function (i, h) {
+                            var dateH = '';
+                            if (h.FechaCambio) {
+                                var milli = h.FechaCambio.replace(/\/Date\((-?\d+)\)\//, '$1');
+                                var d = new Date(parseInt(milli));
+                                dateH = d.toLocaleDateString('es-NI') + ' ' + d.toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' });
+                            }
+                            
+                            var row = `
+                                <tr>
+                                    <td>${dateH}</td>
+                                    <td><span class="badge badge-light">${h.EstadoAnterior || 'INICIAL'}</span></td>
+                                    <td><span class="badge badge-secondary">${h.EstadoNuevo}</span></td>
+                                    <td><strong>${h.CarnetUsuario}</strong> - ${h.NombreUsuario}</td>
+                                    <td>${h.Observaciones || ''}</td>
+                                </tr>
+                            `;
+                            tbody.append(row);
+                        });
+                    }
+                    $('#pageLoader').fadeOut();
+                    $('#modalRevisar').modal('show');
+                });
+            } else {
+                $('#pageLoader').fadeOut();
+            }
+        });
+    }
+</script>
+}

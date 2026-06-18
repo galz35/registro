@@ -1,0 +1,72 @@
+﻿@{
+    ViewBag.Title = "Lista de empleado para registrar HE";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<link href="~/onlinejs/dataTables.bootstrap4.min.css" rel="stylesheet" />
+
+<div class="card shadow">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold" style="color:#800">Empleados</h6>
+    </div>
+    <div class="card-body">
+        <table id="tblEmps" class="table table-bordered table-hover display nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Acción</th>
+                    <th>No Empleado</th>
+                    <th>Nombre</th>
+                    <th>Ubicación</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+@section scripts{
+    <!-- Libs existentes -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+    <script>
+    // Inyecta token antiforgery para POSTs
+    $('body').append('@Html.Raw(System.Web.Helpers.AntiForgery.GetHtml().ToHtmlString())');
+    function token(){ return $('input[name="__RequestVerificationToken"]').val(); }
+
+    $(function(){
+      $.LoadingOverlay("show");
+      $('#tblEmps').DataTable({
+        ajax:{ url:'@Url.Action("EmpleadosListjson","Hrexterno")', type:'GET', datatype:'json' },
+        columns:[
+          { data:null, render:function(row){
+              // Navega al detalle por carnet/EmployeeNumber
+              var url='@Url.Action("EmpleadoDetalle","Hrexterno")' + '?carnet='+ encodeURIComponent(row.EmployeeNumber);
+              return "<a class='btn btn-sm btn-primary' href='"+url+"'>Seleccionar</a>";
+            }, orderable:false, searchable:false, width:"120px" },
+          { data:'EmployeeNumber' },
+          { data:'FullName' },
+          { data:'Location' }
+        ],
+        responsive:true,
+        dom:'Blfrtip',
+        buttons:[
+          { extend:'excelHtml5', text:'Exportar', title:'Empleados_HE' }
+        ],
+        initComplete: function(){ $.LoadingOverlay("hide"); }
+      });
+    });
+    </script>
+}

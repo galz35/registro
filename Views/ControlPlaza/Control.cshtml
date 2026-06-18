@@ -1,0 +1,1102 @@
+@{
+    ViewBag.Title = "Control de Plazas"; 
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.8/css/highcharts.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+<style>
+    /* Estilos personalizados */
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    .card {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        color: #000;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card h6, .h3, .h6 {
+        color: #333333;
+    }
+
+    .kpi-card {
+        background-color: #ffffff;
+        color: #000;
+        border-left: 0.25rem solid #ff0000;
+    }
+
+        .kpi-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+            .kpi-card .card-body .icon {
+                font-size: 3em;
+                opacity: 0.7;
+                color: #ff0000;
+            }
+
+    .animated {
+        animation-duration: 1s;
+        animation-fill-mode: both;
+    }
+
+    .fadeInUp {
+        animation-name: fadeInUp;
+    }
+
+    .highcharts-background {
+        fill: #ffffff;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        color: #000;
+    }
+
+    .chart-type-selector {
+        margin-bottom: 15px;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f2f2f2;
+    }
+    .table tbody tr td {
+        font-size: 0.9em;
+        text-align: center; /* Centrar el texto en todas las celdas */
+    }
+
+    .table thead th {
+        background-color: red;
+        color: white;
+        text-transform: uppercase;
+        text-align: center;
+    }
+    .progress {
+        height: 20px;
+    }
+
+    .progress-bar {
+        font-size: 0.9em;
+        line-height: 20px;
+    }
+
+    /* Estilo para resaltar filas al pasar el cursor */
+    table.display tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+    #tblaPlazas .nav-link {
+        color: black !important;
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+        #tblaPlazas .nav-link:hover {
+            color: red !important;
+            background-color: white !important;
+        }
+    /* Estilo para los enlaces de navegación en plazasTab */
+    #plazasTab .nav-link {
+        color: black !important; /* Color de letra negro por defecto */
+    }
+
+        /* Opcional: Cambiar color al estar activo o en hover */
+        #plazasTab .nav-link:hover,
+        #plazasTab .nav-link.active {
+            color: black !important; /* Cambia el color al azul estándar de Bootstrap o elige otro */
+        }
+
+    /* Ajustar el tamaño de las celdas para porcentajes */
+    table.display td:nth-child(5) {
+        width: 20%;
+    }
+
+    /* Centrar el contenido de las celdas */
+    table.display th, table.display td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Mejorar la apariencia de los botones de DataTables */
+    .dt-buttons .btn {
+        margin-right: 5px;
+    }
+    .progress-bar {
+        background-color: #28a745; /* Verde por defecto */
+    }
+
+        .progress-bar[data-value]:not([data-value=""]) {
+            background-color: attr(data-value px);
+        }
+
+        .progress-bar[data-value="0"] {
+            background-color: #dc3545; /* Rojo para 0% */
+        }
+
+        .progress-bar[data-value="50"] {
+            background-color: #ffc107; /* Amarillo para 50% */
+        }
+
+        .progress-bar[data-value="100"] {
+            background-color: #28a745; /* Verde para 100% */
+        }
+
+    /* Alternar colores de filas manualmente si se desea */
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0,0,0,.05);
+    }
+    .bg-orange {
+        background-color: orange !important;
+    }
+    .chart-type-selector label {
+        margin-bottom: 0;
+        margin-right: 0.5rem;
+    }
+    #tblaPlazas tbody tr td {
+        font-size: 0.8em; /* Puedes ajustar este valor según lo desees */
+    }
+    #tblaPlazas thead tr td {
+        font-size: 0.8em; /* Puedes ajustar este valor según lo desees */
+     }
+    #tblaPlazas thead {
+        background-color: red; /* Fondo rojo */
+        color: white; /* Texto blanco */
+    }
+
+        /* Centrar el texto de las celdas de la cabecera */
+        #tblaPlazas thead th {
+            text-align: center; /* Centrar el texto */
+            text-transform: uppercase; /* Convertir el texto a mayúsculas */
+        }
+</style>
+
+<div class="container-fluid">
+    <!-- Encabezado -->
+
+    <div class="row">
+        <!-- Total Activo -->
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase mb-1">Total Activo</div>
+                        <div class="h5 mb-0 font-weight-bold" id="totalActivo">0</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i> <!-- Puedes cambiar el ícono según prefieras -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Vacante Disponible -->
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase mb-1">Total Vacante Disponible</div>
+                        <div class="h5 mb-0 font-weight-bold" id="totalVacanteDisponible">0</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-plus"></i> <!-- Puedes cambiar el ícono según prefieras -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Plaza -->
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase mb-1">Total Plaza</div>
+                        <div class="h5 mb-0 font-weight-bold" id="totalPlaza">0</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-briefcase"></i> <!-- Puedes cambiar el ícono según prefieras -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Porcentaje Total -->
+        <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="card kpi-card shadow mb-4 animated fadeInUp">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase mb-1">Porcentaje Total</div>
+                        <div class="h5 mb-0 font-weight-bold" id="porcentajeTotal">0%</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-percentage"></i> <!-- Puedes cambiar el ícono según prefieras -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="col-xl-12 col-lg-12">
+                <div class="card shadow mb-4 animated fadeInUp">
+                    <div class="card-header py-3 d-flex align-items-center">
+                        <h6 class="m-0 font-weight-bold mr-3">@ViewBag.Title-</h6>
+                        <div class="chart-type-selector mb-0 mr-3 d-flex align-items-center">
+                            <label for="chartTypePlazas" class="mr-2 mb-0">Tipo de Gráfico</label>
+                            <select id="chartTypePlazas" class="form-control w-auto">
+                                <option value="table">Tabla</option> <!-- Nueva opción -->
+                                <option value="column">Columna</option>
+                                <option value="bar">Barra</option>
+                                <option value="pie">Pastel</option>
+                                <option value="line">Línea</option>
+                                <option value="area">Área</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-sm btn-primary" id="expandChartPlazas"><i class="fas fa-expand"></i></button>
+                        <div id="buttonsContainer" class="ml-auto"></div>    <div id="searchContainer" class="ml-3"></div>
+
+                    </div>
+                    <div class="card-body">
+                        <!-- Selector de tipo de gráfico -->
+
+                        <div id="graficoPlazas" style="height: 600px;"></div>
+                        <div id="tablaPlazasContainer" style="display: none;">
+                            <table id="tblaPlazas" class="display" style="width: 100%; height: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Gerencia</th>
+                                        <th>Empleados Activos</th>
+                                        <th>Vacantes disponible</th>
+                                        <th>Proxima Baja</th>
+                                        <th>Nuevo Ingreso</th>
+                                        <th>Porcentaje</th>
+                                        <th>Total Puestos</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Los datos se llenarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div id="loadingSpinner" class="text-center" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Cargando...</span>
+        </div>
+    </div>
+    <!-- Modal para gráfico ampliado -->
+    <div class="modal fade" id="chartModalPlazas" tabindex="-1" role="dialog" aria-labelledby="chartModalPlazasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Distribución de Plazas por Gerencia (Ampliado)</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Selector de tipo de gráfico en el modal -->
+                    <div class="chart-type-selector mb-3">
+                        <label for="chartTypePlazasAmpliado">Tipo de Gráfico:</label>
+                        <select id="chartTypePlazasAmpliado" class="form-control w-25">
+                            <option value="column">Columna</option>
+                            <option value="bar">Barra</option>
+                            <option value="pie">Pastel</option>
+                            <option value="line">Línea</option>
+                            <option value="area">Área</option>
+                            <option value="table">Tabla</option> <!-- Nueva opción -->
+                        </select>
+                    </div>
+                    <div id="graficoPlazasAmpliado" style="height: 400px;"></div>
+                    <div id="tablaPlazasAmpliadoContainer" style="display: none;">
+                        <table id="tablaPlazasAmpliado" class="display" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Gerencia</th>
+                                    <th>Empleados Activos</th>
+                                    <th>Vacantes por Renuncia</th>
+                                    <th>Vacantes Nuevas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se llenarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Plazas -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow animated fadeInUp">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Listado de Plazas</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Navegación de Pestañas -->
+                    <ul class="nav nav-tabs" id="plazasTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="activo-tab" data-toggle="tab" href="#activo" role="tab" aria-controls="activo" aria-selected="true">Activo</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="vacante-tab" data-toggle="tab" href="#vacante" role="tab" aria-controls="vacante" aria-selected="false">Vacante Disponible</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="nueva-posicion-tab" data-toggle="tab" href="#nueva-posicion" role="tab" aria-controls="nueva-posicion" aria-selected="false">Nueva Posición</a>
+                        </li>
+                    </ul>
+
+                    <!-- Contenido de las Pestañas -->
+                    <div class="tab-content" id="plazasTabContent">
+                        <!-- Pestaña Activo -->
+                        <div class="tab-pane fade show active" id="activo" role="tabpanel" aria-labelledby="activo-tab">
+                            <div class="table-responsive mt-3">
+                                <table id="tablaPlazas" class="table table-striped table-bordered" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Acciones</th>
+                                            <th>Nombre Actividad</th>
+                                            <th>Gerencia</th>
+                                            <th>Subgerencia</th>
+                                            <th>Coordinación</th>
+                                            <th>Organización</th>
+                                            <th>Puesto</th>
+                                            <th>Estado</th>
+                                            <th>Fecha de Creación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pestaña Vacante Disponible -->
+                        <div class="tab-pane fade" id="vacante" role="tabpanel" aria-labelledby="vacante-tab">
+                            <div class="table-responsive mt-3">
+                                <table id="tablaVacante" class="table table-striped table-bordered" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Acciones</th>
+                                            <th>Nombre Posicion</th>
+                                            <th>Gerencia</th>
+                                            <th>Subgerencia</th>
+                                            <th>Coordinación</th>
+                                            <th>Nombre empleado</th>
+                                            <th>Numero empleado</th>
+                                            <th>Estado</th>
+                                            <th>historial</th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pestaña Nueva Posición -->
+                        <div class="tab-pane fade" id="nueva-posicion" role="tabpanel" aria-labelledby="nueva-posicion-tab">
+                            <div class="table-responsive mt-3">
+                                <table id="tablaNuevaPosicion" class="table table-striped table-bordered" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Acciones</th>
+                                            <th>Posición Code</th>
+                                            <th>Nombre</th>
+                                            <th>Departamento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalHistorial" tabindex="-1" role="dialog" aria-labelledby="modalHistorialLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span id="modalHistorialLabel">Historial de Plaza</span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table id="tablaHistorial" class="display" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Nombre_Completo</th>
+                            <th>fecha ingreso</th>
+                            <th>fecha de salida</th>
+                            
+                            <!-- Agrega más columnas según tus necesidades -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <!-- Scripts necesarios -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.11.5/sorting/datetime-moment.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.3.1/css/rowGroup.dataTables.min.css">
+
+    <!-- DataTables RowGroup Extension JS -->
+    <script src="https://cdn.datatables.net/rowgroup/1.3.1/js/dataTables.rowGroup.min.js"></script>
+    <!-- Tabulator CSS -->
+    <!-- Tabulator JS -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.8/highcharts.js"></script>
+
+    <script>
+        var tableInitialized = 0; // 0 = No inicializado, 1 = Inicializado
+
+        $(document).ready(function () {
+            // Inicializar DataTable tablaVacante
+            var tablaPlazas = $('#tablaPlazas').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("ObtenerPlazas", "ControlPlaza")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+                    {
+                        "data": "PlazaId",
+                        "render": function (data, type, row) {
+                            return `
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-cogs"></i> Acciones
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="javascript:void(0);" onclick="verDetalle(${data})">
+                                            <i class="fas fa-eye"></i> Ver Detalle
+                                        </a>
+                                        <a class="dropdown-item" href="@Url.Action("Editar", "ControlPlaza")/${data}">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <a class="dropdown-item" href="javascript:void(0);" onclick="cambiarEstado(${data})">
+                                            <i class="fas fa-exchange-alt"></i> Cambiar Estado
+                                        </a>
+                                    </div>
+                                </div>`;
+                        },
+                        "orderable": false,
+                        "searchable": false
+                    },
+                     { "data": "NombreActividad" },
+                    { "data": "Gerencia" },
+                    { "data": "Subgerencia" },
+                    { "data": "CoordinacionSuperv" },
+
+                    { "data": "Organizacion" },
+                    { "data": "Puesto" },
+                    {
+                        "data": "EstadoActual",
+                        "render": function (data) {
+                            var className = '';
+                            if (data === 'Pendiente de Aprobación') {
+                                className = 'text-warning';
+                            } else if (data === 'Aprobado') {
+                                className = 'text-success';
+                            } else if (data === 'Rechazado') {
+                                className = 'text-danger';
+                            }
+                            return '<span class="' + className + '">' + data + '</span>';
+                        }
+                    },
+                    {
+                        "data": "FechaCreacion",
+                        "render": function (data) {
+                            return moment(data).format('DD/MM/YYYY');
+                        }
+                    }
+                ],
+                "dom": 'Blfrtip',
+                "lengthMenu": [10, 20, 50, 100],
+                "pageLength": 10,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                "responsive": true,
+                "order": [[8, 'desc'], [0, 'asc']]
+            });
+            var tablaPlazas2 = $('#tablaVacante').DataTable({
+    "ajax": {
+        "url": "@Url.Action("Obtenerplazas3", "ControlPlaza")",
+        "type": "GET",
+        "datatype": "json"
+    },
+    "columns": [
+        {
+            "data": "PositionCode",
+            "render": function (data, type, row) {
+                return `<div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="javascript:void(0);" onclick="abrirHistorial('${data}')">
+                            <i class="fas fa-history mr-1"></i> Ver Historial
+                        </a>
+                        <a class="dropdown-item" href="@Url.Action("Requisiciones", "ControlPlaza")?pos=${data}&nombre=${encodeURIComponent(row.Nombre_Posicion || '')}">
+                            <i class="fas fa-file-alt mr-1 text-danger"></i> Crear Requisicion
+                        </a>
+                    </div>
+                </div>`;
+            },
+            "orderable": false,
+            "searchable": false
+        }, {
+            "data": "Nombre_Posicion"
+        }, {
+            "data": "Gerencia"
+        }, {
+            "data": "Subgerencia"
+        }, {
+            "data": "Area"
+        }, {
+            "data": "Nombre_Completo"
+        }, {
+            "data": "Carnet"
+        },
+          {
+              "data": "Categoria"
+        },
+        {
+            "data": "TieneHistorial",
+            "render": function (data, type, row) {
+                if (data === 'Y') {
+                    return `<button class="btn btn-info btn-sm" onclick="abrirHistorial('${row.PositionCode}')">
+                                <i class="fas fa-eye"></i>
+                            </button>`;
+                } else {
+                    return `<button class="btn btn-secondary btn-sm" disabled>
+                                <i class="fas fa-eye"></i>
+                            </button>`;
+                }
+            },
+            "orderable": false,
+            "searchable": false,
+            "title": "Historial"
+        }
+    ],
+    "dom": 'Blfrtip',
+    "lengthMenu": [10, 20, 50, 100],
+    "pageLength": 10,
+    "language": {
+        "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+    },
+    "responsive": true
+});
+
+            cargarGrafico();
+
+          function cargarGrafico() {
+    $.ajax({
+        url: '@Url.Action("ObtenerDatosGrafico", "ControlPlaza")',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            var selectedType = $('#chartTypePlazas').val();
+            if (selectedType === 'table') {
+                renderTablePlazas(data);
+            } else {
+                //renderChartPlazas('graficoPlazas', selectedType, data);
+                renderChartPlazas('graficoPlazas', $('#chartTypePlazas').val(), data);
+
+            }
+        },
+        error: function () {
+            console.error('Error al cargar los datos del gráfico.');
+        }
+    });
+}
+
+            function renderChartPlazas(container, chartType, data) {
+                // Verificar si el gráfico es de tipo 'pie' para estructurar los datos adecuadamente
+                // Mostrar el gráfico y ocultar la tabla
+                $('#' + container).show();
+                $('#tablaPlazasContainer').hide();
+
+                // Verificar si el gráfico es de tipo 'pie' para estructurar los datos adecuadamente
+                var seriesData = [];
+                var isPie = chartType === 'pie';
+
+                if (isPie) {
+                    // Para gráficos de pastel, combinamos los valores en una única serie
+                    console.log(data);
+                    data.Categorias.forEach(function (categoria, index) {
+                        var total = data.Total_Puestos[index];
+                        seriesData.push({
+                            name: categoria,
+                            y: total
+                        });
+                    });
+                } else {
+                    // Para otros tipos de gráficos, mantenemos las series separadas
+                    seriesData = [
+                        {
+                            name: 'Empleados Activos',
+                            data: data.EmpleadosActivos
+                        },
+                        {
+                            name: 'Vacantes por Renuncia',
+                            data: data.VacantesPorRenuncia
+                        },
+                        {
+                            name: 'Nuevas Ingreso',
+                            data: data.NuevoIngreso
+                        }
+                    ];
+                }
+
+                Highcharts.chart(container, {
+                    chart: {
+                        type: chartType,
+                        backgroundColor: '#ffffff'
+                    },
+                    title: {
+                        text: 'Distribución de Plazas por Gerencia',
+                        style: {
+                            color: '#000'
+                        }
+                    },
+                    xAxis: isPie ? {} : {
+                        categories: data.Categorias,
+                        labels: {
+                            style: {
+                                color: '#000'
+                            }
+                        }
+                    },
+                    yAxis: isPie ? {} : {
+                        title: {
+                            text: 'Número de Plazas',
+                            style: {
+                                color: '#000'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                color: '#000'
+                            }
+                        }
+                    },
+                    legend: {
+                        itemStyle: {
+                            color: '#000'
+                        }
+                    },
+                    plotOptions: isPie ? {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.y}'
+                            }
+                        }
+                    } : {
+                        series: {
+                            stacking: 'normal' // Apilar series para mejores comparaciones
+                        }
+                    },
+                    series: isPie ? [{
+                        name: 'Total Plazas',
+                        colorByPoint: true,
+                        data: seriesData
+                    }] : seriesData,
+                    exporting: {
+                        enabled: true // Habilitar exportación de gráficos
+                    },
+                    colors: ['#2E9AFE', '#FF7F50', '#90EE90'], // Colores personalizados
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    },
+                    tooltip: {
+                        shared: true,
+                        useHTML: true,
+                        formatter: function () {
+                            if (isPie) {
+                                return `<b>${this.point.name}</b>: ${this.point.y}`;
+                            } else {
+                                var s = `<b>${this.x}</b><br/>`;
+                                this.points.forEach(function (point) {
+                                    s += `<span style="color:${point.color}">\u25CF</span> ${point.series.name}: <b>${point.y}</b><br/>`;
+                                });
+                                return s;
+                            }
+                        }
+                    }
+                });
+            }
+            function renderTablePlazas(data) {
+                // Ocultar el gráfico y mostrar la tabla
+                $('#graficoPlazas').hide();
+                $('#tablaPlazasContainer').show();
+                if (tableInitialized === 0) {
+                    // Verificar si DataTable ya está inicializado
+                    if ($.fn.DataTable.isDataTable('#tblaPlazas')) {
+                        // Si está inicializado, usar la API para actualizar los datos
+                        var table = $('#tblaPlazas').DataTable({ pageLength: 25, });
+                        table.clear();
+
+                        // Agregar nuevas filas
+                        data.Categorias.forEach(function (categoria, index) {
+                            var porcentaje = data.Porcentaje[index].toFixed(2); // Formato a dos decimales
+                            var progressClass = porcentaje < 90 ? 'bg-orange' : 'bg-success'; // Condicional de color
+
+                            var progressBar = `
+                <div class="progress">
+                    <div class="progress-bar ${progressClass}" role="progressbar" style="width: ${porcentaje}%" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100">
+                        ${porcentaje}%
+                    </div>
+                </div>
+            `;
+                            table.row.add([
+                                categoria,
+                                data.EmpleadosActivos[index],
+                                data.VacantesPorRenuncia[index],
+                                data.ProximaBaja[index],
+                                data.NuevoIngreso[index],
+                                progressBar,
+                                data.Total_Puestos[index]
+                            ]);
+                        });
+
+                        // Redibujar la tabla
+                        table.draw();
+                    } else {
+                        // Si no está inicializado, llenar la tabla y luego inicializar DataTable
+                        $('#tblaPlazas tbody').empty(); // Limpiar cualquier dato previo
+
+
+                        data.Categorias.forEach(function (categoria, index) {
+                            var porcentaje = data.Porcentaje[index].toFixed(2); // Formato a dos decimales
+                            var progressClass = porcentaje < 90 ? 'bg-orange' : 'bg-success'; // Condicional de color
+
+                            var progressBar = `
+                <div class="progress">
+                    <div class="progress-bar ${progressClass}" role="progressbar" style="width: ${porcentaje}%" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100">
+                        ${porcentaje}%
+                    </div>
+                </div>
+            `;
+                            var row = `
+                <tr>
+                    <td>${categoria}</td>
+                    <td>${data.EmpleadosActivos[index]}</td>
+                    <td>${data.VacantesPorRenuncia[index]}</td>
+                    <td>${data.ProximaBaja[index]}</td>
+                    <td>${data.NuevoIngreso[index]}</td>
+                    <td>${progressBar}</td>
+                    <td>${data.Total_Puestos[index]}</td>
+                </tr>
+            `;
+                            $('#tblaPlazas tbody').append(row);
+                        });
+
+                        // Inicializar DataTable
+                        $('#tblaPlazas').DataTable({
+                            destroy: true, // Permite re-inicializar la tabla sin warnings
+
+                            responsive: true,
+                            paging: true,
+                            searching: true,
+                            ordering: true,
+                            info: true, pageLength: 25,
+                            dom: 'frtip', // Esta opción habilita la posición de los botones
+                            buttons: [
+                                'copy', 'csv', 'excel', 'pdf', 'print'
+                            ],
+                            language: {
+                                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" // Opcional: Idioma en Español
+                            },initComplete: function () {
+                                // Mueve los botones al contenedor especificado
+                                this.api().buttons().container().appendTo('#buttonsContainer');
+                                $('#tblaPlazas_filter').detach().appendTo('#searchContainer').find('label').addClass('mb-0');
+
+                            }
+                        });
+                    }
+                    tableInitialized = 1; // Marcar como inicializado
+                    if (data.Categorias.length > 0) {
+                        var ultimoIndex = data.Categorias.length - 1;
+
+                        // Asumiendo que los datos consolidados están en el último registro
+                        var totalActivo = data.EmpleadosActivos[ultimoIndex];
+                        var totalVacanteDisponible = data.VacantesPorRenuncia[ultimoIndex];
+                        var totalPlaza = data.Total_Puestos[ultimoIndex];
+                        var porcentajeTotal = data.Porcentaje[ultimoIndex].toFixed(2) + '%';
+
+                        // Actualizar los campos KPI
+                        $('#totalActivo').text(totalActivo);
+                        $('#totalVacanteDisponible').text(totalVacanteDisponible);
+                        $('#totalPlaza').text(totalPlaza);
+                        $('#porcentajeTotal').text(porcentajeTotal);
+                    }
+                }
+            }
+            // Cambiar el tipo de gráfico
+            $('#chartTypePlazas').change(function () {
+                cargarGrafico();
+            });
+
+            // Expandir Gráfico
+            $('#expandChartPlazas').click(function () {
+                $('#chartModalPlazas').modal('show');
+                setTimeout(function () {
+                    cargarGraficoAmpliado();
+                }, 500);
+            });
+
+            function cargarGraficoAmpliado() {
+                $.ajax({
+                    url: '@Url.Action("ObtenerDatosGrafico", "ControlPlaza")',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        var selectedType = $('#chartTypePlazasAmpliado').val();
+                        if (selectedType === 'table') {
+                            renderTablePlazasAmpliado(data);
+                        } else {
+                            renderChartPlazas('graficoPlazasAmpliado', selectedType, data);
+                        }                    }
+                });
+            }
+            function renderTablePlazasAmpliado(data) {
+                // Ocultar el gráfico ampliado y mostrar la tabla
+                $('#graficoPlazasAmpliado').hide();
+                $('#tablaPlazasAmpliadoContainer').show();
+
+                // Vaciar el cuerpo de la tabla antes de llenarla
+                $('#tablaPlazasAmpliado tbody').empty();
+
+                // Llenar la tabla con los datos
+                data.Categorias.forEach(function (categoria, index) {
+                    var row = `
+                    <tr>
+                        <td>${categoria}</td>
+                        <td>${data.EmpleadosActivos[index]}</td>
+                        <td>${data.VacantesPorRenuncia[index]}</td>
+                        <td>${data.VacantesNuevas[index]}</td>
+                    </tr>
+                `;
+                    $('#tablaPlazasAmpliado tbody').append(row);
+                });
+
+                // Inicializar DataTables si no está inicializado
+                if (!$.fn.DataTable.isDataTable('#tablaPlazasAmpliado')) {
+                    $('#tablaPlazasAmpliado').DataTable({
+                        responsive: true,
+                        paging: true,
+                        searching: true,
+                        ordering: true,
+                        info: true,
+                        dom: 'Bfrtip',
+                        buttons: [
+                            'copy', 'csv', 'excel', 'pdf', 'print'
+                        ]
+                    });
+                } else {
+                    // Si ya está inicializado, recargar los datos
+                    $('#tablaPlazasAmpliado').DataTable().clear().destroy();
+                    $('#tablaPlazasAmpliado').DataTable({
+                        responsive: true,
+                        paging: true,
+                        searching: true,
+                        ordering: true,
+                        info: true,
+                        dom: 'Bfrtip',
+                        buttons: [
+                            'copy', 'csv', 'excel', 'pdf', 'print'
+                        ]
+                    });
+                }
+            }
+            // Funciones adicionales
+            window.verDetalle = function (plazaId) {
+                $.ajax({
+                    url: '@Url.Action("Detalles", "ControlPlaza")/' + plazaId,
+                    type: 'GET',
+                    success: function (response) {
+                        var htmlContent = `
+                            <h5>Detalles de la Plaza</h5>
+                            <p><strong>Código:</strong> ${response.cod_activ}</p>
+                            <p><strong>Nombre Actividad:</strong> ${response.nombre_actividad}</p>
+                            <p><strong>Gerencia:</strong> ${response.gerencia}</p>
+                            <p><strong>Subgerencia:</strong> ${response.subgerencia}</p>
+                            <p><strong>Coordinación:</strong> ${response.coordinacion_superv}</p>
+                            <p><strong>Área Operativa:</strong> ${response.area_operativa}</p>
+                            <p><strong>Organización:</strong> ${response.organizacion}</p>
+                            <p><strong>Puesto:</strong> ${response.puesto}</p>
+                            <p><strong>Estado Actual:</strong> ${response.estado_actual}</p>
+                            <p><strong>Fecha de Creación:</strong> ${moment(response.fecha_creacion).format('DD/MM/YYYY')}</p>
+                        `;
+                        Swal.fire({
+                            title: 'Detalle de la Plaza',
+                            html: htmlContent,
+                            width: '600px'
+                        });
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'No se pudo cargar el detalle de la plaza.', 'error');
+                    }
+                });
+            };
+
+            window.cambiarEstado = function (plazaId) {
+                Swal.fire({
+                    title: 'Cambiar Estado de la Plaza',
+                    input: 'select',
+                    inputOptions: {
+                        'Pendiente de Aprobación': 'Pendiente de Aprobación',
+                        'Aprobado': 'Aprobado',
+                        'Rechazado': 'Rechazado'
+                    },
+                    inputPlaceholder: 'Seleccione un estado',
+                    showCancelButton: true,
+                    inputValidator: function (value) {
+                        return new Promise(function (resolve) {
+                            if (value) {
+                                resolve();
+                            } else {
+                                resolve('Debe seleccionar un estado');
+                            }
+                        });
+                    }
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("CambiarEstado", "ControlPlaza")',
+                            type: 'POST',
+                            data: { plazaId: plazaId, nuevoEstado: result.value },
+                            success: function (response) {
+                                if (response.success) {
+                                    Swal.fire('Éxito', 'El estado de la plaza ha sido actualizado.', 'success').then(function () {
+                                        tablaPlazas.ajax.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            },
+                            error: function () {
+                                Swal.fire('Error', 'No se pudo cambiar el estado de la plaza.', 'error');
+                            }
+                        });
+                    }
+                });
+            };
+        });
+  function abrirHistorial(positionCode) {
+    // Configurar el DataTable de historial
+    var tablaHistorial = $('#tablaHistorial').DataTable({
+        "destroy": true, // Permite reinicializar el DataTable
+        "ajax": {
+            "url": "@Url.Action("ObtenerHistorialPlaza", "ControlPlaza")",
+            "type": "GET",
+            "datatype": "json",
+            "data": { "codigo": positionCode }
+        },
+        "columns": [
+            {
+                "data": "Nombre_Completo",
+                "title": "Nombre Completo"
+            },
+            {
+                "data": "Fechaingreso",
+                "title": "Fecha Ingreso",
+                "render": function (data) {
+                    return moment(data).format('DD/MM/YYYY');
+                }
+            },
+            {
+                "data": "Fechabaja",
+                "title": "Fecha Fin",
+                "render": function (data) {
+                    return data ? moment(data).format('DD/MM/YYYY') : 'N/A';
+                }
+            }
+        ],
+        "dom": 'Blfrtip',
+        "lengthMenu": [10, 20, 50, 100],
+        "pageLength": 10,
+        "language": {
+            "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+        },
+        "responsive": true,
+        "order": [[0, 'asc']]
+    });
+
+    // Mostrar el modal
+    $('#modalHistorial').modal('show');
+}   </script>
+}

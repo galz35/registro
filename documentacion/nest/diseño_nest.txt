@@ -1,0 +1,214 @@
+================================================================================
+📄 DOCUMENTO: DISEÑO Y ESPECIFICACIÓN TÉCNICA DE BACKEND (NESTJS)
+================================================================================
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\nest\diseño_nest.txt
+Stack: NestJS | Node.js | TypeORM | Microsoft SQL Server (T-SQL)
+================================================================================
+
+Este documento contiene la estructura del proyecto NestJS, el archivo package.json
+de dependencias, y los códigos de configuración de base de datos para conectar 
+con el SQL Server del VPS.
+
+--------------------------------------------------------------------------------
+1. ARCHIVO DE CONFIGURACIÓN DE DEPENDENCIAS (package.json)
+--------------------------------------------------------------------------------
+Archivo base para inicializar el proyecto del backend:
+
+```json
+{
+  "name": "asistencia-despacho-backend",
+  "version": "1.0.0",
+  "description": "API REST para el control de asistencia y despacho del Día del Niño",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/passport": "^10.0.3",
+    "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/typeorm": "^10.0.1",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "mssql": "^10.0.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
+    "sharp": "^0.32.6",
+    "typeorm": "^0.3.17",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.0.0",
+    "@nestjs/schematics": "^10.0.0",
+    "@nestjs/testing": "^10.0.0",
+    "@types/express": "^4.17.17",
+    "@types/multer": "^1.4.10",
+    "@types/node": "^20.3.1",
+    "@types/sharp": "^0.31.1",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.1.3"
+  }
+}
+```
+
+--------------------------------------------------------------------------------
+2. ESTRUCTURA DE ARCHIVOS DE LA API DE NESTJS
+--------------------------------------------------------------------------------
+El proyecto del backend se estructurará de forma modular:
+
+/backend
+  ├── src/
+  │    ├── config/                  # Mapeo de variables de entorno y TypeORM
+  │    │    └── database.config.ts
+  │    ├── auth/                    # Módulos de Login y autenticación JWT
+  │    │    ├── auth.module.ts
+  │    │    ├── auth.controller.ts
+  │    │    ├── auth.service.ts
+  │    │    ├── jwt.strategy.ts
+  │    │    └── dto/
+  │    ├── attendance/              # Asistencia física de los empleados
+  │    │    ├── attendance.module.ts
+  │    │    ├── attendance.controller.ts
+  │    │    ├── attendance.service.ts
+  │    │    └── entities/
+  │    ├── catalog/                 # Catálogo CRUD e Inventario de juguetes
+  │    │    ├── catalog.module.ts
+  │    │    ├── catalog.controller.ts
+  │    │    ├── catalog.service.ts
+  │    │    └── entities/
+  │    ├── dispatch/                # Transacciones de Despacho y Reversión
+  │    │    ├── dispatch.module.ts
+  │    │    ├── dispatch.controller.ts
+  │    │    ├── dispatch.service.ts
+  │    │    └── entities/
+  │    ├── integration/             # Integración con Oracle HCM Cloud
+  │    │    ├── hcm.module.ts
+  │    │    └── hcm.service.ts
+  │    ├── app.module.ts            # Módulo raíz que carga todo
+  │    └── main.ts                  # Punto de entrada de la aplicación
+  ├── .env                          # Variables del sistema (VPS)
+  ├── tsconfig.json
+  └── nest-cli.json
+
+--------------------------------------------------------------------------------
+3. MÓDULO RAÍZ E INTEGRACIÓN CON SQL SERVER (app.module.ts)
+--------------------------------------------------------------------------------
+El módulo principal carga la configuración de base de datos SQL Server y
+los módulos de la aplicación:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { DispatchModule } from './dispatch/dispatch.module';
+import { HcmModule } from './integration/hcm.module';
+
+@Module({
+  imports: [
+    // Carga el archivo .env de forma global
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    
+    // Conexión asíncrona a SQL Server usando TypeORM
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mssql',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT', 1433),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_DATABASE'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: false, // ¡No sincronizar en producción! El script SQL es administrado por sql.txt
+        options: {
+          encrypt: true,
+          trustServerCertificate: true, // Requerido para servidores locales de desarrollo
+        },
+        connectionTimeout: 15000,
+        requestTimeout: 15000,
+        pool: {
+          max: 10,
+          min: 1,
+          idleTimeoutMillis: 30000,
+        },
+      }),
+    }),
+    
+    // Cargar submódulos de la aplicación
+    AuthModule,
+    AttendanceModule,
+    CatalogModule,
+    DispatchModule,
+    HcmModule,
+  ],
+})
+export class AppModule {}
+```
+
+--------------------------------------------------------------------------------
+4. PUNTO DE ENTRADA CON PIPES GLOBALES (main.ts)
+--------------------------------------------------------------------------------
+El bootstrap de la aplicación define el puerto, habilita CORS para la web en React,
+y añade los filtros globales de validación DTO y excepciones SQL Server:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { AppModule } from './app.module';
+import { SqlExceptionFilter } from './config/sql-exception.filter';
+import * as path from 'path';
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // Habilitar CORS para permitir llamadas desde el frontend de React
+  app.enableCors({
+    origin: '*', // En producción, especificar la URL del portal corporativo
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
+  // Habilitar la validación automática de datos en DTOs mediante class-validator
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Limpia campos sobrantes en el request
+      forbidNonWhitelisted: true, // Retorna error si envían propiedades no válidas
+      transform: true, // Transforma tipos de datos automáticamente (ej. string a number)
+    }),
+  );
+
+  // Filtro global para manejo de errores en SQL Server (deadlocks, llaves foráneas)
+  app.useGlobalFilters(new SqlExceptionFilter());
+
+  // Servir la carpeta de fotos WebP de forma estática desde el disco del VPS
+  // URL de acceso: http://vps_ip:puerto/uploads/...
+  app.useStaticAssets('D:\\PROYECTOS_PORTAL\\asistencia_uploads', {
+    prefix: '/uploads',
+  });
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`Backend de Despacho corriendo en: http://localhost:${port}`);
+}
+bootstrap();
+```
+================================================================================

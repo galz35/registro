@@ -1,0 +1,400 @@
+﻿@model Entities.ConsumptionClaro
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+
+
+<script>
+    function OnInit(s, e) {  
+        var selectedProductID = IdUnidad.GetValue();  
+        $.ajax({  
+            url: '@Url.Action("GetEmployeeName")', //"/ConsumptionClaro/GetEmployeeName",  
+            dataType: 'json',  
+            data: {  
+                idUnidad: selectedProductID  
+            },  
+            type: "GET",  
+            cache: false,  
+            success: function (returnedData) {  
+                EmployeeName.SetText(returnedData);
+                EmployeeName.SetReadOnly(true);
+            }  
+        });  
+    }
+
+    function OnSelectedIndexChanged2(s, e) {  
+        var selectedProductID = s.GetValue();  
+        $.ajax({  
+            url: '@Url.Action("GetEmployeeName")', //"/ConsumptionClaro/GetEmployeeName",  
+            dataType: 'json',  
+            data: {  
+                idUnidad: selectedProductID  
+            },  
+            type: "GET",  
+            cache: false,  
+            success: function (returnedData) {  
+                EmployeeName.SetText(returnedData);
+                EmployeeName.SetReadOnly(true);
+            }  
+        });  
+    }
+
+    
+    
+
+
+   
+    function OnSupportUploadComplete(s, e) {
+        if (e.callbackData !== "") {
+            //alert(e.callbackData);
+            clientFileName.SetText(e.callbackData);
+        }
+        else {
+            alert("El archivo seleccionado no fue subido");
+        }
+    }
+
+    function SaveConsumption(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("SaveConsumption")',
+            type: "POST",
+            data: $('#frmConsumption').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditConsumption.Hide();
+                            }
+
+                        });
+                } else {
+                    swal({
+                        title: "Error!",
+                        text: data.message,
+                        icon: "error",
+                        button: "Aceptar",
+                    })
+                    //swal("ERROR!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+                }
+
+
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+    }
+
+
+</script>
+<style type="text/css">
+
+
+.memo * {
+text-transform: uppercase;
+}
+</style>
+
+<div id="eG">
+    @using (Html.BeginForm("SaveConsumption", "ConsumptionClaro", FormMethod.Post, new { id = "frmConsumption" }))
+    {
+        @Html.DevExpress().FormLayout(settings => {
+       settings.Name = "frmEditConsumption";
+       settings.Width = Unit.Percentage(100);
+
+
+       settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+       settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 550;
+
+       settings.ColumnCount = 2;
+
+       settings.Items.Add(m => m.IdCombustibleConsumoClaro, i =>
+       {
+           i.Caption = "Id";
+           i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+
+           });
+       });
+
+       settings.Items.Add(m => m.FechaRegistro, i =>
+       {
+           i.Caption = "Fecha";
+
+           i.NestedExtension().DateEdit(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               //s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedIndicatorChanged";
+               //s.Properties.ClientSideEvents.BeginCallback = "OnIndicatorBeginCallback";
+               //s.Properties.ClientSideEvents.Init = "OnInitInidicator";
+
+           });
+       });
+
+       settings.Items.Add(m => m.IdVoucher, i =>
+       {
+           i.Caption = "Id(Referencia)";
+           //i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+
+           });
+       });
+
+       settings.Items.Add(i =>
+       {
+           i.FieldName = "IdUnidad";
+           i.Name = "IdUnidad";
+           i.Caption = "Unidad";
+           i.NestedExtension().ComboBox(s =>
+           {
+               s.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+               s.Properties.TextField = "DescripcionUnidad";
+               s.Properties.ValueField = "IdUnidad";
+               s.Properties.ValueType = typeof(string);
+               s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.Properties.DataSource = slnRhonline.Data.ExtraPlan.GetCarsByManagement();
+               s.Properties.ClientSideEvents.SelectedIndexChanged = "OnSelectedIndexChanged2";
+               s.Properties.ClientSideEvents.EndCallback = "OnInit";
+           });
+       });
+
+
+       settings.Items.Add(m => m.NombreEmpleado, i =>
+       {
+           i.Caption = "Asignado a";
+           i.Name = "EmployeeName";
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+
+
+           });
+       });
+
+
+       settings.Items.Add(m => m.CantidadLitros, i =>
+       {
+           i.Caption = "Cantidad Litros";
+
+           i.NestedExtension().SpinEdit(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               //s.Properties.DisplayFormatString = "c";
+               s.Width = Unit.Percentage(100);
+           });
+       });
+       settings.Items.Add(m => m.ValorCordobas, i =>
+       {
+           i.Caption = "Monto Factura";
+
+           i.NestedExtension().SpinEdit(s =>
+           {
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               //s.Properties.DisplayFormatString = "c";
+               s.Width = Unit.Percentage(100);
+           });
+       });
+
+       settings.Items.Add(m => m.OdometroInicial, i => {
+           i.Caption = "Odómetro";
+
+           i.NestedExtension().SpinEdit(s => {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width= Unit.Percentage(100);
+
+
+           });
+       });
+
+       settings.Items.Add(i =>
+       {
+           i.FieldName = "IdTipoCombustible";
+           i.Caption = "Combustible";
+           i.NestedExtension().ComboBox(s =>
+           {
+               s.Properties.TextField = "Descripcion";
+               s.Properties.ValueField = "IdCatalogo";
+               s.Properties.ValueType = typeof(int);
+               s.Properties.DataSource = slnRhonline.Data.CatalogoSiaf.GetGasById("07");
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+
+
+           });
+       });
+       settings.Items.Add(i =>
+       {
+           i.FieldName = "Cedula";
+           i.Caption = "Colaborador";
+           i.NestedExtension().ComboBox(s =>
+           {
+               s.Properties.TextField = "NombreNumero";
+               s.Properties.ValueField = "IdPersona";
+               s.Properties.ValueType = typeof(string);
+               s.Properties.DataSource = slnRhonline.Data.ExtraPlan.GetSiafEmployees();
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+               s.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+
+           });
+       });
+
+
+
+       //settings.Items.Add(m => m.Cedula, i =>
+       //{
+       //    i.Caption = "Cedula";
+       //    //i.ClientVisible = false;
+       //    i.NestedExtension().TextBox(s =>
+       //    {
+
+       //        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+       //        s.Properties.ValidationSettings.Display = Display.Dynamic;
+       //        s.ShowModelErrors = true;
+       //        s.Width = Unit.Percentage(100);
+       //        s.ControlStyle.CssClass = "memo";
+
+       //    });
+       //});
+
+
+
+
+
+
+
+       settings.Items.Add(m => m.Estacion, i =>
+       {
+           i.Caption = "Estación";
+           //i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.ControlStyle.CssClass = "memo";
+
+           });
+       });
+
+
+
+       settings.Items.Add(m => m.Municipio, i =>
+       {
+           i.Caption = "Municipio";
+           //i.ClientVisible = false;
+           i.NestedExtension().TextBox(s =>
+           {
+
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.ControlStyle.CssClass = "memo";
+
+           });
+       });
+
+       settings.Items.Add(i =>
+       {
+           i.FieldName = "IdDepartamento";
+           i.Caption = "Departamento";
+           i.NestedExtension().ComboBox(s =>
+           {
+               s.Properties.TextField = "Descripcion";
+               s.Properties.ValueField = "IdCatalogo";
+               s.Properties.ValueType = typeof(int);
+               s.Properties.DataSource = slnRhonline.Data.CatalogoSiaf.GetDepartmentById("02");
+               s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+               s.Properties.ValidationSettings.Display = Display.Dynamic;
+               s.ShowModelErrors = true;
+               s.Width = Unit.Percentage(100);
+               s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+
+
+           });
+       });
+       //settings.Items.AddEmptyItem();
+       settings.Items.Add(i =>
+       {
+           i.Caption = "Subir esquela";
+           i.SetNestedContent(() =>
+           {
+               Html.DevExpress().Label(lbSettings =>
+               {
+                   lbSettings.Name = "Nombre de archivo";
+
+                   lbSettings.Properties.ClientInstanceName = "clientFileName";
+               }).Render();
+               Html.RenderPartial("UploadFileVoucher");
+           });
+       });
+
+       //settings.Items.AddEmptyItem();
+
+   }).GetHtml()
+    }
+<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings => {
+                                              settings.Name = "btnDanger";
+                                              settings.Width = 164;
+                                              settings.Text = "Actualizar";
+                                              settings.RenderMode = ButtonRenderMode.Danger;
+                                              settings.ClientSideEvents.Click = "SaveConsumption";  //"function(s, e) { top.popImage.Hide(); }";
+
+    }).GetHtml()
+</div>
+</div>

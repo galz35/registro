@@ -1,0 +1,183 @@
+﻿@using DevExpress.Web.DemoUtils;
+
+@functions{
+    object GetEditingProfile(ASPxGridView grid)
+    {
+        if (grid.IsNewRowEditing)
+            return new Entities.Profiles();
+        return grid.GetRow(grid.EditingRowVisibleIndex);
+    }
+}
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+
+    var grid = Html.DevExpress().GridView(settings =>
+    {
+        settings.Name = "gvProfile";
+        settings.KeyFieldName = "ProfileId";
+        settings.CallbackRouteValues = new { Controller = "Profiles", Action = "ListPartial" };
+        settings.SettingsEditing.AddNewRowRouteValues = new { Controller = "Profiles", Action = "AddProfile" };
+        settings.SettingsEditing.UpdateRowRouteValues = new { Controller = "Profiles", Action = "EditProfile" };
+        settings.SettingsEditing.DeleteRowRouteValues = new { Controller = "Profiles", Action = "DeleteProfile" };
+        settings.SettingsBehavior.AllowFocusedRow = true;
+
+        settings.Width = Unit.Percentage(100);
+
+        settings.SettingsPager.Visible = true;
+        settings.Settings.ShowGroupPanel = false;
+
+        settings.SettingsBehavior.AllowSelectByRowClick = true;
+        settings.ControlStyle.Border.BorderWidth = 1;
+        settings.Settings.ShowFooter = true;
+        settings.KeyboardSupport = true;
+
+        settings.EnableRowsCache = false;
+        settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+        settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+        settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+        settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+        settings.SettingsBehavior.AllowEllipsisInText = true;
+        settings.ClientSideEvents.Init = "OnInit";
+        settings.ClientSideEvents.EndCallback = "OnEndCallback";
+        settings.SettingsBehavior.ConfirmDelete = true;
+
+        #region Configuracion del popup
+        settings.SettingsEditing.Mode = GridViewEditingMode.PopupEditForm;
+        settings.SettingsPopup.EditForm.Modal = true;
+        settings.SettingsPopup.EditForm.Width = 600;
+        settings.SettingsPopup.EditForm.ShowHeader = true;
+        settings.SettingsText.PopupEditFormCaption = "Edición de perfil";
+        settings.SettingsPopup.EditForm.HorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.SettingsPopup.EditForm.VerticalAlign = PopupVerticalAlign.WindowCenter;
+        #endregion
+
+
+        #region Paging
+        settings.SettingsPager.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Visible = true;
+        settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+        settings.SettingsPager.PageSize = 10;
+        #endregion
+        #region filtering
+        settings.Settings.ShowFilterRow = true;
+
+        settings.Settings.ShowHeaderFilterButton = true;
+        settings.SettingsPopup.HeaderFilter.Height = 200;
+        settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+        settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+        settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+        #endregion
+        #region Sorting
+        settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "ProfileName");
+        #endregion
+        #region Personalizacion de Botones del GridView
+
+        settings.CommandColumn.Visible = true;
+        settings.CommandColumn.ButtonRenderMode = GridCommandButtonRenderMode.Image;
+
+
+
+        settings.CommandColumn.ShowNewButton = false;
+        settings.CommandColumn.ShowNewButtonInHeader = true;
+        settings.SettingsCommandButton.NewButton.Image.Url = Url.Content("~/Content/Icons/Add.png");
+
+        settings.CommandColumn.ShowEditButton = true;
+        settings.SettingsCommandButton.EditButton.Image.Url = Url.Content("~/Content/Icons/Edit.png");
+
+        settings.SettingsBehavior.ConfirmDelete = true;
+        settings.SettingsText.ConfirmDelete = "Seguro quiere borrar el registro?";
+        settings.CommandColumn.ShowDeleteButton = true;
+
+        settings.SettingsCommandButton.DeleteButton.Image.Url = Url.Content("~/Content/Icons/trash.png");
+
+
+
+
+        settings.CommandColumn.Width = Unit.Percentage(10);
+        #endregion
+
+        settings.Columns.Add(col =>
+        {
+            col.FieldName = "ProfileName";
+            col.Caption = "Perfil";
+            col.Width = Unit.Percentage(100);
+            col.AdaptivePriority = 1;
+            col.EditFormSettings.Visible = DefaultBoolean.False;
+
+        });
+
+
+
+        settings.SetEditFormTemplateContent(c =>
+        {
+            Html.DevExpress().FormLayout(flSettings =>
+            {
+
+                flSettings.Name = "FormLayoutUser";
+                flSettings.Width = Unit.Percentage(100);
+
+
+                flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 700;
+
+
+                flSettings.ColCount = 2;
+
+                flSettings.Items.Add(i =>
+                {
+                    i.FieldName = "ProfileName";
+                    i.Caption = "Perfil";
+                    i.NestedExtension().TextBox(s =>
+                    {
+                        s.ShowModelErrors = true;
+                        s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        s.Properties.ValidationSettings.Display = Display.Dynamic;
+                        s.Width = Unit.Percentage(100);
+                        s.Properties.MaxLength = 100;
+
+                    });
+                });
+
+
+
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.AddEmptyItem();
+                flSettings.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                }).SetNestedContent(() =>
+                {
+                    ViewContext.Writer.Write("<div style='float:right'>");
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnUpdate";
+                        btnSettings.Text = "Actualizar";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvProfile.UpdateEdit(); }";
+                    }).Render();
+                    Html.DevExpress().Button(btnSettings =>
+                    {
+                        btnSettings.Name = "btnCancel";
+                        btnSettings.Text = "Cancelar";
+                        btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                        btnSettings.ClientSideEvents.Click = "function(s, e){ gvProfile.CancelEdit(); }";
+                    }).Render();
+                    ViewContext.Writer.Write("</div>");
+                });
+            })
+            .Bind(ViewData["Profile"] ?? GetEditingProfile(c.Grid))
+            .Render();
+        });
+
+    });
+    if (ViewData["EditError"] != null)
+    {
+        grid.SetEditErrorText((string)ViewData["EditError"]);
+    }
+}
+@grid.Bind(Model).GetHtml()
+

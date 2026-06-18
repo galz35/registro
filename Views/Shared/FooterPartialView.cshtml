@@ -1,0 +1,12 @@
+<div class="footerMenu">
+    
+</div>
+<div class="copyright">
+    @*<p>&copy; @DateTime.Now.Year - DataKlas ERP Application</p>*@
+    @Html.DevExpress().Label(settings => {
+    settings.EncodeHtml = false;
+ 
+    settings.Text = DateTime.Now.Year + " &copy; Todos los derechos Reservados ";
+    settings.ControlStyle.ForeColor = System.Drawing.ColorTranslator.FromHtml("#FDFEFE");
+}).GetHtml()
+</div>;

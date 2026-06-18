@@ -1,0 +1,105 @@
+﻿<!-- _NavNotifications.cshtml -->
+<ul class="navbar-nav ml-auto">
+    <!-- Dropdown de Citas Pendientes -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" id="citasDropdown" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-clock"></i>
+            <span class="badge badge-info" id="citasBadge">0</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="citasDropdown">
+            <h6 class="dropdown-header">Citas Pendientes:</h6>
+            <!-- Contenedor interno que se actualizará vía AJAX -->
+            <div id="citasContainer"></div>
+        </div>
+    </li>
+
+    <!-- Dropdown de Solicitudes -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" id="solicitudesDropdown" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-clipboard-list"></i>
+            <span class="badge badge-info" id="solicitudesBadge">0</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="solicitudesDropdown">
+            <h6 class="dropdown-header">Solicitudes:</h6>
+            <!-- Contenedor interno que se actualizará vía AJAX -->
+            <div id="solicitudesContainer"></div>
+        </div>
+    </li>
+</ul>
+
+
+
+
+
+<script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+<script src="~/onlinejs/jquery.dataTables.min.js"></script>
+<script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+<script src="~/onlinejs/dataTables.buttons.min.js"></script>
+<script src="~/onlinejs/buttons.html5.min.js"></script>
+<script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+<script src="~/onlinejs/dataTables.select.min.js"></script>
+<script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+<script src="~/onlinejs/bootstrap.min.js"></script>
+<script src="~/onlinejs/loadingoverlay.min.js"></script>
+<script src="~/onlinejs/dataTables.responsive.min.js"></script>
+<script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+<script src="~/onlinejs/moment.min.js"></script>
+<script src="~/onlinejs/jszip.min.js"></script>
+<script src="~/onlinejs/jquery-ui.js"></script>
+<script src="~/onlinejs/spin.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Llama al controlador local para obtener las notificaciones
+        $.ajax({
+            url: '@Url.Action("GetNotifications", "Notifications")',
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.Error) {
+                    console.error(data.Error);
+                    return;
+                }
+                // Actualiza el badge de citas pendientes
+                $('#citasBadge').text(data.CitaPendienteCount || 0);
+                var citasHtml = '';
+                if (data.CitaPendienteList && data.CitaPendienteList.length > 0) {
+                    $.each(data.CitaPendienteList, function (i, cita) {
+                        citasHtml += '<a class="dropdown-item" href="#">' +
+                            '<div class="d-flex justify-content-between align-items-center">' +
+                            '<span class="font-weight-bold">Cita #' + cita.IdCita + '</span>' +
+                            '<small class="text-muted">' + cita.ObservacionUsuario + '</small>' +
+                            '</div>' +
+                            '</a>';
+                    });
+                } else {
+                    citasHtml = '<a class="dropdown-item" href="#">No hay citas pendientes</a>';
+                }
+                // Actualiza solo el contenedor interno, no todo el dropdown
+                $('#citasContainer').html(citasHtml);
+
+                // Actualiza el badge de solicitudes
+                $('#solicitudesBadge').text(data.SolicitudCount || 0);
+                var solicitudesHtml = '';
+                if (data.SolicitudList && data.SolicitudList.length > 0) {
+                    $.each(data.SolicitudList, function (i, solicitud) {
+                        solicitudesHtml += '<div class="dropdown-item d-flex justify-content-between align-items-center">' +
+                            '<span class="font-weight-bold">' + solicitud.IdUnidad + '</span>' +
+                            '<div>' +
+                            '<button class="btn btn-primary btn-sm mr-1" onclick="visualizarSolicitud(\'' + solicitud.IdCita + '\')">Visualizar</button>' +
+                            '<button class="btn btn-success btn-sm mr-1" onclick="aprobarSolicitud(\'' + solicitud.IdCita + '\')">Aprobar</button>' +
+                            '<button class="btn btn-danger btn-sm" onclick="denegarSolicitud(\'' + solicitud.IdCita + '\')">Denegar</button>' +
+                            '</div>' +
+                            '</div>';
+                    });
+                } else {
+                    solicitudesHtml = '<a class="dropdown-item" href="#">No hay solicitudes</a>';
+                }
+                $('#solicitudesContainer').html(solicitudesHtml);
+            },
+            error: function (xhr, status, error) {
+            console.error("Error al cargar notificaciones: " + error);
+            }
+            });
+            });
+</script>
+

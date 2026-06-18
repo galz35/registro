@@ -1,0 +1,450 @@
+﻿@{
+    ViewBag.Title = "Bandeja de Aprobaciones";
+    string carnetJefe = User.Identity.Name;
+}
+
+<style>
+    :root {
+        --primario: #1a252f; /* Azul noche elegante */
+        --acento: #e1251b; /* Tu rojo base para detalles */
+        --bg-color: #f8f9fc;
+        --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    }
+
+    body {
+        background-color: var(--bg-color);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Hero Simplificado y Elegante */
+    .hero {
+        background: var(--primario);
+        color: #fff;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 10px 25px rgba(26, 37, 47, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            right: -50px;
+            top: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+    .kpi-indicator {
+        background: rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 15px 25px;
+        display: inline-block;
+        border: 1px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(5px);
+    }
+
+        .kpi-indicator .number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .kpi-indicator .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+    /* Tarjeta Principal */
+    .dashboard-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        border: none;
+    }
+
+    /* Tabla Estilizada */
+    .table-custom thead th {
+        border-bottom: 2px solid #eee;
+        border-top: none;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #888;
+        padding-bottom: 15px;
+    }
+
+    .table-custom tbody td {
+        vertical-align: middle;
+        padding: 15px 10px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .table-custom tbody tr:hover {
+        background-color: #fafbfc;
+    }
+
+    .colaborador-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background: var(--gris2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: var(--primario);
+    }
+
+    /* Modal de Decisión */
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        padding: 20px 25px;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #eee;
+        padding: 20px 25px;
+        background: #fff;
+    }
+
+    .item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        background: #fff;
+        transition: 0.2s;
+    }
+
+        .item-row:hover {
+            border-color: #ddd;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+    .qty-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+
+        .qty-control input {
+            width: 45px;
+            border: none;
+            text-align: center;
+            background: transparent;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+            .qty-control input:focus {
+                outline: none;
+            }
+
+    /* Botones de Acción */
+    .btn-action {
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: 0.2s;
+    }
+
+    .btn-approve {
+        background: #10b981;
+        color: white;
+        border: none;
+    }
+
+        .btn-approve:hover {
+            background: #059669;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+    .btn-reject {
+        background: #ef4444;
+        color: white;
+        border: none;
+    }
+
+        .btn-reject:hover {
+            background: #dc2626;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+</style>
+
+<div class="container mt-4 mb-5">
+
+    <div class="hero d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="font-weight-bold mb-2">Bandeja de Jefatura</h2>
+            <p class="mb-0 text-light opacity-75" style="font-size: 1.1rem;">Autorización de dotación para tu equipo.</p>
+        </div>
+        <div class="kpi-indicator text-center">
+            <div class="number" id="kpiPendientes">0</div>
+            <div class="label mt-1">Por Revisar</div>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="font-weight-bold m-0 text-dark">Pendientes de Aprobación</h5>
+            <div class="d-flex gap-2">
+                <input type="text" id="busquedaRapida" class="form-control form-control-sm rounded-pill px-3" placeholder="Buscar empleado..." style="width: 200px;">
+                <button class="btn btn-sm btn-light border rounded-pill px-3 ml-2" onclick="recargarTabla()" title="Actualizar">
+                    <i class="fas fa-sync-alt text-muted"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="tblJefe" class="table table-custom w-100">
+                <thead>
+                    <tr>
+                        <th style="width: 15%">Fecha Solicitud</th>
+                        <th style="width: 35%">Colaborador</th>
+                        <th style="width: 35%">Motivo</th>
+                        <th style="width: 15%" class="text-right">Acción</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlRevision" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+
+            <div class="modal-header d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="badge badge-warning mb-2 px-2 py-1">Revisión Requerida</span>
+                    <h5 class="modal-title font-weight-bold text-dark" id="txtNombreEmp">Cargando...</h5>
+                    <p class="text-muted small mb-0 mt-1"><i class="fas fa-comment-alt mr-1"></i> <span id="txtMotivoEmp"></span></p>
+                </div>
+                <button class="btn btn-sm btn-light rounded-circle" data-dismiss="modal"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-body bg-light">
+                <p class="small font-weight-bold text-muted mb-3 text-uppercase">Artículos Solicitados</p>
+
+                <div id="listaItems" class="mb-4">
+                </div>
+
+                <div class="form-group mb-0">
+                    <label class="small font-weight-bold text-muted">Añadir nota (Opcional)</label>
+                    <textarea id="txtComentarioJefe" class="form-control border-0 shadow-sm" rows="2" placeholder="Ej: Aprobado solo por esta vez..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer d-flex justify-content-between bg-white">
+                <button class="btn btn-action btn-reject" onclick="procesarAccion('Rechazar')">
+                    <i class="fas fa-ban"></i> Rechazar Todo
+                </button>
+                <button class="btn btn-action btn-approve" onclick="procesarAccion('Aprobar')">
+                    <i class="fas fa-check"></i> Autorizar Pedido
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const CARNET_JEFE = "@carnetJefe";
+        let DT_Jefe = null;
+        let ID_ACTIVA = null;
+
+        $(document).ready(function() {
+            initTablaJefe();
+
+            // Buscador rápido personalizado
+            $('#busquedaRapida').on('keyup', function() {
+                DT_Jefe.search(this.value).draw();
+            });
+        });
+
+        // 1. Inicializar la tabla
+        function initTablaJefe() {
+            DT_Jefe = $('#tblJefe').DataTable({
+                ajax: '/Inventario/BandejaJefe?carnetJefe=' + CARNET_JEFE,
+                order: [[0, 'asc']], // Lo más antiguo primero
+                dom: 't<"d-flex justify-content-between mt-3"ip>', // Oculta buscador nativo, deja paginación
+                pageLength: 8,
+                columns: [
+                    {
+                        data: 'FechaCreacion',
+                        render: d => `<span class="text-muted small"><i class="far fa-calendar-alt mr-1"></i>${moment(d).format('DD MMM YYYY')}</span>`
+                    },
+                    {
+                        data: 'Empleado',
+                        render: (d) => `
+                            <div class="colaborador-info">
+                                <div class="avatar-circle">${d.charAt(0)}</div>
+                                <div><span class="font-weight-bold text-dark">${d}</span></div>
+                            </div>`
+                    },
+                    {
+                        data: 'MotivoUsuario',
+                        render: m => `<span class="text-muted" style="font-size: 0.9rem;">${m || 'Sin especificar'}</span>`
+                    },
+                    {
+                        data: 'IdSolicitud',
+                        className: 'text-right',
+                        render: id => `<button class="btn btn-sm btn-dark px-4 rounded-pill font-weight-bold shadow-sm" onclick="abrirRevision(${id})">Revisar</button>`
+                    }
+                ],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json" },
+                initComplete: function(settings, json) {
+                    actualizarKPI(json.data.length);
+                }
+            });
+        }
+
+        // 2. Abrir Modal de Decisión
+        function abrirRevision(id) {
+            ID_ACTIVA = id;
+            $('#txtComentarioJefe').val(''); // Limpiar nota anterior
+
+            // Contexto del empleado
+            const rowData = DT_Jefe.rows().data().toArray().find(x => x.IdSolicitud == id);
+            $('#txtNombreEmp').text(rowData.Empleado);
+            $('#txtMotivoEmp').text(rowData.MotivoUsuario || 'Sin motivo especificado.');
+
+            // Cargar líneas (Dapper)
+            $.get('/Inventario/SolicitudDetalle', { idSolicitud: id }, function(res) {
+                if(res.ok) {
+                    let html = '';
+                    res.data.forEach(d => {
+                        // Diseño de "Item Card" en lugar de tabla HTML tradicional
+                        html += `
+                            <div class="item-row" data-id="${d.IdDetalle}">
+                                <div>
+                                    <strong class="text-dark d-block" style="font-size: 0.95rem;">${d.Nombre}</strong>
+                                    <span class="badge badge-light border text-muted mt-1">${d.Talla}</span>
+                                </div>
+                                <div class="qty-control">
+                                    <span class="small text-muted mr-1">Autorizar:</span>
+                                    <input type="number" class="inp-aprob text-primary" value="${d.CantidadSolicitada}" min="0" max="${d.CantidadSolicitada}">
+                                </div>
+                            </div>`;
+                    });
+                    $('#listaItems').html(html);
+                    $('#mdlRevision').modal('show');
+                }
+            });
+        }
+
+        // 3. Procesar Transacción
+        function procesarAccion(accion) {
+            const mods = [];
+            let totalAprobado = 0;
+
+            // Recolectar lo que el jefe dejó en los inputs
+            $('#listaItems .item-row').each(function() {
+                const cant = parseInt($(this).find('.inp-aprob').val());
+                mods.push({
+                    IdDetalle: $(this).data('id'),
+                    CantAprob: cant
+                });
+                totalAprobado += cant;
+            });
+
+            // Lógica de UX: Si le da aprobar pero todo está en cero.
+            if(accion === 'Aprobar' && totalAprobado === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Aprobación vacía',
+                    text: 'Has dejado todas las cantidades en 0. Si no deseas autorizar nada, utiliza el botón rojo de Rechazar.'
+                });
+                return;
+            }
+
+            // Confirmación visual con SweetAlert
+            const isApprove = accion === 'Aprobar';
+            Swal.fire({
+                title: isApprove ? '¿Autorizar Pedido?' : '¿Rechazar Pedido?',
+                text: isApprove ? "La solicitud pasará a bodega para su entrega." : "El empleado será notificado del rechazo.",
+                icon: isApprove ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonColor: isApprove ? '#10b981' : '#ef4444',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: isApprove ? 'Sí, Autorizar' : 'Sí, Rechazar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    $.post('/Inventario/JefeAprobarRechazar', {
+                        idSolicitud: ID_ACTIVA,
+                        carnetJefe: CARNET_JEFE,
+                        accion: accion,
+                        comentario: $('#txtComentarioJefe').val(),
+                        detallesModificadosJson: JSON.stringify(mods)
+                    }, function(res) {
+                        if(res.ok) {
+                            $('#mdlRevision').modal('hide');
+
+                            // Recargar y actualizar globo numérico
+                            DT_Jefe.ajax.reload(function(json) {
+                                actualizarKPI(json.data.length);
+                            });
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: isApprove ? '¡Autorizado!' : 'Rechazado',
+                                text: 'El flujo de la solicitud ha sido actualizado.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire('Error del sistema', res.msg, 'error');
+                        }
+                    });
+
+                }
+            });
+        }
+
+        function recargarTabla() { DT_Jefe.ajax.reload(); }
+        function actualizarKPI(num) { $('#kpiPendientes').text(num); }
+
+    </script>
+}

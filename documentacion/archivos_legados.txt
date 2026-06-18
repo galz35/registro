@@ -1,0 +1,126 @@
+================================================================================
+📄 MAPEO Y REFERENCIA DE ARCHIVOS LEGADOS DE ASISTENCIA Y DESPACHO
+================================================================================
+Archivo: archivos_legados.txt
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\archivos_legados.txt
+Propósito: Identificar y mapear las responsabilidades de los archivos del sistema anterior
+================================================================================
+
+Este documento sirve como guía de referencia para ubicar, comprender y mapear 
+los archivos del sistema legacy (ASP.NET MVC + Python + Dapper) que se encargaban 
+del registro de asistencia y del despacho de juguetes para el Día del Niño.
+
+--------------------------------------------------------------------------------
+1. COMPONENTES FRONTEND: VISTAS CSHTML (ASP.NET MVC Vistas)
+--------------------------------------------------------------------------------
+Ubicación Física en VPS: `d:\PROYECTOS_PORTAL\asistencia\Views\EventRegistration\`
+
+A. Registro de Asistencia: EventoLiga.cshtml (25.5 KB)
+   - Función principal: Pantalla utilizada para registrar la asistencia física
+     de los colaboradores a los eventos corporativos (ej. ligas de fútbol,
+     carreras, y el evento del Día del Niño).
+   - Mecanismo en el censo:
+     * El operador ingresa el carnet del colaborador.
+     * Al guardar, si el ID del evento es de tipo Día del Niño (IDs 193 o 194),
+       la vista ejecuta una redirección automática mediante Javascript / jQuery:
+       `window.location.href = '/EventRegistration/DespachoDiaNino?carnet=' + carnet;`
+     * Esto automatiza el paso de "Marcar Asistencia" a "Entregar Regalos" en 
+       una sola secuencia fluida.
+
+B. Gestión de Despacho: DespachoDiaNino.cshtml (50.7 KB)
+   - Función principal: Interfaz de usuario exclusiva para el Día del Niño.
+   - Responsabilidades dentro del archivo:
+     * Carga y renderizado del catálogo de juguetes mediante un AJAX al iniciar.
+     * Búsqueda del colaborador a través del parámetro en la URL (?carnet=XXX).
+     * Renderizado de la ficha del colaborador (Nombre, Gerencia, Ubicación) y
+       su foto de empleado consumiendo la API de Oracle HCM en Base64.
+     * Renderizado de las Tarjetas de Hijos (para cada niño muestra: nombre, 
+       edad, género, categoría de edad y una imagen del regalo sugerido).
+     * Modal interactivo del Catálogo CRUD: Ventana emergente con formulario 
+       para crear/editar juguetes, subir fotos Base64 y ver existencias.
+     * Tablero de avance: Barras de progreso de entregas por categorías de edad.
+     * Botón para descargar el reporte PDF consolidado.
+
+C. Acceso y Listas de Eventos: List.cshtml (9.7 KB) y ListPartial.cshtml (17.1 KB)
+   - Función principal: Pantalla del listado general de eventos activos del portal.
+   - Responsabilidades dentro del archivo:
+     * Renderizan la tabla de eventos activos de asistencia.
+     * Integran lógica condicional en la vista (Razor) que evalúa el ID del evento:
+       `if (item.Id == 193 || item.Id == 194) { ... }`
+     * Si coincide con Día del Niño, inyectan un botón con icono de regalo para 
+       acceder directamente a la pantalla de despacho `DespachoDiaNino.cshtml`.
+
+--------------------------------------------------------------------------------
+2. COMPONENTES BACKEND: CONTROLADORES Y MODELOS C#
+--------------------------------------------------------------------------------
+Ubicación Física en VPS: `d:\PROYECTOS_PORTAL\asistencia\Controllers\`
+
+A. EventRegistrationController.cs (706 KB / 3,312 líneas)
+   - Es el controlador monolítico principal. Maneja las peticiones AJAX de las 
+     vistas y realiza la lectura/escritura en base de datos.
+   - Métodos clave del Despacho y sus responsabilidades (Líneas 2,940 a 3,249):
+     1. `DespachoDiaNino()`: Retorna la vista HTML al navegador.
+     2. `GetHijosParaDespacho(string carnet)`: Consulta SQL Server mediante 
+        Dapper para traer los hijos de un empleado. Contiene la lógica del JOIN 
+        dinámico para sugerir el juguete basado en rango de edad y género 
+        (con fallback unisex 'TODOS').
+     3. `RegistrarEntregaJuguete(int id, bool entregado)`: Modifica el bit 
+        `Entregado` a 1 o 0, y guarda la fecha y usuario logueado en sesión.
+     4. `ObtenerResumenInventario()`: Consulta Dapper agrupada por categorías 
+        de edad para el dashboard.
+     5. `ObtenerCatalogoCompleto()`: Devuelve todos los juguetes con fotos Base64.
+     6. `GuardarJugueteCatalogo(...)`: Valida duplicados, guarda o edita juguetes.
+     7. `EliminarJugueteCatalogo(int id)`: Borra el juguete de la base de datos.
+     8. `DescargarReporteDespachoPDF()`: Genera reporte en PDF horizontal con iTextSharp.
+     9. `GetEmployeePhoto(string carnet)`: Hace la petición HTTP con Basic Auth 
+        a Oracle HCM Cloud para obtener la foto en Base64 del colaborador.
+
+B. Modelos inline (Líneas 3,275 a 3,311):
+   - Mapean las columnas de la BD a objetos C#:
+     * `DespachoHijoModel` (Campos del censo y estado de entrega).
+     * `CatalogoJugueteModel` (Campos de juguetes y fotos).
+     * `ResumenInventarioModel` (Conteo para gráficos de barra).
+
+--------------------------------------------------------------------------------
+3. SCRIPTS AUXILIARES DE CARGA (PYTHON)
+--------------------------------------------------------------------------------
+Utilizados originalmente para la puesta a punto y mantenimiento de los datos:
+
+A. db_setup.py:
+   - Responsabilidad: Script ejecutable en el servidor que lee la hoja de cálculo 
+     Excel `DATAS ANALIZADAS PADRE_HIJOS.xlsx` con los 892 niños iniciales, se 
+     conecta a la base de datos SQL Server y realiza la inserción inicial.
+
+B. add_photo_column.py:
+   - Responsabilidad: Script de migración en Python que ejecuta la sentencia DDL:
+     `ALTER TABLE tblCatalogoJuguetesDiaNino ADD FotoBase64 VARCHAR(MAX) NULL;`
+     Esto preparó el catálogo antiguo para soportar fotos embebidas directamente
+     en la base de datos.
+
+--------------------------------------------------------------------------------
+4. DIAGRAMA DE INTERACCIÓN SÍNCRONA LEGADA (CSHTML <-> C# <-> SQL)
+--------------------------------------------------------------------------------
+Este flujo muestra cómo interactuaban los archivos legados entre sí:
+
+```
+[ Vista List.cshtml ] (Detección Evento 193/194)
+      │
+      ▼ (Presiona Botón Regalo)
+[ Vista DespachoDiaNino.cshtml ]
+      │
+      ├─► (AJAX GET) ─► [ EventRegistrationController.cs / GetHijosParaDespacho ]
+      │                                       │
+      │                                       ▼ (Dapper Query a SQL Server)
+      │                                 [ dbo.tblDespachoJuguetesDiaNino ]
+      │
+      ├─► (AJAX GET) ─► [ EventRegistrationController.cs / GetEmployeePhoto ]
+      │                                       │
+      │                                       ▼ (REST HTTPS Request)
+      │                                 [ Oracle HCM Cloud API ]
+      │
+      └─► (AJAX POST) ─► [ EventRegistrationController.cs / RegistrarEntregaJuguete ]
+                                              │
+                                              ▼ (Dapper UPDATE a SQL Server)
+                                        [ dbo.tblDespachoJuguetesDiaNino ]
+```
+================================================================================

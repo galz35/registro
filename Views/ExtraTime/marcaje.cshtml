@@ -1,0 +1,403 @@
+﻿@{
+    var carnet = ViewBag.Carnet as string;   /* lo manda el controller */
+}
+<link href="~/onlinecss/leaflet.css" rel="stylesheet" />
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Reporte de marcas – semana pasada</h6>
+    </div>
+
+    <div class="card-body">
+        <table id="tblMarcas" class="table table-bordered table-hover nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Acciones</th>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Ausencia</th>
+                    <th>Estado</th>
+                    <th>Fuentes</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!-- modal detalle -->
+<div class="modal fade" id="modalDetalle" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Detalle de marcas</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table id="tblDetalle" class="table table-sm table-striped w-100">
+                    <thead><tr><th>Marca</th></tr></thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- modal mapa -->
+<div class="modal fade" id="modalMapa" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Ubicación de marcas</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="mapaMarcas" style="height:400px"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <!-- Orden correcto y sin duplicados -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script> <!-- bundle incluye Popper -->
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+
+    <script src="~/onlinejs/leaflet.js"></script>
+
+    <script>
+        $(function () {
+            let mapaInstance = null; // limpia mapa previo
+
+            // DataTable principal
+            var tabla = $('#tblMarcas').DataTable({
+                ajax: {
+                    url: '@Url.Action("ReporteMarcasJson", "Extratime", new { carnet = carnet })',
+                    type: 'GET',
+                    dataSrc: 'data',
+                    beforeSend: function () {
+                        $.LoadingOverlay("show", { image: "", text: "Cargando marcas...", textAutoResize: true, size: 14 });
+                    },
+                    complete: function () { $.LoadingOverlay("hide"); },
+                    error: function () {
+                        $.LoadingOverlay("hide");
+                        Swal.fire("Error", "No se pudo cargar la tabla de marcas.", "error");
+                    }
+                },
+                columns: [
+                    {
+                        data: null, orderable: false,
+                        render: function (r) {
+                            const fechaFmt = moment(r.Fecha).format('YYYY-MM-DD');
+                            const btnDetalle = `
+                                <a class="dropdown-item accion-detalle"
+                                   data-cod="${r.Codigo}" data-fecha="${fechaFmt}">
+                                   <i class="fas fa-search text-info"></i> Detalle
+                                </a>`;
+                            const btnMapa = (r.Fuente && r.Fuente.indexOf('WEB') !== -1)
+                                ? `<a class="dropdown-item accion-mapa"
+                                      data-cod="${r.Codigo}" data-fecha="${fechaFmt}">
+                                      <i class="fas fa-map-marker-alt text-success"></i> Ver mapa
+                                   </a>` : '';
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle"
+                                            data-toggle="dropdown" aria-haspopup="true"
+                                            aria-expanded="false">
+                                        Acción
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        ${btnDetalle}${btnMapa}
+                                    </div>
+                                </div>`;
+                        }
+                    },
+                    { data: 'Codigo' },
+                    { data: 'Nombre' },
+                    { data: 'Fecha', render: function (d) { return moment(d).format('DD/MM/YYYY'); } },
+                    { data: 'HoraEntrada' },
+                    { data: 'HoraSalida' },
+                    { data: 'Ausencia' },
+                    { data: 'EstadoMarca' },
+                    { data: 'Fuente' }
+                ],
+                responsive: true,
+                language: { url: '@Url.Content("~/Scripts/datatable.es-ES.json")' },
+                pageLength: 10,
+                lengthMenu: [10, 20, 50, 100],
+                initComplete: function () {
+                    // Dropdown estable (evita cierre inmediato)
+                    $('#tblMarcas tbody').on('click', '.dropdown-toggle', function (e) {
+                        e.stopPropagation();
+                        $(this).next('.dropdown-menu').toggleClass('show');
+                    });
+                    $(document).on('click', function (e) {
+                        if (!$(e.target).closest('.dropdown-menu, .dropdown-toggle').length) {
+                            $('.dropdown-menu').removeClass('show');
+                        }
+                    });
+                }
+            });
+
+            // DataTable del modal de detalle
+            var tblDetalle = $('#tblDetalle').DataTable({
+                columns: [{ data: 'Marca', render: function (d) { return moment(d).format('HH:mm:ss'); } }],
+                paging: false, searching: false, info: false
+            });
+
+            // Acción: Ver Detalle
+// === FIX para el error: "Unexpected token '<'" y "Cannot read properties of undefined (reading 'length')" ===
+// Causas típicas:
+// 1) El endpoint devuelve HTML (login/404/stacktrace) en vez de JSON -> token '<' al parsear.
+// 2) Estructura inesperada (resp.data undefined o no es array) -> DataTables revienta en rows.add().
+
+// Reemplaza SOLO el handler de "Ver Detalle" por este bloque robusto:
+$('#tblMarcas tbody').on('click', '.accion-detalle', function () {
+  const cod   = $(this).data('cod');
+  const fecha = $(this).data('fecha'); // YYYY-MM-DD
+
+  $.ajax({
+    url: '@Url.Action("DetalleDiaJson", "Extratime")',
+    type: 'GET',
+    dataType: 'json',            // <-- obliga a JSON (si no es JSON, cae en error)
+    cache: false,
+    data: { codigo: cod, fecha: fecha },
+    beforeSend: function () {
+      $.LoadingOverlay("show", { image: "", text: "Cargando registro...", textAutoResize: true, size: 14 });
+    }
+  })
+  .done(function (resp, status, xhr) {
+    // 1) Valida que sea JSON (aun con dataType: 'json', servidores mal configurados pueden colar HTML)
+    // content-type correcto debe contener "application/json"
+    const ct = (xhr.getResponseHeader('content-type') || '').toLowerCase();
+    if (!ct.includes('application/json')) {
+      // Intento detectar HTML (token '<')
+      const raw = (resp && resp.length && typeof resp === 'string') ? resp : '';
+      const fragmento = (raw && raw.substr) ? raw.substr(0, 200) : JSON.stringify(resp).substr(0, 200);
+      Swal.fire('Respuesta no JSON', 'El servidor devolvió HTML o un login. Revisa sesión/Authorize.\n' + fragmento, 'error');
+      return;
+    }
+
+    // 2) Normaliza estructura para DataTables
+    // Esperado: resp = { data: [...] }  donde data es array
+    let rows = [];
+    if (resp && Array.isArray(resp.data)) {
+      rows = resp.data;
+    } else if (Array.isArray(resp)) {
+      // fallback si el server devuelve array directo
+      rows = resp;
+    } else {
+      // si viene un escalar/lista de horas, lo mapeamos a objetos { Marca: ... }
+      if (resp && resp.data != null && !Array.isArray(resp.data)) {
+        // ejemplo: resp.data = "08:01,17:05"
+        const parts = String(resp.data).split(',').map(s => s.trim()).filter(Boolean);
+        rows = parts.map(v => ({ Marca: v }));
+      }
+    }
+
+    // 3) Asegura que tblDetalle existe y tiene la columna 'Marca'
+    if (!window.tblDetalle || typeof window.tblDetalle.clear !== 'function') {
+      // (Re)crea el DT minimal si no estaba
+      window.tblDetalle = $('#tblDetalle').DataTable({
+        destroy: true,
+        columns: [{ data: 'Marca', render: d => moment(d).format('HH:mm:ss') }],
+        paging: false, searching: false, info: false
+      });
+    }
+
+    // 4) Si el servidor manda objetos con otra propiedad (por ejemplo 'Hora' o 'MarcaHora'), mapeamos:
+    if (rows.length && !('Marca' in rows[0])) {
+      rows = rows.map(x => {
+        const v = x.Marca ?? x.Hora ?? x.MarcaHora ?? x.HoraMarca ?? x.hora ?? x.marca ?? '';
+        return { Marca: v };
+      });
+    }
+
+    // 5) Carga segura en DataTables
+    window.tblDetalle.clear().rows.add(rows).draw();
+    $('#modalDetalle').modal('show');
+  })
+  .fail(function (xhr) {
+    // Si vino HTML (login/404/stacktrace), lo detectamos aquí
+    const ct = (xhr.getResponseHeader && xhr.getResponseHeader('content-type') || '').toLowerCase();
+    if (ct.includes('text/html')) {
+      Swal.fire('Error', 'El endpoint devolvió HTML (posible sesión expirada o ruta incorrecta).', 'error');
+    } else {
+      Swal.fire('Error', 'No se pudo obtener el detalle de marcas.', 'error');
+    }
+  })
+  .always(function () { $.LoadingOverlay("hide"); });
+});
+
+            // Acción: Ver Mapa (GPS)
+       // ✅ FIX: mapa dentro de modal → crear el mapa SOLO cuando el modal ya está visible
+// Causa del “se ve máscara / no carga tiles”: Leaflet calcula tamaño con el modal oculto.
+// Solución: usar shown.bs.modal + invalidateSize() y no depender de setTimeout.
+ // Global
+            window.mapaInstance = null; // instancia global del mapa
+
+            // Helper robusto: "12.345,-86.25" -> [12.345, -86.25] o null
+            function toLatLng(s) {
+                try {
+                    const [a, b] = String(s || '').split(',').map(v => Number(String(v).trim()));
+                    return (Number.isFinite(a) && Number.isFinite(b)) ? [a, b] : null;
+                } catch { return null; }
+            }
+
+// Quita handlers previos y registra el nuevo
+$('#tblMarcas tbody').off('click.accionMapa').on('click.accionMapa', '.accion-mapa', function () {
+  const cod   = $(this).data('cod');
+  const fecha = $(this).data('fecha'); // YYYY-MM-DD
+
+  // Limpia mapa previo y contenedor
+  if (window.mapaInstance) { window.mapaInstance.remove(); window.mapaInstance = null; }
+  const $div = $('#mapaMarcas').empty().css('height', '400px');
+
+  $.LoadingOverlay("show", { image: "", text: "Cargando mapa...", size: 14 });
+
+  // Pide datos
+  $.get('@Url.Action("GetMarcaWebClockDetalle", "Extratime")', { carnet: cod, fecha: fecha })
+    .done(function (resp) {
+      const d = (resp && resp.data) ? resp.data : {};
+      const hasGPS = !!(d.geo_entrada || d.geo_salidad);
+      const motivo = d.geoex_ent || d.geoex_sal || "";
+      const tolMts = 150; // radio de tolerancia para esperado vs real
+
+      if (!hasGPS) {
+        // Mensaje simple si no hay coordenadas
+        $div.html(
+          '<div class="alert alert-warning">Sin datos de ubicación para este día.<br>' +
+          '<b>Entrada:</b> ' + (d.Entrada || '-') + '<br>' +
+          '<b>Salida:</b> '  + (d.Salida  || '-') + '<br>' +
+          (motivo ? '<b>Motivo:</b> ' + motivo : '') + '</div>'
+        );
+      }
+
+      // Crea mapa CUANDO el modal ya es visible (evita addTo(null) y tamaños 0)
+      $('#modalMapa').off('shown.bs.modal').on('shown.bs.modal', function () {
+        // Inicializa mapa
+        window.mapaInstance = L.map('mapaMarcas').setView([12.12, -86.25], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.mapaInstance);
+
+        const bounds = [];
+        let esperadoLatLng = null;
+
+        // ===== Punto ESPERADO (azul) + círculo tolerancia =====
+        if (d.lat_esperada != null && d.lon_esperada != null &&
+            Number.isFinite(Number(d.lat_esperada)) && Number.isFinite(Number(d.lon_esperada))) {
+          const latE = Number(d.lat_esperada), lonE = Number(d.lon_esperada);
+          esperadoLatLng = [latE, lonE];
+
+          // Centro esperado (azul)
+          L.circleMarker(esperadoLatLng, {
+            radius: 6, color: '#0d6efd', weight: 2, fillColor: '#0d6efd', fillOpacity: 0.9
+          }).addTo(window.mapaInstance)
+            .bindTooltip('Esperado', { permanent: true, direction: 'top', offset: [0, -8] })
+            .bindPopup('<b>Esperado:</b> ' + (d.nombre_ubicacion || '(sin nombre)') + '<br>' + latE + ', ' + lonE);
+
+          // Radio tolerancia
+          L.circle(esperadoLatLng, { radius: tolMts, color: '#0d6efd', fill: false }).addTo(window.mapaInstance);
+          bounds.push(esperadoLatLng);
+        }
+
+        // ===== ENTRADA (verde) / SALIDA (rojo) =====
+        const pEnt = d.geo_entrada ? toLatLng(d.geo_entrada) : null;
+        const pSal = d.geo_salidad ? toLatLng(d.geo_salidad) : null;
+
+        // utilidades para popup
+        const distToEsperado = (p) => (esperadoLatLng ? Math.round(L.latLng(p).distanceTo(esperadoLatLng)) : null);
+        const badge = (m) => (m != null)
+          ? (m <= tolMts ? ' <span class="text-success">[OK]</span>' : ' <span class="text-danger">[Fuera de rango]</span>')
+          : '';
+
+        // Si ambos existen y están ~en el mismo lugar (<= 5 m), unificamos
+        if (pEnt && pSal && L.latLng(pEnt).distanceTo(pSal) <= 5) {
+          const dEsperado = distToEsperado(pEnt);
+          const popup =
+            '<b>Entrada & Salida (mismo lugar)</b>' +
+            '<br><u>Entrada:</u> ' + (d.Entrada || '') + ' — ' + (d.device_entrada || '') +
+            '<br><u>Salida:</u> '  + (d.Salida  || '') + ' — ' + (d.device_salidad || '') +
+            (dEsperado != null ? ('<br><b>Δ a esperado:</b> ' + dEsperado + ' m' + badge(dEsperado)) : '');
+
+          // Morado para combinado
+          L.circleMarker(pEnt, { radius: 9, color:'#6f42c1', weight:2, fillColor:'#6f42c1', fillOpacity:0.9 })
+            .addTo(window.mapaInstance)
+            .bindTooltip('Entrada & Salida', { permanent:true, direction:'top', offset:[0,-10] })
+            .bindPopup(popup);
+
+          bounds.push(pEnt);
+        } else {
+          // ENTRADA (si existe)
+          if (pEnt) {
+            const dEntEsperado = distToEsperado(pEnt);
+            const extraEnt = (dEntEsperado != null)
+              ? ('<br><b>Δ distancia:</b> ' + dEntEsperado + ' m' + badge(dEntEsperado)) : '';
+            L.circleMarker(pEnt, { radius: 8, color:'#1e7e34', weight:2, fillColor:'#28a745', fillOpacity:0.9 })
+              .addTo(window.mapaInstance)
+              .bindTooltip('Entrada', { permanent:true, direction:'top', offset:[0,-10] })
+              .bindPopup('<b>Entrada</b><br>' + (d.Entrada || '') + '<br>' + (d.device_entrada || '') + extraEnt);
+            bounds.push(pEnt);
+          } else if (d.geoex_ent) {
+            $div.append('<div class="alert alert-info">Entrada: ' + (d.Entrada || '-') +
+                        '<br><b>Motivo:</b> ' + d.geoex_ent + '</div>');
+          }
+
+          // SALIDA (si existe)
+          if (pSal) {
+            const dSalEsperado = distToEsperado(pSal);
+            const extraSal = (dSalEsperado != null)
+              ? ('<br><b>Δ distancia:</b> ' + dSalEsperado + ' m' + badge(dSalEsperado)) : '';
+            L.circleMarker(pSal, { radius: 8, color:'#b21f2d', weight:2, fillColor:'#dc3545', fillOpacity:0.9 })
+              .addTo(window.mapaInstance)
+              .bindTooltip('Salida', { permanent:true, direction:'top', offset:[0,-10] })
+              .bindPopup('<b>Salida</b><br>' + (d.Salida || '') + '<br>' + (d.device_salidad || '') + extraSal);
+            bounds.push(pSal);
+          } else if (d.geoex_sal) {
+            $div.append('<div class="alert alert-info">Salida: ' + (d.Salida || '-') +
+                        '<br><b>Motivo:</b> ' + d.geoex_sal + '</div>');
+          }
+        }
+
+        // Encadre y ajuste tamaño (modal visible)
+        if (bounds.length) {
+          window.mapaInstance.fitBounds(L.latLngBounds(bounds).pad(0.2));
+        }
+        setTimeout(() => window.mapaInstance.invalidateSize(true), 50);
+
+        // Leyenda (opcional)
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+          const div = L.DomUtil.create('div', 'info legend');
+          div.style.background = 'white'; div.style.padding='4px 8px'; div.style.borderRadius='6px';
+          div.innerHTML =
+            '<div><span style="display:inline-block;width:10px;height:10px;background:#28a745;border:2px solid #1e7e34;border-radius:50%;margin-right:6px;"></span>Entrada</div>'+
+            '<div><span style="display:inline-block;width:10px;height:10px;background:#dc3545;border:2px solid #b21f2d;border-radius:50%;margin-right:6px;"></span>Salida</div>'+
+            '<div><span style="display:inline-block;width:10px;height:10px;background:#0d6efd;border:2px solid #0d6efd;border-radius:50%;margin-right:6px;"></span>Esperado</div>'+
+            '<div style="margin-top:2px;"><span style="display:inline-block;width:10px;height:10px;border:2px solid #0d6efd;border-radius:50%;margin-right:6px;"></span>Tolerancia ' + tolMts + ' m</div>';
+          return div;
+        };
+        legend.addTo(window.mapaInstance);
+      }).modal('show'); // abre modal y dispara 'shown'
+    })
+    .fail(function () {
+      Swal.fire("Error", "Fallo obteniendo geolocalización", "error");
+    })
+    .always(function () { $.LoadingOverlay("hide"); });
+});
+        });
+    </script>
+}

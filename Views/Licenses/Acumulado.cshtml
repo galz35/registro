@@ -1,0 +1,1549 @@
+﻿@{
+    ViewBag.Title = "Control de Plazas";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+@{
+
+
+    Entities.Employees employee = (Entities.Employees)Session["User"];
+    //string imgPic = employee.Picture == null ? "~/Content/Icons/Add.png" : String.Format("data:image/jpg;base64", Convert.ToBase64String(employee.Picture));
+
+
+}
+<!-- CSS de DataTables, Bootstrap, Highcharts y Fancybox -->
+<link href="~/onlinecss/jquery.fancybox.min.css" rel="stylesheet" />
+<link href="~/onlinecss/highcharts.css" rel="stylesheet" />
+
+<!-- Bootstrap Icons (Opcional, para mejores iconos) -->
+
+<style>
+    /* Estilos personalizados */
+    body {
+        background-color: #f4f6f9;
+        color: #333333;
+    }
+
+    .card {
+        background-color: #ffffff;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+
+    .card-header {
+        background-color: #ffffff;
+        color: #333333;
+        border-bottom: none;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .card h6, .h3, .h6 {
+        color: #333333;
+    }
+    .dropdown-menu {
+        position: absolute !important; /* Asegura que el menú se posicione relativo al viewport */
+        will-change: transform; /* Mejora el rendimiento al permitir cambios de posición */
+        z-index: 1050; /* Coloca el menú por encima de otros elementos */
+    }
+
+    .table-responsive {
+        overflow: visible; /* Permite que el contenido desborde fuera del contenedor de la tabla */
+    }
+
+    .card-body {
+        position: relative; /* Asegura que el dropdown se posicione relativo al contenedor inmediato */
+    }
+
+    .kpi-card {
+        background-color: #ffffff;
+        color: #333333;
+        border-left: 0.25rem solid #ff4d4d;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+        .kpi-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+            .kpi-card .card-body .icon {
+                font-size: 3em;
+                opacity: 0.7;
+                color: #ff4d4d;
+                margin-top: 10px;
+            }
+
+    .animated {
+        animation-duration: 1s;
+        animation-fill-mode: both;
+    }
+
+    .fadeInUp {
+        animation-name: fadeInUp;
+    }
+
+    .highcharts-background {
+        fill: #ffffff;
+    }
+
+    .modal-dialog.modal-xl {
+        max-width: 95% !important;
+        width: 95% !important;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        color: #333333;
+        border-radius: 10px;
+    }
+
+    .chart-type-selector {
+        margin-bottom: 15px;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f9fafb;
+    }
+
+    .table tbody tr td {
+        font-size: 0.9em;
+        text-align: left;
+    }
+
+    .table thead th {
+        background-color: #ff4d4d;
+        color: white;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .progress {
+        height: 20px;
+    }
+
+    .progress-bar {
+        font-size: 0.9em;
+        line-height: 20px;
+    }
+
+    table.display tbody tr:hover {
+        background-color: #e2e8f0;
+    }
+
+    .dt-buttons .btn {
+        margin-right: 5px;
+    }
+
+    .kpi-card:hover {
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+
+    #graficoAcumuladoGerencia, #graficoAcumuladoPorGerenciaPie {
+        height: 600px;
+        margin: 0 auto;
+    }
+
+    #plazasTab .nav-link {
+        color: black !important; /* Color de letra negro por defecto */
+    }
+
+        /* Opcional: Cambiar color al estar activo o en hover */
+        #plazasTab .nav-link:hover,
+        #plazasTab .nav-link.active {
+            color: black !important; /* Cambia el color al azul estándar de Bootstrap o elige otro */
+        }
+</style>
+
+<div class="container-fluid">
+    <!-- Dashboard KPIs -->
+    <!-- Gráficos de Acumulado por Gerencia -->
+
+
+    <div class="nav-tabs-custom" style="@((employee.GERENCIA.Contains("RECURSOS HUMANOS") || employee.cargo.Contains("DIRECTOR PAIS")==true|| employee.GERENCIA.Contains("NI DIRECCION PAIS")) ? "" : "display:none;")">
+        <ul class="nav nav-tabs" id="plazasTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" href="#tab-acumulado" data-toggle="tab">Acumulado de Vacaciones</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="#tab-porcentaje" data-toggle="tab">Avance en registro de Programación</a>
+            </li>
+
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="tab-acumulado">
+                <div id="graficoAcumuladoGerenciaBar"></div>
+            </div>
+
+            <div class="tab-pane" id="tab-porcentaje">
+                <div class="container mt-3">
+                    <form id="formFechasPorcentaje">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="fechaInicio">Fecha Inicio</label>
+                                <input type="date" id="fechaInicio" class="form-control" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="fechaFin">Fecha Fin</label>
+                                <input type="date" id="fechaFin" class="form-control" required>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" id="btnGenerarPorcentaje" class="btn btn-primary">
+                                    Generar Gráfico
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div id="graficoPorcentajeSinProgramacion" class="mt-4"></div>
+            </div>
+
+        </div>
+    </div>
+
+    @if (employee.GERENCIA.Contains("RECURSOS HUMANOS") == true || employee.cargo.Contains("DIRECTOR PAIS")==true || employee.GERENCIA.Contains("NI DIRECCION PAIS"))
+    {
+        <a href="#" class="btn btn-primary" data-toggle="modal" data-target="#modalRangoFechas">
+            Descargar Planificación de Vacaciones pendiente
+        </a>
+        <a href="#" class="btn btn-primary" data-toggle="modal" data-target="#modalRangoFechas1">
+            Descargar Planificación de Vacaciones
+        </a>
+        <button id="btnVerDetalle" class="btn btn-primary">Ver Detalle General</button>
+                    }
+    <!-- Tabla de Plazas (Gerentes) -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow animated fadeInUp">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Acumulado de Vacaciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive mt-3">
+                        <table id="tablaPlazas" class="table table-striped table-bordered" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Acciones</th>
+
+                                    <th>Gerencia</th>
+                                    <th>Nombre</th>
+                                    <th>Carnet</th>
+                                    <th>Cargo</th>
+                                    <th>Acumulado Gerente</th>
+                                    <th>Acumulado Gerencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos se cargarán dinámicamente -->
+                            </tbody>
+                            <tfoot>
+
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar detalles de la Gerencia -->
+<div class="modal fade" id="detalleGerenciaModal" tabindex="-1" role="dialog" aria-labelledby="detalleGerenciaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <!-- Cambiado a modal-xl para mayor tamaño -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="detalleGerenciaModalLabel" class="modal-title">Detalle de Gerencia</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="detalleGerenciaContenido" class="modal-body">
+                <!-- Contenido se carga dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="vacacionesModal" tabindex="-1" role="dialog" aria-labelledby="vacacionesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <!-- Usamos modal-xl para mayor tamaño -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="vacacionesModalLabel" class="modal-title">Vacaciones de <span id="nombrePersona"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="vacacionesContenido" class="modal-body">
+                <div class="table-responsive">
+                    <table id="tablaVacaciones" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Creador</th>
+                                <th>Fecha Envío</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Hora Inicio</th>
+                                <th>Hora Fin</th>
+                                <th>Unidad de Medida</th>
+                                <th>Duración</th>
+                                <th>Comentario</th>
+                                <th>Estado de Disponibilidad</th>
+                                <th>Fecha de Aprobación</th>
+                                <th>Fecha de Actualización</th>
+                                <th>Usuario Actualizó</th>
+
+
+
+                              
+
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Datos se cargarán dinámicamente -->
+                        </tbody>
+                        <tfoot>
+
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar las Vacaciones por Gerencia -->
+<div class="modal fade" id="vacacionesGerenciaModal" tabindex="-1" role="dialog" aria-labelledby="vacacionesGerenciaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <!-- Usamos modal-xl para mayor tamaño -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="vacacionesGerenciaModalLabel" class="modal-title">Vacaciones de Gerencia: <span id="nombreGerencia"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="vacacionesGerenciaContenido" class="modal-body">
+                <div class="table-responsive">
+                    <table id="tablaVacacionesGerencia" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Carnet</th>
+                                <th>Nombre Completo</th>
+
+                                <th>Gerencia</th>
+                                <th>Primer Nivel</th>
+                                <th>Cargo</th>
+                                <th>Creador</th>
+                                <th>Fecha Envío</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Hora Inicio</th>
+
+                                <th>Hora Fin</th>
+                                <th>Unidad de Medida</th>
+                                <th>Duración</th>
+                                <th>Comentario</th>
+                                <th>Estado de Disponibilidad</th>
+                                <th>Fecha de Aprobación</th>
+                                <th>Fecha de Actualización</th>
+                                <th>Usuario Actualizó</th>
+
+
+
+
+
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Datos se cargarán dinámicamente -->
+                        </tbody>
+                        <tfoot>
+
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalRangoFechas" tabindex="-1" role="dialog" aria-labelledby="modalRangoFechasLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRangoFechasLabel">Seleccionar Rango de Fechas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formRangoFechas">
+                    <div class="form-group">
+                        <label for="fechaInicio2">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fechaInicio2" name="fechaInicio2" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaFin2">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fechaFin2" name="fechaFin2" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnDescargarVacaciones" class="btn btn-primary">Descargar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalRangoFechas1" tabindex="-1" role="dialog" aria-labelledby="modalRangoFechas1Label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRangoFechas1Label">Seleccionar Rango de Fechas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formRangoFechas2">
+                    <div class="form-group">
+                        <label for="fechaInicio1">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fechaInicio1" name="fechaInicio1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaFin1">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fechaFin1" name="fechaFin1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnDescargarVacaciones1" class="btn btn-primary">Descargar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalFechas" tabindex="-1" role="dialog" aria-labelledby="modalFechasLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFechasLabel">Seleccionar Rango de Fechas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formFechas">
+                    <div class="form-group">
+                        <label for="fechaInicio2">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fechaInicio2" name="fechaInicio2" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaFin2">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fechaFin2" name="fechaFin2" required>
+                    </div>
+                    <input type="hidden" id="gerencia" name="gerencia">
+                    <input type="hidden" id="botonOrigen" name="botonOrigen">
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnEnviarFechas" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Librerías JavaScript necesarias -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+    <script src="~/onlinejs/highcharts.js"></script>
+    <script src="~/onlinejs/numeral.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/onlinejs/datetime-moment.js"></script>
+    <script src="~/onlinejs/sweetalert2.10.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Inicializar DataTable tablaPlazas
+            var tablaPlazas = $('#tablaPlazas').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("ObtenerGerentes", "Licenses")",
+                    "type": "GET",
+                    "datatype": "json",
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            Swal.fire('Error', json.error, 'error');
+                            return [];
+                        }
+                        return json.data;
+                    }
+                },
+                "columns": [{
+                    "data": null,
+                    "render": function (data, type, row) {
+                        return `
+                        <div class="dropdown">
+                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="accionesMenu${row.Carnet}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Acciones
+                            </button>
+
+                            <div class="dropdown-menu" aria-labelledby="accionesMenu${row.Carnet}">
+     <a class="dropdown-item ver-vacaciones" href="#" data-carnet="${row.Carnet}">
+                                    <i class="fas fa-calendar-check"></i> Ver mis Vacaciones
+                                </a>
+                                <a class="dropdown-item ver-detalle" href="#" data-gerencia="${row.Gerencia}">
+                                    <i class="fas fa-eye"></i> Ver acumulado de vacaciones por Gerencia
+                                </a>
+
+                                <a class="dropdown-item ver-vacaciones-gerencia" href="#" data-gerencia="${row.Gerencia}">
+                                    <i class="fas fa-calendar-alt"></i> Ver vacaciones de equipo
+                                </a>
+            <a class="dropdown-item programacion-gerencia" href="#" data-gerencia="${row.Gerencia}">
+            <i class="fas fa-calendar-plus"></i> Programacion de Vacaciones
+        </a>
+        <a class="dropdown-item programacion-detalle" href="#" data-gerencia="${row.Gerencia}">
+            <i class="fas fa-calendar-check"></i>Vacaciones Pendientes de programar
+        </a>
+                            </div>
+                        </div>`;
+                    },
+                    "orderable": false,
+                    "searchable": false
+                },
+                    { "data": "Gerencia" },
+                    { "data": "Nombre" },
+                    { "data": "Carnet" },
+                    { "data": "Cargo" },
+                    {
+                        "data": "AcumuladoGerente",
+                        "render": $.fn.dataTable.render.number(',', '.', 2, '')
+                    },
+                    {
+                        "data": "AcumuladoGerencia",
+                        "render": $.fn.dataTable.render.number(',', '.', 2, '')
+                    }
+
+                ],
+                "dom": 'Blfrtip',
+                "lengthMenu": [10, 20, 50, 100],
+                "pageLength": 10,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                "responsive": true,
+                "order": [[5, 'desc']], // Ordenar por AcumuladoGerencia DESC
+
+                "initComplete": function () {
+                    // Opcional: agregar filtros al footer si lo deseas
+                },
+                "buttons": [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+        $('#btnVerDetalle').on('click', function () {
+    var gerencia = "nada";
+    $('#detalleGerenciaModalLabel').text('Detalle General: Sin Gerencia Específica');
+
+    // Mostrar loading usando SweetAlert2
+    Swal.fire({
+        title: 'Cargando...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Obtener datos de empleados sin filtrar por gerencia
+    $.ajax({
+        url: '@Url.Action("ObtenerEmpleadosPorGerencia", "Licenses")',
+        type: 'GET',
+        data: { gerencia: gerencia },
+        success: function (data) {
+            if (data.error) {
+                Swal.fire('Error', data.error, 'error');
+                return;
+            }
+
+            // Construir la tabla de detalle
+            var tablaDetalle = `
+                <table id="tablaDetalleGerencia" class="table table-striped table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Carnet</th>
+                            <th>Nombre</th>
+                            <th>Cargo</th>
+                            <th>Área</th>
+                            <th>Acumulado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.data.forEach(function (item) {
+                tablaDetalle += `
+                    <tr>
+                        <td>${item.Carnet}</td>
+                        <td>${item.NombreCompleto}</td>
+                        <td>${item.Cargo}</td>
+                        <td>${item.Area}</td>
+                        <td>${numeral(item.Acumulado).format('0,0.00')}</td>
+                    </tr>
+                `;
+            });
+
+            tablaDetalle += `
+                    </tbody>
+                </table>
+            `;
+
+            $('#detalleGerenciaContenido').html(tablaDetalle);
+
+            // Inicializar DataTable en el modal
+            $('#tablaDetalleGerencia').DataTable({
+                "order": [[3, 'desc']],
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                },
+                "responsive": true,
+                "order": [[4, 'desc']],
+                "dom": 'Bfrtip',
+                "buttons": [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+
+            // Cerrar el loading
+            Swal.close();
+
+            // Mostrar el modal
+            $('#detalleGerenciaModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            Swal.fire('Error', 'No se pudo obtener el detalle general.', 'error');
+            console.error('Error en AJAX:', error);
+        }
+    });
+});
+
+             $('#btnGenerarPorcentaje').click(function () {
+        const fechaInicio = $('#fechaInicio').val();
+        const fechaFin = $('#fechaFin').val();
+
+        if (!fechaInicio || !fechaFin) {
+            alert("Por favor, seleccione ambas fechas.");
+            return;
+        }
+                 // Mostrar loading usando SweetAlert2
+                 Swal.fire({
+                     title: 'Cargando...',
+                     allowOutsideClick: false,
+                     didOpen: () => {
+                         Swal.showLoading();
+                     }
+                 });
+        // Llamada AJAX para obtener los datos
+        $.ajax({
+            url: '@Url.Action("ObtenerPorcentajeSinProgramacionx", "Licenses")',
+            type: 'GET',
+            data: {
+                fechaInicio: fechaInicio,
+                fechaFin: fechaFin
+             },
+            dataType: 'json',
+            success: function (response) {
+                generarGraficoPorcentaje(response.data);
+                Swal.close();
+            },
+            error: function (xhr, status, error) {
+                Swal.close();
+                console.error('Error al cargar datos del gráfico:', error);
+            }
+        });
+    });
+    // Cargar datos para el gráfico de porcentaje sin programación
+    @*$.ajax({
+        url: '@Url.Action("ObtenerPorcentajeSinProgramacion", "Licenses")',
+        type: 'GET',
+        dataType: 'json',
+        success: function (response) {
+            generarGraficoPorcentaje(response.data);
+        },
+        error: function (xhr, status, error) {
+            console.error('Error al cargar datos del gráfico:', error);
+        }
+    });*@
+            $('#tablaPlazas tbody').on('click', '.dropdown-toggle', function (e) {
+                e.stopPropagation(); // Evita que el clic se propague y cierre el dropdown inmediatamente
+                $(this).siblings('.dropdown-menu').toggleClass('show');
+            });
+          $('#btnDescargarVacaciones1').click(function () {
+            // Obtener los valores de las fechas
+            var fechaInicio = $('#fechaInicio1').val();
+            var fechaFin = $('#fechaFin1').val();
+
+            // Validar que las fechas no estén vacías
+            if (!fechaInicio || !fechaFin) {
+                Swal.fire('Error', 'Debe seleccionar ambas fechas.', 'error');
+                return;
+            }
+
+            // Generar la URL con los parámetros
+            //var url = '@Url.Action("ModificarExcelvacaciones", "Licenses")' +
+            var url = '@Url.Action("ObtenerPendientesYGenerarExcel", "Licenses")' +
+                '?fechaInicio=' + encodeURIComponent(fechaInicio) +
+                '&fechaFin=' + encodeURIComponent(fechaFin);
+              $('#modalRangoFechas1').modal('hide').on('hidden.bs.modal', function () {
+                  $(this).modal('dispose');
+              });
+              Swal.fire({
+                  title: 'Cargando...',
+                  allowOutsideClick: false,
+                  didOpen: () => {
+                      Swal.showLoading();
+                  }
+              });
+              fetch(url)
+                  .then(response => {
+                      if (response.ok) {
+                          // Obtener el nombre del archivo del encabezado personalizado
+                          const contentDisposition = response.headers.get('Content-Disposition');
+                          const filename = contentDisposition
+                              ? contentDisposition.split('filename=')[1].replace(/["']/g, '')
+                              : "Reporte_Vacaciones.xlsx";
+
+                          return response.blob().then(blob => ({ blob, filename }));
+                      } else if (response.status === 204) {
+                          Swal.fire('Sin datos', 'No se encontraron datos para el rango de fechas seleccionado.', 'warning');
+                          return null;
+                      } else {
+                          throw new Error(`Error ${response.status}: ${response.statusText}`);
+                      }
+                  })
+                  .then(result => {
+                      if (result) {
+                          const { blob, filename } = result;
+
+                          if (blob.size > 0) {
+                              // Crear un enlace de descarga para el archivo
+                              const link = document.createElement('a');
+                              link.href = URL.createObjectURL(blob);
+                              link.download = filename; // Usar el nombre proporcionado por el servidor
+                              link.click();
+                              URL.revokeObjectURL(link.href); // Liberar el objeto URL
+                              Swal.close();
+
+                          } else {
+                              Swal.close();
+
+                              Swal.fire('Error', 'El archivo generado está vacío.', 'error');
+                          }
+                      }
+                  })
+                  .catch(error => {
+                      Swal.close();
+
+                      Swal.fire('Error', `Ocurrió un error al generar el archivo: ${error.message}`, 'error');
+                  });
+               setTimeout(function () {
+                  location.reload();
+              }, 3000);
+            // Redirigir para descargar el archivo
+            //window.location.href = url;
+            //  setTimeout(function () {
+            //      location.reload();
+            //  }, 3000);
+            // Cerrar el modal
+        });
+
+                 $('#btnDescargarVacaciones').click(function () {
+            // Obtener los valores de las fechas
+            var fechaInicio = $('#fechaInicio2').val();
+            var fechaFin = $('#fechaFin2').val();
+
+            // Validar que las fechas no estén vacías
+            if (!fechaInicio || !fechaFin) {
+                Swal.fire('Error', 'Debe seleccionar ambas fechas.', 'error');
+                return;
+            }
+
+            // Generar la URL con los parámetros
+            //var url = '@Url.Action("ModificarExcelvacaciones", "Licenses")' +
+            var url = '@Url.Action("ObtenerProgramacion", "Licenses")' +
+                '?fechaInicio=' + encodeURIComponent(fechaInicio) +
+                '&fechaFin=' + encodeURIComponent(fechaFin);
+              $('#modalRangoFechas').modal('hide').on('hidden.bs.modal', function () {
+                  $(this).modal('dispose');
+              });
+            // Redirigir para descargar el archivo
+            ////window.location.href = url;
+                     Swal.fire({
+                         title: 'Cargando...',
+                         allowOutsideClick: false,
+                         didOpen: () => {
+                             Swal.showLoading();
+                         }
+                     });
+                     fetch(url)
+                         .then(response => {
+                             if (response.ok) {
+                                 // Obtener el nombre del archivo del encabezado personalizado
+                                 const contentDisposition = response.headers.get('Content-Disposition');
+                                 const filename = contentDisposition
+                                     ? contentDisposition.split('filename=')[1].replace(/["']/g, '')
+                                     : "Reporte_Vacaciones.xlsx";
+
+                                 return response.blob().then(blob => ({ blob, filename }));
+                             } else if (response.status === 204) {
+                                 Swal.fire('Sin datos', 'No se encontraron datos para el rango de fechas seleccionado.', 'warning');
+                                 return null;
+                             } else {
+                                 throw new Error(`Error ${response.status}: ${response.statusText}`);
+                             }
+                         })
+                         .then(result => {
+                             if (result) {
+                                 const { blob, filename } = result;
+
+                                 if (blob.size > 0) {
+                                     // Crear un enlace de descarga para el archivo
+                                     const link = document.createElement('a');
+                                     link.href = URL.createObjectURL(blob);
+                                     link.download = filename; // Usar el nombre proporcionado por el servidor
+                                     link.click();
+                                     URL.revokeObjectURL(link.href); // Liberar el objeto URL
+                                     Swal.close();
+
+                                 } else {
+                                     Swal.close();
+
+                                     Swal.fire('Error', 'El archivo generado está vacío.', 'error');
+                                 }
+                             }
+                         })
+                         .catch(error => {
+                             Swal.close();
+
+                             Swal.fire('Error', `Ocurrió un error al generar el archivo: ${error.message}`, 'error');
+                         });
+                     setTimeout(function () {
+                         location.reload();
+                     }, 3000);
+            // Cerrar el modal
+                 });
+            $(document).on('click', '.programacion-gerencia', function (e) {
+                e.preventDefault();
+                const gerencia = $(this).data('gerencia');
+                $('#gerencia').val(gerencia); // Asignar la gerencia al campo oculto
+                $('#botonOrigen').val(1); // Etiqueta para este botón
+                $('#modalFechas').modal('show'); // Mostrar el modal
+            });
+
+            // Capturar el evento de la opción "Detalle de Programación"
+            $(document).on('click', '.programacion-detalle', function (e) {
+                e.preventDefault();
+                const gerencia = $(this).data('gerencia');
+                $('#gerencia').val(gerencia); // Asignar la gerencia al campo oculto
+                $('#botonOrigen').val(2); // Etiqueta para este botón
+                $('#modalFechas').modal('show'); // Mostrar el modal
+            });
+
+            // Manejar el envío del formulario del modal
+            $('#btnEnviarFechas').click(function () {
+                const fechaInicio = $('#fechaInicio2').val();
+                const fechaFin = $('#fechaFin2').val();
+                const gerencia = $('#gerencia').val();
+                const botonOrigen = $('#botonOrigen').val(); // Capturar el botón que inició el proceso
+
+                if (!fechaInicio || !fechaFin) {
+                    alert("Debe seleccionar ambas fechas.");
+                    return;
+                }
+                var url = '@Url.Action("ObtenerProgramacion2", "Licenses")' +
+        '?fechaInicio='+ encodeURIComponent(fechaInicio) +
+        '&fechaFin=' + encodeURIComponent(fechaFin) +
+        '&gerencia=' + encodeURIComponent(gerencia) +
+        '&origen=' + encodeURIComponent(botonOrigen) ;
+                // Redirigir al controlador con los parámetros
+                    @*var url = '@Url.Action("ObtenerProgramacion", "Licenses")' +
+                '?fechaInicio=' + encodeURIComponent(fechaInicio) +
+                    '&fechaFin=' + encodeURIComponent(fechaFin) +
+                       '&gerencia=' + encodeURIComponent(gerencia) +
+                    '&origen='+encodeURIComponent( botonOrigen );*@
+                $('#modalFechas').modal('hide').on('hidden.bs.modal', function () {
+                  $(this).modal('dispose');
+              });
+            // Redirigir para descargar el archivo
+            //window.location.href = url;
+                //fetch(url)
+                //    .then(response => {
+                //        if (response.ok) {
+                //            return response.blob(); // Convertir la respuesta a un blob
+                //        } else if (response.status === 204) {
+                //            alert("No se encontraron datos para el rango de fechas seleccionado.");
+                //            return null;
+                //        } else {
+                //            throw new Error(`Error ${response.status}: ${response.statusText}`);
+                //        }
+                //    })
+                //    .then(blob => {
+                //        if (blob) {
+                //            // Crear un enlace de descarga para el archivo
+                //            const link = document.createElement('a');
+                //            link.href = URL.createObjectURL(blob);
+                //            link.download = "Reporte_Vacaciones.xlsx";
+                //            link.click();
+                //            URL.revokeObjectURL(link.href); // Liberar el objeto URL
+                //        }
+                //    })
+                //    .catch(error => {
+                //        alert(`Ocurrió un error al generar el archivo: ${error.message}`);
+                //    });
+                fetch(url)
+                    .then(response => {
+                        if (response.ok) {
+                            // Obtener el nombre del archivo del encabezado personalizado
+                            const contentDisposition = response.headers.get('Content-Disposition');
+                            const filename = contentDisposition
+                                ? contentDisposition.split('filename=')[1].replace(/["']/g, '')
+                                : "Reporte_Vacaciones.xlsx";
+
+                            return response.blob().then(blob => ({ blob, filename }));
+                        } else if (response.status === 204) {
+                            Swal.fire('Sin datos', 'No se encontraron datos para el rango de fechas seleccionado.', 'warning');
+                            return null;
+                        } else {
+                            throw new Error(`Error ${response.status}: ${response.statusText}`);
+                        }
+                    })
+                    .then(result => {
+                        if (result) {
+                            const { blob, filename } = result;
+
+                            if (blob.size > 0) {
+                                // Crear un enlace de descarga para el archivo
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = filename; // Usar el nombre proporcionado por el servidor
+                                link.click();
+                                URL.revokeObjectURL(link.href); // Liberar el objeto URL
+                            } else {
+                                Swal.fire('Error', 'El archivo generado está vacío.', 'error');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire('Error', `Ocurrió un error al generar el archivo: ${error.message}`, 'error');
+                    });
+              //setTimeout(function () {
+              //    location.reload();
+              //}, 3000);
+                // Cerrar el modal
+                $('#modalFechas').modal('hide');
+            });
+      // Cerrar el menú desplegable si se hace clic fuera de él
+            $(document).on('click', function (e) {
+                if (!$('.dropdown-toggle').is(e.target) && $('.dropdown-toggle').has(e.target).length === 0 && $('.show').has(e.target).length === 0) {
+                    $('.dropdown-menu').removeClass('show');
+                }
+            });
+            // Obtener los datos para el dashboard y el gráfico
+            function generarGraficoBarras(data) {
+                var categorias = data.map(function (item) {
+                    return item.Gerencia.replace(/^NI GERENCIA\s*/i, ''); // Eliminar el prefijo "NI GERENCIA"
+                });
+                var acumulados = data.map(function (item) { return item.AcumuladoGerencia; });
+
+                Highcharts.chart('graficoAcumuladoGerenciaBar', {
+                    chart: {
+                        type: 'column',
+                        backgroundColor: '#ffffff'
+                    },
+                    title: {
+                        text: 'Acumulado de vacaciones por Gerencia',
+                        style: {
+                            color: '#333333'
+                        }
+                    },
+                    xAxis: {
+                        categories: categorias,
+                        title: {
+                            text: 'Gerencias',
+                            style: {
+                                color: '#333333'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                color: '#333333'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Acumulado (vacaciones)',
+                            align: 'high',
+                            style: {
+                                color: '#333333'
+                            }
+                        },
+                        labels: {
+                            overflow: 'justify',
+                            style: {
+                                color: '#333333'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        valueSuffix: '',
+                        pointFormat: '<b>{point.y:.2f}</b>'
+                    },
+                    plotOptions: {
+                        column: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.y:.2f}</b>',
+                                style: {
+                                    color: '#333333',
+                                    fontSize: '12px'
+                                }
+                            }
+                        }
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Acumulado',
+                        data: acumulados,
+                        color: '#2E9AFE'
+                    }],
+                    exporting: {
+                        enabled: true
+                    },
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 600
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                });
+            }
+
+            // Generar gráfico de Barras cuando se cargan los datos
+            tablaPlazas.on('xhr', function () {
+                var json = tablaPlazas.ajax.json();
+                if (json && json.data) {
+                    generarGraficoBarras(json.data);
+                }
+            });
+
+            // Evento para abrir el modal y mostrar el detalle de la gerencia
+            $('#tablaPlazas tbody').on('click', '.ver-detalle', function () {
+                var gerencia = $(this).data('gerencia');
+                $('#detalleGerenciaModalLabel').text('Detalle de Gerencia: ' + gerencia);
+
+                // Mostrar loading usando SweetAlert2
+                Swal.fire({
+                    title: 'Cargando...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Obtener datos de los empleados de la gerencia
+                $.ajax({
+                    url: '@Url.Action("ObtenerEmpleadosPorGerencia", "Licenses")',
+                    type: 'GET',
+                    data: { gerencia: gerencia },
+                    success: function (data) {
+                        if (data.error) {
+                            Swal.fire('Error', data.error, 'error');
+                            return;
+                        }
+
+                        // Construir la tabla de detalle
+                        var tablaDetalle = `
+                            <table id="tablaDetalleGerencia" class="table table-striped table-bordered" style="width:100%">
+                                <thead>
+                                    <tr> <th>Carnet</th>
+                                        <th>Nombre</th>
+
+                                        <th>Cargo</th>
+                                        <th>Área</th>
+                                        <th>Acumulado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        data.data.forEach(function (item) {
+                            tablaDetalle += `
+                                <tr>  <td>${item.Carnet}</td>
+
+                                    <td>${item.NombreCompleto}</td>
+                                    <td>${item.Cargo}</td>
+                                    <td>${item.Area}</td>
+                                    <td>${numeral(item.Acumulado).format('0,0.00')}</td>
+                                </tr>
+                            `;
+                        });
+
+                        tablaDetalle += `
+                                </tbody>
+                            </table>
+                        `;
+
+                        $('#detalleGerenciaContenido').html(tablaDetalle);
+
+                        // Inicializar DataTable en el modal
+                        $('#tablaDetalleGerencia').DataTable({
+                            "order": [[3, 'desc']],
+                            "language": {
+                                "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                            },
+                            "responsive": true,
+                            "order": [[4, 'desc']],
+                            "dom": 'Bfrtip',
+                            "buttons": [
+                                'copy', 'csv', 'excel', 'pdf', 'print'
+                            ]
+                        });
+
+                        // Cerrar el loading
+                        Swal.close();
+
+                        // Mostrar el modal
+                        $('#detalleGerenciaModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire('Error', 'No se pudo obtener el detalle de la gerencia.', 'error');
+                        console.error('Error en AJAX:', error);
+                    }
+                });
+            });
+
+               $('#tablaPlazas tbody').on('click', '.ver-vacaciones', function () {
+        var carnet2 = $(this).data('carnet');
+
+        var fila = $(this).closest('tr');
+        var data = tablaPlazas.row(fila).data();
+        var nombreCompleto = data.Nombre;
+        var cargo = data.Cargo;
+        var carnet = carnet2;
+        cargo = nombreCompleto.concat("-", cargo);
+        carnet = cargo.concat("-", carnet);
+
+        $('#nombrePersona').text(carnet);
+
+        Swal.fire({
+            title: 'Cargando Vacaciones...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: '@Url.Action("ObtenerVacacionesPorPersona", "Licenses")',
+            type: 'GET',
+            data: { carnet: carnet2 },
+            success: function (response) {
+                if (response.error) {
+                    Swal.fire('Error', response.error, 'error');
+                    return;
+                }
+
+                // Actualizar el contenido del modal con la tabla
+                $('#vacacionesContenido').html(`
+                    <div class="table-responsive">
+                        <table id="tablaVacaciones" class="table table-striped table-bordered" style="width:100%">
+                            <thead>
+                                <tr>   <th>Creador</th>
+      <th>Fecha Envío</th>
+                                        <th>Fecha Inicio</th>
+          <th>Fecha Fin</th>
+     <th>Hora Inicio</th>
+
+                                    <th>Hora Fin</th>
+     <th>Unidad de Medida</th>
+           <th>Duración</th>
+                                    <th>Comentario</th>
+                                    <th>Estado de Disponibilidad</th>
+
+                                    <th>Fecha de Aprobación</th>
+                                    <th>Fecha de Actualización</th>
+    <th>Usuario Actualizó</th>
+
+
+
+
+
+
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+
+                            </tfoot>
+                        </table>
+                    </div>
+                `);
+
+                // Destruir cualquier instancia previa de DataTable
+
+                Swal.close();
+
+
+
+                $('#vacacionesModal').modal('show');
+                // Inicializar DataTable para Vacaciones por Gerencia
+                $('#vacacionesModal').on('shown.bs.modal', function () {
+                          if ($.fn.DataTable.isDataTable('#tablaVacaciones')) {
+                    $('#tablaVacaciones').DataTable().destroy();
+                }
+
+                // Inicializar DataTable para Vacaciones de la Persona
+                $('#tablaVacaciones').DataTable({
+                    "data": response.data,
+                    "columns": [
+
+                        { "data": "Creador" },
+                        {
+                            "data": "FechaEnvio",
+                            "render": function (data) {
+                                return data ? moment(data).format('DD/MM/YYYY') : '';
+                            }
+                        },
+                        {
+                            "data": "FechaInicio",
+                            "render": function (data) {
+                                return data ? moment(data).format('DD/MM/YYYY') : '';
+                            }
+                        },
+                        {
+                            "data": "FechaFin",
+                            "render": function (data) {
+                                return data ? moment(data).format('DD/MM/YYYY') : '';
+                            }
+                        },
+                        { "data": "HoraInicio" },
+
+                        { "data": "HoraFin" },
+                        { "data": "UnidadDeMedida" },
+                        { "data": "Duracion" },
+                        { "data": "Comentario" },
+                        { "data": "EstadoDeDisponibilidad" },
+
+
+
+
+
+
+                        {
+                            "data": "FechaDeAprobacion",
+                            "render": function(data) {
+                                return data ? moment(data).format('DD/MM/YYYY') : '';
+                            }
+                        },
+                        {
+                            "data": "fecha_Actualizo",
+                            "render": function(data) {
+                                return data ? moment(data).format('DD/MM/YYYY') : '';
+                            }
+                        },
+                                                { "data": "usuarioactualizo" }
+
+                    ],
+                    "dom": 'Blfrtip',
+                    "lengthMenu": [10, 20, 50, 100],
+                    "pageLength": 10,
+                    "language": {
+                        "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                    },
+                    "responsive": true,
+                    "order": [[3, 'desc']], // Ordenar por Fecha Envío DESC
+                    "buttons": [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ],
+                    "columnDefs": [
+                        { "targets": "_all", "className": "dt-body-left" }
+                    ]
+                });
+
+                });
+            },
+            error: function (xhr, status, error) {
+                Swal.fire('Error', 'No se pudo obtener las vacaciones de la persona.', 'error');
+                console.error('Error en AJAX:', error);
+            }
+        });
+    });
+
+    // Evento para abrir el modal y mostrar las Vacaciones por Gerencia
+    $('#tablaPlazas tbody').on('click', '.ver-vacaciones-gerencia', function () {
+        var gerencia = $(this).data('gerencia');
+        $('#nombreGerencia').text(gerencia.replace(/^NI GERENCIA\s*/i, ''));
+
+        Swal.fire({
+            title: 'Cargando Vacaciones por Gerencia...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: '@Url.Action("ObtenerVacacionesPorGerencia", "Licenses")',
+            type: 'GET',
+            data: { gerencia: gerencia },
+            success: function (response) {
+                if (response.error) {
+                    Swal.fire('Error', response.error, 'error');
+                    return;
+                }
+
+                // Actualizar el contenido del modal con la tabla
+                $('#vacacionesGerenciaContenido').html(`
+                    <div class="table-responsive">
+                        <table id="tablaVacacionesGerencia" class="table table-striped table-bordered" style="width:100%">
+                            <thead>
+                                <tr> <th>Carnet</th>
+                                    <th>Nombre Completo</th>
+
+                                     <th>Primer Nivel</th>
+                                    <th>Cargo</th>
+         <th>Creador</th>
+       <th>Fecha Envío</th>
+                                    <th>Fecha Inicio</th>
+      <th>Fecha Fin</th>
+
+                                    <th>Hora Inicio</th>
+
+                                    <th>Hora Fin</th>
+     <th>Unidad de Medida</th>
+     <th>Duración</th>
+         <th>Comentario</th>
+    <th>Estado</th>
+                               <th>Fecha de Aprobación</th>
+                                    <th>Fecha Actualizo</th>
+
+                                    <th>Usuario Actualizo</th>
+
+
+
+
+
+
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+
+                            </tfoot>
+                        </table>
+                    </div>
+                `);
+
+                // Destruir cualquier instancia previa de DataTable
+
+                Swal.close();
+
+                $('#vacacionesGerenciaModal').modal('show');
+                // Inicializar DataTable para Vacaciones por Gerencia
+                $('#vacacionesGerenciaModal').on('shown.bs.modal', function () {
+                    if ($.fn.DataTable.isDataTable('#tablaVacacionesGerencia')) {
+                        $('#tablaVacacionesGerencia').DataTable().destroy();
+                    }
+                    $('#tablaVacacionesGerencia').DataTable({
+                        "data": response.data,
+                        "columns": [
+                            { "data": "Carnet" },
+
+                            { "data": "NombreCompleto" },
+                            { "data": "PrimerNivel" },
+                            { "data": "Cargo" },
+
+                            { "data": "Creador" },
+                            {
+                                "data": "FechaEnvio",
+                                "render": function (data) {
+                                    return data ? moment(data).format('DD/MM/YYYY') : '';
+                                }
+                            },
+                            {
+                                "data": "FechaInicio",
+                                "render": function (data) {
+                                    return data ? moment(data).format('DD/MM/YYYY') : '';
+                                }
+                            },
+                            {
+                                "data": "FechaFin",
+                                "render": function (data) {
+                                    return data ? moment(data).format('DD/MM/YYYY') : '';
+                                }
+                            },
+
+
+                            { "data": "HoraInicio" },
+
+                            { "data": "HoraFin" },
+                            { "data": "UnidadDeMedida" },
+                            { "data": "Duracion" },
+                            { "data": "Comentario" },
+
+                            { "data": "EstadoDeDisponibilidad" },
+                            {
+                                "data": "FechaDeAprobacion",
+                                "render": function (data) {
+                                    return data ? moment(data).format('DD/MM/YYYY') : '';
+                                }
+                            },
+                            {
+                                "data": "fecha_Actualizo",
+                                "render": function (data) {
+                                    return data ? moment(data).format('DD/MM/YYYY') : '';
+                                }
+                            },
+                            { "data": "usuarioactualizo" }
+                        ],
+                        "dom": 'Blfrtip',
+                        "lengthMenu": [10, 20, 50, 100],
+                        "pageLength": 10,
+                        "language": {
+                            "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                        },
+                        "responsive": true,
+                        "order": [[7, 'desc']], // Ordenar por UsuarioActualizo DESC
+                        "buttons": [
+                            'copy', 'csv', 'excel', 'pdf', 'print'
+                        ],
+                        "columnDefs": [
+                            { "targets": "_all", "className": "dt-body-left" }
+                        ]
+                    });
+
+                });
+            },
+            error: function (xhr, status, error) {
+                Swal.fire('Error', 'No se pudo obtener las vacaciones por gerencia.', 'error');
+                console.error('Error en AJAX:', error);
+            }
+        });
+    });
+
+            function generarGraficoPorcentaje(data) {
+                var categorias = data.map(function (item) {
+                    return item.Gerencia;
+                });
+                var porcentajes = data.map(function (item) {
+                    return item.PorcentajeSinProgramacion;
+                });
+
+                Highcharts.chart('graficoPorcentajeSinProgramacion', {
+                    chart: {
+                        type: 'column',
+                        backgroundColor: '#ffffff'
+                    },
+                    title: {
+                        text: 'Porcentaje Sin Programación por Gerencia',
+                        style: {
+                            color: '#333333'
+                        }
+                    },
+                    xAxis: {
+                        categories: categorias,
+                        title: {
+                            text: 'Gerencias',
+                            style: {
+                                color: '#333333'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                color: '#333333'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            text: 'Porcentaje (%)',
+                            align: 'high',
+                            style: {
+                                color: '#333333'
+                            }
+                        },
+                        labels: {
+                            format: '{value}%',
+                            style: {
+                                color: '#333333'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        pointFormat: '<b>{point.y:.2f}%</b>'
+                    },
+                    plotOptions: {
+                        column: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y:.2f}%',
+                                style: {
+                                    color: '#333333',
+                                    fontSize: '12px'
+
+                                }
+                            }
+                        }
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Porcentaje Sin Programación',
+                        data: porcentajes,
+                        color: '#FF5733'
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                });
+            }
+
+        });
+    </script>
+}

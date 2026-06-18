@@ -1,0 +1,4529 @@
+﻿@* Views/Helpdesk2025/TodosLosCasos.cshtml *@
+@{ ViewBag.Title = "Todos los Casos";
+                Layout = "~/Views/Shared/_mainLayout.cshtml"; }
+
+<!-- Fancybox / Buttons DataTables (export Excel) -->
+<link href="~/onlinecss/jquery.fancybox.min.css" rel="stylesheet" />
+
+@* =========================================================
+    ESTILOS (solo presentación)
+    ========================================================= *@
+<style>
+    /* =========================================================
+     0. Z-index global / layout base
+     ========================================================= */
+    .swal2-container {
+        z-index: 5000 !important;
+    }
+
+    /* Quitamos el martillo que dañaba todo.
+     Dejamos solo color base del contenedor, SIN afectar hijos */
+    #helpdeskPage {
+        color: #111827;
+    }
+
+    /* Ajuste de z-index de modales bootstrap */
+    .modal {
+        z-index: 4000;
+    }
+
+    .modal-backdrop {
+        z-index: 3500;
+    }
+
+    /* =========================================================
+     1. Botones Excel (main y soporte360)
+     ========================================================= */
+    #helpdeskPage #exportMainWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary,
+    #helpdeskPage #exportSupWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary {
+        background-color: #10b981 !important; /* verde */
+        border-color: #10b981 !important;
+        color: #fff !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: .8rem !important;
+        line-height: 1rem !important;
+        padding: .45rem .75rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        box-shadow: 0 4px 10px rgba(16,185,129,.3) !important;
+        outline: none !important; /* quita borde gris en focus */
+    }
+
+        #helpdeskPage #exportMainWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary span,
+        #helpdeskPage #exportMainWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary i,
+        #helpdeskPage #exportSupWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary span,
+        #helpdeskPage #exportSupWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary i {
+            color: #fff !important;
+        }
+
+        #helpdeskPage #exportMainWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary:hover,
+        #helpdeskPage #exportSupWrap .dt-buttons .buttons-excel.buttons-html5.btn-secondary:hover {
+            background-color: #0ea472 !important;
+            border-color: #0ea472 !important;
+            box-shadow: 0 6px 14px rgba(16,185,129,.4) !important;
+            color: #fff !important;
+        }
+
+    /* =========================================================
+     2. Texto, links, tablas, cards generales
+     ========================================================= */
+
+    /* links */
+    #helpdeskPage a {
+        color: #1d4ed8;
+    }
+
+        #helpdeskPage a:hover {
+            color: #1e40af;
+            text-decoration: none;
+        }
+
+    /* scroll tablas */
+    #helpdeskPage .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+    }
+
+    #helpdeskPage .dataTables_wrapper .row {
+        overflow: visible !important;
+    }
+
+    /* card base */
+    #helpdeskPage .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    #helpdeskPage .card-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        color: #0f172a;
+    }
+
+    /* filas alternas tabla */
+    #helpdeskPage .table-striped tbody tr:nth-of-type(odd) {
+        background: #f8fafc;
+    }
+    /* --- Dropzone para Cerrar Caso --- */
+    .dropzone-cierre {
+        border: 2px dashed #94a3b8;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 16px;
+        position: relative;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+
+        .dropzone-cierre.dragover {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+    .drop-inner-cierre {
+        font-size: .85rem;
+        color: #475569;
+        line-height: 1.2rem;
+    }
+
+    .fileInput-cierre {
+        width: 100%;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: .5rem .75rem;
+        font-size: .8rem;
+        margin-top: .75rem;
+        cursor: pointer;
+    }
+
+    #previewsCierreWrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: center;
+    }
+    /* thead tablas */
+    #helpdeskPage .table thead th {
+        background: #eef2f7;
+        color: #111827;
+    }
+
+    /* filtros fila 2 tabla principal */
+    #helpdeskPage #tablaTodosLosCasos thead tr.filters th {
+        background: #f3f4f6 !important;
+        vertical-align: middle;
+    }
+
+        #helpdeskPage #tablaTodosLosCasos thead tr.filters th .form-control {
+            height: calc(1.8125rem + 2px);
+        }
+
+    /* filtros fila 2 tabla soporte360 */
+    #helpdeskPage #tablaSoporteCasos thead tr.filtersSup th {
+        background: #f3f4f6 !important;
+        vertical-align: middle;
+    }
+
+        #helpdeskPage #tablaSoporteCasos thead tr.filtersSup th .form-control {
+            height: calc(1.8125rem + 2px);
+        }
+
+    /* dropdown flotante Acciones (fix z-index sobre DataTable) */
+    #helpdeskPage .dropdown-menu._float {
+        z-index: 3000;
+    }
+
+    /* =========================================================
+     3. Chips/Pills de estado en tablas y en detalle
+     ========================================================= */
+    #helpdeskPage .pill {
+        display: inline-block;
+        padding: .20rem .55rem;
+        border-radius: 999px;
+        color: #fff !important;
+        font-weight: 700;
+        font-size: .85rem;
+    }
+
+    #helpdeskPage .pill-pend {
+        background: #e11d48;
+    }
+
+    #helpdeskPage .pill-asig {
+        background: #2563eb;
+    }
+
+    #helpdeskPage .pill-proc {
+        background: #f59e0b;
+        color: #111827 !important;
+    }
+
+    #helpdeskPage .pill-close {
+        background: #10b981;
+    }
+
+    #helpdeskPage .pill-canc {
+        background: #6b7280;
+    }
+
+    /* =========================================================
+     4. Tabs de estado (Pendiente / Asignado / ...)
+     ========================================================= */
+    #helpdeskPage .hd-tabs {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 0 12px;
+    }
+
+        #helpdeskPage .hd-tabs .hd-tablink {
+            display: inline-block;
+            border: 0;
+            border-bottom: 3px solid transparent;
+            margin: 0 .25rem;
+            padding: .75rem 1rem;
+            color: #475569;
+            font-weight: 800;
+            text-decoration: none !important;
+            background: transparent !important;
+        }
+
+            #helpdeskPage .hd-tabs .hd-tablink.active {
+                color: #111827;
+                border-bottom-color: #2563eb !important;
+                background: linear-gradient(to bottom,#f8fafc,transparent) !important;
+            }
+
+            #helpdeskPage .hd-tabs .hd-tablink .badge {
+                margin-left: .35rem;
+            }
+
+    /* =========================================================
+     5. KPIs fila superior (cards horizontales arriba de la tabla)
+     ========================================================= */
+    #kpiRow {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+
+        #kpiRow > .col {
+            flex: 0 0 260px !important;
+            max-width: 260px !important;
+        }
+
+    #helpdeskPage .kpi-icon-pend {
+        color: #e11d48;
+    }
+
+    #helpdeskPage .kpi-icon-asig {
+        color: #2563eb;
+    }
+
+    #helpdeskPage .kpi-icon-proc {
+        color: #f59e0b;
+    }
+
+    #helpdeskPage .kpi-icon-cerr {
+        color: #10b981;
+    }
+
+    /* =========================================================
+     6. Vista Soporte 360° (modal fullscreen style)
+     ========================================================= */
+
+    /* Dialog ocupa viewport */
+    .soporte360-dialog {
+        max-width: 100vw;
+        width: 100%;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        align-items: stretch;
+    }
+
+    /* Contenedor general del contenido del modal 360 */
+    .soporte360-content {
+        border-radius: 0;
+        width: 100%;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Header del modal 360 */
+    .soporte360-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 16px 20px;
+    }
+
+    .badge-soft-dark {
+        background: #e5e7eb;
+        color: #1f2937 !important;
+        font-weight: 600;
+        border-radius: 999px;
+        font-size: .7rem;
+        padding: .35rem .5rem;
+        line-height: 1;
+    }
+
+    /* Select Soporte */
+    .soporte360-soporteSel {
+        border-radius: 10px;
+        font-size: .9rem;
+    }
+
+    /* Chips de estado dentro Soporte360 */
+    #chipsEstados .estado-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        margin: 0 8px 8px 0;
+        cursor: pointer;
+        font-weight: 600;
+        background: #fff;
+        font-size: .8rem;
+        line-height: 1.1rem;
+        color: #111827;
+    }
+
+        #chipsEstados .estado-chip.active {
+            background: #111827 !important;
+            color: #fff !important;
+            border-color: #111827 !important;
+        }
+
+        #chipsEstados .estado-chip .count {
+            margin-left: 6px;
+            font-weight: 700;
+            font-size: .8rem;
+        }
+
+    /* KPI badges (mini contadores Pend / Asig / Proc / Cerr) */
+    .soporte360-kpis .kpi-badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: end;
+    }
+
+        .soporte360-kpis .kpi-badges .kpi-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: .8rem;
+            font-weight: 600;
+            line-height: 1.1rem;
+            border-radius: 8px;
+            padding: .35rem .5rem;
+            min-width: 70px;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,.08);
+            margin-right: .25rem;
+            margin-bottom: .25rem;
+            border: 0;
+            color: #fff !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,.3);
+        }
+
+        .soporte360-kpis .kpi-badges .kpi-badge-pend {
+            background-color: #e11d48;
+            box-shadow: 0 4px 10px rgba(225,29,72,.4);
+        }
+
+        .soporte360-kpis .kpi-badges .kpi-badge-asig {
+            background-color: #2563eb;
+            box-shadow: 0 4px 10px rgba(37,99,235,.4);
+        }
+
+        .soporte360-kpis .kpi-badges .kpi-badge-proc {
+            background-color: #f59e0b;
+            color: #111827 !important;
+            text-shadow: none;
+            box-shadow: 0 4px 10px rgba(245,158,11,.4);
+        }
+
+        .soporte360-kpis .kpi-badges .kpi-badge-cerr {
+            background-color: #10b981;
+            box-shadow: 0 4px 10px rgba(16,185,129,.4);
+        }
+
+    /* Body del modal soporte360 */
+    .soporte360-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0 20px 20px 20px;
+        background: #fff;
+    }
+
+    /* Layout interno: tabla izq / detalle der */
+    .soporte360-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 70%) minmax(280px, 30%);
+        grid-gap: 20px;
+        height: 100%;
+        min-height: 0;
+    }
+
+    /* LEFT (tabla casos) */
+    .soporte360-left {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .table-wrapper-360 {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 10px 20px rgba(0,0,0,.03);
+        padding: 12px;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+        .table-wrapper-360 .table-responsive {
+            max-height: calc(100vh - 240px);
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+    #tablaSoporteCasos thead th {
+        background: #eef2f7;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    #tablaSoporteCasos thead tr.filtersSup th {
+        background: #f3f4f6 !important;
+        vertical-align: middle;
+        position: sticky;
+        top: 33px;
+        z-index: 1;
+    }
+
+    #tablaSoporteCasos .dt-center {
+        text-align: center;
+    }
+
+    /* RIGHT (detalle caso seleccionado en 360) */
+    .soporte360-right {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detalleCard {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 10px 20px rgba(0,0,0,.03);
+        padding: 16px;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+        .detalleCard .detalle-desc {
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        .detalleCard .detailSectionTtl {
+            font-size: .7rem;
+            color: #6b7280;
+            letter-spacing: .03em;
+        }
+
+        .detalleCard #dvMeta,
+        .detalleCard #dvHS,
+        .detalleCard #dvDesc,
+        .detalleCard #dvAdj {
+            font-size: .85rem;
+        }
+
+    /* Pills dentro del detalle derecho */
+    #soporte360 .pill {
+        font-size: .78rem;
+        padding: .15rem .5rem;
+    }
+
+    /* Footer modal 360 */
+    .soporte360-footer {
+        background: #fafafa;
+        border-top: 1px solid #e5e7eb;
+        padding: 12px 20px;
+        font-size: .8rem;
+    }
+
+    /* Banner HS genérico reutilizable */
+    #helpdeskPage .hs-box {
+        padding: 12px;
+        border: 1px dashed #f59e0b;
+        background: #fff7ed;
+        border-radius: 10px;
+    }
+
+        #helpdeskPage .hs-box .title {
+            font-weight: 800;
+            color: #b45309;
+            margin-bottom: 6px;
+        }
+
+    /* RIGHT PANEL DETALLE (det360-*) usado dentro del panel derecho de soporte360 */
+    .det360-bodyScroll {
+        overflow-y: auto;
+        max-height: calc(100vh - 260px);
+        padding-right: 4px;
+    }
+
+    @@edia(max-height:700px) {
+        .det360-bodyScroll {
+            max-height: calc(100vh - 220px);
+        }
+    }
+
+    .det360-head {
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 12px;
+    }
+
+    .det360-title {
+        font-size: .9rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        color: #0f172a;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: .4rem;
+        margin-bottom: .35rem;
+        word-break: break-word;
+    }
+
+    .det360-caseId {
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 600;
+        color: #475569;
+        background: #f1f5f9;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 2px 6px;
+    }
+
+    .det360-metaRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .det360-metaItem {
+        font-size: .7rem;
+        line-height: 1rem;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .det360-metaLabel {
+        color: #6b7280;
+        font-weight: 400;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    .det360-metaValue {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        font-weight: 600;
+        color: #111827;
+        font-size: .8rem;
+        line-height: 1.1rem;
+    }
+
+    .det360-prio {
+        color: #fff;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 600;
+    }
+
+    /* badge mini de estado */
+    .det360-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 700;
+        color: #fff !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+
+    .det360-badge-pend {
+        background: #e11d48;
+    }
+
+    .det360-badge-asig {
+        background: #2563eb;
+    }
+
+    .det360-badge-proc {
+        background: #f59e0b;
+        color: #111827 !important;
+    }
+
+    .det360-badge-cerr {
+        background: #10b981;
+    }
+
+    .det360-badge-canc {
+        background: #6b7280;
+    }
+
+    /* tarjetas info dentro del panel derecho */
+    .det360-secCard {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 10px 20px rgba(0,0,0,.03);
+        margin-bottom: 16px;
+    }
+
+    .det360-secHeader {
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 8px 12px;
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .det360-secHeader i {
+            font-size: .8rem;
+            color: #475569;
+        }
+
+    .det360-secBody {
+        padding: 12px;
+        font-size: .8rem;
+        line-height: 1.2rem;
+        color: #1f2937;
+    }
+
+    .det360-rowPair {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -6px;
+    }
+
+        .det360-rowPair + .det360-rowPair {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+    .det360-kv {
+        flex: 1 1 50%;
+        min-width: 140px;
+        padding: 0 6px 12px;
+    }
+
+    .det360-kvLabel {
+        font-size: .65rem;
+        line-height: .9rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin-bottom: 2px;
+    }
+
+    .det360-kvValue {
+        font-size: .8rem;
+        line-height: 1.1rem;
+        font-weight: 500;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    /* descripción caja detalle 360 */
+    .det360-descBox {
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: .8rem;
+        line-height: 1.2rem;
+        color: #1f2937;
+        max-height: 25vh;
+        overflow-y: auto;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+
+    /* tarjeta HS riesgo */
+    .det360-hsCard {
+        border: 2px solid #f59e0b;
+        background: #fff7ed;
+        border-radius: 12px;
+        box-shadow: 0 12px 24px rgba(251,146,60,.15);
+        margin-bottom: 16px;
+    }
+
+    .det360-hsHeader {
+        background: rgba(251,146,60,.08);
+        border-bottom: 1px dashed #f59e0b;
+        padding: 8px 12px;
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 700;
+        color: #b45309;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .det360-hsHeader i {
+            font-size: .8rem;
+            color: #b45309;
+        }
+
+    .det360-hsBody {
+        padding: 12px;
+        font-size: .75rem;
+        line-height: 1.1rem;
+        color: #78350f;
+    }
+
+    .det360-hsGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
+        gap: 12px;
+    }
+
+    .det360-hsLabel {
+        font-size: .6rem;
+        line-height: .9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #92400e;
+        margin-bottom: 2px;
+        letter-spacing: .03em;
+    }
+
+    .det360-hsValue {
+        font-size: .75rem;
+        line-height: 1rem;
+        font-weight: 500;
+        color: #78350f;
+        word-break: break-word;
+    }
+
+    /* adjuntos bloque derecho */
+    .det360-secTitle {
+        font-size: .75rem;
+        font-weight: 700;
+        line-height: 1rem;
+        text-transform: uppercase;
+        color: #475569;
+        letter-spacing: .03em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+        .det360-secTitle i {
+            font-size: .8rem;
+            color: #475569;
+        }
+
+    .det360-attachWrap {
+        display: flex;
+        flex-wrap: wrap;
+        margin: -6px;
+    }
+
+    .det360-attachItem {
+        margin: 6px;
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        background: #f3f4f6;
+        width: 70px;
+        height: 70px;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(0,0,0,.06);
+    }
+
+        .det360-attachItem img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+    .det360-attachNote {
+        font-size: .65rem;
+        line-height: .9rem;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    /* Responsive soporte360 */
+    @@media(max-width: 992px) {
+        .soporte360-layout {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto;
+        }
+
+        .soporte360-right {
+            order: -1; /* detalle primero */
+        }
+
+        .table-wrapper-360 .table-responsive {
+            max-height: calc(60vh);
+        }
+    }
+
+    /* =========================================================
+     7. Modal "Administrar Soportes"
+     ========================================================= */
+    #helpdeskPage #modalSoporte .modal-content {
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    #helpdeskPage #modalSoporte .modal-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    #helpdeskPage #modalSoporte .modal-title {
+        font-weight: 700;
+    }
+
+    #helpdeskPage #modalSoporte #subTitleSoporte {
+        font-weight: 400;
+        font-size: .85rem;
+    }
+
+    #helpdeskPage #modalSoporte .panel-title {
+        font-weight: 700;
+        font-size: .95rem;
+        color: #111827;
+        margin-bottom: .5rem;
+    }
+
+    #helpdeskPage #modalSoporte .hint {
+        font-size: .8rem;
+        color: #6b7280 !important;
+    }
+
+    #helpdeskPage #modalSoporte .card-lite {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+        #helpdeskPage #modalSoporte .card-lite .card-title {
+            font-weight: 600;
+            font-size: .9rem;
+            color: #374151 !important;
+            margin-bottom: .35rem;
+        }
+
+    #helpdeskPage #modalSoporte .form-control,
+    #helpdeskPage #modalSoporte .custom-select,
+    #helpdeskPage #modalSoporte .input-group .btn {
+        border-radius: 10px;
+    }
+
+    #helpdeskPage #modalSoporte .input-group-append .btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    #helpdeskPage #modalSoporte #tblSoportes thead th {
+        background: #f3f4f6;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    #helpdeskPage #modalSoporte #tblSoportes tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    #helpdeskPage #modalSoporte #tblSoportes td,
+    #helpdeskPage #modalSoporte #tblSoportes th {
+        vertical-align: middle;
+    }
+
+    #helpdeskPage #modalSoporte #permTree {
+        background: #f9fafb;
+        border: 1px dashed #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    #helpdeskPage #modalSoporte .border-right {
+        border-right: 1px solid #eef2f7 !important;
+    }
+
+    #helpdeskPage #modalSoporte .modal-footer {
+        background: #fafafa;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    #modalPersona {
+        z-index: 6000 !important;
+    }
+
+    /* =========================================================
+     8. Drawer grande verDetalle() (SweetAlert fullscreen-ish)
+     ========================================================= */
+    .caseDrawer {
+        width: 80vw;
+        max-width: 1600px;
+        height: auto;
+        max-height: 90vh;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 60px 140px rgba(0,0,0,.55), 0 4px 16px rgba(0,0,0,.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e5e7eb;
+        font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    }
+
+    /* header sticky arriba */
+    .caseDrawer-header {
+        flex: 0 0 auto;
+        background: linear-gradient(to right, #f8fafc 0%, #ffffff 30%, #ffffff 100%);
+        border-bottom: 1px solid #e5e7eb;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .caseDrawer-header-left {
+        min-width: 0;
+        max-width: calc(100% - 200px);
+    }
+
+    .caseDrawer-title {
+        font-size: 1rem;
+        line-height: 1.4rem;
+        font-weight: 600;
+        color: #0f172a;
+        word-break: break-word;
+        margin-bottom: .35rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: .5rem;
+    }
+
+    .caseDrawer-id {
+        font-size: .8rem;
+        font-weight: 600;
+        color: #334155;
+        background: #f1f5f9;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2px 8px;
+        line-height: 1rem;
+    }
+
+    .caseDrawer-metaRow {
+        font-size: .75rem;
+        color: #475569;
+        display: flex;
+        flex-wrap: wrap;
+        line-height: 1.2rem;
+        gap: .75rem;
+        font-weight: 500;
+    }
+
+    .metaItem {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        white-space: nowrap;
+    }
+
+    .metaItem-label {
+        color: #6b7280;
+        font-weight: 400;
+        margin-right: .35rem;
+    }
+
+    .metaItem-badge {
+        font-size: .7rem;
+        border-radius: 999px;
+        line-height: 1rem;
+        padding: 2px 8px;
+        font-weight: 600;
+        color: #fff !important;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+
+    .metaItem-prio {
+        background: #1e293b;
+        color: #fff;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 600;
+    }
+
+    .badgePend {
+        background: #e11d48;
+    }
+
+    .badgeAsig {
+        background: #2563eb;
+    }
+
+    .badgeProc {
+        background: #f59e0b;
+        color: #111827 !important;
+    }
+
+    .badgeCerr {
+        background: #10b981;
+    }
+
+    .badgeCanc {
+        background: #6b7280;
+    }
+
+    .caseDrawer-header-right {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        text-align: right;
+        min-width: 180px;
+    }
+
+    .estadoChipMain {
+        font-size: .7rem;
+        font-weight: 700;
+        border-radius: 999px;
+        line-height: 1rem;
+        padding: 4px 10px;
+        color: #fff !important;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        margin-bottom: .5rem;
+    }
+
+    .drawerCloseBtn {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #374151;
+        font-size: .8rem;
+        font-weight: 600;
+        line-height: 1rem;
+        padding: 6px 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all .12s;
+    }
+
+        .drawerCloseBtn i {
+            font-size: .8rem;
+            margin-right: 4px;
+        }
+
+        .drawerCloseBtn:hover {
+            background: #f9fafb;
+        }
+
+    @@media(max-width:992px) {
+        .caseDrawer-header-left {
+            max-width: 100%;
+        }
+    }
+
+    /* body scroll drawer */
+    .caseDrawer-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        background: #fff;
+        padding: 20px;
+    }
+
+    /* grid interno del drawer grande */
+    .drawerGridV2 {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) minmax(320px, 2fr) minmax(240px, 1fr);
+        grid-gap: 20px;
+    }
+    /* fila completa adjuntos */
+    .drawerAttachmentsRow {
+        margin-top: 24px;
+    }
+
+    @@media(max-width:1200px) {
+        .drawerGridV2 {
+            grid-template-columns: minmax(220px,1fr) minmax(320px,2fr);
+        }
+    }
+
+    @@media(max-width:992px) {
+        .drawerGridV2 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media(max-width:480px) {
+        .caseDrawer {
+            width: 95vw;
+            border-radius: 16px;
+        }
+    }
+
+    /* Tarjetas reutilizables del drawer */
+    .sectionCard {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 16px 32px rgba(0,0,0,.04);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sectionHead {
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 10px 14px;
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .sectionHead i {
+            font-size: .8rem;
+            color: #475569;
+        }
+
+    .sectionBody {
+        padding: 14px;
+        font-size: .85rem;
+        line-height: 1.25rem;
+        color: #1f2937;
+    }
+
+    .sectionGroup + .sectionGroup {
+        margin-top: 16px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 16px;
+    }
+
+    .kblock-label {
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: .03em;
+        margin-bottom: 2px;
+    }
+
+    .kblock-value {
+        font-size: .9rem;
+        line-height: 1.2rem;
+        font-weight: 500;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    /* descripción principal en drawer */
+    .descBox2 {
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        border-radius: 10px;
+        padding: 12px;
+        font-size: .85rem;
+        line-height: 1.25rem;
+        color: #1f2937;
+        white-space: pre-line;
+        word-break: break-word;
+        max-height: 28vh;
+        overflow-y: auto;
+    }
+
+    /* tarjeta alerta HS en drawer */
+    .hsAlertCard {
+        border: 2px solid #f59e0b;
+        background: #fff7ed;
+        border-radius: 14px;
+        box-shadow: 0 16px 32px rgba(251,146,60,.15);
+        margin-bottom: 20px;
+    }
+
+    .hsAlertHeader {
+        background: rgba(251,146,60,.08);
+        border-bottom: 1px dashed #f59e0b;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #b45309;
+        letter-spacing: .03em;
+        gap: 6px;
+    }
+
+        .hsAlertHeader i {
+            color: #b45309;
+            font-size: .8rem;
+        }
+
+    .hsAlertBody {
+        padding: 14px;
+        font-size: .8rem;
+        line-height: 1.2rem;
+        color: #78350f;
+    }
+
+    .hsGrid2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
+        gap: 12px;
+    }
+
+    .hsLabel {
+        font-size: .7rem;
+        line-height: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #92400e;
+        margin-bottom: 2px;
+        letter-spacing: .03em;
+    }
+
+    .hsValue {
+        font-size: .8rem;
+        line-height: 1.1rem;
+        font-weight: 500;
+        color: #78350f;
+        word-break: break-word;
+    }
+
+    /* galería adjuntos en drawer */
+    .attachCardHead {
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #475569;
+        letter-spacing: .03em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .attachWrap2 {
+        display: flex;
+        flex-wrap: wrap;
+        margin: -6px;
+    }
+
+    .attachItem2 {
+        margin: 6px;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        background: #f3f4f6;
+        width: 90px;
+        height: 90px;
+        overflow: hidden;
+        cursor: pointer;
+        position: relative;
+        box-shadow: 0 10px 20px rgba(0,0,0,.06);
+    }
+
+        .attachItem2 img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+    .attachNote {
+        font-size: .7rem;
+        color: #6b7280;
+        margin-top: 6px;
+    }
+
+    /* override SweetAlert para mostrar el drawer tal cual */
+    .swal2-popup.swal-drawer {
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    .swal2-html-container.swal-drawer-html {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    .swal2-actions {
+        display: none !important;
+    }
+
+    .kpi-btn.active {
+        transform: scale(1.02);
+        box-shadow: 0 6px 14px rgba(0,0,0,.15);
+        transition: all .15s ease-in-out;
+    }
+    /* === AGREGAR ESTO AL FINAL DE TU <STYLE> === */
+
+    /* Estilos para el Chat */
+    .chat-box-container {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px;
+        height: 300px; /* Altura fija con scroll */
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-bubble {
+        max-width: 85%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    .chat-me { /* Mis mensajes (Verde/Derecha) */
+        background-color: #d1fae5;
+        color: #065f46;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+        margin-left: auto;
+    }
+
+    .chat-other { /* Otros mensajes (Gris/Izquierda) */
+        background-color: #e5e7eb;
+        color: #1f2937;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+        margin-right: auto;
+    }
+
+    .chat-meta {
+        font-size: 0.7rem;
+        margin-top: 4px;
+        opacity: 0.7;
+        text-align: right;
+    }
+
+    .chat-author {
+        font-weight: 700;
+        font-size: 0.75rem;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    /* Estilo para filas de casos de equipo (Amarillo suave) */
+    .row-equipo {
+        background-color: #fffbeb !important;
+    }
+
+        .row-equipo:hover {
+            background-color: #fef3c7 !important;
+        }
+    /* Estilo Chat Legacy */
+    .chat-container-legacy {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        height: 250px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+    }
+
+    /* Caja destacada para la gestión (Centro) */
+    .gestion-box {
+        background-color: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .gestion-header {
+        background: #f1f5f9;
+        padding: 10px 15px;
+        border-bottom: 1px solid #cbd5e1;
+        font-weight: 700;
+        color: #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .gestion-body {
+        padding: 15px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Ajuste scroll descripción */
+    .desc-scroll {
+        max-height: 120px;
+        overflow-y: auto;
+        background: #f8fafc;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px dashed #cbd5e1;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+    }
+
+    /* --- Sub-Estado dentro del Drawer/Detalle --- */
+    .subestado-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: .5rem 0 1rem;
+    }
+
+        .subestado-row .form-control {
+            max-width: 260px;
+            border-radius: 10px;
+        }
+
+        .subestado-row .btn-add {
+            white-space: nowrap
+        }
+
+    /* --- Chat de Notas --- */
+    .chat-box-container {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px;
+        height: 300px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column
+    }
+
+    .chat-bubble {
+        max-width: 85%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        font-size: .85rem;
+        line-height: 1.3;
+        word-break: break-word
+    }
+
+    .chat-me {
+        background: #d1fae5;
+        color: #065f46;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+        margin-left: auto
+    }
+
+    .chat-other {
+        background: #e5e7eb;
+        color: #1f2937;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+        margin-right: auto
+    }
+
+    .chat-meta {
+        font-size: .7rem;
+        margin-top: 4px;
+        opacity: .7;
+        text-align: right
+    }
+
+    .chat-author {
+        font-weight: 700;
+        font-size: .75rem;
+        display: block;
+        margin-bottom: 2px
+    }
+    /* =========================
+    CSS – reglas nuevas
+    ========================= */
+
+    .modal-xxl {
+        max-width: 95vw;
+    }
+
+    .chip {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 9999px;
+        padding: .15rem .5rem;
+        font-size: .75rem;
+        line-height: 1rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-rojo {
+        background: #e11d48;
+        color: #fff;
+        border-color: #e11d48;
+    }
+
+        .btn-rojo:hover,
+        .btn-rojo:focus {
+            background: #be123c;
+            border-color: #be123c;
+            color: #fff;
+        }
+</style>
+
+
+@* =========================================================
+    CONTENIDO
+    ========================================================= *@
+<div id="helpdeskPage" class="container-fluid">
+
+    <!-- Header + botones -->
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex">
+            <button id="btnResumenSoporte" class="btn btn-outline-primary my-3 mr-2" style="display:none">
+                <i class="fas fa-users-cog mr-1"></i> Resumen por Soporte
+            </button>
+            <button id="btnAdminSoportes" class="btn btn-outline-dark my-3 mr-2" style="display:none">
+                <i class="fas fa-tools mr-1"></i> Administrar Soportes
+            </button>
+        </div>
+    </div>
+
+    <!-- KPIs globales -->
+    <!-- KPIs globales -->
+    <div class="row" id="kpiRow">
+        <div class="col">
+            <div class="card shadow mb-4 kpi-btn" data-estado="Pendiente" style="border-left:.25rem solid #e11d48; cursor:pointer;">
+                <div class="card-body d-flex justify-content-between">
+                    <div>
+                        <div class="text-uppercase mb-1" style="color:#e11d48 !important;">Pendientes</div>
+                        <div class="h5 mb-0 font-weight-bold" id="kpiPend">0</div>
+                    </div>
+                    <div class="icon kpi-icon-pend" style="font-size:2rem;"><i class="fas fa-book-open"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow mb-4 kpi-btn" data-estado="Asignado" style="border-left:.25rem solid #6b7280; cursor:pointer;">
+                <div class="card-body d-flex justify-content-between">
+                    <div>
+                        <div class="text-uppercase mb-1" style="color:#2563eb !important;">Asignados</div>
+                        <div class="h5 mb-0 font-weight-bold" id="kpiAsig">0</div>
+                    </div>
+                    <div class="icon kpi-icon-asig" style="font-size:2rem;"><i class="fas fa-user-tag"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow mb-4 kpi-btn" data-estado="En Proceso" style="border-left:.25rem solid #f59e0b; cursor:pointer;">
+                <div class="card-body d-flex justify-content-between">
+                    <div>
+                        <div class="text-uppercase mb-1" style="color:#f59e0b !important;">En Proceso</div>
+                        <div class="h5 mb-0 font-weight-bold" id="kpiProc">0</div>
+                    </div>
+                    <div class="icon kpi-icon-proc" style="font-size:2rem;"><i class="fas fa-tasks"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow mb-4 kpi-btn" data-estado="Cerrado" style="border-left:.25rem solid #10b981; cursor:pointer;">
+                <div class="card-body d-flex justify-content-between">
+                    <div>
+                        <div class="text-uppercase mb-1" style="color:#10b981 !important;">Cerrados</div>
+                        <div class="h5 mb-0 font-weight-bold" id="kpiCerr">0</div>
+                    </div>
+                    <div class="icon kpi-icon-cerr" style="font-size:2rem;"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div> <div class="col">
+            <div class="card shadow mb-4 kpi-btn" data-estado="Cancelado"
+                 style="border-left:.25rem solid #6b7280; cursor:pointer;">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <!-- título y contador -->
+                        <div class="text-uppercase mb-1" style="color:#6b7280; font-weight:800;">Cancelados</div>
+                        <div class="h5 mb-0 font-weight-bold" id="kpicancelar">0</div>
+                    </div>
+                    <!-- ícono distinto para Cancelados -->
+                    <div class="icon" style="font-size:2rem; color:#6b7280;">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Tabs por estado -->
+    <div class="hd-tabs mb-3 d-none">
+        <ul class="nav nav-tabs" id="estadoTabs" role="tablist" style="border:0 !important;">
+            <li class="nav-item"><a class="hd-tablink active" data-estado="Pendiente" href="#" role="tab">Pendiente <span class="badge badge-light" id="bPend">0</span></a></li>
+            <li class="nav-item"><a class="hd-tablink" data-estado="Asignado" href="#" role="tab">Asignado  <span class="badge badge-light" id="bAsig">0</span></a></li>
+            <li class="nav-item"><a class="hd-tablink" data-estado="En Proceso" href="#" role="tab">En Proceso <span class="badge badge-light" id="bProc">0</span></a></li>
+            <li class="nav-item"><a class="hd-tablink" data-estado="Cerrado" href="#" role="tab">Cerrado   <span class="badge badge-light" id="bCerr">0</span></a></li>
+            <li class="nav-item"><a class="hd-tablink" data-estado="Cancelado" href="#" role="tab">Cancelado <span class="badge badge-light" id="bCanc">0</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold">Listado de Reportes</h6>
+                    <!-- Botones export -->
+                    <div id="exportMainWrap"></div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tablaTodosLosCasos" class="table table-striped table-bordered" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Acciones</th>
+                                    <th>Solicitante</th>
+                                    <th>Afectado</th>
+                                    <th>Título</th>
+                                    <th>Tipo</th>
+                                    <th>Subtipo</th>
+                                    <th>Soporte</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Fecha Creacion</th>
+                                    <th>Fecha Finalización</th>
+                                    <th>Tiempo</th>
+                                </tr>
+                                <tr class="filters">
+                                    <th></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar solicitante" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar afectado" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar título" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar tipo" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar subtipo" /></th>
+                                    <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar soporte" /></th>
+                                    <th>
+                                        <select id="fEstado" class="form-control form-control-sm">
+                                            <option value="">(Todos)</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <select id="fPrioridad" class="form-control form-control-sm">
+                                            <option value="">(Todas)</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <div class="d-flex align-items-center">
+                                            <input type="text" id="minDate" class="form-control form-control-sm" placeholder="Desde dd/mm/aaaa" style="min-width:140px" />
+                                        </div>
+                                    </th>
+                                    <!-- Estas dos columnas nuevas (Fecha Finalización y Tiempo) de momento no tienen filtros -->
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ Modales ============ -->
+    <!-- Soporte 360° -->
+    @* =========================================================
+        MODALES
+        ========================================================= *@
+    <div class="modal fade" id="soporte360" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl soporte360-dialog" role="document">
+            <div class="modal-content soporte360-content">
+                <!-- HEADER -->
+                <div class="modal-header soporte360-header">
+                    <div class="w-100">
+                        <div class="d-flex flex-wrap align-items-start justify-content-between">
+                            <div class="mr-3" style="flex:1 1 auto; min-width:240px;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h5 class="modal-title mb-0 mr-2">
+                                        Panel de Soporte y su casos
+                                    </h5>
+                                    <span class="badge badge-soft-dark">Vista Analítica</span>
+                                </div>
+
+                                <!-- Selector de Subgerencia / Soporte -->
+                                <div class="form-group mb-2">
+                                    <label class="small text-muted mb-1 font-weight-bold">
+                                        Subgerencia / Soporte
+                                    </label>
+                                    <select id="ddlSoporteSel" class="form-control form-control-sm soporte360-soporteSel">
+                                        <!-- Se llena dinámicamente -->
+                                    </select>
+                                </div>
+
+                                <!-- Chips estados -->
+                                <div id="chipsEstados" class="chipsEstadosWrap mb-2">
+                                    <!-- se rellena dinámicamente -->
+                                </div>
+                            </div>
+
+                            <!-- KPIs por soporte -->
+                            <div class="text-right soporte360-kpis " style="flex:0 0 auto; min-width:260px;">
+                                <div class="small text-muted mb-1 font-weight-bold d-none" id="lblSoporteSel">
+                                    Seleccione un soporte
+                                </div>
+                                <div class="d-flex flex-wrap justify-content-end kpi-badges d-none">
+                                    <span class="badge badge-light border mr-1 mb-1">
+                                        Pend:
+                                        <b id="kpiSPend">0</b>
+                                    </span>
+                                    <span class="badge badge-light border mr-1 mb-1">
+                                        Asig:
+                                        <b id="kpiSAsig">0</b>
+                                    </span>
+                                    <span class="badge badge-light border mr-1 mb-1">
+                                        Proc:
+                                        <b id="kpiSProc">0</b>
+                                    </span>
+                                    <span class="badge badge-light border mb-1">
+                                        Cerr:
+                                        <b id="kpiSCerr">0</b>
+                                    </span>
+                                </div>
+
+                                <!-- Botones export -->
+                                <div class="text-right mt-2">
+                                    <div id="exportSupWrap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="close ml-2" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body soporte360-body">
+                    <div class="soporte360-layout">
+                        <!-- LEFT: Tabla de casos -->
+                        <div class="soporte360-left">
+                            <div class="table-responsive table-wrapper-360">
+                                <table id="tablaSoporteCasos" class="table table-sm table-bordered" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Solicitante</th>
+                                            <th>Afectado</th>
+                                            <th>Título</th>
+                                            <th>Tipo</th>
+                                            <th>Subtipo</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Fecha</th>
+                                            <th class="dt-center">Ver</th>
+                                        </tr>
+                                        <tr class="filtersSup">
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Solicitante" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Afectado" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Título" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Tipo" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Subtipo" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Estado" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="Prioridad" /></th>
+                                            <th><input type="text" class="form-control form-control-sm" placeholder="dd/mm/aaaa" /></th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Detalle del caso -->
+                        <div class="soporte360-right">
+                            <div class="detalleCard">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div class="mr-2">
+                                        <div class="h6 mb-0" id="dvTitulo">Selecciona un caso</div>
+                                        <small class="text-muted" id="dvFecha"></small>
+                                    </div>
+                                    <div id="dvEstadoPill"></div>
+                                </div>
+
+                                <div id="dvMeta" class="mb-3 small"></div>
+
+                                <div id="dvHS" class="mb-3"></div>
+
+                                <div class="mb-2 font-weight-bold text-uppercase detailSectionTtl">Descripción</div>
+                                <div id="dvDesc" class="mb-3 detalle-desc">—</div>
+
+                                <div class="mb-2 font-weight-bold text-uppercase detailSectionTtl">Adjunto</div>
+                                <div id="dvAdj" class="mb-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="modal-footer soporte360-footer">
+                    <small class="text-muted mr-auto">
+                        Tip: Cambie el soporte arriba, filtre por estado con los chips y exporte Excel a la derecha.
+                    </small>
+                    <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cerrar Caso -->
+    <div class="modal fade" id="modalCerrar" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Cerrar Caso</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-body">
+                    <div id="detalleCasoContentCasosx" class="mb-3"></div>
+                    <form id="formCerrar" enctype="multipart/form-data">
+                        <input type="hidden" id="CasoIDCasos" name="CasoID" />
+                        <div class="form-group">
+                            <label for="NotasCierreCasos">Notas de Cierre</label>
+                            <textarea class="form-control" id="NotasCierreCasos" name="NotasCierre" rows="3" required></textarea>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label class="font-weight-bold">Evidencia de Cierre (opcional)</label>
+                            <div id="dropZoneCierre" class="dropzone-cierre">
+                                <div class="drop-inner-cierre">
+                                    <strong style="color:#0f172a;">Arrastra aquí tu archivo</strong> o búscalo manualmente<br>
+                                    <span style="font-size: .75rem;">Imágenes (.jpg, .png) y Documentos (.pdf, .doc, .xls)</span><br>
+                                    <span style="font-size: .75rem; font-weight:600;">Máx. 1 archivo · 10 MB</span>
+                                </div>
+                                <input type="file" class="fileInput-cierre" id="AdjuntoEvidencia" name="AdjuntoEvidencia" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx" />
+                            </div>
+                            <div id="previewsCierreWrap"></div>
+                        </div>
+
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button id="btnGuardarCierre" class="btn btn-success">Cerrar caso</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancelar Caso -->
+    <div class="modal fade" id="modalCancelar" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Cancelar Caso</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-body">
+                    <form id="formCancelar">
+                        <input type="hidden" id="CasoIDCancel" name="CasoID" />
+                        <div class="form-group">
+                            <label for="MotivoCancel">Motivo</label>
+                            <textarea class="form-control" id="MotivoCancel" name="Motivo" rows="3" required></textarea>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button id="btnGuardarCancel" class="btn btn-danger">Confirmar Cancelación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asignar / Reasignar Caso -->
+    <div class="modal fade" id="modalAsignar" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Asignar / Reasignar Caso</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-body">
+                    <form id="formAsignar">
+                        <input type="hidden" id="CasoIDAsignar" name="CasoID" />
+                        <div class="form-group">
+                            <label for="SoporteIDSelect">Soporte</label>
+                            <select id="SoporteIDSelect" name="SoporteID" class="form-control" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="NotaAsignar">Nota / Comentario</label>
+                            <textarea class="form-control" id="NotaAsignar" name="Nota" rows="3"></textarea>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button id="btnGuardarAsignacion" class="btn btn-primary">Guardar Asignación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ficha Persona -->
+    <div class="modal fade" id="modalPersona" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Ficha de Persona</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <img id="personaFoto" class="avatar mr-3" src="#" alt="Foto" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;background:#f3f4f6;display:none" />
+                        <div>
+                            <div id="personaNombre" class="h5 mb-0">—</div>
+                            <div id="personaCargo" class="text-muted">—</div>
+                        </div>
+                    </div>
+                    <div class="kv"><span class="k" style="width:120px;font-weight:700;color:#374151;display:inline-block;">Carnet:</span>   <span id="personaCarnet" class="v">—</span></div>
+                    <div class="kv"><span class="k" style="width:120px;font-weight:700;color:#374151;display:inline-block;">Correo:</span>   <span id="personaCorreo" class="v">—</span></div>
+                    <div class="kv"><span class="k" style="width:120px;font-weight:700;color:#374151;display:inline-block;">Área:</span>     <span id="personaArea" class="v">—</span></div>
+                    <div class="kv"><span class="k" style="width:120px;font-weight:700;color:#374151;display:inline-block;">Gerencia:</span> <span id="personaGerencia" class="v">—</span></div>
+                    <div class="kv"><span class="k" style="width:120px;font-weight:700;color:#374151;display:inline-block;">Teléfono:</span> <span id="personaTelefono" class="v">—</span></div>
+                    <div id="personaFotoError" class="text-warning small mt-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer"><button class="btn btn-secondary" data-dismiss="modal">Cerrar</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Soportes -->
+    <div class="modal fade" id="modalSoporte" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Administrador de Soportes
+                        <small class="text-muted d-block" id="subTitleSoporte">Alta/edición, activar/desactivar y permisos por tipo/subtipo</small>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- IZQUIERDA: búsqueda, datos soporte, tabla -->
+                        <div class="col-md-7 border-right">
+                            <div class="card-lite">
+                                <div class="card-title">Vincular desde empleados (emp2024)</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-8 mb-2">
+                                        <label class="mb-1">Buscar por nombre o correo</label>
+                                        <div class="input-group">
+                                            <input type="text" id="txtBuscarEmp" class="form-control" placeholder="Ej. Ana Pérez o ana.perez">
+                                            <div class="input-group-append"><button class="btn btn-outline-secondary" type="button" id="btnBuscarEmp"><i class="fas fa-search"></i></button></div>
+                                        </div>
+                                        <div class="hint mt-1">Opcional: selecciona y llenaremos los campos de soporte.</div>
+                                    </div>
+                                    <div class="form-group col-md-4 mb-2">
+                                        <label class="mb-1">Resultados</label>
+                                        <select id="EmpleadoSel" class="form-control"></select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-lite">
+                                <div class="card-title">Datos del soporte</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="SoporteIDSoporteID" class="mb-1">SoporteID <span class="hint">(sugerido: correo)</span></label>
+                                        <input type="text" id="SoporteID" name="SoporteID" class="form-control" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="Email" class="mb-1">Email</label>
+                                        <input type="email" id="Email" name="Email" class="form-control" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="Nombre" class="mb-1">Nombre</label>
+                                        <input type="text" id="Nombre" name="Nombre" class="form-control" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="Area" class="mb-1">Área</label>
+                                        <input type="text" id="Area" name="Area" class="form-control" placeholder="Ej. RRHH, Servicios Generales">
+                                    </div>
+                                    <div class="form-group col-md-6 d-flex align-items-center">
+                                        <div class="custom-control custom-switch mt-4">
+                                            <input type="checkbox" class="custom-control-input" id="Activo" checked>
+                                            <label class="custom-control-label" for="Activo">Activo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-lite">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="card-title mb-0">Soportes registrados</div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="input-group input-group-sm mr-2" style="max-width: 280px;">
+                                            <input type="text" id="txtBuscarSoporte" class="form-control" placeholder="Filtrar por nombre/correo">
+                                            <div class="input-group-append"><button class="btn btn-outline-secondary" id="btnBuscarSoporte"><i class="fas fa-search"></i></button></div>
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm" id="btnNuevoSoporteModal">
+                                            <i class="fas fa-user-plus mr-1"></i> Nuevo
+                                        </button>                                    </div>
+                                </div>
+
+                                <div class="table-responsive mt-2" style="max-height: 420px; overflow:auto;">
+                                    <table class="table table-sm table-bordered mb-0" id="tblSoportes">
+                                        <thead class="thead-light">
+                                            <tr><th>Nombre</th><th>Correo</th><th>Activo</th><th style="width:75px;">Acción</th></tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DERECHA: árbol tipos/subtipos -->
+                        <div class="col-md-5">
+                            <form id="formSoporte">
+                                <div class="panel-title">Permisos (Tipo/Subtipo)</div>
+                                <div id="permTree" class="border rounded p-2" style="max-height:380px; overflow:auto;"></div>
+                                <div class="hint mt-2">
+                                    Marca <strong>“Todos los subtipos”</strong> para atender cualquiera.<br />
+                                    Si marcas subtipos individuales, no selecciones “Todos”.
+                                </div>
+                            </form>
+
+                            <!-- NUEVA SECCIÓN: Visibilidad entre Soportes -->
+                            <div class="card-lite mt-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="card-title mb-0">Ver casos de…</div>
+                                    <button class="btn btn-link btn-sm p-0" type="button"
+                                            data-toggle="collapse" data-target="#panelVisibilidadSoportes"
+                                            aria-expanded="true" aria-controls="panelVisibilidadSoportes">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+
+                                <div id="panelVisibilidadSoportes" class="collapse show">
+                                    <div class="mb-2 small text-muted">
+                                        Define qué otros soportes puede visualizar el soporte actual.
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <span class="small text-muted mr-1">Soporte actual (Viewer):</span>
+                                        <span id="lblViewerChip" class="chip">—</span>
+                                    </div>
+
+                                    <div class="form-row align-items-end mb-2">
+                                        <div class="form-group col-8">
+                                            <label class="mb-1" for="txtTargetId">Soporte (Target)</label>
+                                            <input type="text"
+                                                   id="txtTargetId"
+                                                   class="form-control form-control-sm"
+                                                   placeholder="Carnet o correo del soporte" />
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <button type="button"
+                                                    id="btnAddVis"
+                                                    class="btn btn-rojo btn-sm btn-block mt-3">
+                                                <i class="fas fa-user-plus mr-1"></i> Agregar permiso
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive" style="max-height:220px; overflow:auto;">
+                                        <table id="tblVisibilidad" class="table table-sm table-bordered mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Soporte (Target)</th>
+                                                    <th style="width:70px;">Quitar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @* se llena por JS *@
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" id="btnGuardarSoporte" class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div> <!-- /#helpdeskPage -->
+<!-- Modal: añade data-action y type="button" para evitar submits raros -->
+<div class="modal fade" id="modalRecategorizar" tabindex="-1" role="dialog" aria-hidden="true" data-action="@Url.Action("RecategorizarCaso","Helpdesk2025")">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-tags mr-2"></i>Recategorizar Caso</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="formRecateg" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="CasoIDRecateg" name="CasoID" />
+                    <div class="form-group">
+                        <label class="mb-1" for="TipoIDRecateg">Tipo</label>
+                        <select id="TipoIDRecateg" name="TipoCasoID" class="form-control" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="mb-1" for="SubtipoIDRecateg">Subtipo</label>
+                        <select id="SubtipoIDRecateg" name="SubtipoCasoID" class="form-control" required></select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button id="btnGuardarRecateg" type="button" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i> Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* =========================================================
+    SCRIPTS (no modificar lógica; solo organizado y comentado)
+    ========================================================= *@
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/responsive.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons2.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/jszip3.10.1.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+
+    <script>
+
+        // =========================================================
+        //  CONFIGURACIÓN / VARIABLES GLOBALES
+        // =========================================================
+        /* =========================================================
+           Estado global
+           ======================================================== */
+        let _yo = { EsAdmin: false, EsSuper: false, Carnet: null };
+
+        // =========================================================
+        //  TABLA (DataTables) / CARGA PRINCIPAL
+        // =========================================================
+        let dt = null;           // DataTable principal
+        let dtSup = null;        // DataTable Soporte 360
+        let _estadoActual = 'Pendiente';
+        let __analitica = { all: [] };
+        let _soporteSel = null;        // soporte seleccionado en 360
+        let _estadoChip = 'Pendiente'; // chip activo en 360
+        let _adminSoporteSel = null;   // soporte seleccionado en Admin Soportes
+        let _arbolPerm = [];           // árbol tipo/subtipo
+        let _permisosActuales = [];    // permisos actuales del soporte
+        let _soportesCache = {};       // cache soportes para 360
+
+        /* =========================================================
+           Utilidades generales
+           ======================================================== */
+
+        // =========================================================
+        //  HELPERS / UTILIDADES
+        // =========================================================
+        function _esc(s) {
+            return String(s || '').replace(/[&<>"']/g, function (m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+            });
+        }
+
+        function parseNetDate(v) {
+            if (!v) return null;
+            if (typeof v === 'string' && v.indexOf('/Date(') === 0) {
+                return new Date(parseInt(v.match(/\d+/)[0], 10));
+            }
+            return new Date(v);
+        }
+        function fechaDisp(v) {
+            const d = parseNetDate(v);
+            return d ? moment(d).format('DD/MM/YYYY') : '-';
+        }
+        function fechaKey(v) {
+            const d = parseNetDate(v);
+            return d ? moment(d).format('YYYYMMDD') : '00000000';
+        }
+        function normEstado(v) {
+            if (!v) return 'Pendiente';
+            if (v === 'Abierto') return 'Pendiente';
+            return v;
+        }
+        function pill(v) {
+            v = normEstado(v);
+            if (v === 'Pendiente') return '<span class="pill pill-pend">Pendiente</span>';
+            if (v === 'Asignado') return '<span class="pill pill-asig">Asignado</span>';
+            if (v === 'En Proceso') return '<span class="pill pill-proc">En Proceso</span>';
+            if (v === 'Cerrado') return '<span class="pill pill-close">Cerrado</span>';
+            if (v === 'Cancelado') return '<span class="pill pill-canc">Cancelado</span>';
+            return v || '-';
+        }
+        const rankEstado = {
+            'Pendiente': 0,
+            'Asignado': 1,
+            'En Proceso': 2,
+            'Cerrado': 3,
+            'Cancelado': 4
+        };
+        function normTxt(s) {
+            return (s || '').toString()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+        function getSubgerenciaFromRow(c) {
+            return c.SUBGERENTE || c.Subgerencia || c.SubGerencia || c.SubGerenciaNombre || c.Fgerencia || '';
+        }
+
+        // MIME helpers adjuntos
+        function esImagenMime(mime, nombre) {
+            mime = (mime || '').toLowerCase();
+            if (mime.indexOf('image/') === 0) return true;
+            var n = (nombre || '').toLowerCase();
+            return n.endsWith('.jpg') || n.endsWith('.jpeg') || n.endsWith('.png') || n.endsWith('.gif') || n.endsWith('.webp');
+        }
+        function esPDFMime(mime, nombre) {
+            mime = (mime || '').toLowerCase();
+            if (mime === 'application/pdf') return true;
+            var n = (nombre || '').toLowerCase();
+            return n.endsWith('.pdf');
+        }
+
+        function getEstadoBadgeClasses(estado) {
+            estado = normEstado(estado);
+            if (estado === 'Pendiente') return 'badgePend';
+            if (estado === 'Asignado') return 'badgeAsig';
+            if (estado === 'En Proceso') return 'badgeProc';
+            if (estado === 'Cerrado') return 'badgeCerr';
+            if (estado === 'Cancelado') return 'badgeCanc';
+            return 'badgePend';
+        }
+        function getEstadoText(estado) {
+            return normEstado(estado || '');
+        }
+
+        /* =========================================================
+           Sub-estado + Chat de notas
+           ======================================================== */
+
+        // Cargar dropdown de subestados y fijar valor original
+        function cargarDropdownSubEstados(casoId, seleccionadoId) {
+            var $ddl = $('#ddlSubEstado_' + casoId);
+            if (!$ddl.length) return;
+
+            $ddl.empty().append('<option value="">-- Etapa / Sub-estado --</option>');
+
+            $.get('@Url.Action("ObtenerSubEstados","Helpdesk2025")', function (r) {
+                if (!r || !r.success || !r.data) return;
+
+                var selStr = (seleccionadoId != null) ? String(seleccionadoId) : '';
+                $.each(r.data, function (i, item) {
+                    var val = String(item.SubEstadoID);
+                    var sel = (val === selStr) ? 'selected' : '';
+                    $ddl.append('<option value="' + val + '" ' + sel + '>' + item.Nombre + '</option>');
+                });
+
+                var fijo = $ddl.val() || '';
+                $ddl.data('original', fijo);
+            });
+        }
+
+        // Cargar historial de notas del chat
+        function cargarNotasChat(idCaso) {
+            const $box = $('#chatContainer_' + idCaso);
+            if (!$box.length) return;
+
+            $box.html('<div class="text-center text-muted small mt-5"><i class="fas fa-circle-notch fa-spin"></i> Cargando...</div>');
+
+            $.post('@Url.Action("ObtenerNotas","Helpdesk2025")', { id: idCaso }, function (r) {
+                if (!r || !r.success) {
+                    $box.html('<div class="text-danger small text-center">Error al cargar chat.</div>');
+                    return;
+                }
+
+                const notas = Array.isArray(r.data) ? r.data : [];
+                if (!notas.length) {
+                    $box.html('<div class="text-center text-muted small mt-5">No hay notas. Inicia la conversación.</div>');
+                    return;
+                }
+
+                $box.empty();
+                for (var i = 0; i < notas.length; i++) {
+                    var n = notas[i] || {};
+                    var autor = _esc(n.AutorNombre || 'Sistema');
+                    var msg = _esc(n.Mensaje || '');
+                    var fecha = _esc(n.FechaStr || '');
+
+                    var soyAdmin = (window._yo && _yo.EsAdmin) ? true : false;
+                    var miNombre = (window._yo && _yo.Nombre) ? String(_yo.Nombre) : '';
+                    var esMio = (autor === miNombre) || (autor === 'Yo') || (autor === 'Soporte' && soyAdmin);
+
+                    var clase = esMio ? 'chat-me' : 'chat-other';
+
+                    $box.append(
+                        '<div class="chat-bubble ' + clase + '">' +
+                        '<span class="chat-author">' + autor + '</span>' +
+                        '<div class="chat-text">' + msg.replace(/\n/g, '<br>') + '</div>' +
+                        '<div class="chat-meta">' + fecha + '</div>' +
+                        '</div>'
+                    );
+                }
+                $box.scrollTop($box[0].scrollHeight);
+            }, 'json').fail(function () {
+                $box.html('<div class="text-danger small text-center">Error de conexión.</div>');
+            });
+        }
+
+        // Enviar nota + opcionalmente actualizar subestado
+        window.enviarNotaChat = function (idCaso) {
+            const $txt = $('#txtChat_' + idCaso);
+            let msj = ($txt.val() || '').trim();
+            if (!msj.length) { $txt.focus(); return; }
+
+            const $ddl = $('#ddlSubEstado_' + idCaso);
+            const nuevoSub = $ddl.length ? ($ddl.val() || '') : '';
+            const origSub = $ddl.length ? ($ddl.data('original') || '') : '';
+
+            const $btn = $('button[onclick="enviarNotaChat(' + idCaso + ')"]');
+
+            $txt.prop('disabled', true);
+            $btn.prop('disabled', true);
+            $.LoadingOverlay('show');
+            if ($ddl.length && !nuevoSub) {
+                $.LoadingOverlay('hide');
+                $txt.prop('disabled', false);
+                $btn.prop('disabled', false);
+
+                Swal.fire(
+                    'Seleccione un estado',
+                    'Antes de enviar la nota, seleccione en qué etapa / estado está el caso.',
+                    'info'
+                );
+
+                $ddl.focus(); // 👈 lleva el foco al combo
+                return;
+            }
+
+            function finOK(prefijo) {
+                $.LoadingOverlay('hide');
+                $txt.val('').prop('disabled', false).focus();
+                $btn.prop('disabled', false);
+                cargarNotasChat(idCaso);
+                if ($ddl.length && nuevoSub) {
+                    $ddl.data('original', nuevoSub);
+                }
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: (nuevoSub && nuevoSub !== origSub)
+                        ? 'Subestado y nota guardados'
+                        : 'Nota guardada'
+                });
+            }
+
+            function finError(msg) {
+                $.LoadingOverlay('hide');
+                $txt.prop('disabled', false);
+                $btn.prop('disabled', false);
+                Swal.fire('Error', msg || 'No se pudo guardar', 'error');
+            }
+
+            const enviarNota = function (etiqueta) {
+                const payload = {
+                    casoId: idCaso,
+                    mensaje: (etiqueta ? '[' + etiqueta + '] ' : '') + msj
+                };
+                $.post('@Url.Action("AgregarNotaUsuario","Helpdesk2025")', payload, function (r2) {
+                    if (!r2 || !r2.success) {
+                        finError((r2 && r2.message) || 'No se pudo guardar la nota.');
+                        return;
+                    }
+                    finOK(etiqueta ? '[' + etiqueta + ']' : '');
+                }).fail(function () {
+                    finError('Error de conexión al guardar la nota.');
+                });
+            };
+
+            // Si cambió subestado, primero actualizamos subestado
+            if ($ddl.length && nuevoSub && nuevoSub !== origSub) {
+                $.post('@Url.Action("ActualizarSubEstadoCaso","Helpdesk2025")', {
+                    casoId: idCaso,
+                    subEstadoId: nuevoSub
+                }, function (r1) {
+                    if (!r1 || !r1.success) {
+                        finError((r1 && r1.message) || 'No se pudo actualizar el subestado.');
+                        return;
+                    }
+                    const txtSel = $ddl.find('option:selected').text() || '';
+                    enviarNota(txtSel);
+                       $.post('@Url.Action("NotificarNotaCaso","Helpdesk2025")', {
+                           casoId: idCaso, estado: txtSel,
+                           mensaje: msj
+        }).always(function () {
+            // Éxito visual del chat (aunque el correo falle)
+            finOK(etiqueta ? '[' + etiqueta + ']' : '');
+        }).fail(function () {
+            Swal.fire(
+                'Nota guardada',
+                'La nota se guardó, pero hubo un problema al enviar el correo.',
+                'warning'
+            );
+        });
+
+                }).fail(function () {
+                    finError('Error de conexión al actualizar el subestado.');
+                });
+            } else {
+                enviarNota('');
+            }
+        };
+
+        // Crear nuevo subestado al vuelo
+        window.nuevoSubEstado = function (casoId) {
+            var existentes = [];
+            $('#ddlSubEstado_' + casoId + ' option').each(function () {
+                var t = $(this).text();
+                if (t && t !== 'Cargando...' && t !== '-- Etapa / Sub-estado --') {
+                    existentes.push(t.toLowerCase());
+                }
+            });
+
+            Swal.fire({
+                title: 'Nueva Etapa / Sub-estado',
+                html:
+                    '<div class="text-left">' +
+                    '<p class="text-muted small mb-2">Se agregará al catálogo global.</p>' +
+                    '<input type="text" id="inpNE" class="swal2-input" placeholder="Ej: En Taller Externo" style="width:calc(100% - 2rem)">' +
+                    '<div id="errNE" class="text-danger small mt-1" style="display:none;"></div>' +
+                    '<div class="d-flex justify-content-end mt-2">' +
+                    '<button type="button" class="btn btn-outline-secondary mr-2" id="btnNE_Cancelar">Cancelar</button>' +
+                    '<button type="button" class="btn btn-success" id="btnNE_Guardar"><i class="fas fa-save mr-1"></i>Guardar y usar</button>' +
+                    '</div>' +
+                    '</div>',
+                showConfirmButton: false,
+                didOpen: function () {
+                    function guardar() {
+                        var nombre = ($('#inpNE').val() || '').trim();
+                        if (!nombre.length) {
+                            $('#errNE').text('Escribe un nombre.').show();
+                            return;
+                        }
+                        if (existentes.indexOf(nombre.toLowerCase()) > -1) {
+                            $('#errNE').text('Ese nombre ya existe.').show();
+                            return;
+                        }
+                        $('#errNE').hide();
+                        $('#btnNE_Guardar,#btnNE_Cancelar').prop('disabled', true);
+                        $.LoadingOverlay('show');
+
+                        $.post('@Url.Action("CrearSubEstado","Helpdesk2025")', { nombre: nombre }, function (r) {
+                            $.LoadingOverlay('hide');
+                            if (!r || !r.success) {
+                                $('#btnNE_Guardar,#btnNE_Cancelar').prop('disabled', false);
+                                $('#errNE').text((r && r.message) || 'No se pudo crear.').show();
+                                return;
+                            }
+                            Swal.close();
+                            cargarDropdownSubEstados(casoId, r.id);
+                            setTimeout(function () {
+                                var $ddl = $('#ddlSubEstado_' + casoId);
+                                $ddl.val(String(r.id));
+                                $ddl.data('original', ''); // fuerza cambio
+                            }, 250);
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+                            Toast.fire({ icon: 'success', title: 'Sub-estado creado' });
+                        }).fail(function () {
+                            $.LoadingOverlay('hide');
+                            $('#btnNE_Guardar,#btnNE_Cancelar').prop('disabled', false);
+                            $('#errNE').text('Error de conexión.').show();
+                        });
+                    }
+
+
+        // =========================================================
+        //  EVENTOS UI
+        // =========================================================
+                    $('#btnNE_Guardar').on('click', guardar);
+                    $('#btnNE_Cancelar').on('click', function () { Swal.close(); });
+                    $('#inpNE').on('keydown', function (e) { if (e.keyCode === 13) guardar(); });
+                    setTimeout(function () { $('#inpNE').focus(); }, 120);
+                }
+            });
+        };
+
+        /* =========================================================
+           Info "yo" / KPIs
+           ======================================================== */
+        function cargarYo(cb) {
+            $.getJSON('@Url.Action("MiSoporte","Helpdesk2025")', function (r) {
+                if (r && r.success && r.data) {
+                    _yo = r.data;
+                }
+
+                if (_yo && _yo.EsAdmin) {
+                    $('#btnAdminSoportes').show();
+                    $('#btnResumenSoporte').show();
+                    cargarAnalitica();
+                } else if (_yo && _yo.EsSuper) {
+                    $('#btnResumenSoporte').show();
+                    cargarAnalitica();
+                }
+
+                cb && cb();
+            }).fail(function () { cb && cb(); });
+        }
+
+        function cargarKPIs() {
+            $.getJSON('@Url.Action("KPIs", "Helpdesk2025")', function (r) {
+                const k = (r && r.success && r.data)
+                    ? r.data
+                    : { Pendiente: 0, Asignado: 0, EnProceso: 0, Cerrado: 0, Cancelado: 0, Total: 0 };
+
+                $('#kpiPend').text(k.Pendiente); $('#bPend').text(k.Pendiente);
+                $('#kpiAsig').text(k.Asignado);  $('#bAsig').text(k.Asignado);
+                $('#kpiProc').text(k.EnProceso); $('#bProc').text(k.EnProceso);
+                $('#kpiCerr').text(k.Cerrado);   $('#bCerr').text(k.Cerrado);
+                $('#bCanc').text(k.Cancelado);
+            });
+        }
+
+        $(document).on('click', '.kpi-btn', function () {
+            $('.kpi-btn').removeClass('active');
+            $(this).addClass('active');
+            var estado = $(this).data('estado');
+            cargarPorEstado(estado);
+        });
+
+        /* =========================================================
+           Menú Acciones en tabla principal
+           ======================================================== */
+        function menuAcciones(row) {
+            const est = normEstado(row.Estado);
+            const assignedToMe = (_yo && _yo.Carnet && row.SoporteID && String(row.SoporteID) === String(_yo.Carnet));
+            const canAdmin = (_yo && (_yo.EsAdmin === true || _yo.EsSuper === true));
+
+            const btnVer =
+                '<a class="dropdown-item" href="#" onclick="verDetalle(\'' + row.ID + '\')">' +
+                '<i class="fas fa-eye mr-2"></i> Ver Detalle</a>';
+
+            const btnAsignar = ( (est === 'Pendiente' || est === 'Asignado' || est === 'En Proceso'))
+                ? '<a class="dropdown-item" href="#" onclick="abrirAsignar(\'' + row.ID + '\',\'' + (row.TipoCasoID || '') + '\',\'' + (row.SubtipoCasoID || '') + '\')">' +
+                '<i class="fas fa-user-tag mr-2"></i> ' + (est === 'Asignado' ? 'Reasignar' : 'Asignar') + '</a>'
+                : '';
+
+            const btnRecategorizar = est === 'Pendiente'
+                ? '<a class="dropdown-item" href="#" onclick="abrirRecategorizar(\'' + row.ID + '\',\'' + (row.TipoCasoID || '') + '\',\'' + (row.SubtipoCasoID || '') + '\')">' +
+                '<i class="fas fa-tags mr-2"></i> Recategorizar</a>'
+                : '';
+
+            const btnAtender = (est === 'Pendiente' || est === 'Asignado')
+                ? '<a class="dropdown-item text-primary" href="#" onclick="atender(\'' + row.ID + '\')">' +
+                '<i class="fas fa-play mr-2"></i> Atender</a>'
+                : '';
+
+            const btnCerrar = ((canAdmin || assignedToMe) && est === 'En Proceso')
+                ? '<a class="dropdown-item text-success" href="#" onclick="abrirCerrar(\'' + row.ID + '\')">' +
+                '<i class="fas fa-check mr-2"></i> Cerrar</a>'
+                : '';
+
+            const btnCancelar = (est === 'Pendiente')
+                ? '<a class="dropdown-item text-danger" href="#" onclick="abrirCancelar(\'' + row.ID + '\')">' +
+                '<i class="fas fa-ban mr-2"></i> Cancelar</a>'
+                : '';
+
+            return (
+                '<div class="dropdown">' +
+                '<button type="button" class="btn btn-primary btn-sm dropdown-toggle btnAcciones">' +
+                '<i class="fas fa-cogs"></i> Acciones</button>' +
+                '<div class="dropdown-menu">' +
+                btnVer + btnAsignar + btnRecategorizar + btnAtender + btnCerrar + btnCancelar +
+                '</div></div>'
+            );
+        }
+
+        // Menú flotante
+        $(document).on('click', '#tablaTodosLosCasos .btnAcciones', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            $('.dropdown-menu._float').remove();
+
+            const $btn = $(this);
+            const $menu = $btn.siblings('.dropdown-menu').clone(true, true);
+            const off = $btn.offset();
+
+            $menu.addClass('_float show')
+                .css({
+                    position: 'absolute',
+                    left: off.left,
+                    top: off.top + $btn.outerHeight(),
+                    display: 'block',
+                    minWidth: Math.max(180, $btn.outerWidth()) + 'px'
+                });
+
+            $('body').append($menu);
+        });
+        $(document).on('click scroll resize', function () {
+            $('.dropdown-menu._float').remove();
+        });
+
+        /* =========================================================
+           DataTable principal
+           ======================================================== */
+        function parseDMY(s) {
+            if (!s) return null;
+            const p = s.split('/');
+            if (p.length !== 3) return null;
+            const d = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        $.fn.dataTable.ext.search.push(function (settings, data) {
+            if (!dt || settings.nTable !== $('#tablaTodosLosCasos')[0]) return true;
+            const min = parseDMY($('#minDate').val());
+            const d = parseDMY(data[9]); // col Fecha creación
+
+            if (!min) return true;
+            if (!d) return false;
+            if (min && d < min) return false;
+            return true;
+        });
+
+        function poblarSelectsFromApi(api) {
+            $('#fEstado').find('option:not(:first)').remove();
+            $('#fPrioridad').find('option:not(:first)').remove();
+
+            api.column(7).data().unique().sort().each(function (v) {
+                v = (v || '').toString().replace(/<[^>]*>/g, '').trim();
+                if (v) $('#fEstado').append(new Option(v, v));
+            });
+            api.column(8).data().unique().sort().each(function (v) {
+                v = (v || '').toString().trim();
+                if (v) $('#fPrioridad').append(new Option(v, v));
+            });
+        }
+        function repoblarSelects() {
+            if (!dt) return;
+            poblarSelectsFromApi(dt);
+        }
+
+        function initTabla() {
+            dt = $('#tablaTodosLosCasos').DataTable({
+                data: [],
+                responsive: true,
+                pageLength: 20,
+                dom: 'Blfrtip',
+                buttons: [{
+                    extend: 'excelHtml5',
+                    title: function () {
+                        return 'casos_' + moment().format('YYYYMMDD_HHmm');
+                    },
+                    text: '<i class="fas fa-file-excel mr-1"></i>Excel'
+                }],
+                orderCellsTop: true,
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function (d, t, row) { return menuAcciones(row); }
+                    },
+                    {
+                        data: null,
+                        render: function (d, t, row) {
+                            const nom = row.NombreAutor || '-';
+                            const carnet = row.UsuarioID || '';
+                            return carnet
+                                ? '<a href="#" onclick="verPersona(\'solicitante\',\'' + carnet + '\',\'\')">' + nom + '</a>'
+                                : nom;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (d, t, row) {
+                            const nom = row.NombreResponsable || '-';
+                            const corr = row.CorreoResponsable || row.Correo || '';
+                            return corr
+                                ? '<a href="#" onclick="verPersona(\'afectado\',\'\',\'' + corr + '\')">' + nom + '</a>'
+                                : nom;
+                        }
+                    },
+                    { data: 'Titulo', defaultContent: '-' },
+                    { data: 'TipoNombre', defaultContent: '-' },
+                    { data: 'SubtipoNombre', defaultContent: '-' },
+                    {
+                        data: null,
+                        render: function (d, t, row) {
+                            const nom = row.SoporteID
+                                ? (row.Nombresoport || '—')
+                                : 'Pendiente asignar';
+                            const car = row.SoporteID || '';
+                            return car
+                                ? '<a href="#" onclick="verPersona(\'soporte\',\'' + car + '\',\'\')">' + nom + '</a>'
+                                : nom;
+                        }
+                    },
+                    {
+                        data: 'Estado',
+                        render: function (d, t) {
+                            return t === 'sort'
+                                ? (rankEstado[normEstado(d)] || 99)
+                                : (t === 'filter'
+                                    ? normEstado(d)
+                                    : pill(d));
+                        }
+                    },
+                    { data: 'Prioridad', defaultContent: '-' },
+                    {
+                        data: 'FechaCreacion',
+                        render: function (d, t) { return t === 'display' ? fechaDisp(d) : fechaKey(d); }
+                    },
+                    {
+                        data: 'FechaFinalizacion',
+                        defaultContent: '-',
+                        render: function (d, t) { return t === 'display' ? fechaDisp(d) : fechaKey(d); }
+                    },
+                    { data: 'TiempoAtencion', defaultContent: '-' }
+                ],
+                order: [[7, 'asc'], [9, 'desc']],
+                initComplete: function () {
+                    const api = this.api();
+                    $(api.buttons().container()).appendTo('#exportMainWrap');
+
+                    $('#tablaTodosLosCasos thead tr.filters th').each(function (i) {
+                        const $inp = $(this).find('input[type="text"]').first();
+                        if ($inp.length) {
+                            $inp.on('keyup change', function () {
+                                api.column(i).search(this.value).draw();
+                            });
+                        }
+                    });
+
+                    $('#fEstado').on('change', function () {
+                        const val = this.value;
+                        api.column(7).search(
+                            val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '',
+                            true, false
+                        ).draw();
+                    });
+
+                    $('#fPrioridad').on('change', function () {
+                        const val = this.value;
+                        api.column(8).search(
+                            val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '',
+                            true, false
+                        ).draw();
+                    });
+
+                    $('#minDate').on('change keyup', function () {
+                        api.draw();
+                    });
+
+                    poblarSelectsFromApi(api);
+                }
+            });
+        }
+
+        /* =========================================================
+           Carga por estado
+           ======================================================== */
+        function cargarPorEstado(estado) {
+            _estadoActual = estado;
+            $.getJSON('@Url.Action("ObtenerCasosPorEstado","Helpdesk2025")', { estado: estado }, function (r) {
+                if (!(r && r.success)) {
+                    Swal.fire('Error', r.message || 'No se pudo cargar.', 'error');
+                    return;
+                }
+                const data = r.data || [];
+                dt.clear().rows.add(data).draw();
+                repoblarSelects();
+            }).fail(function () {
+                Swal.fire('Error', 'Fallo de red.', 'error');
+            });
+        }
+
+        /* =========================================================
+           Analítica Soporte 360
+           ======================================================== */
+        function cargarAnalitica() {
+            const estados = ['Pendiente', 'Asignado', 'En Proceso', 'Cerrado', 'Cancelado'];
+            const reqs = estados.map(function (e) {
+                return $.getJSON('@Url.Action("ObtenerCasosPorEstado","Helpdesk2025")', { estado: e });
+            });
+
+            $.when.apply($, reqs).done(function () {
+                const args = (arguments.length === 1 ? [arguments] : arguments);
+                const all = [];
+                for (let i = 0; i < args.length; i++) {
+                    const r = args[i][0];
+                    if (r && r.success && Array.isArray(r.data)) {
+                        all.push.apply(all, r.data.map(function (x) {
+                            var obj = $.extend({}, x);
+                            obj.__Estado = estados[i];
+                            return obj;
+                        }));
+                    }
+                }
+                __analitica.all = all;
+            });
+        }
+
+        function buildSoporteDropdown(soportesAgrupados) {
+            const $ddl = $('#ddlSoporteSel').empty();
+
+            soportesAgrupados.forEach(function (g) {
+                if (g.Subgerencia) {
+                    const $optgroup = $('<optgroup/>').attr('label', 'Subgerencia: ' + g.Subgerencia);
+                    g.Items.forEach(function (it) {
+                        $optgroup.append(
+                            $('<option/>').val(it.Key).text(it.Nombre + (it.Area ? ' - ' + it.Area : ''))
+                        );
+                    });
+                    $ddl.append($optgroup);
+                } else {
+                    g.Items.forEach(function (it) {
+                        $ddl.append(
+                            $('<option/>').val(it.Key).text(it.Nombre + (it.Area ? ' - ' + it.Area : ''))
+                        );
+                    });
+                }
+            });
+
+            if (!_soporteSel && soportesAgrupados.length && soportesAgrupados[0].Items.length) {
+                _soporteSel = soportesAgrupados[0].Items[0].Key;
+            }
+
+            if (_soporteSel) $ddl.val(_soporteSel);
+        }
+
+        function actualizarLblSoporteSel() {
+            const s = _soportesCache[_soporteSel];
+            if (!s) {
+                $('#lblSoporteSel').text('Seleccione un soporte');
+                return;
+            }
+            let lbl = s.Nombre || '';
+            if (s.Area) lbl += ' · ' + s.Area;
+            if (s.Subgerencia) lbl += ' · ' + s.Subgerencia;
+            $('#lblSoporteSel').text(lbl || 'Seleccione un soporte');
+        }
+
+        function renderChipsEstados() {
+            const all = __analitica.all || [];
+            const arr = all.filter(function (c) {
+                const key = c.SoporteID ? String(c.SoporteID) : '__UNASSIGNED__';
+                return String(key) === String(_soporteSel);
+            });
+
+            const cont = { 'Pendiente': 0, 'Asignado': 0, 'En Proceso': 0, 'Cerrado': 0 };
+            arr.forEach(function (c) {
+                const e = normEstado(c.__Estado || c.Estado);
+                if (cont[e] != null) cont[e]++;
+            });
+
+            const chips = [
+                { k: 'Pendiente', txt: 'Pendiente' },
+                { k: 'Asignado', txt: 'Asignado' },
+                { k: 'En Proceso', txt: 'En Proceso' },
+                { k: 'Cerrado', txt: 'Cerrado' }
+            ];
+
+            const $chips = $('#chipsEstados').empty();
+            chips.forEach(function (ch) {
+                const $c = $(
+                    '<div class="estado-chip ' + (_estadoChip === ch.k ? 'active' : '') + '" data-est="' + ch.k + '">' +
+                    ch.txt + ' <span class="count">' + (cont[ch.k] || 0) + '</span></div>'
+                );
+                $c.on('click', function () {
+                    $('#chipsEstados .estado-chip').removeClass('active');
+                    $(this).addClass('active');
+                    _estadoChip = $(this).data('est');
+                    cargarTablaSoporteCasos();
+                    limpiarVisorDetalle();
+                });
+                $chips.append($c);
+            });
+        }
+
+        function renderKPISoporte() {
+            const all = __analitica.all || [];
+            const arr = all.filter(function (c) {
+                const key = c.SoporteID ? String(c.SoporteID) : '__UNASSIGNED__';
+                return String(key) === String(_soporteSel);
+            });
+
+            const cont = { 'Pendiente': 0, 'Asignado': 0, 'En Proceso': 0, 'Cerrado': 0 };
+            arr.forEach(function (c) {
+                const e = normEstado(c.__Estado || c.Estado);
+                if (cont[e] != null) cont[e]++;
+            });
+
+            $('#kpiSPend').text(cont['Pendiente'] || 0);
+            $('#kpiSAsig').text(cont['Asignado'] || 0);
+            $('#kpiSProc').text(cont['En Proceso'] || 0);
+            $('#kpiSCerr').text(cont['Cerrado'] || 0);
+        }
+
+        function cargarTablaSoporteCasos() {
+            if (!dtSup) return;
+
+            const all = __analitica.all || [];
+            const arr = all
+                .filter(function (c) {
+                    const key = c.SoporteID ? String(c.SoporteID) : '__UNASSIGNED__';
+                    return String(key) === String(_soporteSel);
+                })
+                .filter(function (c) {
+                    return normEstado(c.__Estado || c.Estado) === _estadoChip;
+                });
+
+            dtSup.clear().rows.add(arr).draw();
+            renderKPISoporte();
+            actualizarLblSoporteSel();
+        }
+
+        function limpiarVisorDetalle() {
+            $('#dvTitulo').text('Selecciona un caso');
+            $('#dvFecha').text('');
+            $('#dvEstadoPill').html('');
+            $('#dvMeta').html('');
+            $('#dvHS').html('');
+            $('#dvDesc').html('—');
+            $('#dvAdj').html('');
+        }
+
+        function initTablaSoporte360() {
+            dtSup = $('#tablaSoporteCasos').DataTable({
+                data: [],
+                paging: true,
+                pageLength: 12,
+                dom: 'Blfrtip',
+                buttons: [{
+                    extend: 'excelHtml5',
+                    title: function () {
+                        return 'casos_soporte_' + moment().format('YYYYMMDD_HHmm');
+                    },
+                    text: '<i class="fas fa-file-excel mr-1"></i>Excel'
+                }],
+                columns: [
+                    { data: null, render: function (d, t, c) { return c.NombreAutor || c.UsuarioID || '—'; } },
+                    { data: null, render: function (d, t, c) { return c.NombreResponsable || c.CorreoResponsable || c.Correo || '—'; } },
+                    { data: 'Titulo', defaultContent: '-' },
+                    { data: 'TipoNombre', defaultContent: '-' },
+                    { data: 'SubtipoNombre', defaultContent: '-' },
+                    { data: null, render: function (d, t, c) { return normEstado(c.__Estado || c.Estado); } },
+                    { data: 'Prioridad', defaultContent: '-' },
+                    { data: 'FechaCreacion', render: function (d, t, c) { return fechaDisp(c.FechaCreacion); } },
+                    {
+                        data: null,
+                        orderable: false,
+                        className: 'dt-center',
+                        render: function (d, t, c) {
+                            return '<button class="btn btn-sm btn-outline-primary" onclick="soporte360VerDetalle(\'' + c.ID + '\')"><i class="fas fa-eye"></i></button>';
+                        }
+                    }
+                ],
+                order: [[7, 'desc']],
+                initComplete: function () {
+                    const api = this.api();
+                    $(api.buttons().container()).appendTo('#exportSupWrap');
+
+                    $('#tablaSoporteCasos thead tr.filtersSup th').each(function (i) {
+                        const $inp = $(this).find('input[type="text"]').first();
+                        if ($inp.length) {
+                            $inp.on('keyup change', function () {
+                                api.column(i).search(this.value).draw();
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function actualizarVistaSoporteActual() {
+            renderChipsEstados();
+            renderKPISoporte();
+            limpiarVisorDetalle();
+            actualizarLblSoporteSel();
+        }
+
+        function renderSoporte360() {
+            const all = __analitica.all || [];
+
+            const soporteMap = {};
+            all.forEach(function (c) {
+                const est = normEstado(c.__Estado || c.Estado);
+                const key = c.SoporteID ? String(c.SoporteID) : '__UNASSIGNED__';
+                const nombre = c.SoporteID ? (c.Nombresoport || '—') : 'Pendiente asignar';
+                const area = c.AreaSoporte || c.Area || '';
+                const subg = getSubgerenciaFromRow(c) || 'Sin subgerencia';
+
+                if (!soporteMap[key]) {
+                    soporteMap[key] = {
+                        Key: key,
+                        SoporteID: c.SoporteID || '',
+                        Nombre: nombre,
+                        Area: area || '',
+                        Subgerencia: subg || 'Sin subgerencia',
+                        Pendiente: 0, Asignado: 0, EnProceso: 0, Cerrado: 0
+                    };
+                }
+
+                if (est === 'Pendiente') soporteMap[key].Pendiente++;
+                else if (est === 'Asignado') soporteMap[key].Asignado++;
+                else if (est === 'En Proceso') soporteMap[key].EnProceso++;
+                else if (est === 'Cerrado') soporteMap[key].Cerrado++;
+            });
+
+            _soportesCache = soporteMap;
+
+            const gruposPorSubg = {};
+            $.each(soporteMap, function (k, s) {
+                const sg = s.Subgerencia || 'Sin subgerencia';
+                if (!gruposPorSubg[sg]) gruposPorSubg[sg] = [];
+                gruposPorSubg[sg].push(s);
+            });
+
+            $.each(gruposPorSubg, function (k, list) {
+                list.sort(function (a, b) {
+                    const ca = a.Pendiente + a.Asignado + a.EnProceso + a.Cerrado;
+                    const cb = b.Pendiente + b.Asignado + b.EnProceso + b.Cerrado;
+                    return cb - ca;
+                });
+            });
+
+            const soportesAgrupados = Object.keys(gruposPorSubg).sort().map(function (subgName) {
+                return {
+                    Subgerencia: (subgName === 'Sin subgerencia') ? null : subgName,
+                    Items: gruposPorSubg[subgName]
+                };
+            });
+
+            buildSoporteDropdown(soportesAgrupados);
+
+            $('#ddlSoporteSel').off('change').on('change', function () {
+                _soporteSel = $(this).val();
+                _estadoChip = 'Pendiente';
+                actualizarVistaSoporteActual();
+                cargarTablaSoporteCasos();
+            });
+
+            if (!dtSup) initTablaSoporte360();
+            actualizarVistaSoporteActual();
+            cargarTablaSoporteCasos();
+        }
+
+        function abrirSoporte360() {
+            if (!(__analitica.all || []).length) {
+                $.LoadingOverlay('show', { image: "", text: "Preparando resumen..." });
+                cargarAnalitica();
+                setTimeout(function () {
+                    $.LoadingOverlay('hide');
+                    renderSoporte360();
+                    $('#soporte360').modal('show');
+                }, 450);
+            } else {
+                renderSoporte360();
+                $('#soporte360').modal('show');
+            }
+        }
+
+        /* =========================================================
+           Adjuntos helpers
+           ======================================================== */
+        function renderAdjuntoThumb(a, galId) {
+            var mime = (a.TipoArchivo || '').toLowerCase();
+            var nombre = a.NombreArchivo || 'archivo';
+            var b64 = a.data || '';
+            var url = a.UrlDescarga || '';
+
+            if (esImagenMime(mime, nombre) && b64) {
+                var src = 'data:' + (mime || 'image/webp') + ';base64,' + b64;
+                return (
+                    '<a href="' + src + '" data-fancybox="' + galId + '" class="attachItem2" title="' + nombre + '">' +
+                    '<img src="' + src + '" alt="' + nombre + '"/>' +
+                    '</a>'
+                );
+            }
+
+            if (!url && b64) {
+                var fallbackMime = mime || 'application/octet-stream';
+                url = 'data:' + fallbackMime + ';base64,' + b64;
+            }
+
+            var icon = '<i class="far fa-file-alt" style="font-size:28px; margin-bottom:4px; color:#4B5563;"></i>';
+            if (esPDFMime(mime, nombre)) {
+                icon = '<i class="far fa-file-pdf" style="font-size:28px; margin-bottom:4px; color:#DC2626;"></i>';
+            }
+
+            return (
+                '<a href="' + (url || '#') + '" ' + (url ? 'target="_blank" rel="noopener"' : '') +
+                ' class="attachItem2 d-flex flex-column justify-content-center align-items-center text-center" ' +
+                ' style="text-decoration:none;">' +
+                icon +
+                '<div style="font-size:.65rem; line-height:1rem; color:#374151; word-break:break-word; padding:0 4px;">' +
+                nombre +
+                '</div>' +
+                '</a>'
+            );
+        }
+
+        function renderBloqueAdjuntos(adj, galId) {
+            if (!adj || !adj.length) {
+                return (
+                    '<div class="det360-secTitle"><i class="fas fa-paperclip"></i> Adjuntos</div>' +
+                    '<div class="text-muted" style="font-size:.8rem;">Sin adjuntos.</div>'
+                );
+            }
+            var thumbs = '';
+            for (var i = 0; i < adj.length; i++) thumbs += renderAdjuntoThumb(adj[i], galId);
+            return (
+                '<div class="det360-secTitle"><i class="fas fa-paperclip"></i> Adjuntos</div>' +
+                '<div class="det360-attachWrap">' + thumbs + '</div>' +
+                '<div class="det360-attachNote">Imágenes: click para ampliar • Documentos: abrir/descargar</div>'
+            );
+        }
+
+        /* =========================================================
+           Detalle dentro de Soporte360 (panel derecho)
+           ======================================================== */
+        function soporte360VerDetalle(id) {
+            $.get('@Url.Action("Details","Helpdesk2025")/' + id).done(function (r) {
+                if (!r) { Swal.fire('Error', 'No se pudo cargar el detalle.', 'error'); return; }
+
+                function estadoBadgeClass(estadoRaw) {
+                    var e = normEstado(estadoRaw || '');
+                    if (e === 'Pendiente') return 'det360-badge det360-badge-pend';
+                    if (e === 'Asignado') return 'det360-badge det360-badge-asig';
+                    if (e === 'En Proceso') return 'det360-badge det360-badge-proc';
+                    if (e === 'Cerrado') return 'det360-badge det360-badge-cerr';
+                    if (e === 'Cancelado') return 'det360-badge det360-badge-canc';
+                    return 'det360-badge';
+                }
+                function safe(v, dashText) { return (v !== null && v !== undefined && v !== '') ? v : (dashText || '—'); }
+
+                var solicitHtml = '<a href="#" onclick="verPersona(\'solicitante\',\'' + (r.UsuarioID || '') + '\',\'' + (r.CorreoAutor || '') + '\')">' + safe(r.NombreAutor || r.UsuarioID) + '</a>';
+                var afectHtml = '<a href="#" onclick="verPersona(\'afectado\',\'\', \'' + (r.CorreoResponsable || r.Correo || '') + '\')">' + safe(r.NombreResponsable) + '</a>';
+                var sopTxt = r.SoporteID ? safe(r.Nombresoport, '—') : 'Pendiente asignar';
+                var sopHtml = r.SoporteID
+                    ? '<a href="#" onclick="verPersona(\'soporte\',\'' + (r.SoporteID || '') + '\',\'\')">' + sopTxt + '</a>'
+                    : sopTxt;
+                var subg = getSubgerenciaFromRow(r) || r.SUBGERENTE || '—';
+
+                var tipoSub = safe(r.TipoNombre) + ' / ' + safe(r.SubtipoNombre);
+                var prioridadTxt = safe(r.Prioridad);
+                var creadoTxt = fechaDisp(r.FechaCreacion);
+                var caseIdTxt = '#' + safe(r.ID);
+
+                var tipoTxtNorm = normTxt(r.TipoNombre || r.TipoCaso || '');
+                var subtipoNorm = normTxt(r.SubtipoNombre || '');
+                var esHS = (Number(r.TipoCasoID) === 5) ||
+                    (tipoTxtNorm.indexOf('higiene') > -1 && tipoTxtNorm.indexOf('seguridad') > -1 &&
+                        subtipoNorm.indexOf('inconveniente') > -1 && subtipoNorm.indexOf('edificio') > -1);
+
+                var dep = safe(r.Departamento);
+                var edi = safe(r.Edificio);
+                var pers = (r.CantidadAfectados != null ? r.CantidadAfectados : '—');
+                var dias = (r.DiasCondicion != null ? r.DiasCondicion : '—');
+                var hayDatosHS = (r.Departamento || r.Edificio || r.CantidadAfectados != null || r.DiasCondicion != null);
+
+                var hsBlockHtml = '';
+                if (esHS || hayDatosHS) {
+                    hsBlockHtml =
+                        '<div class="det360-hsCard">' +
+                        '<div class="det360-hsHeader"><i class="fas fa-exclamation-triangle"></i>Riesgo / Higiene y Seguridad</div>' +
+                        '<div class="det360-hsBody"><div class="det360-hsGrid">' +
+                        '<div><div class="det360-hsLabel">Departamento</div><div class="det360-hsValue">' + dep + '</div></div>' +
+                        '<div><div class="det360-hsLabel">Edificio</div><div class="det360-hsValue">' + edi + '</div></div>' +
+                        '<div><div class="det360-hsLabel">Personal afectado</div><div class="det360-hsValue">' + pers + '</div></div>' +
+                        '<div><div class="det360-hsLabel">Días con la condición</div><div class="det360-hsValue">' + dias + '</div></div>' +
+                        '</div></div>' +
+                        '</div>';
+                }
+
+                var galId = 'case360_' + r.ID;
+                var adjBlockHtml = renderBloqueAdjuntos(r.Adjuntos || [], galId);
+
+                var headerBlock =
+                    '<div class="det360-head">' +
+                    '<div class="det360-head-left">' +
+                    '<div class="det360-title">' + safe(r.Titulo, 'Detalle del caso') + ' <span class="det360-caseId">' + caseIdTxt + '</span></div>' +
+                    '<div class="det360-metaRow">' +
+                    '<div class="det360-metaItem"><div class="det360-metaLabel">Estado</div><div class="det360-metaValue"><span class="' + estadoBadgeClass(r.Estado) + '">' + normEstado(r.Estado || '') + '</span></div></div>' +
+                    '<div class="det360-metaItem"><div class="det360-metaLabel">Prioridad</div><div class="det360-metaValue det360-prio">' + prioridadTxt + '</div></div>' +
+                    '<div class="det360-metaItem"><div class="det360-metaLabel">Creado</div><div class="det360-metaValue">' + creadoTxt + '</div></div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+
+                var personasBlock =
+                    '<div class="det360-secCard">' +
+                    '<div class="det360-secHeader"><i class="fas fa-user-friends"></i>Personas</div>' +
+                    '<div class="det360-secBody">' +
+                    '<div class="det360-rowPair">' +
+                    '<div class="det360-kv"><div class="det360-kvLabel">Solicitante</div><div class="det360-kvValue">' + solicitHtml + '</div></div>' +
+                    '<div class="det360-kv"><div class="det360-kvLabel">Afectado</div><div class="det360-kvValue">' + afectHtml + '</div></div>' +
+                    '</div>' +
+                    '<div class="det360-rowPair">' +
+                    '<div class="det360-kv"><div class="det360-kvLabel">Soporte</div><div class="det360-kvValue">' + sopHtml + '</div></div>' +
+                    '<div class="det360-kv"><div class="det360-kvLabel">Área / Subgerencia</div><div class="det360-kvValue">' + safe(subg) + '</div></div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+
+                var casoBlock =
+                    '<div class="det360-secCard">' +
+                    '<div class="det360-secHeader"><i class="fas fa-info-circle"></i>Caso</div>' +
+                    '<div class="det360-secBody">' +
+                    '<div class="det360-rowPair">' +
+                    '<div class="det360-kv"><div class="det360-kvLabel">Tipo / Subtipo</div><div class="det360-kvValue">' + tipoSub + '</div></div>' +
+                    '<div class="det360-kv"><div class="det360-kvLabel">ID caso</div><div class="det360-kvValue">' + caseIdTxt + '</div></div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+
+                var descBlock =
+                    '<div class="det360-secCard">' +
+                    '<div class="det360-secHeader"><i class="fas fa-align-left"></i>Descripción</div>' +
+                    '<div class="det360-secBody"><div class="det360-descBox">' + safe(r.Descripcion, 'Sin descripción') + '</div></div>' +
+                    '</div>';
+
+                var panelHtml =
+                    headerBlock +
+                    '<div class="det360-bodyScroll">' +
+                    personasBlock +
+                    casoBlock +
+                    (hsBlockHtml || '') +
+                    descBlock +
+                    '<div class="det360-secCard">' +
+                    '<div class="det360-secHeader"><i class="fas fa-paperclip"></i>Adjuntos</div>' +
+                    '<div class="det360-secBody">' + adjBlockHtml + '</div>' +
+                    '</div>' +
+                    '</div>';
+
+                $('.detalleCard').html(panelHtml);
+
+                if (r.Adjuntos && r.Adjuntos.length > 0) {
+                    $('[data-fancybox="' + galId + '"]').fancybox({ buttons: ["zoom", "close"], loop: false, protect: true });
+                }
+            }).fail(function () {
+                Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
+            });
+        }
+        window.soporte360VerDetalle = soporte360VerDetalle;
+
+        /* =========================================================
+           Detalle principal (drawer SweetAlert)
+           ======================================================== */
+        function verDetalle(id) {
+            $.get('@Url.Action("Details","Helpdesk2025")/' + id).done(function (r) {
+                if (!r) { Swal.fire('Error', 'No se pudo cargar el detalle.', 'error'); return; }
+
+                const estado = normEstado(r.Estado || '');
+                const isEnProceso = (estado === 'En Proceso');
+                const estadoCls = getEstadoBadgeClasses(estado);
+                const prioridad = r.Prioridad || '-';
+                const fCreado = fechaDisp(r.FechaCreacion);
+                const fFin = fechaDisp(r.FechaFinalizacion);
+                const tiempo = r.TiempoAtencion || '-';
+                const galId = 'drawer_' + r.ID;
+
+                const solicitHtml = '<a href="#" onclick="verPersona(\'solicitante\',\'' + (r.UsuarioID || '') + '\',\'' + (r.CorreoAutor || '') + '\')">' + (r.NombreAutor || r.UsuarioID || '—') + '</a>';
+                const afectHtml = '<a href="#" onclick="verPersona(\'afectado\',\'\',\'' + (r.CorreoResponsable || r.Correo || '') + '\')">' + (r.NombreResponsable || '—') + '</a>';
+                const sopHtml = r.SoporteID
+                    ? '<a href="#" onclick="verPersona(\'soporte\',\'' + (r.SoporteID || '') + '\',\'\')">' + (r.Nombresoport || '-') + '</a>'
+                    : 'Pendiente asignar';
+                const subg = (r.SUBGERENTE || getSubgerenciaFromRow(r) || '-') || '-';
+
+                const tipoTxt = normTxt(r.TipoNombre || r.TipoCaso || '');
+                const subtipoTxt = normTxt(r.SubtipoNombre || '');
+                const esHS = (Number(r.TipoCasoID) === 5) ||
+                    (tipoTxt.indexOf('higiene') > -1 && tipoTxt.indexOf('seguridad') > -1 &&
+                        (subtipoTxt.indexOf('inconveniente') > -1 || subtipoTxt.indexOf('edificio') > -1));
+                const dep = r.Departamento || '-';
+                const edi = r.Edificio || '-';
+                const pers = (r.CantidadAfectados != null ? r.CantidadAfectados : '-');
+                const dias = (r.DiasCondicion != null ? r.DiasCondicion : '-');
+                const hayDatosHS = (r.Departamento || r.Edificio || r.CantidadAfectados != null || r.DiasCondicion != null);
+                const mostrarHS = (esHS || hayDatosHS);
+
+                let adjHtmlMain = '<div class="text-muted" style="font-size:.85rem;">Sin adjuntos.</div>';
+                if (r.Adjuntos && r.Adjuntos.length > 0) {
+                    let thumbs = '';
+                    for (let i = 0; i < r.Adjuntos.length; i++) thumbs += renderAdjuntoThumb(r.Adjuntos[i], galId);
+                    adjHtmlMain =
+                        '<div class="attachWrap2">' + thumbs + '</div>' +
+                        '<div class="attachNote small text-muted mt-1">Click para ampliar evidencia.</div>';
+                }
+                const adjCardHtml =
+                    '<div class="sectionCard">' +
+                    '<div class="sectionHead"><i class="fas fa-paperclip"></i>Evidencia / Adjuntos</div>' +
+                    '<div class="sectionBody">' + adjHtmlMain + '</div>' +
+                    '</div>';
+
+                const colA =
+                    '<div class="sectionCard">' +
+                    '<div class="sectionHead"><i class="fas fa-users"></i>Personas / Organización</div>' +
+                    '<div class="sectionBody">' +
+                    '<div class="mb-2"><div class="text-muted small text-uppercase font-weight-bold">Solicitante</div><div>' + solicitHtml + '</div></div>' +
+                    '<div class="mb-2"><div class="text-muted small text-uppercase font-weight-bold">Afectado</div><div>' + afectHtml + '</div></div>' +
+                    '<div class="mb-2"><div class="text-muted small text-uppercase font-weight-bold">Soporte asignado</div><div>' + sopHtml + '</div></div>' +
+                    '<div class="mb-2"><div class="text-muted small text-uppercase font-weight-bold">Área / Subgerencia</div><div>' + subg + '</div></div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="sectionCard mt-3">' +
+                    '<div class="sectionHead"><i class="fas fa-layer-group"></i>Meta</div>' +
+                    '<div class="sectionBody">' +
+                    '<div><b>Prioridad:</b> ' + prioridad + '</div>' +
+                    '<div><b>Creado:</b> ' + fCreado + '</div>' +
+                    '<div><b>Finalización:</b> ' + fFin + '</div>' +
+                    '<div><b>Tiempo:</b> ' + tiempo + '</div>' +
+                    '</div>' +
+                    '</div>';
+
+                let bloqueSeguimiento = '';
+                if (isEnProceso) {
+                    bloqueSeguimiento =
+                        '<div class="sectionCard mt-3" style="display:flex;flex-direction:column; border-color:#f59e0b;">' +
+                        '<div class="sectionHead" style="background-color:#fffbeb; color:#b45309;">' +
+                        '<i class="fas fa-route"></i> Seguimiento del caso (estado + nota)' +
+                        '</div>' +
+                        '<div class="sectionBody">' +
+
+                        // 👇 Texto guía para el usuario
+                        '<div class="alert alert-warning py-2 px-3 mb-2" style="font-size:.80rem;">' +
+                        '<strong>¿Cómo usar esta sección?</strong><br/>' +
+                        '1) Seleccione en qué estado/etapa está el caso.<br/>' +
+                        '2) Escriba una nota corta explicando el avance.<br/>' +
+                        '3) Presione el botón de enviar para guardar.' +
+                        '</div>' +
+
+                        '<div class="form-group mb-2">' +
+                        '<label class="small font-weight-bold text-muted text-uppercase mb-1">Paso 1: Estado actual del caso</label>' +
+                        '<div class="input-group input-group-sm">' +
+                        '<select id="ddlSubEstado_' + r.ID + '" class="form-control">' +
+                        '<option value="">-- Seleccione estado / etapa --</option>' +
+                        '</select>' +
+                        '<div class="input-group-append">' +
+                        '<button class="btn btn-success" title="Crear nuevo subestado" onclick="nuevoSubEstado(' + r.ID + ')" style="z-index:1;">' +
+                        '<i class="fas fa-plus"></i>' +
+                        '</button>' +
+                        '</div>' +
+                        '</div>' +
+                        '<small class="text-muted d-block mt-1">' +
+                        'Este estado es obligatorio para registrar una nota de seguimiento.' +
+                        '</small>' +
+                        '</div>' +
+
+                        '<div class="d-flex align-items-center justify-content-between mb-2">' +
+                        '<strong><i class="fas fa-comments"></i> Paso 2: Notas de seguimiento</strong>' +
+                        '<span class="small text-muted">Use este espacio para documentar avances y acuerdos.</span>' +
+                        '</div>' +
+
+                        '<div id="chatContainer_' + r.ID + '" class="chat-box-container mb-2" ' +
+                        'style="height:260px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;"></div>' +
+
+                        '<div class="input-group">' +
+                        '<input type="text" id="txtChat_' + r.ID + '" class="form-control" ' +
+                        'placeholder="Escriba aquí la actualización del caso (requiere estado seleccionado)... (Enter)" ' +
+                        'onkeydown="if(event.keyCode==13) enviarNotaChat(' + r.ID + ')">' +
+                        '<div class="input-group-append">' +
+                        '<button class="btn btn-primary" onclick="enviarNotaChat(' + r.ID + ')">' +
+                        '<i class="fas fa-paper-plane"></i>' +
+                        '</button>' +
+                        '</div>' +
+                        '</div>' +
+
+                        '</div>' +
+                        '</div>';
+                } else {
+                    bloqueSeguimiento =
+                        '<div class="alert alert-light mt-3 text-center text-muted small border">' +
+                        '<i class="fas fa-lock"></i> El seguimiento está cerrado porque el caso no está "En Proceso".' +
+                        '</div>';
+                }
+
+
+                const colB =
+                    '<div class="sectionCard">' +
+                    '<div class="sectionHead"><i class="fas fa-info-circle"></i>Caso / Descripción</div>' +
+                    '<div class="sectionBody">' +
+                    '<div class="mb-2"><b>Tipo / Subtipo:</b> ' + (r.TipoNombre || '-') + ' / ' + (r.SubtipoNombre || '-') + '</div>' +
+                    '<div class="descBox2" style="max-height:200px;overflow-y:auto;">' + (r.Descripcion || 'Sin descripción') + '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    bloqueSeguimiento;
+
+                const colC = (mostrarHS)
+                    ? '<div class="hsAlertCard">' +
+                    '<div class="hsAlertHeader"><i class="fas fa-exclamation-triangle"></i>Riesgo / Higiene y Seguridad</div>' +
+                    '<div class="hsAlertBody"><div class="hsGrid2">' +
+                    '<div><div class="hsLabel">Departamento</div><div class="hsValue">' + dep + '</div></div>' +
+                    '<div><div class="hsLabel">Edificio</div><div class="hsValue">' + edi + '</div></div>' +
+                    '<div><div class="hsLabel">Afectados</div><div class="hsValue">' + pers + '</div></div>' +
+                    '<div><div class="hsLabel">Días cond.</div><div class="hsValue">' + dias + '</div></div>' +
+                    '</div></div></div>'
+                    : adjCardHtml;
+
+                const header =
+                    '<div class="caseDrawer-header">' +
+                    '<div class="caseDrawer-header-left">' +
+                    '<div class="caseDrawer-title">' + (r.Titulo || '-') + ' <span class="caseDrawer-id">#' + r.ID + '</span></div>' +
+                    '<div class="caseDrawer-metaRow">' +
+                    '<span class="metaItem-badge ' + estadoCls + '">' + estado + '</span>' +
+                    '<span class="metaItem-badge" style="background:#1f2937">' + prioridad + '</span>' +
+                    '<span class="metaItem-badge" style="background:#374151">' + fCreado + '</span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="caseDrawer-header-right">' +
+                    '<button class="drawerCloseBtn" id="btnCloseDrawer"><i class="fas fa-times mr-1"></i> Cerrar</button>' +
+                    '</div>' +
+                    '</div>';
+
+                const body =
+                    '<div class="caseDrawer-body">' +
+                    '<div class="drawerGridV2">' +
+                    '<div class="drawerGridV2-colA">' + colA + '</div>' +
+                    '<div class="drawerGridV2-colB">' + colB + '</div>' +
+                    '<div class="drawerGridV2-colC">' + colC + '</div>' +
+                    '</div>' +
+                    (mostrarHS ? ('<div class="drawerAttachmentsRow mt-3">' + adjCardHtml + '</div>') : '') +
+                    '</div>';
+
+                Swal.fire({
+                    html: '<div class="caseDrawer">' + header + body + '</div>',
+                    customClass: { popup: 'swal-drawer', htmlContainer: 'swal-drawer-html' },
+                    width: 'auto',
+                    background: 'transparent',
+                    showConfirmButton: false,
+                    showCloseButton: false,
+                    didOpen: function () {
+                        $('#btnCloseDrawer').on('click', function () { Swal.close(); });
+                        if (r.Adjuntos && r.Adjuntos.length > 0) {
+                            $('[data-fancybox="' + galId + '"]').fancybox({ buttons: ["zoom", "close"], loop: false, protect: true });
+                        }
+                        if (isEnProceso) {
+                            cargarNotasChat(r.ID);
+                            cargarDropdownSubEstados(r.ID, r.SubEstadoID);
+                            setTimeout(function () {
+                                const $ddl = $('#ddlSubEstado_' + r.ID);
+                                if ($ddl.length) {
+                                    if (r.SubEstadoID != null) { $ddl.val(String(r.SubEstadoID)); }
+                                    $ddl.data('original', $ddl.val() || '');
+                                }
+                            }, 250);
+                        }
+                    }
+                });
+            }).fail(function () {
+                Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
+            });
+        }
+
+        /* =========================================================
+           Atender / Cerrar / Cancelar
+           ======================================================== */
+        function atender(id) {
+            $.post('@Url.Action("MarcarEnProceso","Helpdesk2025")', { id: id })
+                .done(function (r) {
+                    if (r && r.success) {
+                        Swal.fire('Éxito', 'Caso marcado En Proceso.', 'success').then(function () {
+                            cargarKPIs();
+                            cargarPorEstado(_estadoActual);
+                            cargarAnalitica();
+                        });
+                    } else {
+                        Swal.fire('Error', (r && r.message) || 'No se pudo asignar.', 'error');
+                    }
+                }).fail(function () {
+                    Swal.fire('Error', 'Fallo de red.', 'error');
+                });
+        }
+        var archivoCierreSel = null;
+        var objUrlCierre = null;
+     function abrirCerrar(id) {
+    $.get('@Url.Action("Details","Helpdesk2025")/' + id).done(function (r) {
+        const html =
+            '<p class="mb-1"><strong>Título:</strong> ' + (r.Titulo || '-') + '</p>' +
+            '<p class="mb-1"><strong>Tipo/Subtipo:</strong> ' + ((r.TipoNombre || '-') + ' / ' + (r.SubtipoNombre || '-')) + '</p>' +
+            '<p class="mb-2"><strong>Descripción:</strong></p><div class="desc-scroll">' + (r.Descripcion || 'Sin descripción') + '</div>';
+
+        $('#detalleCasoContentCasosx').html(html);
+        $('#CasoIDCasos').val(id);
+        $('#NotasCierreCasos').val('');
+
+        // Limpiar adjuntos
+        $('#AdjuntoEvidencia').val('');
+        $('#previewsCierreWrap').empty();
+        archivoCierreSel = null;
+        if(objUrlCierre) URL.revokeObjectURL(objUrlCierre);
+
+        $('#modalCerrar').modal('show');
+    }).fail(function () {
+        Swal.fire('Error', 'No se pudo abrir el caso.', 'error');
+    });
+}
+        $('#AdjuntoEvidencia').on('change', function (e) {
+            var files = e.target.files;
+            if (files && files.length > 0) {
+                var f = files[0];
+
+                // Validación de peso (10 MB)
+                if (f.size > 10 * 1024 * 1024) {
+                    Swal.fire('Archivo muy pesado', 'El archivo excede el límite de 10 MB.', 'warning');
+                    $(this).val('');
+                    $('#previewsCierreWrap').empty();
+                    archivoCierreSel = null;
+                    return;
+                }
+
+                archivoCierreSel = f;
+                renderPreviewCierre(f);
+            }
+        });
+        function renderPreviewCierre(f) {
+            if (objUrlCierre) URL.revokeObjectURL(objUrlCierre);
+            var $wrap = $('#previewsCierreWrap').empty();
+
+            var isImg = esImagenMime(f.type, f.name);
+            objUrlCierre = URL.createObjectURL(f);
+
+            var innerHtml = '';
+            if (isImg) {
+                innerHtml = '<img src="' + objUrlCierre + '" alt="' + f.name + '"/>';
+            } else {
+                var icon = '<i class="far fa-file-alt" style="font-size:26px;color:#4B5563"></i>';
+                if (esPDFMime(f.type, f.name)) icon = '<i class="far fa-file-pdf" style="font-size:26px;color:#DC2626"></i>';
+                else if (f.name.indexOf('.doc') > -1) icon = '<i class="far fa-file-word" style="font-size:26px;color:#9CA3AF"></i>';
+                else if (f.name.indexOf('.xls') > -1) icon = '<i class="far fa-file-excel" style="font-size:26px;color:#10b981"></i>';
+                innerHtml = icon;
+            }
+
+            var htmlChip =
+                '<div class="pv-chip mt-2" style="width:100px; height:100px;">' +
+                innerHtml +
+                '<button type="button" class="pv-del" id="btnQuitarCierre">&times;</button>' +
+                '<span class="pv-name" title="' + f.name + '">' + f.name + '</span>' +
+                '</div>';
+
+            $wrap.append(htmlChip);
+        }
+        $(document).on('click', '#btnQuitarCierre', function () {
+            archivoCierreSel = null;
+            $('#AdjuntoEvidencia').val(''); // Limpia el input real
+            $('#previewsCierreWrap').empty();
+            if (objUrlCierre) URL.revokeObjectURL(objUrlCierre);
+        });
+
+        // Drag & Drop visual effects
+        var $dzCierre = $('#dropZoneCierre');
+        $dzCierre.on('dragover', function (e) { e.preventDefault(); e.stopPropagation(); $(this).addClass('dragover'); });
+        $dzCierre.on('dragleave dragend drop', function (e) { $(this).removeClass('dragover'); });
+        $dzCierre.on('drop', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            var dt = e.originalEvent.dataTransfer;
+            if (dt && dt.files && dt.files.length > 0) {
+                // Asignamos el archivo al input real para que el FormData lo tome
+                document.getElementById('AdjuntoEvidencia').files = dt.files;
+                $('#AdjuntoEvidencia').trigger('change');
+            }
+        });
+$('#btnGuardarCierre').click(function () {
+    if(!$('#NotasCierreCasos').val().trim()){
+        Swal.fire('Atención', 'Por favor ingrese las notas de cierre.', 'warning');
+        return;
+    }
+
+    // El input file con name="AdjuntoEvidencia" se empaqueta automáticamente aquí
+    var fd = new FormData(document.getElementById('formCerrar'));
+
+    $.LoadingOverlay("show", { image: "", text: "Cerrando y notificando..." });
+    $.ajax({
+        url: '@Url.Action("CerrarCaso","Helpdesk2025")',
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false
+    }).done(function (r) {
+        $.LoadingOverlay("hide");
+        if (r && r.success) {
+            Swal.fire('Éxito', 'Caso cerrado correctamente.', 'success').then(function () {
+                $('#modalCerrar').modal('hide');
+                cargarKPIs();
+                cargarPorEstado(_estadoActual);
+                cargarAnalitica();
+            });
+        } else {
+            Swal.fire('Error', (r && r.message) || 'No se pudo cerrar el caso.', 'error');
+        }
+    }).fail(function () {
+        $.LoadingOverlay("hide");
+        Swal.fire('Error', 'Fallo de red al intentar cerrar el caso.', 'error');
+    });
+});
+        function abrirCancelar(id) {
+            $('#CasoIDCancel').val(id);
+            $('#MotivoCancel').val('');
+            $('#modalCancelar').modal('show');
+        }
+
+// Guardar cancelación usando CancelarCasox
+$('#btnGuardarCancel').off('click').on('click', function () {
+    var motivo = ($('#MotivoCancel').val() || '').trim();
+    if (!motivo.length) {
+        Swal.fire('Motivo requerido', 'Por favor escriba el motivo de la cancelación.', 'info');
+        $('#MotivoCancel').focus();
+        return;
+    }
+
+    var idCaso = parseInt($('#CasoIDCancel').val() || '0', 10);
+    if (!idCaso) {
+        Swal.fire('Error', 'No se encontró el identificador del caso.', 'error');
+        return;
+    }
+
+    $.LoadingOverlay("show", { image: "", text: "Cancelando..." });
+
+    $.ajax({
+        url: '@Url.Action("CancelarCasox","Helpdesk2025")',
+        type: 'POST',
+        data: {
+            id: idCaso,         // coincide con int id
+            motivo: motivo      // coincide con string motivo
+            // si luego agregas [ValidateAntiForgeryToken] en la acción,
+            // aquí también envías el token:
+            // __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        }
+    }).done(function (r) {
+        $.LoadingOverlay("hide");
+        if (r && r.success) {
+            Swal.fire('Éxito', 'Caso cancelado.', 'success').then(function () {
+                $('#modalCancelar').modal('hide');
+                cargarKPIs();
+                cargarPorEstado(_estadoActual);
+                cargarAnalitica();
+            });
+        } else {
+            Swal.fire('Error', (r && r.message) || 'No se pudo cancelar.', 'error');
+        }
+    }).fail(function () {
+        $.LoadingOverlay("hide");
+        Swal.fire('Error', 'Fallo de red.', 'error');
+    });
+});
+        /* =========================================================
+           Asignar / Reasignar
+           ======================================================== */
+        function abrirAsignar(id, tipoId, subtipoId) {
+            $('#CasoIDAsignar').val(id);
+            $('#SoporteIDSelect').empty().append(new Option('Cargando...', ''));
+            $('#NotaAsignar').val('');
+            $('#modalAsignar').modal('show');
+
+            $.getJSON('@Url.Action("ObtenerSoportes","Helpdesk2025")', {
+                tipoId: (tipoId || 0),
+                subtipoId: (subtipoId || '')
+            }).done(function (r) {
+                $('#SoporteIDSelect').empty();
+                const arr = (r && r.data) || [];
+                if (!arr.length) {
+                    $('#SoporteIDSelect').append(new Option('No hay soportes configurados', ''));
+                } else {
+                    $('#SoporteIDSelect').append(new Option('Seleccione soporte...', ''));
+                    arr.forEach(function (s) {
+                        $('#SoporteIDSelect').append(
+                            new Option(s.Nombre + ' (' + (s.Area || 'N/D') + ')', s.SoporteID)
+                        );
+                    });
+                }
+            }).fail(function () {
+                $('#SoporteIDSelect').empty().append(new Option('Error cargando soportes', ''));
+            });
+        }
+
+        $('#btnGuardarAsignacion').click(function () {
+            const fd = $('#formAsignar').serialize();
+            if (!$('#SoporteIDSelect').val()) {
+                Swal.fire('Atención', 'Seleccione un soporte.', 'warning');
+                return;
+            }
+            $.LoadingOverlay("show", { image: "", text: "Asignando..." });
+            $.ajax({
+                url: '@Url.Action("AsignarCaso","Helpdesk2025")',
+                type: 'POST',
+                data: fd
+            }).done(function (r) {
+                $.LoadingOverlay("hide");
+                if (r && r.success) {
+                    Swal.fire('Éxito', 'Caso asignado.', 'success').then(function () {
+                        $('#modalAsignar').modal('hide');
+                        cargarKPIs();
+                        cargarPorEstado(_estadoActual);
+                        cargarAnalitica();
+                    });
+                } else {
+                    Swal.fire('Error', (r && r.message) || 'No se pudo asignar.', 'error');
+                }
+            }).fail(function () {
+                $.LoadingOverlay("hide");
+                Swal.fire('Error', 'Fallo de red.', 'error');
+            });
+        });
+
+        /* =========================================================
+           Ficha Persona
+           ======================================================== */
+        function verPersona(tipo, carnet, correo) {
+            $.getJSON('@Url.Action("PersonaInfo","Helpdesk2025")', {
+                carnet: carnet || '',
+                correo: correo || ''
+            }, function (r) {
+                if (!(r && r.success && r.data)) {
+                    Swal.fire('Info', 'No se encontró la persona.', 'info');
+                    return;
+                }
+                renderPersonaModal(r.data, r.imageDataURL, r.photoError);
+            }).fail(function () {
+                Swal.fire('Error', 'No se pudo obtener la persona.', 'error');
+            });
+        }
+
+        function renderPersonaModal(p, imgUrl, photoErr) {
+            $('#personaNombre').text(p.Nombre || '—');
+            $('#personaCargo').text(p.Cargo || '—');
+            $('#personaCarnet').text(p.Carnet || '—');
+            $('#personaCorreo').text(p.Correo || '—');
+            $('#personaArea').text(p.Area || '—');
+            $('#personaGerencia').text(p.Gerencia || '—');
+            $('#personaTelefono').text(p.Telefono || '—');
+
+            if (imgUrl) {
+                $('#personaFoto').attr('src', imgUrl).show();
+            } else {
+                $('#personaFoto').hide();
+            }
+
+            if (photoErr) {
+                $('#personaFotoError').text(photoErr).show();
+            } else {
+                $('#personaFotoError').hide();
+            }
+
+            $('#modalPersona').modal('show');
+        }
+
+        /* =========================================================
+           Admin Soportes (permisos tipo/subtipo)
+           ======================================================== */
+        function nodeIdTodos(tid) { return 'pt_todos_' + tid; }
+        function nodeIdSub(sid) { return 'pt_sub_' + sid; }
+
+        function cargarArbolTipos(cb) {
+            if (_arbolPerm.length > 0) { cb && cb(); return; }
+            $.getJSON('@Url.Content("~/Helpdesk2025/ArbolTipoSubtipo")', function (r) {
+                if (r && r.success) {
+                    _arbolPerm = r.data || [];
+                    cb && cb();
+                } else {
+                    Swal.fire('Error', 'No se pudo cargar Tipos/Subtipos.', 'error');
+                }
+            }).fail(function () {
+                Swal.fire('Error', 'Fallo de red al cargar Tipos/Subtipos.', 'error');
+            });
+        }
+
+        function renderPermTree() {
+            const $root = $('#permTree').empty();
+            if (!_arbolPerm.length) {
+                $root.html('<div class="text-muted">Sin datos</div>');
+                return;
+            }
+
+            const mapa = {};
+            (_permisosActuales || []).forEach(function (p) {
+                if (!mapa[p.TipoCasoID]) mapa[p.TipoCasoID] = { todos: false, subs: new Set() };
+                if (p.SubtipoCasoID == null) mapa[p.TipoCasoID].todos = true;
+                else mapa[p.TipoCasoID].subs.add(p.SubtipoCasoID);
+            });
+
+            const $ul = $('<ul class="list-unstyled mb-0"></ul>');
+
+            _arbolPerm.forEach(function (t) {
+                const tid = t.TipoCasoID;
+                const idTodos = nodeIdTodos(tid);
+
+                const $li = $('<li class="mb-2"></li>');
+
+                const $header = $(
+                    '<div class="d-flex align-items-center">' +
+                    '<strong class="mr-2">' + t.Nombre + '</strong>' +
+                    '<input type="checkbox" class="mr-1 chkTodos" id="' + idTodos + '" data-tipo="' + tid + '">' +
+                    '<label for="' + idTodos + '" class="mb-0">Todos los subtipos</label>' +
+                    '</div>'
+                );
+
+                const $subs = $('<div class="ml-4 mt-2"></div>');
+                if (t.Subtipos && t.Subtipos.length) {
+                    const $u2 = $('<ul class="list-unstyled mb-1"></ul>');
+                    t.Subtipos.forEach(function (s) {
+                        const idSub = nodeIdSub(s.SubtipoCasoID);
+                        const $li2 = $(
+                            '<li class="mb-1">' +
+                            '<input type="checkbox" class="mr-1 chkSub" id="' + idSub + '" data-tipo="' + tid + '" data-sub="' + s.SubtipoCasoID + '">' +
+                            '<label for="' + idSub + '" class="mb-0">' + s.Nombre + '</label>' +
+                            '</li>'
+                        );
+                        $u2.append($li2);
+                    });
+                    $subs.append($u2);
+                } else {
+                    $subs.append('<div class="text-muted">Sin subtipos</div>');
+                }
+
+                const m = mapa[tid];
+                if (m && m.todos) {
+                    $header.find('.chkTodos').prop('checked', true);
+                    $subs.find('input.chkSub').prop('checked', false).prop('disabled', true);
+                } else if (m) {
+                    $subs.find('input.chkSub').each(function () {
+                        const sid = parseInt($(this).data('sub'), 10);
+                        if (m.subs.has(sid)) $(this).prop('checked', true);
+                    });
+                }
+
+                $header.find('.chkTodos').on('change', function () {
+                    const on = $(this).is(':checked');
+                    $subs.find('input.chkSub').prop('disabled', on);
+                    if (on) $subs.find('input.chkSub').prop('checked', false);
+                });
+
+                $li.append($header, $subs);
+                $ul.append($li);
+            });
+
+            $root.append($ul);
+        }
+
+        function leerPermisosSeleccionados() {
+            const out = [];
+            _arbolPerm.forEach(function (t) {
+                const tid = t.TipoCasoID;
+                if ($('#' + nodeIdTodos(tid)).is(':checked')) {
+                    out.push({ TipoCasoID: tid, SubtipoCasoID: null });
+                    return;
+                }
+                (t.Subtipos || []).forEach(function (s) {
+                    if ($('#' + nodeIdSub(s.SubtipoCasoID)).is(':checked')) {
+                        out.push({ TipoCasoID: tid, SubtipoCasoID: s.SubtipoCasoID });
+                    }
+                });
+            });
+            return out;
+        }
+
+        function cargarSoportes() {
+            const q = ($('#txtBuscarSoporte').val() || '').trim();
+            $('#tblSoportes tbody').html('<tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>');
+
+            $.getJSON('@Url.Content("~/Helpdesk2025/Admin_ListarSoportes")', { q: q }, function (r) {
+                if (!(r && r.success)) {
+                    $('#tblSoportes tbody').html('<tr><td colspan="4" class="text-center text-danger">No se pudo listar soportes.</td></tr>');
+                    return;
+                }
+                const arr = r.data || [];
+                const $tb = $('#tblSoportes tbody').empty();
+                if (!arr.length) {
+                    $tb.append('<tr><td colspan="4" class="text-center text-muted">Sin soportes configurados.</td></tr>');
+                    return;
+                }
+
+                arr.forEach(function (s) {
+                    const badge = s.Activo ? '<span class="badge badge-success">Sí</span>' : '<span class="badge badge-secondary">No</span>';
+                    const btns =
+                        '<div class="btn-group btn-group-sm">' +
+                        '<button class="btn btn-outline-primary" onclick="adminEditar(\'' + s.SoporteID + '\')"><i class="fas fa-edit"></i></button>' +
+                        '<button class="btn ' + (s.Activo ? 'btn-outline-danger' : 'btn-outline-success') + '" onclick="adminToggle(\'' + s.SoporteID + '\',' + (!s.Activo) + ')">' +
+                        '<i class="fas ' + (s.Activo ? 'fa-user-slash' : 'fa-user-check') + '"></i></button>' +
+                        '</div>';
+
+                    $tb.append(
+                        '<tr>' +
+                        '<td>' + (s.Nombre || '-') + '</td>' +
+                        '<td>' + (s.Email || '-') + '</td>' +
+                        '<td class="text-center">' + badge + '</td>' +
+                        '<td class="text-center">' + btns + '</td>' +
+                        '</tr>'
+                    );
+                });
+            }).fail(function () {
+                $('#tblSoportes tbody').html('<tr><td colspan="4" class="text-center text-danger">Fallo de red.</td></tr>');
+            });
+        }
+
+        window.adminEditar = function (soporteID) {
+            _adminSoporteSel = soporteID;
+            $('#formSoporte')[0].reset();
+            $('#EmpleadoSel').empty();
+
+            $.getJSON('@Url.Content("~/Helpdesk2025/Admin_ObtenerSoporte")', { id: soporteID }, function (r) {
+                if (!(r && r.success)) {
+                    Swal.fire('Error', r.message || 'No se pudo obtener.', 'error');
+                    return;
+                }
+                const s = r.data;
+                $('#SoporteID').val(s.SoporteID);
+                $('#Email').val(s.Email);
+                $('#Nombre').val(s.Nombre);
+                $('#Area').val(s.Area || '');
+                $('#Activo').prop('checked', !!s.Activo);
+
+                _permisosActuales = (s.Permisos || []).map(function (p) {
+                    return { TipoCasoID: p.TipoCasoID, SubtipoCasoID: p.SubtipoCasoID };
+                });
+
+                cargarArbolTipos(function () {
+                    renderPermTree();
+                });
+
+                setViewerSoporte(s.SoporteID, $('#Nombre').val() || s.SoporteID);
+            }).fail(function () {
+                Swal.fire('Error', 'Fallo de red al obtener.', 'error');
+            });
+        };
+
+        window.adminToggle = function (soporteID, activo) {
+            $.post('@Url.Content("~/Helpdesk2025/Admin_ToggleSoporte")', { id: soporteID, activo: activo })
+                .done(function (r) {
+                    if (r && r.success) {
+                        cargarSoportes();
+                        Swal.fire('OK', 'Estado actualizado.', 'success');
+                    } else {
+                        Swal.fire('Error', r.message || 'No se pudo cambiar estado.', 'error');
+                    }
+                }).fail(function () {
+                    Swal.fire('Error', 'Fallo de red al cambiar estado.', 'error');
+                });
+        };
+
+        $('#btnBuscarEmp').on('click', function () {
+            const q = ($('#txtBuscarEmp').val() || '').trim();
+            if (!q) {
+                $('#EmpleadoSel').empty().append(new Option('Escribe algo para buscar', ''));
+                return;
+            }
+            $('#EmpleadoSel').empty().append(new Option('Buscando...', ''));
+            $.getJSON('@Url.Action("BuscarEmpleados","Helpdesk2025")', { q: q }, function (r) {
+                const arr = (r && r.data) || [];
+                $('#EmpleadoSel').empty().append(new Option('Seleccione...', ''));
+                arr.forEach(function (e) {
+                    $('#EmpleadoSel').append(
+                        new Option(e.Nombre + ' <' + e.Correo + '> (' + (e.Area || 'N/D') + ')', JSON.stringify(e))
+                    );
+                });
+            }).fail(function () {
+                $('#EmpleadoSel').empty().append(new Option('Error al buscar', ''));
+            });
+        });
+
+        $('#EmpleadoSel').on('change', function () {
+            const v = $(this).val();
+            if (!v) return;
+            try {
+                const e = JSON.parse(v);
+                $('#SoporteID').val(e.Correo || '');
+                $('#Email').val(e.Correo || '');
+                $('#Nombre').val(e.Nombre || '');
+                $('#Area').val(e.Area || '');
+            } catch (e) { }
+        });
+
+        $('#btnAdminSoportes').on('click', function () {
+            _adminSoporteSel = null;
+            $('#formSoporte')[0].reset();
+            $('#EmpleadoSel').empty();
+            _permisosActuales = [];
+            $('#txtBuscarSoporte').val('');
+
+            $.LoadingOverlay("show", { image: "", text: "Cargando administrador..." });
+            cargarArbolTipos(function () {
+                renderPermTree();
+                cargarSoportes();
+                $.LoadingOverlay("hide");
+                $('#modalSoporte').modal('show');
+            });
+        });
+
+        $('#btnBuscarSoporte').on('click', function () {
+            cargarSoportes();
+        });
+        // Nuevo => guarda (si es válido) y luego limpia para crear otro
+     $('#btnNuevoSoporteModal').off('click').on('click', function (e) {
+    e.preventDefault();
+
+    // 1) TOMA lo que haya en pantalla AHORITA (antes de limpiar)
+    var req = {
+        SoporteID: ($('#SoporteID').val() || '').trim(),
+        Email:     ($('#Email').val() || '').trim(),
+        Nombre:    ($('#Nombre').val() || '').trim(),
+        Area:      ($('#Area').val() || '').trim(),
+        Activo:    $('#Activo').is(':checked'),
+        EsAdmin:   false,
+        EsSuper:   false,
+        Permisos:  (typeof leerPermisosSeleccionados === 'function')
+                    ? leerPermisosSeleccionados()
+                    : []
+    };
+
+    // Si está vacío, entonces "Nuevo" solo limpia (modo crear)
+    if (!req.SoporteID && !req.Email && !req.Nombre && !req.Area && (!req.Permisos || req.Permisos.length === 0)) {
+        $('#SoporteID').val('');
+        $('#Email').val('');
+        $('#Nombre').val('');
+        $('#Area').val('');
+        $('#Activo').prop('checked', true);
+        window._adminSoporteSel = null;
+
+        if (typeof limpiarPermisosSeleccionados === 'function') {
+            limpiarPermisosSeleccionados();
+        } else {
+            $('#permTree').find('input[type="checkbox"]').prop('checked', false);
+        }
+
+        $('#lblViewerChip').text('—');
+        $('#txtTargetId').val('');
+        $('#tblVisibilidad tbody').empty();
+        return;
+    }
+
+    // Validaciones del Controller
+    if (!req.SoporteID || !req.Email || !req.Nombre) {
+        Swal.fire('Atención', 'SoporteID, Email y Nombre son obligatorios.', 'warning');
+        return;
+    }
+    if (!req.Permisos || req.Permisos.length === 0) {
+        Swal.fire('Atención', 'Debe seleccionar al menos un permiso.', 'warning');
+        return;
+    }
+
+    var token = $('input[name="__RequestVerificationToken"]').val();
+
+    // 2) GUARDA lo actual
+    $.ajax({
+        url: '@Url.Content("~/Helpdesk2025/Admin_GuardarSoporte")',
+        type: 'POST',
+        data: JSON.stringify(req),
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        headers: token ? { 'RequestVerificationToken': token } : {}
+    })
+    .done(function (r) {
+        if (r && (r.success === true || r.success === 1 || r.success === "1")) {
+            Swal.fire('Éxito', 'Soporte guardado. Listo para crear uno nuevo.', 'success');
+
+            if (typeof cargarSoportes === 'function') cargarSoportes();
+            window._adminSoporteSel = req.SoporteID;
+
+            // 3) YA GUARDÓ -> LIMPIA PARA "NUEVO"
+            $('#SoporteID').val('');
+            $('#Email').val('');
+            $('#Nombre').val('');
+            $('#Area').val('');
+            $('#Activo').prop('checked', true);
+
+            window._adminSoporteSel = null;
+
+            if (typeof limpiarPermisosSeleccionados === 'function') {
+                limpiarPermisosSeleccionados();
+            } else {
+                $('#permTree').find('input[type="checkbox"]').prop('checked', false);
+            }
+
+            $('#lblViewerChip').text('—');
+            $('#txtTargetId').val('');
+            $('#tblVisibilidad tbody').empty();
+
+            // enfoca primer campo
+            $('#SoporteID').focus();
+        } else {
+            Swal.fire('Error', (r && r.message) ? r.message : 'No se pudo guardar.', 'error');
+        }
+    })
+    .fail(function (xhr) {
+        console.log('STATUS:', xhr.status);
+        console.log('RESPONSE:', xhr.responseText);
+        Swal.fire('Error', 'Fallo al guardar (ver consola).', 'error');
+    });
+});
+ $('#btnGuardarSoporte').off('click').on('click', function (e) {
+    e.preventDefault();
+
+    // arma request EXACTO al DTO del Controller
+    var req = {
+        SoporteID: ($('#SoporteID').val() || '').trim(),
+        Email:     ($('#Email').val() || '').trim(),
+        Nombre:    ($('#Nombre').val() || '').trim(),
+        Area:      ($('#Area').val() || '').trim(),
+        Activo:    $('#Activo').is(':checked'),
+        EsAdmin:   false,
+        EsSuper:   false,
+        Permisos:  (typeof leerPermisosSeleccionados === 'function')
+                    ? leerPermisosSeleccionados()
+                    : []
+    };
+
+    // validaciones mínimas (mismo criterio del controller)
+    if (!req.SoporteID || !req.Email || !req.Nombre) {
+        Swal.fire('Atención', 'SoporteID, Email y Nombre son obligatorios.', 'warning');
+        return;
+    }
+    if (!req.Permisos || req.Permisos.length === 0) {
+        Swal.fire('Atención', 'Debe seleccionar al menos un permiso.', 'warning');
+        return;
+    }
+
+    // IMPORTANTE: antiforgery si tu action lo exige
+    // (si no usas @Html.AntiForgeryToken(), este header no estorba)
+    var token = $('input[name="__RequestVerificationToken"]').val();
+
+    $.ajax({
+        url: '@Url.Content("~/Helpdesk2025/Admin_GuardarSoporte")',
+        type: 'POST',
+        data: JSON.stringify(req),
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        headers: token ? { 'RequestVerificationToken': token } : {}
+    })
+    .done(function (r) {
+        if (r && (r.success === true || r.success === 1 || r.success === "1")) {
+            Swal.fire('Éxito', 'Soporte guardado.', 'success');
+
+            // refresca lista
+            if (typeof cargarSoportes === 'function') cargarSoportes();
+
+            // re-selecciona el recién guardado
+            window._adminSoporteSel = req.SoporteID;
+
+            // recarga permisos desde BD si existe esa función
+            if (typeof cargarPermisosSoporte === 'function') {
+                cargarPermisosSoporte(req.SoporteID);
+            }
+        } else {
+            Swal.fire('Error', (r && r.message) ? r.message : 'No se pudo guardar.', 'error');
+        }
+    })
+    .fail(function (xhr) {
+        // esto NO es "inventado": aquí cae cuando el server responde 400/500 o bloquea el request
+        console.log('STATUS:', xhr.status);
+        console.log('RESPONSE:', xhr.responseText);
+        Swal.fire('Error', 'Fallo al guardar (ver consola: STATUS/RESPONSE).', 'error');
+    });
+});
+
+        /* =========================================================
+           Visibilidad soportes (quién ve a quién)
+           ======================================================== */
+        function setViewerSoporte(soporteId, nombre) {
+            _adminSoporteSel = soporteId;
+            $('#lblViewerChip').text(nombre || soporteId);
+            $('#txtTargetId').val('');
+            cargarVisibilidad();
+        }
+
+   // JS: ya solo usas la propiedad Etiqueta que viene del backend
+function cargarVisibilidad() {
+    if (!_adminSoporteSel) {
+        $('#tblVisibilidad tbody').empty();
+        return;
+    }
+
+    $('#tblVisibilidad tbody').html('<tr><td colspan="2" class="text-center text-muted">Cargando…</td></tr>');
+
+    $.getJSON('@Url.Action("Admin_Visibilidad_Listar","Helpdesk2025")',
+        { viewerId: _adminSoporteSel }, function (r) {
+            const $tb = $('#tblVisibilidad tbody').empty();
+            if (!(r && r.success)) {
+                $tb.html('<tr><td colspan="2" class="text-danger text-center">Error</td></tr>');
+                return;
+            }
+            const arr = r.data || [];
+            if (!arr.length) {
+                $tb.html('<tr><td colspan="2" class="text-center text-muted">Sin permisos</td></tr>');
+                return;
+            }
+
+            arr.forEach(function (x) {
+                const nom = x.Etiqueta || '-';
+                $tb.append(
+                    '<tr>' +
+                        '<td>' + nom + '</td>' +
+                        '<td class="text-center">' +
+                            '<button class="btn btn-sm btn-outline-danger" onclick="quitarVis(' + x.Id + ')">' +
+                                '<i class="fas fa-times"></i>' +
+                            '</button>' +
+                        '</td>' +
+                    '</tr>'
+                );
+            });
+        }).fail(function () {
+            $('#tblVisibilidad tbody').html('<tr><td colspan="2" class="text-danger text-center">Fallo de red</td></tr>');
+        });
+}
+
+
+        $('#btnAddVis').on('click', function () {
+            const target = ($('#txtTargetId').val() || '').trim();
+            if (!_adminSoporteSel) {
+                Swal.fire('Atención', 'Seleccione primero el soporte (Viewer).', 'warning');
+                return;
+            }
+            if (!target) return;
+            if (String(target).toLowerCase() === String(_adminSoporteSel).toLowerCase()) {
+                Swal.fire('Atención', 'No puedes agregarte a ti mismo.', 'info');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+            formData.append('viewerId', _adminSoporteSel);
+            formData.append('targetId', target);
+
+            $.ajax({
+                url: '@Url.Action("Admin_Visibilidad_Agregar","Helpdesk2025")',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false
+            }).done(function (r) {
+                if (r && r.success) {
+                    $('#txtTargetId').val('');
+                    cargarVisibilidad();
+                    if (r.duplicated) {
+                        Swal.fire({
+                            toast: true, position: 'top-end', icon: 'info',
+                            title: 'Ya existía', timer: 1600, showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            toast: true, position: 'top-end', icon: 'success',
+                            title: 'Agregado', timer: 1200, showConfirmButton: false
+                        });
+                    }
+                } else {
+                    Swal.fire('Error', (r && r.message) || 'No se pudo agregar', 'error');
+                }
+            }).fail(function () {
+                Swal.fire('Error', 'Fallo de red', 'error');
+            });
+        });
+
+        function quitarVis(id) {
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+            formData.append('id', id);
+
+            $.ajax({
+                url: '@Url.Action("Admin_Visibilidad_Quitar","Helpdesk2025")',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false
+            }).done(function (r) {
+                if (r && r.success) {
+                    cargarVisibilidad();
+                } else {
+                    Swal.fire('Error', (r && r.message) || 'No se pudo quitar', 'error');
+                }
+            }).fail(function () {
+                Swal.fire('Error', 'Fallo de red', 'error');
+            });
+        }
+
+        $('#modalSoporte').on('shown.bs.modal', function () {
+            const sId = $('#SoporteID').val();
+            if (sId) {
+                setViewerSoporte(sId, $('#Nombre').val() || sId);
+            } else {
+                $('#lblViewerChip').text('—');
+                $('#tblVisibilidad tbody').empty();
+            }
+        });
+
+        $('#SoporteID').on('change', function () {
+            const sId = ($(this).val() || '').trim();
+            if (!sId) {
+                _adminSoporteSel = null;
+                $('#lblViewerChip').text('—');
+                $('#tblVisibilidad tbody').empty();
+                return;
+            }
+            setViewerSoporte(sId, $('#Nombre').val() || sId);
+        });
+
+        /* =========================================================
+           Eventos generales / inicialización
+           ======================================================== */
+        $('#estadoTabs').on('click', '.hd-tablink', function (e) {
+            e.preventDefault();
+            $('#estadoTabs .hd-tablink').removeClass('active');
+            $(this).addClass('active');
+            cargarPorEstado($(this).data('estado'));
+        });
+
+        $('#btnResumenSoporte').on('click', abrirSoporte360);
+
+        $('.modal').on('show.bs.modal', function () {
+            $('.dropdown-menu._float').remove();
+        });
+
+        $('#TipoIDRecateg').off('change').on('change', function () {
+            var id = $(this).val();
+            var $sub = $('#SubtipoIDRecateg');
+            $sub.empty();
+            if (!id) {
+                $sub.append(new Option('Seleccione tipo primero', ''));
+                return;
+            }
+            $.getJSON('@Url.Action("GetSubtiposCaso","Helpdesk2025")', { tipoCasoId: id }, function (r) {
+                $sub.append(new Option('Seleccione...', ''));
+                if (r && r.success) {
+                    for (var i = 0; i < r.data.length; i++) {
+                        var s = r.data[i];
+                        $sub.append(new Option(s.Nombre, s.SubtipoCasoID));
+                    }
+                }
+            });
+        });
+
+        function cargarTiposRecateg(preselectTipoId) {
+            var $tipo = $('#TipoIDRecateg');
+            $tipo.empty().append(new Option('Cargando...', ''));
+
+            $.getJSON('@Url.Action("GetTiposCaso","Helpdesk2025")', function (r) {
+                $tipo.empty().append(new Option('Seleccione...', ''));
+                if (r && r.success) {
+                    for (var i = 0; i < r.data.length; i++) {
+                        var t = r.data[i];
+                        $tipo.append(new Option(t.Nombre, t.TipoCasoID));
+                    }
+                    if (preselectTipoId) {
+                        $tipo.val(String(preselectTipoId));
+                    }
+                    $tipo.trigger('change');
+                }
+            });
+        }
+
+        function abrirRecategorizar(casoId, tipoIdActual, subtipoIdActual) {
+            $('#CasoIDRecateg').val(casoId);
+            $('#SubtipoIDRecateg').empty().append(new Option('Seleccione...', ''));
+
+            cargarTiposRecateg(tipoIdActual);
+
+            $('#modalRecategorizar').one('shown.bs.modal', function () {
+                if (subtipoIdActual) {
+                    setTimeout(function () {
+                        $('#SubtipoIDRecateg').val(String(subtipoIdActual));
+                    }, 150);
+                }
+            });
+
+            $('#modalRecategorizar').modal('show');
+        }
+
+        $(document).on('click', '#btnGuardarRecateg', function () {
+            var $btn = $(this);
+            var url = $('#modalRecategorizar').data('action');
+            var token = $('#formRecateg input[name="__RequestVerificationToken"]').val();
+
+            var casoId = parseInt($('#CasoIDRecateg').val(), 10);
+            var tipoId = parseInt($('#TipoIDRecateg').val(), 10);
+            var subtipoId = parseInt($('#SubtipoIDRecateg').val(), 10);
+
+            if (!casoId || !tipoId || !subtipoId) {
+                Swal.fire('Validación', 'Seleccione Tipo y Subtipo.', 'warning');
+                return;
+            }
+
+            $btn.prop('disabled', true);
+            $.LoadingOverlay("show", { image: "", text: "Guardando..." });
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                dataType: 'json',
+                headers: { 'RequestVerificationToken': token },
+                data: {
+                    __RequestVerificationToken: token,
+                    casoId: casoId,
+                    tipoId: tipoId,
+                    subtipoId: subtipoId
+                }
+            }).done(function (r) {
+                if (r && r.success) {
+                    $('#modalRecategorizar').modal('hide');
+                    if (typeof cargarKPIs === 'function') cargarKPIs();
+                    if (typeof cargarPorEstado === 'function') cargarPorEstado(_estadoActual);
+                    if (typeof cargarAnalitica === 'function') cargarAnalitica();
+                    Swal.fire('Éxito', 'Categoría actualizada.', 'success');
+                } else {
+                    Swal.fire('Error', (r && r.message) || 'No se pudo guardar.', 'error');
+                }
+            }).fail(function (jqXHR) {
+                Swal.fire('Error', 'Error ' + (jqXHR.status || 0) + ' - ' + (jqXHR.statusText || 'Fallo de red'), 'error');
+            }).always(function () {
+                $.LoadingOverlay("hide");
+                $btn.prop('disabled', false);
+            });
+        });
+
+        // Inicio
+
+        // =========================================================
+        //  INICIO
+        // =========================================================
+        $(function () {
+            cargarYo(function () {
+                initTabla();
+                cargarKPIs();
+                cargarPorEstado('Pendiente');
+            });
+        });
+    </script>
+}

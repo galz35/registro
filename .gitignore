@@ -1,0 +1,61 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_cache/
+
+# Build outputs
+dist/
+build/
+bin/
+obj/
+out/
+.next/
+.nuxt/
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.csproj
+*.user
+.expo/
+.svelte-kit/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project-specific ignores
+*.xlsx
+*.xls
+*.csv
+.env
+.env.*
+!.env.example
+
+# React specific
+react/node_modules/
+react/dist/
+
+# NestJS specific
+nest/node_modules/
+nest/dist/
+
+# Flutter specific
+flutter/.dart_tool/
+flutter/build/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/.packages
+flutter/generated/
+flutter/.pub-cache/
+flutter/pubspec.lock

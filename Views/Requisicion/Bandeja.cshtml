@@ -1,0 +1,880 @@
+﻿@{
+    ViewBag.Title = "Bandeja de Requisiciones (RRHH)";
+    bool esAnalista = true;
+}
+
+<style>
+    :root {
+        --claro-red: #d32f2f;
+        --claro-red-hover: #b71c1c;
+        --dark-bg: #0f172a;
+        --border-color: #cbd5e1;
+        --light-bg: #f8fafc;
+        --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 12px -5px rgba(0, 0, 0, 0.02);
+        --transition-soft: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        background-color: #f1f5f9;
+        color: #334155;
+    }
+
+    .main-container {
+        padding: 24px;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        background: #ffffff;
+        padding: 20px 24px;
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .header-info h2 {
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin: 0;
+        font-size: 26px;
+        letter-spacing: -0.5px;
+    }
+
+    .header-info p {
+        color: #64748b;
+        margin: 4px 0 0 0;
+        font-size: 14px;
+    }
+
+    /* KPIs */
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        display: flex;
+        align-items: center;
+        transition: var(--transition-soft);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background-color: #cbd5e1;
+    }
+
+    .kpi-card.kpi-borrador::before { background-color: #64748b; }
+    .kpi-card.kpi-pendiente::before { background-color: #2563eb; }
+    .kpi-card.kpi-devuelta::before { background-color: #ea580c; }
+    .kpi-card.kpi-aprobada::before { background-color: #10b981; }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-right: 16px;
+    }
+
+    .kpi-borrador .kpi-icon { color: #64748b; background-color: #f1f5f9; }
+    .kpi-pendiente .kpi-icon { color: #2563eb; background-color: #dbeafe; }
+    .kpi-devuelta .kpi-icon { color: #ea580c; background-color: #ffedd5; }
+    .kpi-aprobada .kpi-icon { color: #059669; background-color: #d1fae5; }
+
+    .kpi-info h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .kpi-info p {
+        font-size: 12px;
+        color: #64748b;
+        margin: 2px 0 0 0;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    /* Buttons */
+    .btn-claro {
+        background-color: var(--claro-red);
+        color: #ffffff !important;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        transition: var(--transition-soft);
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.15);
+    }
+
+    .btn-claro:hover {
+        background-color: var(--claro-red-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(211, 47, 47, 0.25);
+    }
+
+    .btn-secondary-custom {
+        background-color: #e2e8f0;
+        color: #334155 !important;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+        transition: var(--transition-soft);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-secondary-custom:hover {
+        background-color: #cbd5e1;
+    }
+
+    .btn-success-custom {
+        background-color: #10b981;
+        color: #ffffff !important;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: var(--transition-soft);
+    }
+
+    .btn-success-custom:hover {
+        background-color: #059669;
+    }
+
+    /* Cards generic */
+    .content-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        margin-bottom: 24px;
+    }
+
+    /* Badges */
+    .badge-custom {
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-borrador { background-color: #f1f5f9; color: #475569; }
+    .badge-enviada { background-color: #dbeafe; color: #1d4ed8; }
+    .badge-reenviada { background-color: #eff6ff; color: #2563eb; }
+    .badge-devuelta { background-color: #ffedd5; color: #c2410c; }
+    .badge-aprobada { background-color: #d1fae5; color: #047857; }
+    .badge-cancelada { background-color: #fee2e2; color: #b91c1c; }
+
+    /* Form Styles in Modals */
+    .form-group-custom {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group-custom label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control-custom {
+        height: 38px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        transition: var(--transition-soft);
+    }
+
+    .form-control-custom:focus {
+        border-color: var(--claro-red);
+        box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
+    }
+
+    #pageLoader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        font-weight: 500;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--claro-red);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Inbox Layout */
+    .inbox-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 20px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        overflow: hidden;
+        min-height: 650px;
+        margin-bottom: 24px;
+    }
+
+    .inbox-sidebar {
+        border-right: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        background: #f8fafc;
+        max-height: 650px;
+    }
+
+    .inbox-header {
+        padding: 16px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #ffffff;
+        font-weight: 700;
+        color: var(--dark-bg);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .inbox-list {
+        overflow-y: auto;
+        flex-grow: 1;
+        padding: 12px;
+    }
+
+    .inbox-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: var(--transition-soft);
+        position: relative;
+    }
+
+    .inbox-item:hover {
+        border-color: var(--claro-red);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .inbox-item.active {
+        background: #fef2f2;
+        border-color: var(--claro-red);
+    }
+
+    .inbox-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background: var(--claro-red);
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }
+
+    .inbox-item-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+
+    .inbox-item-folio {
+        font-weight: 700;
+        color: var(--claro-red);
+        font-size: 13px;
+    }
+
+    .inbox-item-date {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .inbox-item-title {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--dark-bg);
+        margin: 0 0 4px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .inbox-item-subtitle {
+        font-size: 12px;
+        color: #64748b;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .inbox-reader {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        max-height: 650px;
+    }
+
+    .reader-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #64748b;
+        text-align: center;
+        padding: 40px;
+    }
+
+    .reader-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto;
+        padding: 24px;
+    }
+
+    .reader-header {
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 16px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div id="pageLoader">
+    <div class="spinner"></div>
+    <span id="loader-text">Cargando Requisiciones...</span>
+</div>
+
+<div class="main-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-info">
+            <h2>Módulo de Requisiciones (Bandeja de Revisión)</h2>
+            <p>Auditoría de solicitudes, descriptores de puestos y bitácoras.</p>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+        <div class="kpi-card kpi-borrador">
+            <div class="kpi-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-borradores">0</h3>
+                <p>Borradores</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-pendiente">
+            <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-pendientes">0</h3>
+                <p>En Revisión</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-devuelta">
+            <div class="kpi-icon"><i class="fas fa-undo"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-devueltas">0</h3>
+                <p>Devueltas</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-aprobada">
+            <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="kpi-info">
+                <h3 id="kpi-aprobadas">0</h3>
+                <p>Aprobadas</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros (Para el Analista) -->
+    <div class="content-card filter-card">
+        <div class="filter-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+            <div class="form-group-custom">
+                <label for="filtro-estado">Estado</label>
+                <select id="filtro-estado" class="form-control-custom">
+                    <option value="">-- Todos los Estados --</option>
+                    <option value="BORRADOR">Borrador</option>
+                    <option value="ENVIADA" selected>Enviada</option>
+                    <option value="REENVIADA">Reenviada</option>
+                    <option value="DEVUELTA">Devuelta</option>
+                    <option value="APROBADA">Aprobada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                </select>
+            </div>
+            <div class="form-group-custom">
+                <label for="filtro-gerencia">Gerencia</label>
+                <select id="filtro-gerencia" class="form-control-custom">
+                    <option value="">-- Todas las Gerencias --</option>
+                </select>
+            </div>
+            <div class="form-group-custom">
+                <label for="filtro-desde">Desde</label>
+                <input type="date" id="filtro-desde" class="form-control-custom" />
+            </div>
+            <div class="form-group-custom">
+                <label for="filtro-hasta">Hasta</label>
+                <input type="date" id="filtro-hasta" class="form-control-custom" />
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-filtrar" class="btn-claro" style="height: 38px; width: 100%; justify-content: center;">Filtrar</button>
+                <button type="button" id="btn-limpiar" class="btn-secondary-custom" style="height: 38px;"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado Principal (Bandeja Inbox para Analista) -->
+    <div class="inbox-container">
+        <!-- Sidebar / Inbox List -->
+        <div class="inbox-sidebar">
+            <div class="inbox-header">
+                <i class="fas fa-inbox text-danger"></i> <span>Bandeja de Solicitudes</span>
+            </div>
+            <div class="inbox-list" id="inbox-requisiciones">
+                <div style="text-align:center; padding: 20px; color: #64748b;">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> Cargando bandeja...
+                </div>
+            </div>
+        </div>
+        <!-- Reader / Detalle -->
+        <div class="inbox-reader" id="inbox-reader-panel">
+            <div class="reader-placeholder" id="inbox-placeholder">
+                <i class="far fa-envelope-open" style="font-size:48px; color:#cbd5e1; margin-bottom:15px;"></i>
+                <h5 style="font-weight:700; color:#475569;">Bandeja de Revisión</h5>
+                <p style="font-size:13px; max-width:300px; margin:0 auto; color:#64748b;">Seleccione una requisición de la bandeja izquierda para auditar sus descriptores y bitácora en tiempo real.</p>
+            </div>
+            
+            <div class="reader-content" id="inbox-reader-content" style="display:none;">
+                <!-- Cabecera de Requisición -->
+                <div class="reader-header" style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <h4 style="font-weight:700; color:#1e293b; margin:0;" id="read-puesto"></h4>
+                        <p style="font-size:13px; color:#64748b; margin:4px 0 0 0;">
+                            Folio: <strong class="text-danger" id="read-folio"></strong> | 
+                            Tipo: <span id="read-tipo"></span> | 
+                            Creada por: <span id="read-solicitante"></span>
+                        </p>
+                    </div>
+                    <div id="read-badge-estado"></div>
+                </div>
+
+                <!-- Cuerpo de Detalles -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold" style="color:var(--dark-bg); margin-bottom:12px;"><i class="fas fa-user-tie text-danger mr-1"></i> Información General</h6>
+                        <table class="table table-sm table-borderless" style="font-size:13px; line-height:1.8;">
+                            <tr><th style="width:150px; color:#64748b; font-weight:500;">Colaborador Saliente:</th><td id="read-saliente"></td></tr>
+                            <tr><th style="color:#64748b; font-weight:500;">Posición SIGHO:</th><td id="read-codigo-pos"></td></tr>
+                            <tr><th style="color:#64748b; font-weight:500;">Gerencia / Subgerencia:</th><td id="read-gerencia"></td></tr>
+                            <tr><th style="color:#64748b; font-weight:500;">Contrato / Horario:</th><td id="read-contrato"></td></tr>
+                            <tr><th style="color:#64748b; font-weight:500;">Sueldo / Comisiones:</th><td id="read-sueldo"></td></tr>
+                            <tr><th style="color:#64748b; font-weight:500;">Observaciones Jefe:</th><td id="read-obs-jefe" style="font-style:italic;"></td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="read-traslado-box" style="display:none; background-color:#f8fafc; border-radius:12px; padding:15px; border-left: 4px solid var(--claro-red);">
+                            <h6 class="font-weight-bold" style="color:var(--dark-bg); margin-top:0; margin-bottom:12px;"><i class="fas fa-exchange-alt text-danger mr-1"></i> Datos de Traslado</h6>
+                            <table class="table table-sm table-borderless" style="font-size:13px; line-height:1.8; margin-bottom:0;">
+                                <tr><th style="width:130px; color:#64748b; font-weight:500;">Destino:</th><td id="read-t-destino"></td></tr>
+                                <tr><th style="color:#64748b; font-weight:500;">Jefe Destino:</th><td id="read-t-jefe"></td></tr>
+                                <tr><th style="color:#64748b; font-weight:500;">Propuesta / Plazo:</th><td id="read-t-plazo"></td></tr>
+                                <tr><th style="color:#64748b; font-weight:500;">Justificación:</th><td id="read-t-justif"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <hr style="margin:20px 0; border-color:#e2e8f0;" />
+
+                <!-- Descriptores y Adjuntos -->
+                <div style="margin-bottom:20px;">
+                    <h6 class="font-weight-bold" style="color:var(--dark-bg);"><i class="fas fa-paperclip text-danger mr-1"></i> Documentos Adjuntos</h6>
+                    <div class="list-group" id="read-documentos-list" style="margin-top:10px;">
+                        <!-- Dinámico -->
+                    </div>
+                </div>
+
+                <hr style="margin:20px 0; border-color:#e2e8f0;" />
+
+                <!-- Bitácora de Aprobaciones -->
+                <div style="margin-bottom:25px;">
+                    <h6 class="font-weight-bold" style="color:var(--dark-bg);"><i class="fas fa-history text-danger mr-1"></i> Bitácora e Historial</h6>
+                    <div class="table-responsive" style="max-height:150px; overflow-y:auto; border: 1px solid #e2e8f0; border-radius:8px; margin-top:10px;">
+                        <table class="table table-sm table-striped" style="font-size:12px; margin:0;" id="read-tabla-historial">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Estado Anterior</th>
+                                    <th>Estado Nuevo</th>
+                                    <th>Usuario</th>
+                                    <th>Observación</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel de Decisión -->
+                <div style="background-color:#f8fafc; border: 1px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:auto;">
+                    <h6 class="font-weight-bold" style="color:var(--dark-bg); margin-top:0; margin-bottom:10px;"><i class="fas fa-gavel mr-1"></i> Panel de Decisión del Especialista</h6>
+                    <div class="form-group mb-3">
+                        <textarea id="read-observaciones-decision" class="form-control-custom" style="height:60px; font-size:13px; width:100%; box-sizing:border-box;" placeholder="Ingrese observaciones del trámite (Obligatorio en caso de devolución)..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end" style="gap:12px; display:flex;">
+                        <button type="button" class="btn-secondary-custom text-danger" onclick="procesarDecisionInbox('Devolver')"><i class="fas fa-undo mr-1"></i> Devolver Solicitud</button>
+                        <button type="button" class="btn-success-custom" onclick="procesarDecisionInbox('Aprobar')"><i class="fas fa-check mr-1"></i> Aprobar Requisición</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    var esAnalista = true;
+    var currentInboxReqId = 0;
+
+    $(document).ready(function () {
+        // Cargar Catálogos para Filtros
+        $.get('@Url.Action("ObtenerCatalogos", "Requisicion")', function (res) {
+            if (res.success) {
+                if ($('#filtro-gerencia').length > 0) {
+                    var selectFiltro = $('#filtro-gerencia');
+                    $.each(res.gerencias, function (i, val) {
+                        selectFiltro.append($('<option>', { value: val, text: val }));
+                    });
+                }
+            }
+        });
+
+        // Cargar bandeja
+        cargarBandejaInbox();
+        cargarKPIs();
+
+        // Filtros
+        $('#btn-filtrar').click(function () {
+            $('#pageLoader').fadeIn();
+            cargarBandejaInbox();
+            $('#pageLoader').fadeOut();
+            cargarKPIs();
+        });
+
+        $('#btn-limpiar').click(function () {
+            $('#filtro-estado').val('ENVIADA');
+            $('#filtro-gerencia').val('');
+            $('#filtro-desde').val('');
+            $('#filtro-hasta').val('');
+            $('#pageLoader').fadeIn();
+            cargarBandejaInbox();
+            $('#pageLoader').fadeOut();
+            cargarKPIs();
+        });
+    });
+
+    function cargarKPIs() {
+        $.get('@Url.Action("Dashboard", "Requisicion")', function (res) {
+            if (res.success && res.data) {
+                $('#kpi-borradores').text(res.data.Borradores);
+                $('#kpi-pendientes').text(res.data.Pendientes);
+                $('#kpi-devueltas').text(res.data.Devueltas);
+                $('#kpi-aprobadas').text(res.data.Aprobadas);
+            }
+        });
+    }
+
+    function cargarBandejaInbox() {
+        var estado = $('#filtro-estado').val();
+        var gerencia = $('#filtro-gerencia').val();
+        var desde = $('#filtro-desde').val();
+        var hasta = $('#filtro-hasta').val();
+
+        $('#inbox-requisiciones').html('<div style="text-align:center; padding: 20px; color: #64748b;"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando bandeja...</div>');
+
+        $.get('@Url.Action("ListarTodas", "Requisicion")', {
+            estado: estado,
+            gerencia: gerencia,
+            fechaDesde: desde,
+            fechaHasta: hasta
+        }, function (res) {
+            if (res.success && res.data) {
+                var listContainer = $('#inbox-requisiciones');
+                listContainer.empty();
+
+                if (res.data.length === 0) {
+                    listContainer.html('<div style="text-align:center; padding: 30px; color:#64748b;"><i class="far fa-folder-open" style="font-size:24px; display:block; margin-bottom:8px;"></i> No hay solicitudes</div>');
+                    return;
+                }
+
+                $.each(res.data, function (i, r) {
+                    var dateStr = '';
+                    if (r.FechaCreacion) {
+                        var milli = r.FechaCreacion.replace(/\/Date\((-?\d+)\)\//, '$1');
+                        var d = new Date(parseInt(milli));
+                        dateStr = d.toLocaleDateString('es-NI');
+                    }
+
+                    var badgeCss = 'badge-borrador';
+                    if (r.Estado === 'ENVIADA') badgeCss = 'badge-enviada';
+                    else if (r.Estado === 'REENVIADA') badgeCss = 'badge-reenviada';
+                    else if (r.Estado === 'DEVUELTA') badgeCss = 'badge-devuelta';
+                    else if (r.Estado === 'APROBADA') badgeCss = 'badge-aprobada';
+                    else if (r.Estado === 'CANCELADA') badgeCss = 'badge-cancelada';
+
+                    var itemHtml = `
+                        <div class="inbox-item" id="inbox-item-${r.RequisicionID}" onclick="verDetalleInbox(${r.RequisicionID})">
+                            <div class="inbox-item-header">
+                                <span class="inbox-item-folio">${r.NumeroRequisicion}</span>
+                                <span class="inbox-item-date">${dateStr}</span>
+                            </div>
+                            <h5 class="inbox-item-title">${r.NombrePuesto}</h5>
+                            <p class="inbox-item-subtitle"><i class="far fa-user text-muted mr-1"></i> Solicitante: ${r.NombreSolicitante}</p>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                                <span class="badge-custom ${badgeCss}" style="font-size:9px; padding:3px 8px;">${r.Estado}</span>
+                                <span style="font-size:10px; color:#94a3b8;"><i class="fas fa-sitemap mr-1"></i>${r.Gerencia || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.append(itemHtml);
+                });
+
+                if (currentInboxReqId > 0 && $(`#inbox-item-${currentInboxReqId}`).length > 0) {
+                    verDetalleInbox(currentInboxReqId);
+                }
+            } else {
+                $('#inbox-requisiciones').html('<div style="text-align:center; padding: 20px; color:red;"><i class="fas fa-exclamation-triangle"></i> Error al cargar datos.</div>');
+            }
+            $('#pageLoader').fadeOut();
+        });
+    }
+
+    function verDetalleInbox(id) {
+        currentInboxReqId = id;
+        $('.inbox-item').removeClass('active');
+        $(`#inbox-item-${id}`).addClass('active');
+
+        $('#inbox-placeholder').hide();
+        $('#inbox-reader-content').fadeOut(100, function() {
+            $.get('@Url.Action("ObtenerRequisicion", "Requisicion")', { id: id }, function (res) {
+                if (res.success && res.data) {
+                    var r = res.data;
+
+                    $('#read-puesto').text(r.NombrePuesto);
+                    $('#read-folio').text(r.NumeroRequisicion);
+                    $('#read-tipo').text(r.TipoRequisicion === 'NUEVA' ? 'NUEVA PLAZA' : (r.TipoRequisicion === 'TRASLADO' ? 'TRASLADO HORIZONTAL' : 'REPOSICIÓN DE VACANTE'));
+                    $('#read-solicitante').text((r.NombreSolicitante || '') + ' (Carnet: ' + (r.CarnetSolicitante || '') + ')');
+                    
+                    if (r.TipoRequisicion === 'NUEVA') {
+                        $('#read-saliente').text('N/A - Nueva Plaza');
+                        $('#read-codigo-pos').text(r.PositionCode ? r.PositionCode + ' - ' + (r.NombrePosicion || '') : 'Sin Código (Nueva Plaza)');
+                    } else {
+                        $('#read-saliente').text((r.CarnetEmpleadoBaja || '') + ' - ' + (r.NombreEmpleadoBaja || ''));
+                        $('#read-codigo-pos').text((r.PositionCode || '') + ' - ' + (r.NombrePosicion || ''));
+                    }
+                    
+                    $('#read-gerencia').text((r.Gerencia || '') + ' / ' + (r.SubGerencia || ''));
+                    $('#read-contrato').text((r.TipoContrato || '') + ' | ' + (r.HorarioLaboral || 'No especificado'));
+                    $('#read-obs-jefe').text(r.ObservacionesJefe || 'Sin observaciones');
+
+                    var sueldoStr = 'C$ ' + (r.Sueldo ? r.Sueldo.toLocaleString('es-NI', { minimumFractionDigits: 2 }) : '0.00');
+                    var comisionStr = 'C$ ' + (r.Comisiones ? r.Comisiones.toLocaleString('es-NI', { minimumFractionDigits: 2 }) : '0.00');
+                    $('#read-sueldo').text(sueldoStr + ' (Comisiones: ' + comisionStr + ')');
+
+                    var badgeCss = 'badge-borrador';
+                    if (r.Estado === 'ENVIADA') badgeCss = 'badge-enviada';
+                    else if (r.Estado === 'REENVIADA') badgeCss = 'badge-reenviada';
+                    else if (r.Estado === 'DEVUELTA') badgeCss = 'badge-devuelta';
+                    else if (r.Estado === 'APROBADA') badgeCss = 'badge-aprobada';
+                    else if (r.Estado === 'CANCELADA') badgeCss = 'badge-cancelada';
+                    $('#read-badge-estado').html('<span class="badge-custom ' + badgeCss + '">' + r.Estado + '</span>');
+
+                    if (r.TipoRequisicion === 'TRASLADO') {
+                        $('#read-t-destino').text(r.GerenciaDestino + ' - ' + (r.SubGerenciaDestino || '') + ' (' + (r.PuestoDestino || '') + ')');
+                        $('#read-t-jefe').text(r.CarnetJefeDestino + ' - ' + r.NombreJefeDestino);
+
+                        var dateProp = '';
+                        if (r.FechaTrasladoPropuesta) {
+                            var milli = r.FechaTrasladoPropuesta.replace(/\/Date\((-?\d+)\)\//, '$1');
+                            dateProp = new Date(parseInt(milli)).toLocaleDateString('es-NI');
+                        }
+                        $('#read-t-plazo').text(dateProp + ' | Plazo: ' + r.DuracionTraslado);
+                        $('#read-t-justif').text(r.JustificacionTraslado);
+                        $('#read-traslado-box').show();
+                    } else {
+                        $('#read-traslado-box').hide();
+                    }
+
+                    var listGroup = $('#read-documentos-list');
+                    listGroup.empty();
+
+                    $.get('@Url.Action("ObtenerDocumentos", "Requisicion")', { id: id }, function (docRes) {
+                        if (docRes.success && docRes.data) {
+                            if (docRes.data.length === 0) {
+                                listGroup.html('<div class="text-muted" style="font-size:12px; padding:10px 0;"><i class="fas fa-info-circle"></i> No se han subido documentos.</div>');
+                            } else {
+                                $.each(docRes.data, function (i, doc) {
+                                    var icon = doc.Extension === '.pdf' ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
+                                    var sizeKb = doc.TamanioBytes ? (doc.TamanioBytes / 1024).toFixed(1) + ' KB' : 'N/A';
+
+                                    var item = `
+                                        <a href="@Url.Action("DescargarDocumento", "Requisicion")/${doc.DocumentoID}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2" target="_blank" style="font-size:12px;">
+                                            <div>
+                                                <i class="far ${icon} mr-2" style="font-size:14px;"></i>
+                                                <strong>${doc.TipoDocumento.replace('_', ' ')}:</strong> ${doc.NombreArchivo}
+                                            </div>
+                                            <span class="badge badge-light badge-pill">${sizeKb}</span>
+                                        </a>
+                                    `;
+                                    listGroup.append(item);
+                                });
+                            }
+                        }
+                    });
+
+                    var tbody = $('#read-tabla-historial tbody');
+                    tbody.empty();
+
+                    $.get('@Url.Action("ObtenerHistorial", "Requisicion")', { id: id }, function (histRes) {
+                        if (histRes.success && histRes.data) {
+                            $.each(histRes.data, function (i, h) {
+                                var dateH = '';
+                                if (h.FechaCambio) {
+                                    var milli = h.FechaCambio.replace(/\/Date\((-?\d+)\)\//, '$1');
+                                    var d = new Date(parseInt(milli));
+                                    dateH = d.toLocaleDateString('es-NI') + ' ' + d.toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' });
+                                }
+
+                                var row = `
+                                    <tr>
+                                        <td>${dateH}</td>
+                                        <td><span class="badge badge-light">${h.EstadoAnterior || 'INICIAL'}</span></td>
+                                        <td><span class="badge badge-secondary">${h.EstadoNuevo}</span></td>
+                                        <td><strong>${h.CarnetUsuario}</strong> - ${h.NombreUsuario}</td>
+                                        <td>${h.Observaciones || ''}</td>
+                                    </tr>
+                                `;
+                                tbody.append(row);
+                            });
+                        }
+                    });
+
+                    $('#read-observaciones-decision').val('');
+                    $('#inbox-reader-content').fadeIn(150);
+                }
+            });
+        });
+    }
+
+    function procesarDecisionInbox(operacion) {
+        var obs = $('#read-observaciones-decision').val();
+        if (operacion === 'Devolver' && obs.trim() === '') {
+            Swal.fire('Observación Obligatoria', 'Debe detallar el motivo por el cual devuelve la solicitud.', 'warning');
+            return;
+        }
+
+        var url = operacion === 'Aprobar' ? '@Url.Action("Aprobar", "Requisicion")' : '@Url.Action("Devolver", "Requisicion")';
+
+        Swal.fire({
+            title: '¿Confirmar ' + operacion.toLowerCase() + '?',
+            text: operacion === 'Aprobar' ? 'Se notificará al Jefe y al área de Reclutamiento para iniciar búsqueda.' : 'La solicitud se devolverá al borrador del solicitante.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: operacion === 'Aprobar' ? '#10b981' : '#ea580c',
+            cancelButtonColor: '#cbd5e1',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#pageLoader').fadeIn();
+                $('#loader-text').text("Procesando requisición...");
+
+                $.post(url, { requisicionId: currentInboxReqId, observaciones: obs }, function (res) {
+                    $('#pageLoader').fadeOut();
+                    if (res.success) {
+                        Swal.fire('Completado', res.message, 'success').then(function () {
+                            cargarBandejaInbox();
+                            cargarKPIs();
+                        });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+</script>
+}

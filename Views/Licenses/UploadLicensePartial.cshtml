@@ -1,0 +1,21 @@
+﻿@Html.DevExpress().UploadControl(s =>
+{
+    s.Name = "uploadLicense";
+    s.Width = System.Web.UI.WebControls.Unit.Percentage(100);
+    s.ShowUploadButton = true;
+   
+    s.ShowProgressPanel= true;
+ 
+
+    s.Width = Unit.Percentage(100);
+    s.Height = 25;
+    //s.UploadMode = UploadControlUploadMode.Advanced;
+    s.FileSystemSettings.UploadFolder = "~/UploadFolder/";
+    s.CallbackRouteValues = new { Controller = "Licenses", Action = "FileUpload" };
+    s.ValidationSettings.AllowedFileExtensions = new string[] { ".pdf" };
+    s.ValidationSettings.MaxFileSizeErrorText = "El archivo excede el maximo autorizado que es de 200kb";
+    s.ValidationSettings.MaxFileSize = 205000;
+    s.ValidationSettings.NotAllowedFileExtensionErrorText = "Este tipo de documento no esta permitido (pdf, txt, doc, rtf o jpg)";
+
+    s.ClientSideEvents.FileUploadComplete = "OnFileUploadComplete";
+}).GetHtml()

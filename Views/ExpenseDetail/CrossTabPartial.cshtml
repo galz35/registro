@@ -1,0 +1,30 @@
+﻿@using slnRhonline.Reports
+@Html.DevExpress().GetStyleSheets(
+
+   new StyleSheet { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().GetScripts(
+
+    new Script { ExtensionSuite = ExtensionSuite.Report }
+
+)
+@Html.DevExpress().DocumentViewer(settings =>
+{
+    settings.Name = "DocumentViewer";
+    settings.CallbackRouteValues = new
+    {
+        Controller = "ExpenseDetail",
+        Action = "CrossTabPartial"
+    };
+    settings.ExportRouteValues = new
+    {
+        Controller = "ExpenseDetail",
+        Action = "CrossTabExport"
+    };
+    settings.Report = new CrossTabExpenses()
+    {
+        DataSource = Model
+    };
+}).GetHtml()
+

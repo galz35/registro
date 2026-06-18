@@ -1,0 +1,263 @@
+﻿@model List<Entities.ViewModels.VistaUnidadesConsumo>
+
+@{
+    Html.EnableClientValidation();
+    Html.EnableUnobtrusiveJavaScript();
+}
+
+@Html.DevExpress().GridView(settings => {
+    settings.Name = "gvUnidades";
+    settings.KeyFieldName = "IdUnidad";
+    settings.CallbackRouteValues = new { Controller = "Consumo", Action = "CarsListPartial" };
+    settings.Width = Unit.Percentage(100);
+    settings.Settings.ShowGroupPanel = false;
+    settings.SettingsBehavior.AllowSelectByRowClick = true;
+    settings.ControlStyle.Border.BorderWidth = 0;
+    settings.Settings.ShowFooter = true;
+    settings.KeyboardSupport = true;
+
+    settings.EnableRowsCache = false;
+
+    settings.ClientSideEvents.Init = "OnInit";
+    settings.ClientSideEvents.EndCallback = "OnEndCallback";
+
+
+
+    settings.Settings.VerticalScrollBarMode = ScrollBarMode.Visible;
+    settings.SettingsAdaptivity.AdaptivityMode = GridViewAdaptivityMode.HideDataCells;
+    settings.SettingsAdaptivity.AllowOnlyOneAdaptiveDetailExpanded = true;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.EditFormLayoutProperties.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 600;
+    settings.SettingsBehavior.AllowEllipsisInText = true;
+
+    #region Paging
+    settings.SettingsPager.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Visible = true;
+    settings.SettingsPager.PageSizeItemSettings.Items = new string[] { "10", "20", "50", "100" };
+    settings.SettingsPager.PageSize = 10;
+    #endregion
+    #region filtering
+    settings.SettingsSearchPanel.CustomEditorName = "search";
+    settings.Settings.ShowHeaderFilterButton = true;
+    settings.Settings.ShowFilterBar = GridViewStatusBarMode.Visible;
+
+    settings.SettingsFilterControl.ViewMode = FilterControlViewMode.VisualAndText;
+    settings.Settings.AutoFilterCondition = AutoFilterCondition.Contains;
+
+
+    #endregion
+    #region Sorting
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Count, "IdUnidad");
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalAsignacion");
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalTraslado");
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalExtraPlan");
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "TotalConsumo");
+    settings.TotalSummary.Add(DevExpress.Data.SummaryItemType.Sum, "Saldo");
+    #endregion
+
+    #region Toolbar
+    settings.Toolbars.Add(t =>
+    {
+        t.Enabled = true;
+        t.Position = GridToolbarPosition.Top;
+        t.EnableAdaptivity = true;
+
+
+       
+
+        t.Items.Add(i =>
+        {
+            i.BeginGroup = true;
+            i.Alignment = MenuItemAlignment.Right;
+            i.SetTemplateContent(c =>
+            {
+                Html.DevExpress().ButtonEdit(s =>
+                {
+                    s.Name = "search";
+                    s.Properties.NullText = "Buscar..";
+
+                    s.Properties.Buttons
+                        .Add()
+                        .Image.IconID = DevExpress.Web.ASPxThemes.IconID.FindFind16x16gray;
+
+                }).Render();
+            });
+        });
+
+    });
+
+    //settings.ClientSideEvents.ToolbarItemClick = "onToolbarItemClick";
+
+    #endregion
+
+    settings.Columns.Add(c =>
+    {
+        c.Caption = "#";
+        c.SetDataItemTemplateContent(tc =>
+        {
+
+
+            ViewContext.Writer.Write(
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "btnConsumo" + tc.KeyValue;
+                p.Text = "";
+                p.Width = 30;
+                p.EnableTheming = false;
+
+                p.Images.Image.Url = Url.Content("~/Content/Icons/combustible.png");
+                p.ImagePosition = ImagePosition.Left;
+                p.ToolTip = "Lista de consumo";
+
+                p.ClientSideEvents.Click = string.Format("function(s,e) {{VerLista(s.name,'{0}'); }}", Url.Action("VouchersListByCar", "Consumo", new { idUnidad = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+
+            }).GetHtml()
+            );
+
+            ViewContext.Writer.Write(
+
+            @Html.DevExpress().Button(p =>
+            {
+                p.Name = "btnTraslado" + tc.KeyValue;
+                p.Text = "";
+                p.Width = 30;
+                p.EnableTheming = false;
+                p.Images.Image.Url = Url.Content("~/Content/Icons/traslados16x16.png");
+                p.ImagePosition = ImagePosition.Left;
+                p.ToolTip = "Lista de Traslado";
+                p.ClientSideEvents.Click = string.Format("function(s,e) {{VerLista(s.name,'{0}'); }}", Url.Action("TransfersList", "Consumo", new { idUnidad = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+            }).GetHtml()
+            );
+
+
+
+            ViewContext.Writer.Write(
+
+                @Html.DevExpress().Button(p =>
+                {
+                    p.Name = "btnExtraPlan" + tc.KeyValue;
+
+                    p.Text = "";
+                    p.Width = 30;
+                    p.EnableTheming = false;
+                    p.Images.Image.Url = Url.Content("~/Content/Icons/extraplan16x16.png");
+                    p.ImagePosition = ImagePosition.Left;
+                    p.ToolTip = "Extra Planes";
+                    p.ClientSideEvents.Click = string.Format("function(s,e) {{VerLista(s.name,'{0}'); }}", Url.Action("ExtraPlanList", "Consumo", new { idUnidad = (tc as GridViewDataItemTemplateContainer).KeyValue }));
+
+                }).GetHtml()
+                );
+
+
+        });
+
+
+        c.Settings.AllowDragDrop = DefaultBoolean.False;
+        c.Settings.AllowSort = DefaultBoolean.False;
+        c.Width = Unit.Percentage(10); ;
+    });
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "NombreProveedor";
+        col.Caption = "Proveedor";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 1;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "IdUnidad";
+        col.Caption = "Unidad";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 2;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "NombreEmpleado";
+        col.Caption = "Asignado a";
+        col.Width = Unit.Percentage(20);
+        col.AdaptivePriority = 3;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+
+    });
+
+
+
+
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "TotalAsignacion";
+        col.Caption = "Asignacion";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 4;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+        col.PropertiesEdit.DisplayFormatString = "n2";
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "TotalTraslado";
+        col.Caption = "Traslados";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 5;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+        col.PropertiesEdit.DisplayFormatString = "n2";
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "TotalExtraPlan";
+        col.Caption = "Extra Plan";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 6;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+        col.PropertiesEdit.DisplayFormatString = "n2";
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "TotalConsumo";
+        col.Caption = "Consumo";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 7;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+        col.PropertiesEdit.DisplayFormatString = "n2";
+
+    });
+    settings.Columns.Add(col =>
+    {
+        col.FieldName = "Saldo";
+        col.Caption = "Saldo";
+        col.Width = Unit.Percentage(10);
+        col.AdaptivePriority = 8;
+        col.EditFormSettings.Visible = DefaultBoolean.False;
+        col.PropertiesEdit.DisplayFormatString = "n2";
+
+    });
+
+
+
+
+
+    settings.ClientLayout = (s, e) => {
+        if(e.LayoutMode == ClientLayoutMode.Loading) {
+            if(Session["GridState"] != null)
+                e.LayoutData = (string)Session["GridState"];
+        }
+        else
+            Session["GridState"] = e.LayoutData;
+    };
+
+
+}).Bind(Model).GetHtml()
+
+
+

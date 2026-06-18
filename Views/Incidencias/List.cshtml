@@ -1,0 +1,594 @@
+﻿@model  List<Entities.ViewModels.VistaIncidencias>
+@{
+    ViewBag.Title = "Lista de Incidencias";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<script>
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvIncidencias.SetHeight(height - 200);
+    }
+
+    //function NuevaIncidencia(elementID, url) {
+    //    popEditarIncidencia.SetContentUrl(url);
+    //    popEditarIncidencia.ShowAtElementByID(elementID);
+    //}
+    function NuevaIncidencia(s, e) {
+        //var visibleIndex = gvIncidencias.GetFocusedRowIndex();
+        //var key = gvGratefulness.GetRowKey(visibleIndex);
+        //var idAccion = elementID;
+  
+
+        var defaultHour = new Date();
+        IdIncidencia.SetValue(-1);
+        FechaIncidencia.SetValue(defaultHour);
+        popEditarIncidencia.Show();
+
+    }
+
+ 
+
+    function CargarIncidencias(s, e) {
+        //var visibleIndex = gvAppointments.GetFocusedRowIndex();
+        //var key = gvAppointments.GetRowKey(visibleIndex);
+        $.ajax({
+            url: '@Url.Action("ListPartial","Incidencias")',
+            //contentType: 'application/json; charset=utf-8',
+            //data: { idUnidad: key },
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#ListPartial').html(result);
+        });
+    }
+
+    function EditarIncidencia(s,e) {
+        var visibleIndex = gvIncidencias.GetFocusedRowIndex();
+        var key = gvIncidencias.GetRowKey(visibleIndex);
+
+        $.ajax({
+            url: '@Url.Action("EditarIncidencia")',
+            data: { idIncidencia: key },
+            type: "GET",
+            contentType: "application/json; charset=utf-8",        
+            dataType: "Json",
+            //traditional: true,
+            //cache: false,      
+            success: function (result) {
+                if (result.status != "Error") {
+                  
+
+                    var jsonDate = result.data.FechaIncidencia;
+                    var normalDate = new Date(parseInt(jsonDate.replace("/Date(", "").replace(")/")));
+                    var valueCheck = result.data.ReportoSeguro;
+                    //alert(valueCheck);
+
+                    //alert(normalDate.toDateString());
+                    IdIncidencia.SetValue(result.data.IdIncidencia);
+                    FechaIncidencia.SetValue(normalDate);
+                    IdTipoIncidencia.SetValue(result.data.IdTipoIncidencia);
+                    ReportadoPor.SetValue(result.data.ReportadoPor);
+                    IdTipoServicio.SetValue(result.data.IdTipoServicio);
+                    Odometro.SetValue(result.data.Odometro);
+                    DescripcionDano.SetValue(result.data.DescripcionDano);
+                    if (valueCheck == 1) {
+                        ReportoSeguro.SetChecked(true);
+                    }
+                    else {
+                        ReportoSeguro.SetChecked(false);
+                    } 
+                   
+                    NumeroReclamo.SetValue(result.data.NumeroReclamo);
+                    IdEstadoGestion.SetValue(result.data.IdEstadoGestion);
+                    ObservacionesTransporte.SetValue(result.data.ObservacionesTransporte);
+
+
+                    //Habilitar Controles
+                    HabilitarControles();
+                    //Mostrar popup
+                    popEditarIncidencia.Show();
+
+                } else {
+                    swal("Advertencia!", result.data, "warning");
+                }
+
+
+            },
+            error: function (result) {
+                swal("Error", "Ha ocurrido un error en la transaccion", "error");
+            }
+        });
+    }
+
+    function HabilitarControles() {
+        IdIncidencia.SetReadOnly(false);
+        FechaIncidencia.SetReadOnly(false);
+        IdTipoIncidencia.SetReadOnly(false);
+        ReportadoPor.SetReadOnly(false);
+        IdTipoServicio.SetReadOnly(false);
+        Odometro.SetReadOnly(false);
+        DescripcionDano.SetReadOnly(false);
+        ReportoSeguro.SetReadOnly(false);
+
+        NumeroReclamo.SetReadOnly(false);
+        IdEstadoGestion.SetReadOnly(false);
+        ObservacionesTransporte.SetReadOnly(false);
+        btnAceptar.SetEnabled(true);
+    }
+    function InhabilitarControles() {
+        IdIncidencia.SetReadOnly(true);
+        FechaIncidencia.SetReadOnly(true);
+        IdTipoIncidencia.SetReadOnly(true);
+        ReportadoPor.SetReadOnly(true);
+        IdTipoServicio.SetReadOnly(true);
+        Odometro.SetReadOnly(true);
+        DescripcionDano.SetReadOnly(true);
+        ReportoSeguro.SetReadOnly(true);
+
+        NumeroReclamo.SetReadOnly(true);
+        IdEstadoGestion.SetReadOnly(true);
+        ObservacionesTransporte.SetReadOnly(true);
+        btnAceptar.SetEnabled(false);
+    }
+    
+    function ConsultarIncidencia(s,e) {
+        var visibleIndex = gvIncidencias.GetFocusedRowIndex();
+        var key = gvIncidencias.GetRowKey(visibleIndex);
+
+        $.ajax({
+            url: '@Url.Action("EditarIncidencia")',
+            data: { idIncidencia: key },
+            type: "GET",
+            contentType: "application/json; charset=utf-8",        
+            dataType: "Json",
+            //traditional: true,
+            //cache: false,      
+            success: function (result) {
+                if (result.status != "Error") {
+                  
+
+                    var jsonDate = result.data.FechaIncidencia;
+                    var normalDate = new Date(parseInt(jsonDate.replace("/Date(", "").replace(")/")));
+                    var valueCheck = result.data.ReportoSeguro;
+                    //alert(valueCheck);
+
+                    //alert(normalDate.toDateString());
+                    IdIncidencia.SetValue(result.data.IdIncidencia);
+                    FechaIncidencia.SetValue(normalDate);
+                    IdTipoIncidencia.SetValue(result.data.IdTipoIncidencia);
+                    ReportadoPor.SetValue(result.data.ReportadoPor);
+                    IdTipoServicio.SetValue(result.data.IdTipoServicio);
+                    Odometro.SetValue(result.data.Odometro);
+                    DescripcionDano.SetValue(result.data.DescripcionDano);
+                    if (valueCheck == 1) {
+                        ReportoSeguro.SetChecked(true);
+                    }
+                    else {
+                        ReportoSeguro.SetChecked(false);
+                    } 
+                   
+                    NumeroReclamo.SetValue(result.data.NumeroReclamo);
+                    IdEstadoGestion.SetValue(result.data.IdEstadoGestion);
+                    ObservacionesTransporte.SetValue(result.data.ObservacionesTransporte);
+
+
+                    //Establecer valores solo de lectura
+                    InhabilitarControles();
+                 
+                    //Mostrar popup
+                    popEditarIncidencia.Show();
+
+                } else {
+                    swal("Advertencia!", data.message, "warning");
+                }
+
+
+            },
+            error: function (result) {
+                swal("Error", "Ha ocurrido un error en la transaccion", "error");
+            }
+        });
+    }
+    //function ConsultarIncidencia(elementID, url) {
+    //    popConsultarIncidencia.SetContentUrl(url);
+    //    popConsultarIncidencia.ShowAtElementByID(elementID);
+    //}
+
+    function AnularIncidencia(id, e) {
+        var visibleIndex = gvIncidencias.GetFocusedRowIndex();
+        var key = gvIncidencias.GetRowKey(visibleIndex);
+
+        $.ajax({
+            url: '@Url.Action("AnularIncidencia")',
+            type: "POST",
+            data: { idIncidencia: key },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                CargarIncidencias();
+
+                            }
+
+                        });
+                } else {
+                    swal("Advertencia!", data.message, "warning");
+                }
+
+
+            },
+            error: function () {
+                swal("Error!", "Ha ocurrido un error en la transacción", "error");
+            }
+        });
+    }
+
+      function GuardarIncidencia(s, e) {
+        // prevent the default event behaviour
+          var x = document.getElementById("popIncidencia");
+
+        $.ajax({
+            url: '@Url.Action("GuardarIncidencia")',
+            type: "POST",
+            data: $('#frmIncidencia').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    popEditarIncidencia.Hide();
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                CargarIncidencias();
+                            }
+
+                        });
+                } else {
+                    x.style.display = "none";
+                    swal({
+                        title: "Advertencia!",
+                        text: data.message,
+                        icon: "warning",
+                        button: "Aceptar",
+                    })
+
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                x.style.display = "block";
+
+                            }
+
+                        });
+                }
+
+
+
+            },
+            error: function () {
+                swal("Error!", "Ocurrió un error en la transaccion, por favor verifique los datos o consulte con el administrador de la plataforma.", "error");;
+            }
+        });
+    }
+
+
+</script>
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+<br />
+@*@{
+        string url = Url.Action("BackToList", "Appointments");
+    }
+    <a href="@url" title="Volver a la Lista" style="font-size:12px; color:white;">
+        <img src="~/Content/Icons/Back.png" width="28" height="20" alt="Volver" style="vertical-align:middle; align-content:center;" />
+        Volver
+    </a>*@
+<h3 class="form-h2">
+    @ViewBag.Unidad
+
+
+</h3>
+<div id="ListPartial">
+
+    @Html.Partial("ListPartial", Model);
+
+
+</div>
+
+<div id="popIncidencia">
+    @Html.DevExpress().PopupControl(settingsPopup =>
+{
+
+    settingsPopup.Name = "popEditarIncidencia";
+    settingsPopup.Width = 500;
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.AllowDragging = true;
+    settingsPopup.CloseAction = CloseAction.CloseButton;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.PopupAnimationType = AnimationType.Fade;
+    settingsPopup.HeaderText = "Editar Incidencia";
+    settingsPopup.Modal = true;
+    settingsPopup.AutoUpdatePosition = true;
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.SetContent(() =>
+    {
+        using (Html.BeginForm("GuardarIncidencia", "Incidencias", FormMethod.Post, new { id = "frmIncidencia" }))
+        {
+            //Html.Hidden("IdIncidencia");
+
+            @Html.DevExpress().FormLayout(s =>
+            {
+                s.Name = "frmEditIncidencia";
+                s.RequiredMarkDisplayMode = RequiredMarkMode.None;
+                s.Width = Unit.Percentage(100);
+                s.Height = Unit.Percentage(100);
+
+                s.NestedExtensionWidth = Unit.Percentage(100);
+
+                s.Items.Add(i =>
+                {
+                    i.Name = "IdIncidencia";
+                    i.Caption = "IdIncidencia";
+                    i.ClientVisible = false;
+                    i.NestedExtensionType = FormLayoutNestedExtensionItemType.TextBox;
+                });
+
+                s.Items.Add(i =>
+                {
+                    i.Name = "FechaIncidencia";
+                    i.Caption = "Fecha";
+
+                    i.NestedExtension().DateEdit(c =>
+                    {
+                        c.Properties.NullText = "DD/MM/YYYY";
+                        c.Properties.EditFormat = EditFormat.Date;
+                        c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                        c.Properties.ValidationSettings.Display = Display.Dynamic;
+                        c.ShowModelErrors = true;
+                        s.Width = Unit.Percentage(100);
+
+                        //s.ReadOnly = true;
+                        //s.Enabled = false;
+                    });
+                });
+
+                s.Items.Add(i =>
+                {
+                    i.FieldName = "IdTipoIncidencia";
+                    i.Caption = "Tipo de Incidencia";
+                    i.NestedExtension().ComboBox(c =>
+                    {
+                        //s.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "GetAssigmnentCarsByManagement", TextField = "IdUnidad", ValueField = "IdUnidad" };
+                        c.Properties.TextField = "Descripcion";
+                        c.Properties.ValueField = "IdCatalogo";
+                        c.Properties.ValueType = typeof(string);
+                        //s.Properties.LoadDropDownOnDemand = true;
+                        c.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                        c.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+                        c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        c.Properties.ValidationSettings.Display = Display.Dynamic;
+                        c.ShowModelErrors = true;
+                        c.Width = Unit.Percentage(100);
+                        c.Properties.DataSource = slnRhonline.Data.CatalogoSiaf.GetDepartmentById("20");
+
+
+
+
+                    });
+                });
+
+                s.Items.Add(i =>
+                {
+                    i.Name = "ReportadoPor";
+                    i.Caption = "Reportado Por";
+                    i.NestedExtensionType = FormLayoutNestedExtensionItemType.TextBox;
+                });
+                s.Items.Add(i =>
+                {
+                    i.Name = "Odometro";
+                    i.Caption = "Odometro";
+                    i.NestedExtensionType = FormLayoutNestedExtensionItemType.SpinEdit;
+                });
+
+                s.Items.Add(i =>
+                {
+                    i.FieldName = "IdTipoServicio";
+                    i.Caption = "Tipo de Servicio";
+                    i.NestedExtension().ComboBox(c =>
+                    {
+                        //s.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "GetAssigmnentCarsByManagement", TextField = "IdUnidad", ValueField = "IdUnidad" };
+                        c.Properties.TextField = "NombreTipoServicio";
+                        c.Properties.ValueField = "IdTipoServicio";
+                        c.Properties.ValueType = typeof(string);
+                        //s.Properties.LoadDropDownOnDemand = true;
+                        c.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                        c.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+                        c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                        c.Properties.ValidationSettings.Display = Display.Dynamic;
+                        c.ShowModelErrors = true;
+                        c.Width = Unit.Percentage(100);
+                        c.Properties.DataSource = slnRhonline.Data.TipoServicio.ObtenerTipoServicios();
+
+
+
+
+                    });
+                });
+                s.Items.Add(i =>
+                {
+                    i.Name = "DescripcionDano";
+                    i.Caption = "Descripcion";
+                    i.NestedExtension().Memo(c =>
+                    {
+                        c.Properties.Rows = 6;
+                        c.ControlStyle.CssClass = "memo";
+                    });
+                });
+                //s.Items.Add(i =>
+                //{
+                //    i.Name = "ReportoSeguro";
+                //    i.Caption = "Reporto seguro";
+                //    i.NestedExtension().CheckBox(c =>
+                //    {
+
+                //    });
+                //});
+
+
+                //s.Items.Add(i =>
+                //{
+                //    i.Name = "NumeroReclamo";
+                //    i.Caption = "Numero de reclamo";
+                //    i.NestedExtension().TextBox(c =>
+                //    {
+
+                //    });
+                //});
+                //s.Items.Add(i =>
+                //{
+                //    i.FieldName = "IdEstadoGestion";
+                //    i.Caption = "Estado Gestion";
+                //    i.NestedExtension().ComboBox(c =>
+                //    {
+                //        //s.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "GetAssigmnentCarsByManagement", TextField = "IdUnidad", ValueField = "IdUnidad" };
+                //        c.Properties.TextField = "Descripcion";
+                //        c.Properties.ValueField = "IdCatalogo";
+                //        c.Properties.ValueType = typeof(string);
+                //        //s.Properties.LoadDropDownOnDemand = true;
+                //        c.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                //        c.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+                //        c.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                //        c.Properties.ValidationSettings.Display = Display.Dynamic;
+                //        c.ShowModelErrors = true;
+                //        c.Width = Unit.Percentage(100);
+                //        c.Properties.DataSource = slnRhonline.Data.CatalogoSiaf.GetDepartmentById("22");
+
+
+
+
+                //    });
+                //});
+                //s.Items.Add(i =>
+                //{
+                //    i.Name = "ObservacionesTransporte";
+                //    i.Caption = "Observaciones Transporte";
+                //    i.NestedExtension().Memo(c =>
+                //    {
+                //        c.Properties.Rows = 6;
+                //        c.ControlStyle.CssClass = "memo";
+                //    });
+                //});
+                s.Items.Add(i =>
+                {
+                    i.ShowCaption = DefaultBoolean.False;
+                    i.HorizontalAlign = FormLayoutHorizontalAlign.Right;
+                    i.SetNestedContent(() =>
+                    {
+
+                        Html.DevExpress().Button(
+
+                            buttonSettings =>
+                            {
+
+                                buttonSettings.Name = "btnAceptar";
+                                //buttonSettings.ControlStyle.CssClass = "button";
+                                buttonSettings.RenderMode = ButtonRenderMode.Danger;
+                                buttonSettings.Width = 80;
+                                buttonSettings.Text = "Actualizar";
+                                buttonSettings.ClientSideEvents.Click = "GuardarIncidencia";//"function(s, e){ popEditGratefulness.Hide(); }";
+                            }
+                        ).Render();
+                    });
+                });
+            }).Render();
+        }
+
+
+    });
+
+    settingsPopup.ClientSideEvents.CloseUp = "function(s, e){ ASPxClientEdit.ClearEditorsInContainer(null, '', true); }";
+
+
+    //settingsPopup.Name = "popEditGratefulness";
+    //settingsPopup.ShowOnPageLoad = false;
+    //settingsPopup.HeaderText = "Edicion de agradecimiento";
+    //settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    //settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    //settingsPopup.CloseOnEscape = true;
+    //settingsPopup.Width = 700;
+    //settingsPopup.Height = 400;
+    //settingsPopup.ClientSideEvents.CloseUp = "LoadGratefulness";
+
+
+
+}).GetHtml()
+</div>
+
+@*@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popEditarIncidencia";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Edicion de incidencia";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 600;
+    settingsPopup.Height = 400;
+    settingsPopup.ClientSideEvents.CloseUp = "CargarIncidencias";
+
+
+
+}).GetHtml()*@
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popConsultarIncidencia";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Consultar de incidencia";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 600;
+    settingsPopup.Height = 300;
+    settingsPopup.ClientSideEvents.CloseUp = "CargarIncidencias";
+
+
+
+}).GetHtml()
+
+

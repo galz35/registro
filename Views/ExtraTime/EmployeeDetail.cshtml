@@ -1,0 +1,216 @@
+﻿@model Entities.Employees
+@{ 
+
+    string url3 = Url.Action("EmployeeDetailx", "ExtraTime");
+}
+@Html.DevExpress().GetStyleSheets(
+         new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.GridView }
+
+
+     )
+@section scripts {
+
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+     
+
+    <script>
+        function onButtonClick(s, e) {
+            e.processOnServer = confirm('Seguro que desea borrar el registro?');
+        }
+
+        function ResetSessionEnd(s, e) {
+            if (e.command == "ADDNEWROW" || e.command == "STARTEDIT") {
+                swal.fire({ title: "ExtraPlan", text: "actualizado" });
+                //your code
+            }
+        }
+        function ShowSupportClick(s, e, url) {
+            var key = s.GetRowKey(e.visibleIndex);
+
+
+
+            if (e.buttonID == "btnPdfId") {
+                var destUrl = url + "/" + key;
+
+
+                popImage.SetContentUrl(destUrl);
+                popImage.Show();
+
+            }
+
+
+
+        }
+
+
+        function OnSupportUploadComplete(s, e) {
+            if (e.callbackData !== "") {
+                //alert(e.callbackData);
+                clientFileName.SetText(e.callbackData);
+            }
+            else {
+                alert("El archivo seleccionado no fue subido");
+            }
+        }
+
+    </script>
+}
+@Html.DevExpress().GetScripts(
+   new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+   new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new Script { ExtensionSuite = ExtensionSuite.GridView }
+
+)
+<style type="text/css">
+
+    .breadcrumb-container {
+        margin: 20px 0;
+    }
+
+    .breadcrumb {
+        background-color: transparent; /* No background for breadcrumb */
+        margin-bottom: 0; /* Remove bottom margin */
+        display: flex;
+        align-items: center;
+    }
+
+    .breadcrumb-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+
+        .breadcrumb-item a {
+            color: blue;
+            text-decoration: none;
+        }
+
+    .breadcrumb-box {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+        .breadcrumb-box:hover {
+            background-color: #e2e6ea;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    .breadcrumb-item.active .breadcrumb-box {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .breadcrumb-item.active .breadcrumb-box:hover {
+            background-color: #5a6268;
+        }
+
+    .breadcrumb-box i {
+        margin-right: 5px; /* Space between icon and text */
+    }
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+
+
+@Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "popImage";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Soporte de Horas Extras";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 800;
+    settingsPopup.Height = 600;
+
+
+
+}).GetHtml()
+
+
+
+@*@{
+    var imgSrc = "";
+    if (Model.Picture != null)
+    {
+        var base64 = Convert.ToBase64String(Model.Picture);
+        imgSrc = String.Format("data:image/jpg;base64,{0}", base64);
+    }
+    else
+    {
+        imgSrc = Url.Content("~/Content/Images/Persons.png");
+    }
+}*@
+<div class="breadcrumb-container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+           
+            <li class="breadcrumb-item">
+                <a href="@url3">
+                    <span class="breadcrumb-box">
+                        <i class="fas fa-users"></i> Lista empleado
+                    </span>
+                </a>
+            </li>
+           
+            <li class="breadcrumb-item active">
+                <span class="breadcrumb-box">
+                    <i class="fas fa-file-alt"></i> Lista Hora Extra
+                </span>
+            </li>
+        </ol>
+    </nav>
+</div>
+<div class="col-12 content" style="margin-top: -10px; background-color: white; padding:0;">
+    <div class="col-3 divContent" style="background-color:transparent;">
+     @*   <img src="@imgSrc" style="padding:15px 20px 0px 0px; width:80px; height:100px; float:left;border-radius:10px" />*@
+    </div>
+    <div class="col-9 divContent">
+        <h2 class="form-h2">
+
+
+            @Html.DisplayFor(model => model.FullName) -@Html.DisplayFor(model => model.EmployeeNumber)<br />
+        </h2>
+        <h4>
+            @Html.DisplayFor(model => model.Departamento)- @Html.DisplayFor(model => model.Nombreubicacion)<br />
+        </h4>
+    </div>
+</div>
+
+
+@using (Html.BeginForm())
+{
+    @Html.Action("EmployeeDetailPartial", "ExtraTime", new { personId = Model.Idhrms })
+}
+
+
+
+

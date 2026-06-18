@@ -1,0 +1,248 @@
+﻿@model Entities.ViewModels.VistaExtraPlan
+
+@{ Layout = "~/Views/Shared/_popupLayout.cshtml"; }
+@Html.DevExpress().GetStyleSheets(
+         new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Editors },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Chart },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.Report },
+         new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+          new StyleSheet { ExtensionSuite = ExtensionSuite.Dashboard },
+          new StyleSheet { ExtensionSuite = ExtensionSuite.TreeList },
+            new StyleSheet { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+     )
+@Html.DevExpress().GetScripts(
+    new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new Script { ExtensionSuite = ExtensionSuite.Editors },
+    new Script { ExtensionSuite = ExtensionSuite.Chart },
+    new Script { ExtensionSuite = ExtensionSuite.Report },
+    new Script { ExtensionSuite = ExtensionSuite.GridView },
+    new Script { ExtensionSuite = ExtensionSuite.Dashboard },
+    new Script { ExtensionSuite = ExtensionSuite.TreeList },
+     new Script { ExtensionSuite = ExtensionSuite.PivotGrid }
+
+)
+
+<script>
+
+
+
+
+
+    //function OnInit(s, e) {
+    //    AdjustSize();
+    //    ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+    //        AdjustSize();
+    //    });
+    //}
+
+    //function AdjustSize() {
+    //    var height = document.documentElement.clientHeight;
+    //    gvDetailExtraPlan.SetHeight(height - 100);
+    //}
+
+
+
+
+    function SaveExtraPlan(s, e) {
+        // prevent the default event behaviour
+
+        $.ajax({
+            url: '@Url.Action("SaveExtraPlan")',
+            type: "POST",
+            data: $('#frmExtraPlan').serialize(),
+            dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status != "Error") {
+                    swal({
+                            title: "Exito!",
+                            text: data.message,
+                            icon: "success",
+                            button: "Aceptar",
+                        })
+                        .then((willSaved) => {
+                            if (willSaved) {
+                                top.popEditExtraPlan.Hide();
+                            }
+
+                        });
+                } else {
+                    swal("Advertencia!", data.message, "warning");
+                }
+
+
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+    }
+
+    function OnBatchEditEndEditing(s, e) {
+        CalculateSummary(s, e.rowValues, e.visibleIndex, false);
+    }
+    var savedValue;
+    function OnEndCallback(s, e) {
+        if (!savedValue) return;
+        labelSum.SetValue(savedValue);
+
+    }
+    function CalculateSummary(grid, rowValues, visibleIndex, isDeleting) {
+        var originalValue = grid.batchEditApi.GetCellValue(visibleIndex, "KmsRecorrer");
+        var newValue = rowValues[(grid.GetColumnByField("KmsRecorrer").index)].value;
+        var dif = isDeleting ? -newValue : newValue - originalValue;
+        var sum = (parseFloat(labelSum.GetValue()) + dif).toFixed(1);
+        savedValue = sum;
+        labelSum.SetValue(sum);
+    }
+
+    function OnBatchEditRowDeleting(s, e) {
+        CalculateSummary(s, e.rowValues, e.visibleIndex, true);
+    }
+    function OnChangesCanceling(s, e) {
+        if (s.batchEditApi.HasChanges())
+            setTimeout(function () {
+                savedValue = null;
+                s.Refresh();
+            }, 0);
+    }
+
+
+
+
+</script>
+
+<style type="text/css">
+
+
+    .memo * {
+        text-transform: uppercase;
+    }
+</style>
+
+
+<div id="master">
+    @using (Html.BeginForm("SaveExtraPlan", "ExtraPlan", FormMethod.Post, new { id = "frmExtraPlan" }))
+    {
+        @Html.DevExpress().FormLayout(settings =>
+        {
+       settings.Name = "frmEditExtraPlan";
+       settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+       settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 500;
+       settings.ControlStyle.CssClass = "formLayout";
+
+       settings.Items.AddGroupItem(g =>
+            {
+           g.Caption = "";
+           g.ColCount = 2;
+           g.UseDefaultPaddings = false;
+           g.Paddings.PaddingTop = Unit.Pixel(10);
+           g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+           g.Items.Add(m => m.IdCombustibleExtraPlan, i =>
+           {
+               i.Caption = "Id";
+               i.ClientVisible = false;
+               i.NestedExtension().TextBox(s =>
+               {
+
+                   s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   s.Properties.ValidationSettings.Display = Display.Dynamic;
+                   s.ShowModelErrors = true;
+                   s.Width = Unit.Percentage(100);
+
+
+               });
+           }); g.Items.Add(i =>
+           {
+               i.FieldName = "FechaSolicitud";
+               i.Caption = "Fecha de Solicitud";
+               i.NestedExtension().DateEdit(s =>
+               {
+                   s.Properties.NullText = "DD/MM/YYYY";
+                   s.Properties.EditFormat = EditFormat.Date;
+                   s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.None;
+                   s.Properties.ValidationSettings.Display = Display.Dynamic;
+                   s.ShowModelErrors = true;
+                   s.Width = Unit.Percentage(100);
+                   s.ReadOnly = true;
+
+               });
+           });
+
+
+
+
+           g.Items.Add(i =>
+           {
+               i.FieldName = "IdUnidad";
+               i.Caption = "Unidad";
+               i.NestedExtension().ComboBox(s =>
+               {
+                   //s.CallbackRouteValues = new { Controller = "ExtraPlan", Action = "GetAssigmnentCarsByManagement", TextField = "IdUnidad", ValueField = "IdUnidad" };
+                   s.Properties.TextField = "IdUnidad";
+                   s.Properties.ValueField = "IdUnidad";
+                   s.Properties.ValueType = typeof(string);
+                   //s.Properties.LoadDropDownOnDemand = true;
+                   s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                   s.Properties.IncrementalFilteringMode = IncrementalFilteringMode.Contains;
+                   s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   s.Properties.ValidationSettings.Display = Display.Dynamic;
+                   s.ShowModelErrors = true;
+                   s.Width = Unit.Percentage(100);
+                   s.Properties.DataSource = slnRhonline.Data.Consumo.ObtenerListaUnidades(string.Empty);
+                   s.Properties.Columns.Add("IdUnidad", "Unidad", 50);
+                   s.Properties.Columns.Add("Saldo", "Saldo", 50);
+
+
+
+               });
+           });
+
+
+
+
+           g.Items.Add(i =>
+           {
+               i.FieldName = "KilometrajeActual";
+               i.Caption = "Km Actual";
+               i.NestedExtension().TextBox(s =>
+               {
+                   s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                   s.Properties.ValidationSettings.Display = Display.Dynamic;
+                   s.ShowModelErrors = true;
+                   s.Width = Unit.Percentage(100);
+
+               });
+           });
+
+
+
+       });
+   }).GetHtml()
+    }
+</div>
+<div id="partial">@{Html.RenderAction("DetailPartial");}</div>
+<br />
+<div>
+    @ViewBag.Mensaje
+</div>
+<br />
+<div class="innerEditor" style="float:right;">
+    @Html.DevExpress().Button(settings =>
+    {
+       settings.Name = "btnDanger";
+       settings.Width = 164;
+       settings.Text = "Actualizar";
+       settings.RenderMode = ButtonRenderMode.Danger;
+    settings.ClientSideEvents.Click = "SaveExtraPlan";  //"function(s, e) { top.popImage.Hide(); }";
+
+    }).GetHtml()
+</div>

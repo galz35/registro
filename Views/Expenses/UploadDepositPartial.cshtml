@@ -1,0 +1,11 @@
+﻿
+@Html.DevExpress().UploadControl(settings =>
+{
+    settings.Name = "ucDepositFile";
+    settings.Width = 250;
+    settings.ShowUploadButton = true;
+    settings.ShowProgressPanel = true;
+    settings.CallbackRouteValues = new { Controller = "Expenses", Action = "DepositFileUpload" };
+    settings.ClientSideEvents.FileUploadComplete = "OnDepositFileUploadComplete";
+    settings.ValidationSettings.Assign(slnRhonline.Data.Expense.DepositFileUploadValidationSettings);
+}).GetHtml()

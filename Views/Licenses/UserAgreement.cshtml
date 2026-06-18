@@ -1,0 +1,25 @@
+﻿@{
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+    ViewBag.Title = "Acuerdo de Aceptacion";
+}
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "pc";
+    settingsPopup.ShowOnPageLoad = true;
+    settingsPopup.HeaderText = "Información";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 500;
+    settingsPopup.Height= 400;
+    //settingsPopup.Modal = true;
+  
+
+    settingsPopup.SetContent(() =>
+    {
+        Html.RenderPartial("UserAgreementPartial");
+    });
+}).GetHtml()
+}

@@ -1,0 +1,18 @@
+﻿@{
+    ViewBag.Title = "CrossTab";
+}
+
+<br />
+@Html.Action("CrossTabPartial")
+
+
+
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="2" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+}

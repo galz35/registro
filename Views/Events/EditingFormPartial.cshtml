@@ -1,0 +1,155 @@
+﻿@model Entities.Events
+@Html.DevExpress().PopupControl(
+    settings =>
+    {
+        settings.Name = "pcModalMode";
+        settings.ShowOnPageLoad = false;
+        settings.HeaderText = "Edicion de Evento";
+        settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+        settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+        settings.CloseOnEscape = true;
+        settings.Width = 600;
+        settings.Height = 400;
+
+        settings.SetContent(() =>
+        {
+            using (Html.BeginForm("SaveEvent", "Events", FormMethod.Post, new { id = "eventGrid" }))
+            {
+                @Html.DevExpress().FormLayout(flSettings =>
+                {
+                    flSettings.Name = "frmEventEdit";
+                    flSettings.Width = Unit.Percentage(100);
+
+
+                    flSettings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+                    flSettings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 550;
+
+                    flSettings.ColumnCount = 2;
+
+                    flSettings.Items.Add(m => m.EventId, i =>
+                    {
+                        i.Caption = "Id";
+                        i.ClientVisible = false;
+                        i.NestedExtension().TextBox(s =>
+                        {
+
+                            s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                            s.Properties.ValidationSettings.Display = Display.Dynamic;
+                            s.ShowModelErrors = true;
+                            s.Width = Unit.Percentage(100);
+
+
+                        });
+                    });
+
+                    flSettings.Items.Add(m => m.EventName, i =>
+                    {
+                        i.Caption = "Evento";
+
+                        i.NestedExtension().TextBox(s =>
+                        {
+
+                            s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                            s.Properties.ValidationSettings.Display = Display.Dynamic;
+                            s.ShowModelErrors = true;
+                            s.Width = Unit.Percentage(100);
+
+
+                        });
+                    });
+
+                    flSettings.Items.Add(m => m.CoordinatorEmail, i =>
+                    {
+                        i.Caption = "Correo Coordinador";
+
+                        i.NestedExtension().TextBox(s =>
+                        {
+
+                            s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                            s.Properties.ValidationSettings.Display = Display.Dynamic;
+                            s.ShowModelErrors = true;
+                            s.Width = Unit.Percentage(100);
+
+
+                        });
+                    });
+
+                    flSettings.Items.Add(m => m.EventDate, i =>
+                    {
+                        i.Caption = "Fecha de Evento";
+
+                        i.NestedExtension().DateEdit(s =>
+                        {
+
+                            s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                            s.Properties.ValidationSettings.Display = Display.Dynamic;
+                            s.ShowModelErrors = true;
+                            s.Width = Unit.Percentage(100);
+
+
+                        });
+                    });
+
+                    flSettings.Items.Add(m => m.RegistrationClosing, i =>
+                    {
+                        i.Caption = "Fecha de cierre";
+
+                        i.NestedExtension().DateEdit(s =>
+                        {
+
+                            s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                            s.Properties.ValidationSettings.Display = Display.Dynamic;
+                            s.ShowModelErrors = true;
+                            s.Width = Unit.Percentage(100);
+
+
+                        });
+                    });
+
+                    flSettings.Items.Add(m => m.Description, i =>
+                    {
+                        i.Caption = "Descripcion";
+
+                        i.NestedExtension().Memo(s =>
+                        {
+
+                            s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                            s.Properties.ValidationSettings.Display = Display.Dynamic;
+                            s.ShowModelErrors = true;
+                            s.Width = Unit.Percentage(275);
+                            s.Properties.Rows = 7;
+
+                        });
+                    });
+
+                    flSettings.Items.AddEmptyItem();
+                    flSettings.Items.AddEmptyItem();
+                    flSettings.Items.Add(i =>
+                    {
+                        i.ShowCaption = DefaultBoolean.False;
+                    }).SetNestedContent(() =>
+                    {
+                        ViewContext.Writer.Write("<div style='float:right'>");
+                        Html.DevExpress().Button(btnSettings =>
+                        {
+                            btnSettings.Name = "btnUpdate";
+                            btnSettings.Text = "Actualizar";
+                            //btnSettings.ClientSideEvents.Click = "ValidateData";
+                        }).Render();
+                        Html.DevExpress().Button(btnSettings =>
+                        {
+                            btnSettings.Name = "btnCancel";
+                            btnSettings.Text = "Cancelar";
+                            btnSettings.Style[HtmlTextWriterStyle.MarginLeft] = "5px";
+                            //btnSettings.ClientSideEvents.Click = "function(s, e){ gvLicensesRegisterDetail.CancelEdit(); }";
+                        }).Render();
+                        ViewContext.Writer.Write("</div>");
+                    });
+
+                }).GetHtml();
+
+            }
+        });
+
+        //settings.ClientSideEvents.CloseUp = "function(s, e){ ASPxClientEdit.ClearEditorsInContainer(null, '', true); }";
+    }).GetHtml()

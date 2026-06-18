@@ -1,0 +1,107 @@
+================================================================================
+📄 DOCUMENTO DE REQUERIMIENTOS Y ESPECIFICACIÓN FUNCIONAL DEL PROYECTO
+================================================================================
+Archivo: requerimientos_proyecto.txt
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\requerimientos_proyecto.txt
+Proyecto: Migración del Sistema de Asistencia y Despacho de Juguetes del Día del Niño
+================================================================================
+
+Este documento define formalmente el alcance, los objetivos, las reglas de 
+negocio y las especificaciones funcionales que el nuevo sistema (React, NestJS 
+y Flutter) debe cumplir según la visión del negocio.
+
+--------------------------------------------------------------------------------
+1. OBJETIVO GENERAL Y ALCANCE
+--------------------------------------------------------------------------------
+Migrar el módulo de registro de asistencia y despacho de juguetes del Día del 
+Niño de la plataforma monolítica legacy ASP.NET MVC a una solución modular 
+moderna basada en microservicios, optimizada para su hospedaje en el VPS de la
+empresa y conectada al motor SQL Server local.
+
+El sistema debe resolver tres flujos integrados de forma rápida y segura:
+1. El registro rápido de asistencia física del colaborador al ingresar al evento.
+2. La carga inmediata de los hijos asociados al colaborador y la entrega de sus
+   respectivos regalos según el catálogo.
+3. El control administrativo del inventario, auditoría de entregas, reversiones
+   y generación de reportes desde el portal web.
+
+--------------------------------------------------------------------------------
+2. REQUERIMIENTOS FUNCIONALES DETALLADOS (LO QUE EL SISTEMA DEBE HACER)
+--------------------------------------------------------------------------------
+
+RF01: Registro de Asistencia Vinculado al Despacho
+- El sistema debe permitir registrar la asistencia física del colaborador 
+  utilizando el escáner de la app móvil (cámara) o buscando por carnet manualmente.
+- Al guardar la asistencia, el sistema debe devolver de inmediato la ficha del
+  colaborador junto a las tarjetas de sus hijos y juguetes sugeridos, evitando
+  hacer búsquedas secundarias.
+
+RF02: Despacho de Juguete con Identificación del Receptor
+- Al entregar un juguete a un hijo, el despachador debe registrar opcionalmente 
+  quién retira físicamente el obsequio:
+  * El propio Colaborador.
+  * El Cónyuge.
+  * Un Tercero (en cuyo caso la app obliga a digitar el nombre del receptor).
+
+RF03: Captura de Foto Evidencia de Entrega
+- El sistema debe permitir capturar de manera opcional una fotografía como
+  evidencia física de la entrega (límite: 1 foto por colaborador para todo su censo).
+- La foto debe optimizarse automáticamente en formato WebP para conservar el
+  espacio en el disco del VPS.
+
+RF04: Lógica Transaccional de Inventarios
+- Al registrarse una entrega exitosa, el stock actual (`StockActual`) del juguete
+  debe decrementarse automáticamente en el catálogo (`tblCatalogoJuguetes`).
+- Si el stock actual llega a cero, el sistema debe bloquear nuevas entregas 
+  de ese regalo para evitar sobreventas.
+
+RF05: Reversión de Entregas (Corrección de Errores)
+- Si el despachador se equivoca de niño o juguete al registrar una entrega en
+  campo, el sistema debe permitir reversar (deshacer) la entrega de forma sencilla.
+- Al reversar una entrega:
+  * El estado de la entrega cambia a `REVERTED`.
+  * El stock actual del juguete se incrementa automáticamente en +1 en el catálogo.
+  * El niño vuelve a figurar como "Pendiente" (tarjeta gris oscuro en la app móvil).
+  * Se registra con fines de auditoría la fecha, el usuario que revirtió y el
+    motivo de la reversión.
+
+RF06: Dashboard Administrativo e Inventarios
+- El administrador web en React debe visualizar el avance en vivo del evento (gráfico 
+  circular de entregas completadas, métricas de asistencia y alarmas visuales de
+  stock crítico).
+- El administrador puede editar el catálogo de juguetes y ajustar existencias.
+
+--------------------------------------------------------------------------------
+3. REQUERIMIENTOS NO FUNCIONALES (CALIDAD, SEGURIDAD Y RENDIMIENTO)
+--------------------------------------------------------------------------------
+
+RNF01: Optimización de Imágenes (WebP)
+- Las imágenes del catálogo y las fotos de evidencia tomadas por los celulares
+  deben ser procesadas y guardadas en formato WebP con calidad del 80% y tamaño 
+  máximo de 1024px.
+- La base de datos SQL Server no debe almacenar bytes de fotos; únicamente se 
+  guardarán rutas de archivos (`/uploads/...`) que apunten a la carpeta física del VPS.
+
+RNF02: Control de Concurrencia de Base de Datos
+- Las operaciones de despacho y reversión deben utilizar transacciones aisladas 
+  con bloqueo de filas (`ROWLOCK, UPDLOCK`) en SQL Server para evitar
+  inconsistencias por escrituras simultáneas de stock.
+
+RNF03: Seguridad e Integración Oracle HCM Cloud
+- Las fotos de colaboradores deben consultarse en tiempo real a Oracle HCM 
+  mediante el backend de NestJS de forma directa y segura utilizando variables 
+  de entorno `.env`. No se deben almacenar estas credenciales en texto plano.
+- Las fotos se envían al cliente temporalmente y no se guardan en el disco del VPS.
+- Todas las APIs de escritura deben estar protegidas mediante tokens JWT.
+
+RNF04: Identidad Visual Claro
+- El diseño debe utilizar estrictamente el color Rojo Claro y Blanco como 
+  colores de marca. Se aceptan Negro y Grises para fondos y textos.
+- Queda prohibido el uso del color azul.
+- El color verde se utilizará únicamente en estados exitosos (badges de entregado).
+
+RNF05: Resiliencia de Conexión (Offline Cache)
+- La app móvil de Flutter debe poder funcionar en modo sin red utilizando una
+  base de datos Hive en caché local. Los registros guardados se sincronizarán 
+  automáticamente al detectar señal.
+================================================================================

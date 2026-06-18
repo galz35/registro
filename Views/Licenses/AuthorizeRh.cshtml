@@ -1,0 +1,765 @@
+﻿@{
+    ViewBag.Title = "Aprobación de Vacaciones";
+ }
+<style>
+    /* agranda todos los checkboxes de la tabla */
+    #dataTable input.checkItem,
+    #checkAll {
+        transform: scale(1.5); /* 1.2–1.5 suele ser cómodo */
+        margin: 4px; /* separa un poco del texto */
+        cursor: pointer;
+    }
+</style>
+
+
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Aprobación Masiva de Vacaciones</h5dataTable
+</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <!-- Botones de acción masiva (sin campo comentario, pues se quema en el controlador) -->
+                <button class="btn btn-success" id="btnMassApprove">Aprobar Seleccionados</button>
+                <button class="btn btn-danger" id="btnMassDeny">Denegar Seleccionados</button>
+                <button class="btn btn-secondary" id="btnRefresh">Refrescar Lista</button>
+                <!-- Botón para abrir modal de errores -->
+                <button class="btn btn-warning" id="btnVerErrores">
+                    <i class="fas fa-exclamation-triangle"></i> Ver ausencias con error
+                </button>
+
+
+
+            </div>
+            <div class="table-responsive">
+                <table id="dataTable" class="table table-striped table-bordered dt-responsive nowrap" width="100%">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th><input type="checkbox" id="checkAll" /></th>
+                            <th>Acción</th>           <!-- ↓ quitamos las dos columnas anteriores -->
+                            <th>Tipo</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+
+                            <th>Duración</th>
+                            <th>Carnet</th>
+                            <th>Nombre Completo</th>
+                            <th>Gerencia</th>
+                            <th>Hora Inicio</th>
+                            <th>Hora Fin</th>
+                            <th>Estado</th>
+                            <th>Comentario</th>
+
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="absenceEditModal" tabindex="-1" role="dialog" aria-labelledby="absenceEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="absenceEditModalLabel">Editar Vacación</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="absenceEditForm">
+                    <input type="hidden" id="absenceEntryId" name="absenceEntryId" />
+                    <!-- Datos de registro (solo lectura) -->
+                    <div class="form-group">
+                        <label for="editCarnet">Carnet</label>
+                        <input type="text" class="form-control" id="editCarnet" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label for="editNombreCompleto">Nombre Completo</label>
+                        <input type="text" class="form-control" id="editNombreCompleto" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label for="editComentario">Comentario</label>
+                        <input type="text" class="form-control" id="editComentario" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label for="editEstado">Estado</label>
+                        <input type="text" class="form-control" id="editEstado" readonly />
+                    </div>
+                    <!-- Campos editables -->
+                    <div class="form-group">
+                        <label for="newStartDate">Fecha de Inicio</label>
+                        <input type="date" class="form-control" id="newStartDate" name="newStartDate" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="newEndDate">Fecha de Fin</label>
+                        <input type="date" class="form-control" id="newEndDate" name="newEndDate" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="newStartTime">Hora de Inicio</label>
+                        <input type="time" class="form-control" id="newStartTime" name="newStartTime" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="newEndTime">Hora de Fin</label>
+                        <input type="time" class="form-control" id="newEndTime" name="newEndTime" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="submitAbsenceEdit('approve')">Aprobar</button>
+                <button type="button" class="btn btn-danger" onclick="submitAbsenceEdit('deny')">Denegar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalHistorial" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Historial de ausencias</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="historialContent">
+                    <div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalErrores" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Ausencias con error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="contenedorErrores">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Botón + modal (colócalo junto a tus botones actuales) -->
+ 
+
+<div class="modal fade" id="modalPendYErr" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Ausencias pendientes (año pasado) y con error</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body" id="contenedorPendYErr">
+                <div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/js/popper.min.js"></script>
+    <script type="text/javascript">
+        var tablaVacations;
+        let volverAHistorial = false;
+
+        function marcarTraslapesAusencias(data) {
+            const traslape = Array(data.length).fill(false);
+            for (let i = 0; i < data.length; i++) {
+                const iniA = data[i].FechaInicio ? moment(data[i].FechaInicio) : null;
+                const finA = data[i].FechaFin ? moment(data[i].FechaFin) : null;
+                if (!iniA || !iniA.isValid() || !finA || !finA.isValid()) continue;
+
+                for (let j = 0; j < data.length; j++) {
+                    if (i === j) continue;
+                    const iniB = data[j].FechaInicio ? moment(data[j].FechaInicio) : null;
+                    const finB = data[j].FechaFin ? moment(data[j].FechaFin) : null;
+                    if (!iniB || !iniB.isValid() || !finB || !finB.isValid()) continue;
+
+                    if (iniA.isSameOrBefore(finB) && finA.isSameOrAfter(iniB)) {
+                        traslape[i] = true; break;
+                    }
+                }
+            }
+            return traslape;
+        }
+
+        // Construye HTML del historial (tema rojo/blanco/negro/gris + botón Editar)
+        function renderHistorialAusencias(data) {
+            data.sort((a, b) => new Date(a.FechaInicio) - new Date(b.FechaInicio) || new Date(a.FechaFin) - new Date(b.FechaFin));
+            const tras = marcarTraslapesAusencias(data);
+
+            let html = `
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm" style="font-size:13px;">
+        <thead style="background:#212529;color:#fff;">
+          <tr>
+            <th>Tipo</th><th>Inicio</th><th>Fin</th><th>Duración</th>
+            <th>Comentario</th><th>Estado</th><th>Fecha Envío</th><th>Editar</th>
+          </tr>
+        </thead><tbody>`;
+
+            data.forEach((x, i) => {
+                const warn = tras[i] ? "background:#fff1f1;font-weight:600;" : ""; // rojo muy claro
+                html += `<tr style="${warn}">
+          <td>${x.AbsenceType || ''}</td>
+          <td>${x.FechaInicio ? moment(x.FechaInicio).format('DD/MM/YYYY') : ''}</td>
+          <td>${x.FechaFin ? moment(x.FechaFin).format('DD/MM/YYYY') : ''}</td>
+          <td>${x.DuracionFormateada || x.Duracion || ''}</td>
+          <td>${x.Comentario || ''}</td>
+          <td>${x.EstadoDeDisponibilidad || ''}</td>
+          <td>${x.FechaEnvio ? moment(x.FechaEnvio).format('DD/MM/YYYY') : ''}</td>
+          <td>
+            <button class="btn btn-outline-danger btn-sm accion-editar"
+                    data-id="${x.PersonAbsenceEntryId}"
+                    data-inicio="${x.FechaInicio || ''}"
+                    data-fin="${x.FechaFin || ''}"
+                    data-hinicio="${x.HoraInicio || ''}"
+                    data-hfin="${x.HoraFin || ''}"
+                    data-carnet="${x.Carnet || ''}"
+                    data-nombre="${x.NombreCompleto || ''}"
+                    data-comentario="${x.Comentario || ''}"
+                    data-estado="${x.EstadoDeDisponibilidad || ''}">
+              <i class="fas fa-edit"></i>
+            </button>
+          </td>
+        </tr>`;
+            });
+
+            html += `</tbody></table>
+      <div class="mt-2">
+        <span style="display:inline-block;width:22px;height:16px;background:#fff1f1;border:1px solid #ced4da;margin-right:8px;"></span>
+        <small>Filas resaltadas: fechas traslapadas.</small>
+      </div>
+    </div>`;
+            return html;
+        }
+
+        // Lanza el modal de edición (reutiliza tu función existente)
+        function lanzarEdicion($x) {
+            openEditModal(
+                $x.data('id'),
+                $x.data('inicio'),
+                $x.data('fin'),
+                $x.data('hinicio'),
+                $x.data('hfin'),
+                $x.data('carnet'),
+                $x.data('nombre'),
+                $x.data('comentario'),
+                $x.data('estado')
+            );
+        }
+
+     $(document).ready(function () {
+    tablaVacations = $('#dataTable').DataTable({
+        "ajax": {
+            "url": "@Url.Action("ObtenerVacacionesPorGerenciatodo", "Licenses")",
+            "type": "GET",
+            "datatype": "json",
+            "beforeSend": function () { $.LoadingOverlay("show"); },
+            "complete": function () { $.LoadingOverlay("hide"); },
+            "error": function (xhr, status, error) { console.error("Error al cargar los datos:", error); }
+        },
+        "columns": [
+            { "data": null }, // contador
+            {
+                "data": null,
+                "render": function (data) {
+                    return "<input type='checkbox' class='checkItem' data-absenceid='" + data.PersonAbsenceEntryId + "'>";
+                },
+                "orderable": false,
+                "width": "10px"
+            },
+            { // Columna de acciones como dropdown
+                "data": null,
+                "orderable": false,
+                "render": function (r) {
+                    let btnEdit = `
+                        <a class="dropdown-item accion-editar"
+                           data-id="${r.PersonAbsenceEntryId}"
+                           data-inicio="${r.FechaInicio}"
+                           data-fin="${r.FechaFin}"
+                           data-hinicio="${r.HoraInicio}"
+                           data-hfin="${r.HoraFin}"
+                           data-carnet="${r.Carnet}"
+                           data-nombre="${r.NombreCompleto}"
+                           data-comentario="${r.Comentario}"
+                           data-estado="${r.EstadoDeDisponibilidad}">
+                           <i class="fas fa-edit text-primary"></i> Editar
+                        </a>`;
+                    let btnAdj = `
+                        <a class="dropdown-item accion-adjunto"
+                           data-id="${r.PersonAbsenceEntryId}">
+                           <i class="fas fa-paperclip text-info"></i> Ver adjunto
+                        </a>`;
+                    let btnHist = `
+    <a class="dropdown-item accion-historial"
+       data-carnet="${r.Carnet}"
+       data-nombre="${r.NombreCompleto}">
+       <i class="fas fa-list text-success"></i> Ver historial
+    </a>`;
+
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-secondary btn-sm dropdown-toggle"
+                                    data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false">
+                                Acción
+                            </button>
+                            <div class="dropdown-menu">
+                                  ${btnEdit}${btnAdj}${btnHist}
+                            </div>
+                        </div>`;
+                }
+            },
+            { "data": "AbsenceType" },
+            { "data": "FechaInicio", "render": function (data) { return moment(data).format("DD/MM/YYYY"); } },
+            { "data": "FechaFin", "render": function (data) { return moment(data).format("DD/MM/YYYY"); } },
+            { "data": "DuracionFormateada" },
+            { "data": "Carnet" },
+            { "data": "NombreCompleto" },
+            { "data": "Gerencia" },
+            { "data": "HoraInicio" },
+            { "data": "HoraFin" },
+            { "data": "Comentario" },
+            { "data": "EstadoDeDisponibilidad" }
+        ],
+        "dom": 'Blfrtip',
+        "lengthMenu": [10, 20, 50, 100],
+        "pageLength": 10,
+        "language": { "url": "@Url.Content("~/Scripts/datatable.es-ES.json")" },
+        "responsive": true,
+        "drawCallback": function (settings) {
+            var api = this.api();
+            var rows = api.rows({ page: 'current' }).nodes();
+            var counter = 1;
+            $.each(rows, function (index, row) {
+                if (row.cells.length > 0) {
+                    row.cells[0].innerHTML = counter;
+                    counter++;
+                }
+            });
+        }
+    });
+
+    // Dropdown seguro (abre/cierra)
+    $('#dataTable tbody').on('click', '.dropdown-toggle', function (e) {
+        e.stopPropagation();
+        $(this).next('.dropdown-menu').toggleClass('show');
+    });
+    $(document).on('click', function (e) {
+        if (
+            !$(e.target).closest('.dropdown-menu').length &&
+            !$(e.target).closest('.dropdown-toggle').length
+        ) {
+            $('.dropdown-menu').removeClass('show');
+        }
+    });
+         $('#dataTable tbody').on('click', '.accion-historial', function (e) {
+    e.preventDefault();
+    var carnet = $(this).data('carnet');
+    var nombre = $(this).data('nombre');
+             $("#historialContent").html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>');
+
+    $("#modalHistorial .modal-title").text("Historial de ausencias de " + nombre + " (" + carnet + ")");
+    $("#modalHistorial").modal("show");
+
+    $.get('@Url.Action("HistorialPorCarnet", "Licenses")', { carnet: carnet }, function (data) {
+        if (!data || data.length === 0) {
+            $("#historialContent").html("<div class='alert alert-info'>No hay historial disponible.</div>");
+            return;
+        }
+
+        /* ordenar por inicio, luego fin */
+        data.sort((a, b) => new Date(a.FechaInicio) - new Date(b.FechaInicio) ||
+            new Date(a.FechaFin) - new Date(b.FechaFin));
+
+        /* detectar traslapes */
+        const traslapes = marcarTraslapesAusencias(data);
+
+        /* construir tabla */
+        let html = `
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm" style="font-size:13px;">
+        <thead style="background:#343a40;color:#fff;">
+          <tr>
+            <th>Tipo</th><th>Inicio</th><th>Fin</th><th>Duración</th>
+            <th>Comentario</th><th>Estado</th><th>Fecha Envío</th><th>Editar</th>
+          </tr>
+        </thead><tbody>`;
+
+        data.forEach((x, i) => {
+            const warn = traslapes[i] ? "background:#ffe5e5;font-weight:bold;" : "";
+            html += `<tr style="${warn}">
+          <td>${x.AbsenceType}</td>
+          <td>${x.FechaInicio ? moment(x.FechaInicio).format('DD/MM/YYYY') : ''}</td>
+          <td>${x.FechaFin ? moment(x.FechaFin).format('DD/MM/YYYY') : ''}</td>
+          <td>${x.DuracionFormateada || x.Duracion || ''}</td>
+          <td>${x.Comentario || ''}</td>
+          <td>${x.EstadoDeDisponibilidad || ''}</td>
+          <td>${x.FechaEnvio ? moment(x.FechaEnvio).format('DD/MM/YYYY') : ''}</td>
+          <td>
+            <button class="btn btn-outline-danger btn-sm accion-editar"
+                    data-id="${x.PersonAbsenceEntryId}"
+                    data-inicio="${x.FechaInicio}"
+                    data-fin="${x.FechaFin}"
+                    data-hinicio="${x.HoraInicio}"
+                    data-hfin="${x.HoraFin}"
+                    data-carnet="${x.Carnet}"
+                    data-nombre="${x.NombreCompleto}"
+                    data-comentario="${x.Comentario}"
+                    data-estado="${x.EstadoDeDisponibilidad}">
+              <i class="fas fa-edit"></i>
+            </button>
+          </td>
+        </tr>`;
+        });
+
+        html += `</tbody></table>
+      <div class="mt-2">
+        <span style="display:inline-block;width:22px;height:16px;background:#ffe5e5;border:1px solid #ccc;margin-right:8px;"></span>
+        <small>Filas resaltadas: fechas traslapadas.</small>
+      </div></div>`;
+
+        $("#historialContent").html(html);
+    });
+
+});
+
+    // Acciones del dropdown
+    $('#dataTable tbody')
+        .on('click', '.accion-editar', function (e) {
+            e.preventDefault();
+            const $x = $(this);
+            openEditModal(
+                $x.data('id'),
+                $x.data('inicio'),
+                $x.data('fin'),
+                $x.data('hinicio'),
+                $x.data('hfin'),
+                $x.data('carnet'),
+                $x.data('nombre'),
+                $x.data('comentario'),
+                $x.data('estado')
+            );
+        })
+        .on('click', '.accion-adjunto', function (e) {
+            e.preventDefault();
+            viewAttachment($(this).data('id'));
+        });
+
+    $("#checkAll").click(function () {
+        $('.checkItem').prop('checked', this.checked);
+    });
+         $(document).on('click', '.accion-editar', function (e) {
+             e.preventDefault();
+             const $x = $(this);
+             const $modalHistorial = $('#modalHistorial');
+
+             if ($modalHistorial.is(':visible')) {
+                 volverAHistorial = true; // marcar que venimos del historial
+                 $modalHistorial.modal('hide');
+                 setTimeout(() => lanzarEdicion($x), 200);
+             } else {
+                 volverAHistorial = false;
+                 lanzarEdicion($x);
+             }
+         });
+});
+
+        function viewAttachment(absenceId) {
+    // Genera la URL del Action y abre en una pestaña nueva
+    var url = '@Url.Action("VerAdjuntoPdf", "Licenses", new { id = "__ID__" })';
+    url = url.replace("__ID__", absenceId);
+    window.open(url, '_blank');
+}
+        // Función para abrir el modal de edición individual
+        function openEditModal(absenceId, startDate, endDate, startTime, endTime, carnet, nombreCompleto, comentario, estado) {
+            $("#absenceEntryId").val(absenceId);
+            $("#newStartDate").val(moment(startDate).format("YYYY-MM-DD"));
+            $("#newEndDate").val(moment(endDate).format("YYYY-MM-DD"));
+            $("#newStartTime").val(startTime);
+            $("#newEndTime").val(endTime);
+            // Rellenar campos de solo lectura
+            $("#editCarnet").val(carnet);
+            $("#editNombreCompleto").val(nombreCompleto);
+            $("#editComentario").val(comentario);
+            $("#editEstado").val(estado);
+            $("#absenceEditModal").modal("show");
+        }
+        $("#btnRefresh").click(function () {
+            Swal.fire({
+                title: 'Cargando...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            // Recargar la DataTable y cerrar el loading al finalizar
+            tablaVacations.ajax.reload(function () {
+                Swal.close();
+            });
+        });
+
+ $("#btnVerErrores").click(function () {
+      $("#contenedorPendYErr").html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>');
+  $("#modalPendYErr").modal("show");
+
+  $.ajax({
+    url: '@Url.Action("ObtenerVacacionesErrores", "Licenses")',
+    type: 'GET',
+    dataType: 'json',                 // ← fuerza JSON
+    success: function (resp) {
+      var data = Array.isArray(resp) ? resp
+               : (resp && Array.isArray(resp.items) ? resp.items : []);
+
+      if (!data.length) {
+        $("#contenedorPendYErr").html("<div class='alert alert-info'>Sin datos.</div>");
+        return;
+      }
+
+      var html = '<div class="table-responsive"><table class="table table-bordered table-sm">';
+      html += '<thead class="thead-light"><tr>' +
+              '<th>Carnet</th><th>Nombre</th><th>Tipo</th><th>Inicio</th><th>Fin</th>' +
+              '<th>Duración</th><th>Estado</th><th>Envío</th><th>Error</th><th>Fec. Error</th>' +
+              '</tr></thead><tbody>';
+
+      // ✅ data es un array seguro
+      data.forEach(function (x) {
+        html += '<tr>' +
+          '<td>' + (x.Carnet || '') + '</td>' +
+          '<td>' + (x.NombreCompleto || '') + '</td>' +
+          '<td>' + (x.AbsenceType || '') + '</td>' +
+          '<td>' + (x.FechaInicio ? moment(x.FechaInicio).format("DD/MM/YYYY") : '') + '</td>' +
+          '<td>' + (x.FechaFin ? moment(x.FechaFin).format("DD/MM/YYYY") : '') + '</td>' +
+          '<td>' + (x.DuracionFormateada || '') + '</td>' +
+          '<td>' + (x.EstadoDeDisponibilidad || '') + '</td>' +
+          '<td>' + (x.FechaEnvio || '') + '</td>' +
+          '<td>' + (x.ErrorContenido || '') + '</td>' +
+          '<td>' + (x.FechaError ? moment(x.FechaError).format("DD/MM/YYYY HH:mm") : '') + '</td>' +
+        '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      $("#contenedorPendYErr").html(html);
+    },
+    error: function () {
+      $("#contenedorPendYErr").html("<div class='alert alert-danger'>No se pudo cargar la información.</div>");
+    }
+  });
+
+    
+    });
+        // Función para obtener los IDs seleccionados
+        function getSelectedIDs() {
+            var selectedIDs = [];
+            $('.checkItem:checked').each(function () {
+                var id = $(this).data('absenceid');
+                if (id) { selectedIDs.push(id); }
+            });
+            return selectedIDs.join(",");
+        }
+
+        $("#btnMassApprove").click(function () {
+            Swal.fire({
+                title: "Confirmación",
+                text: "¿Está seguro de aprobar las ausencias seleccionadas?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Sí, aprobar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.value) {
+                    processMassUpdate("approve");
+                }
+            });
+        });
+        $('#absenceEditModal').on('hidden.bs.modal', function () {
+            if (volverAHistorial) {
+                $('#modalHistorial').modal('show');
+                volverAHistorial = false; // resetear
+            }
+        });
+
+        // Acción masiva: denegar
+        $("#btnMassDeny").click(function () {
+            Swal.fire({
+                title: "Confirmación",
+                text: "¿Está seguro de denegar las ausencias seleccionadas?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Sí, denegar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.value) {
+                    processMassUpdate("deny");
+                }
+            });
+        });
+          // Función para procesar actualizaciones masivas, una por una, y actualizar el progreso
+      function processMassUpdate(actionType) {
+    var ids = getSelectedIDs().split(",");
+    if (ids.length === 0 || ids[0] === "") {
+        swal.fire("Advertencia", "Debe seleccionar al menos una ausencia.", "warning");
+        return;
+    }
+    var total = ids.length;
+    var processed = 0;
+    var responses = [];
+
+    // Abrir un SweetAlert2 con un indicador de carga personalizado
+    Swal.fire({
+        title: 'Procesando...',
+        html: 'Procesando <b>0</b> de ' + total,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    function processNext() {
+        if (ids.length === 0) {
+            // Cuando se termina de procesar todos los registros, se cierra el swal y se muestra mensaje final.
+            Swal.fire("Éxito", "Actualización masiva completada.", "success").then(function () {
+                tablaVacations.ajax.reload();
+            });
+            return;
+        }
+        var id = ids.shift();
+        $.ajax({
+            url: '@Url.Action("UpdateAbsenceedit4", "Licenses")',
+            type: "POST",
+            data: { absenceId: id, actionType: actionType },
+            success: function (result) {
+                responses.push(result);
+                processed++;
+                // Si el resultado indica error, se muestra el mensaje durante 5 segundos
+                if (result.status === "Error") {
+                    Swal.fire({
+                        title: "Error",
+                        html: result.message,
+                        icon: "error",
+                        timer: 5000,
+                        timerProgressBar: true,
+                        showConfirmButton: true
+                    });
+                    // Se espera 5 segundos antes de continuar
+                    setTimeout(processNext, 5000);
+                }
+                Swal.update({
+                    html: 'Procesando <b>' + processed + '</b> de ' + total
+                });
+                setTimeout(processNext, 500); // Retardo de 0.5 s entre cada llamada
+            },
+            error: function () {
+                processed++;
+                Swal.update({
+                    html: 'Procesando <b>' + processed + '</b> de ' + total
+                });
+                setTimeout(processNext, 500);
+            }
+        });
+    }
+    processNext();
+}
+        // Función para enviar actualización individual desde el modal
+        function submitAbsenceEdit(actionType) {
+            var absenceEntryId = $("#absenceEntryId").val();
+            var newStartDate = $("#newStartDate").val();
+            var newEndDate = $("#newEndDate").val();
+            var newStartTime = $("#newStartTime").val();
+            var newEndTime = $("#newEndTime").val();
+            Swal.fire({
+                title: 'Procesando...',
+                html: 'Por favor espere...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Validar que las fechas sean válidas
+            var startDate = moment(newStartDate, "YYYY-MM-DD");
+            var endDate = moment(newEndDate, "YYYY-MM-DD");
+            if (!startDate.isValid() || !endDate.isValid()) {
+                swal.fire("Error!", "Una de las fechas ingresadas no es válida.", "error");
+                return;
+            }
+            // Validar que la fecha de fin no sea anterior a la fecha de inicio
+            if (endDate.isBefore(startDate)) {
+                Swal.fire("Error!", "La fecha de fin no puede ser anterior a la fecha de inicio.", "error");
+                return;
+            }
+            // Si es el mismo día, validar que la hora de fin no sea anterior a la hora de inicio
+            if (startDate.isSame(endDate)) {
+                var startTime = moment(newStartTime, "HH:mm");
+                var endTime = moment(newEndTime, "HH:mm");
+                if (!startTime.isValid() || !endTime.isValid()) {
+                    swal.fire("Error!", "Una de las horas ingresadas no es válida.", "error");
+                    return;
+                }
+                if (endTime.isBefore(startTime)) {
+                    swal.fire("Error!", "La hora de fin no puede ser anterior a la hora de inicio.", "error");
+                    return;
+                }
+            }
+            $.ajax({
+                url: '@Url.Action("UpdateAbsenceedit3", "Licenses")',
+                type: "POST",
+                data: {
+                    absenceId: absenceEntryId,
+                    actionType: actionType,
+                    comment: "", // Sin comentario, ya está quemado en el controller
+                    newStartDate: newStartDate,
+                    newEndDate: newEndDate,
+                    newStartTime: newStartTime,
+                    newEndTime: newEndTime
+                },
+                success: function (result) {
+                    Swal.close();
+                    if (result.status == "OK" || result.status =="Advertencia") {
+                        swal.fire("Éxito!", result.message, "success").then(function () {
+                            $("#absenceEditModal").modal("hide");
+                            tablaVacations.ajax.reload();
+                        });
+                    } else {
+                        swal.fire("Error!", result.message, "error");
+                    }
+                },
+                error: function () {
+                    swal.fire("Error!", "Ocurrió un error al actualizar la ausencia.", "error");
+                }
+            });
+        }
+    </script>
+}
+

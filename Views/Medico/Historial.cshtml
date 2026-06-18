@@ -1,0 +1,216 @@
+﻿@* Views/Encuesta/Historial.cshtml — agrega Carnet/Nombre/Gerencia/Área en la grilla y export *@
+@{
+    ViewBag.Title = "Historial de Chequeo";
+    var urlData = Url.Action("ObtenerHistorial", "Medico");
+    var urlDetJson = Url.Action("DetalleJson", "Medico");
+    var urlPdf = Url.Action("Pdf", "Medico");
+    var urlDetExcel = Url.Action("DetalleExcel", "Medico");
+    var urlRangoExcel = Url.Action("RangoDetalleExcel", "Medico");
+}
+<div class="container-fluid mt-3">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <h1 class="h5 m-0 text-gray-800"><i class="fas fa-clipboard-list"></i> Historial de mis registros</h1>
+        <div class="d-flex">
+            <input id="fDesde" class="form-control form-control-sm mr-2 flatpickr" style="width:140px" placeholder="Desde" />
+            <input id="fHasta" class="form-control form-control-sm mr-2 flatpickr" style="width:140px" placeholder="Hasta" />
+            <button id="btnFiltrar" class="btn btn-sm btn-dark mr-2">Filtrar</button>
+            <a id="btnRangoExcel" class="btn btn-sm btn-success"><i class="fas fa-file-excel"></i> Excel (detalle rango)</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-2">
+            <table id="tb" class="table table-sm table-striped table-hover w-100">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Carnet</th>
+                        <th>Nombre</th>
+                        <th>Gerencia</th>
+                        <th>Área</th>
+                        <th>Modalidad</th>
+                        <th>Apto</th>
+                        <th>Comentario</th>
+                        <th style="width:260px">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="modal fade" id="mdlDetalle" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#b30000;color:#fff">
+                <h5 class="modal-title"><i class="fas fa-file-medical"></i> Detalle del registro</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" style="color:#fff">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="detalleBody">Cargando…</div>
+            <div class="modal-footer">
+                <a id="btnPdf" class="btn btn-sm btn-secondary" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                <a id="btnExcelDetalle" class="btn btn-sm btn-success"><i class="fas fa-file-excel"></i> Excel detalle</a>
+                <button class="btn btn-sm btn-dark" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="~/onlinecss/flatpickr.min.css" rel="stylesheet" />
+<style>
+    .badge-pill-strong {
+        display: inline-block;
+        border: 1px solid #d9d9d9;
+        background: #efefef;
+        color: #111;
+        border-radius: 999px;
+        padding: 2px 8px;
+        margin: 2px;
+        font-size: 12px
+    }
+
+    .hr {
+        height: 1px;
+        background: #eee;
+        margin: 10px 0
+    }
+</style>
+
+@section scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/flatpickr.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script>
+var urlData='@urlData', urlDetJson='@urlDetJson', urlPdf='@urlPdf', urlDetExcel='@urlDetExcel', urlRangoExcel='@urlRangoExcel';
+var dt=null;
+
+// fecha .NET/ISO → Date
+function parseNetDate(v){
+  if(!v) return null;
+  if(typeof v==='string'){
+    var m=/Date\((\d+)\)/.exec(v); if(m) return new Date(parseInt(m[1],10));
+    var d=new Date(v); if(!isNaN(d)) return d;
+  }
+  if(v instanceof Date) return v;
+  return null;
+}
+function fmt(v){ var d=parseNetDate(v); return d? moment(d).format('DD/MM/YYYY HH:mm'):''; }
+
+$(function(){
+  flatpickr('.flatpickr',{dateFormat:'Y-m-d'});
+
+  dt = $('#tb').DataTable({
+    ajax:{
+      url:urlData,
+      dataSrc:'data',
+      data:function(d){ d.desde=$('#fDesde').val(); d.hasta=$('#fHasta').val(); }
+    },
+    pageLength:25,
+    order:[[0,'desc']],
+    dom:'Bfrtip',
+    buttons:[
+      { extend:'excelHtml5',
+        text:'<i class="fas fa-file-excel"></i> Excel',
+        className:'btn btn-sm btn-success',
+        title:'Historial_Chequeo',
+        exportOptions:{ columns:[0,1,2,3,4,5,6,7] } // sin Acciones
+      }
+    ],
+    columns:[
+      { data:'FechaRegistro', render:function(v){ return fmt(v); } },
+      { data:'Carnet' },
+      { data:'Nombre' },
+      { data:'Gerencia' },
+      { data:'Area' },
+      { data:'Modalidad' },
+      { data:'AptoLaboral', render:function(v){ return v? 'Sí':'No'; } },
+      { data:'Comentario', render:function(v){ return v||''; } },
+      { data:null, orderable:false, render:function(row){
+          return ''+
+           '<button class="btn btn-xs btn-outline-dark mr-1 btn-det" data-id="'+row.IdEncuestaRegistro+'"><i class="fas fa-eye"></i> Ver</button>' ;
+        }
+      }
+    ]
+  });
+
+  $('#btnFiltrar').on('click', function(){ dt.ajax.reload(); });
+
+  $('#btnRangoExcel').on('click', function(){
+    var d=$('#fDesde').val()||'', h=$('#fHasta').val()||'';
+    var q='?desde='+encodeURIComponent(d)+'&hasta='+encodeURIComponent(h);
+    this.href = urlRangoExcel + q;
+  });
+
+  // Modal detalle
+  $('#tb').on('click','.btn-det',function(){
+    var id = $(this).data('id');
+    $('#detalleBody').html('Cargando…');
+    $('#btnPdf').attr('href', urlPdf+'?id='+id);
+    $('#btnExcelDetalle').attr('href', urlDetExcel+'?id='+id);
+
+    $.getJSON(urlDetJson, { id:id }).done(function(res){
+      if(!res.ok){ $('#detalleBody').html('<div class="text-danger">'+(res.mensaje||'Error')+'</div>'); return; }
+      var d = res.data || {};
+
+      function item3(lbl,val){ return '<div class="col-md-4 mb-2"><b>'+lbl+':</b><br/>'+(val==null?'':val)+'</div>'; }
+      function pills(arr){
+        if(!arr||!arr.length) return '<i class="text-muted">Sin datos</i>';
+        return arr.map(function(x){ return '<span class="badge-pill-strong">'+x+'</span>'; }).join(' ');
+      }
+
+      var html = ''+
+      '<div class="row">'+
+        item3('Fecha', (d.FechaRegistro? moment(d.FechaRegistro).format('DD/MM/YYYY HH:mm') : ''))+
+        item3('Carnet', d.Carnet)+
+        item3('Nombre', d.Nombre)+
+        item3('Gerencia', d.Gerencia)+
+        item3('Área', d.Area)+
+        item3('Modalidad', d.Modalidad)+
+        item3('Apto laboral', d.AptoLaboral ? 'Sí':'No')+
+        '<div class="col-12 mb-2"><b>Comentario:</b><br/>'+(d.Comentario||'')+'</div>'+
+      '</div>'+
+      '<div class="hr"></div>'+
+      '<div><b>Síntomas:</b><br/>'+pills(d.Sintomas)+'</div>'+
+      '<div class="mt-1"><b>Insumos:</b><br/>'+pills(d.Insumos)+'</div>'+
+      (d.Categorias && d.Categorias.length ? '<div class="mt-1"><b>Categorías:</b><br/>'+pills(d.Categorias)+'</div>' : '');
+
+      if(d.Detalles && d.Detalles.length){
+        html += '<div class="table-responsive mt-2"><table class="table table-sm table-bordered">'+
+                '<thead class="thead-light"><tr>'+
+                '<th>Síntoma (key)</th><th>Intensidad</th><th>Duración</th><th>Frecuencia</th><th>Notas</th>'+
+                '</tr></thead><tbody>';
+        d.Detalles.forEach(function(x){
+          html += '<tr>'+
+            '<td>'+(x.SintomaKey||'')+'</td>'+
+            '<td>'+(x.Intensidad!=null?x.Intensidad:'')+'</td>'+
+            '<td>'+(x.Duracion||'')+'</td>'+
+            '<td>'+(x.Frecuencia||'')+'</td>'+
+            '<td>'+(x.Notas||'')+'</td>'+
+          '</tr>';
+        });
+        html += '</tbody></table></div>';
+      }else{
+        html += '<div class="text-muted mt-2">Sin detalles de síntomas.</div>';
+      }
+
+      $('#detalleBody').html(html);
+    }).fail(function(){
+      $('#detalleBody').html('<div class="text-danger">Error al obtener detalle.</div>');
+    });
+
+    $('#mdlDetalle').modal('show');
+  });
+});
+    </script>
+}

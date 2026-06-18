@@ -1,0 +1,865 @@
+﻿@{
+    ViewBag.Title = "Gestión de Viáticos";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gestión de Viáticos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="http://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .card-custom {
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
+
+        .btn-custom {
+            background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+            .btn-custom:hover {
+                opacity: 0.9;
+                transform: scale(1.02);
+            }
+
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%);
+            color: #fff;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%) !important;
+            color: #fff !important;
+        }
+
+        .modal-header,
+        .btn-success {
+            background-color: #e74a3b;
+            color: #fff;
+        }
+
+        .badge-estado {
+            font-size: 90%;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .badge-estado-guardado {
+            background-color: #f6c23e;
+        }
+
+        .badge-estado-autorizado {
+            background-color: #1cc88a;
+        }
+
+        .badge-estado-coordinador {
+            background-color: #36b9cc;
+        }
+
+        .badge-estado-gerente {
+            background-color: #c0392b;
+        }
+
+        .badge-estado-ejecutado {
+            background-color: #858796;
+        }
+
+        .badge-estado-otro {
+            background-color: #999;
+        }
+        .table-small-font {
+            font-size: 12px; /* Ajusta según tus necesidades */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Título -->
+        <div class="row mb-3">
+            <div class="col text-center">
+                <h2 class="text-danger">Gestión de Viáticos</h2>
+            </div>
+        </div>
+
+        <!-- Filtros y botón Registrar -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <label for="cmbPeriodos" class="text-secondary">Período:</label>
+                <select id="cmbPeriodos" class="form-control">
+                    @{
+                        var currentDate = DateTime.Now;
+                        var options = new List<SelectListItem>();
+
+                        // Generar 3 meses: mes anterior, mes actual, mes siguiente
+                        for (int i = -1; i <= 1; i++)
+                        {
+                            var date = currentDate.AddMonths(i);
+                            var value = date.ToString("yyyy-MM");
+                            var text = date.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES"));
+
+                            options.Add(new SelectListItem
+                            {
+                                Value = value,
+                                Text = text,
+                                Selected = (i == -1) // Seleccionar el mes anterior por defecto
+                            });
+                        }
+                    }
+                    @foreach (var option in options)
+                    {
+                        <option value="@option.Value" @(option.Selected ? "selected" : "")>@option.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="cmbGerencias" class="text-secondary">Gerencia:</label>
+                <select id="cmbGerencias" class="form-control">
+                    <!-- Llenar vía Ajax -->
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-custom btn-block" onclick="cargarTodo()">
+                    <i class="fas fa-sync"></i> Cargar Datos
+                </button>
+            </div>
+            <div class="col-md-2 d-flex align-items-end justify-content-end">
+                <button class="btn btn-custom" data-toggle="modal" data-target="#modalPresupuesto">
+                    <i class="fas fa-plus-circle"></i> Registrar
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs de Gráficos -->
+        <ul class="nav nav-tabs" id="tabGrafico" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="grafico1-tab" data-toggle="tab" href="#grafico1" role="tab">Estado Presupuesto</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="grafico2-tab" data-toggle="tab" href="#grafico2" role="tab">Presupuesto / Ejecución</a>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="grafico1" role="tabpanel">
+                <div class="card card-custom p-3">
+                    <canvas id="graficoEstado"></canvas>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="grafico2" role="tabpanel">
+                <div class="card card-custom p-3">
+                    <canvas id="graficoPresupuesto"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Presupuestos -->
+        <div class="row mt-4">
+            <div class="col">
+                <div class="table-responsive">
+                    <table id="dataTable" class="table table-bordered table-striped table-hover table-small-font">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+
+                                <th>Gerencia</th>
+                                <th>Monto Aumentar</th>
+                                <th>Monto Disminuir</th>
+                                <th>Período</th>
+                                <th>Estado Presupuesto</th>
+
+                                <th>Justificación</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+            </div>
+            <div class="col-md-12 text-right">
+                <!-- Botón para Ver Viáticos (abre la tabla en un popup) -->
+                <button class="btn btn-custom mt-3" data-toggle="modal" data-target="#modalViaticos">
+                    <i class="fas fa-eye"></i> Ver Viáticos del Período
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registrar Presupuesto -->
+    <div class="modal fade" id="modalPresupuesto" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabel">Asignar Viáticos</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formPresupuesto">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Gerencia</th>
+                                    <th>Aumentar Viáticos</th>
+                                    <th>Disminuir Viáticos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaGerencias"></tbody>
+                        </table>
+                        <div class="form-group">
+                            <label for="justificacion">Justificación:</label>
+                            <textarea id="justificacion" rows="3" class="form-control" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="registrarPresupuestoSession()">
+                        Aceptar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver Viáticos -->
+    <div class="modal fade" id="modalViaticos" tabindex="-1" aria-labelledby="modalViaticosLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalViaticosLabel">Registros de Viáticos</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table id="tablaViaticos" class="table table-bordered table-striped table-small-font">
+                            <thead>
+                                <tr>
+                                    <th>Carnet</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Gerencia</th>
+                                    <th>Notas</th>
+                                    <th>justificacion</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Monto</th>
+
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @section scripts {
+
+        <!-- Scripts Base -->
+        <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+        <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+        <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+        <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+        <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+        <script src="~/onlinejs/buttons.html5.min.js"></script>
+        <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+        <script src="~/onlinejs/dataTables.select.min.js"></script>
+        <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+        <script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+        <script src="~/onlinejs/jquery.fancybox.min.js"></script>
+        <script src="~/onlinejs/highcharts.js"></script>
+        <script src="~/onlinejs/numeral.min.js"></script>
+        <script src="~/onlinejs/moment.min.js"></script>
+        <script src="~/onlinejs/jszip.min.js"></script>
+        <script src="~/onlinejs/spin.min.js"></script>
+        <script src="~/onlinejs/datetime-moment.js"></script>
+        <script src="~/onlinejs/sweetalert2.10.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+        let graficoEstadoInstance = null;
+        let graficoPresupuestoInstance = null;
+  // Llenar combo Gerencias
+   function cargarGerencias() {
+    $.ajax({
+      url: '@Url.Action("ObtenerGerenciasSession", "Expenses")',
+      type: 'GET',
+      success: function(resp) {
+        const cmb = document.getElementById("cmbGerencias");
+        cmb.innerHTML = "";
+        if (!resp) return;
+        resp.forEach(g => {
+          const op = document.createElement("option");
+          op.value = g.Id;
+          op.text = g.Nombre;
+          cmb.appendChild(op);
+        });
+      },
+      error: function() {
+        console.error("Error al cargar gerencias");
+      }
+    });
+  }
+
+
+  // Cargar Viáticos
+          function cargarViaticosSession() {
+    const periodo = document.getElementById("cmbPeriodos").value;
+              const gerencia = $("#cmbGerencias").val() ? parseInt($("#cmbGerencias").val()) : -1; // Asignar -1 si es null
+    $.ajax({
+      url: '@Url.Action("GetExpenseGerenciaSession", "Expenses")',
+      type: 'GET',
+        data: { periodId: periodo, gerencia: gerencia},
+      beforeSend: function() {
+        Swal.fire({ title: 'Cargando Viáticos...', didOpen: () => Swal.showLoading() });
+      },
+      success: function(resp) {
+        Swal.close();
+
+
+            // Inicializar DataTable
+
+                if ($.fn.DataTable.isDataTable('#tablaViaticos')) {
+                $('#tablaViaticos').DataTable().clear().destroy();
+            }
+
+            // Inicializar DataTable
+            $('#tablaViaticos').DataTable({
+                data: resp.data || [], // Usar los datos de respuesta
+                columns: [
+                    { data: 'Carnet', title: 'Carnet', defaultContent: '' },
+                    { data: 'FullName', title: 'Nombre Completo', defaultContent: '' },
+                     { data: 'Gerencia', title: 'Gerencia', defaultContent: '' },
+                    { data: 'Notes', title: 'periodo', defaultContent: '' },
+                    { data: 'JUSTIFY', title: 'justificacion', defaultContent: '' },
+                    {
+                        data: 'ExpenseDate',
+                        title: 'Fecha',
+                        render: function (data) {
+                            return data ? moment(data).format('YYYY-MM-DD') : '';
+                        },
+                        defaultContent: ''
+                    },
+                    {
+                        data: 'Estado',
+                        title: 'Estado',
+                        render: function (data) {
+                            let estadoClass = "badge-estado-otro";
+                            let textoEstado = (data || "Pendiente").toUpperCase();
+
+                            switch (textoEstado) {
+                                case "GUARDADO": estadoClass = "badge-estado-guardado"; break;
+                                case "APROBADO": estadoClass = "badge-estado-autorizado"; break;
+                                case "DENEGADO": estadoClass = "badge-estado-coordinador"; break;
+                                case "GERENTE": estadoClass = "badge-estado-gerente"; break;
+                                case "EJECUTADO": estadoClass = "badge-estado-ejecutado"; break;
+                            }
+
+                            return `<span class="badge-estado ${estadoClass}">${textoEstado}</span>`;
+                        },
+                        defaultContent: ''
+                    },
+                    {
+                        data: 'Amount',
+                        title: 'Monto',
+                        render: function (data) {
+                            return data ? `C$${parseFloat(data).toFixed(0)}` : 'C$0.00';
+                        },
+                        defaultContent: ''
+                    }
+                ],
+                dom: 'Blfrtip', // Habilitar botones para exportar
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ],
+                language: {
+                    url: '@Url.Content("~/Scripts/datatable.es-ES.json")'
+                },
+                responsive: true,
+                destroy: true
+            });
+
+      },
+      error: function() {
+        Swal.close();
+        Swal.fire('Error', 'No se pudieron cargar Viáticos', 'error');
+      }
+    });
+  }
+
+        // Cargar Presupuestos
+    function cargarPresupuestosSessionx() {
+    const periodo = document.getElementById("cmbPeriodos").value;
+        const gerencia = $("#cmbGerencias").val() ? parseInt($("#cmbGerencias").val()) : -1; // Asignar -1 si es null
+    $.ajax({
+      url: '@Url.Action("ObtenerDetallesPresupuestoPorGerenciaSession", "Expenses")',
+      type: 'GET',
+        data: { periodId: periodo, gerencia: gerencia },
+      beforeSend: function() {
+        Swal.fire({ title: 'Cargando Presupuestos...', didOpen: () => Swal.showLoading() });
+      },
+      success: function(resp) {
+        Swal.close();
+        const tabla = document.getElementById("tablaPresupuestos");
+        tabla.innerHTML = "";
+        if (resp) {
+            const data = resp.data || [];
+            data.forEach(item => {
+                const fila = `
+        <tr>
+            <td>${item.IdPresupuesto}</td>
+                            <td>${item.Gerencias}</td>
+                            <td>${item.MontoAumentar}</td>
+                            <td>${item.MontoDisminuir}</td>
+                            <td>${item.MontoAumentar - item.MontoDisminuir}</td>
+                            <td>${item.Justificacion || ''}</td>
+                            <td>${item.Estado || ''}</td>
+                            <td>${item.Periodo || ''}</td>
+                            <td>${item.EstadoPresupuesto || ''}</td>
+                            <td>${item.FechaRegistro ? moment(item.FechaRegistro).format('YYYY-MM-DD') : ''}</td>
+                            <td>${item.FechaEstado ? moment(item.FechaEstado).format('YYYY-MM-DD') : ''}</td>
+
+        </tr>`;
+                tabla.innerHTML += fila;
+            });
+        }
+      },
+      error: function() {
+        Swal.close();
+        Swal.fire('Error', 'No se pudieron cargar Presupuestos', 'error');
+      }
+    });
+  }
+
+        function cargarPresupuestosSession() {
+    const periodo = document.getElementById("cmbPeriodos").value;
+    const gerencia = $("#cmbGerencias").val() ? parseInt($("#cmbGerencias").val()) : -1; // Asignar -1 si es null
+
+    $.ajax({
+        url: '@Url.Action("ObtenerDetallesPresupuestoPorGerenciaSession", "Expenses")',
+        type: 'GET',
+        data: { periodId: periodo, gerencia: gerencia },
+        beforeSend: function () {
+            Swal.fire({ title: 'Cargando Presupuestos...', didOpen: () => Swal.showLoading() });
+        },
+        success: function (resp) {
+            Swal.close();
+            const esRRHH = resp.esRRHH; // Verificar si es RRHH
+
+            // Destruir instancia previa de DataTables si existe
+            if ($.fn.DataTable.isDataTable('#dataTable')) {
+                $('#dataTable').DataTable().clear().destroy();
+            }
+
+                $('#dataTable').DataTable({
+                    data: resp.data || [], // Usar los datos de respuesta
+                    columns: [
+
+                        {
+                            data: null,
+                            title: 'Acciones',
+                            render: function (data, type, row) {
+                                if (esRRHH == true && row.EstadoPresupuesto !== "APROBADO" && row.EstadoPresupuesto !== "DENEGADO" && row.EstadoPresupuesto !== "EJECUTADO") {
+                                    return `
+                                       <div class="btn-group" role="group" aria-label="Acciones">
+                    <button class="btn btn-success btn-sm" onclick="gestionarPresupuesto(${row.IdPresupuesto}, 'APROBAR')">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="gestionarPresupuesto(${row.IdPresupuesto}, 'DENEGAR')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                                    `;
+                                } else {
+                                    return `<span class="text-muted">Sin acciones</span>`;
+                                }
+                            },
+                            orderable: false
+                        },
+                        { data: 'Gerencias', title: 'Gerencia' },
+                        { data: 'MontoAumentar', title: 'Monto Aumentar' },
+                        { data: 'MontoDisminuir', title: 'Monto Disminuir' },
+                         { data: 'Periodo', title: 'Período', defaultContent: '' },
+                        { data: 'EstadoPresupuesto', title: 'Estado Presupuesto', defaultContent: '' },
+
+                        { data: 'Justificacion', title: 'Justificación', defaultContent: '' }
+                    ],
+                    dom: 'Blfrtip',
+                    language: {
+                        url: '@Url.Content("~/Scripts/datatable.es-ES.json")'
+                    },
+                    responsive: true,
+                    destroy: true
+                }); },
+        error: function () {
+            Swal.close();
+            Swal.fire('Error', 'No se pudieron cargar Presupuestos.', 'error');
+        }
+    });
+}
+         function gestionarPresupuesto(idPresupuesto, accion) {
+        Swal.fire({
+            title: `Está seguro que desea ${accion.toLowerCase()} este presupuesto?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, confirmar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '@Url.Action("gestorPresupuestoSession", "Expenses")',
+                    type: 'POST',
+                    data: { idPresupuesto: idPresupuesto, accion: accion },
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire('Exito', response.message || `Presupuesto ${accion.toLowerCase()} con éxito.`, 'success');
+                            cargarPresupuestosSession();
+                        } else {
+                            Swal.fire('Error', response.message || 'No se pudo realizar la acción.', 'error');
+                        }
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+            function aprobarPresupuestox(idPresupuesto) {
+    Swal.fire({
+        title: '¿Está seguro de aprobar este presupuesto?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, aprobar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '@Url.Action("AprobarPresupuesto", "Expenses")',
+                type: 'POST',
+                data: { idPresupuesto },
+                success: function (resp) {
+                    if (resp.success) {
+                        Swal.fire('Éxito', 'Presupuesto aprobado.', 'success');
+                        cargarPresupuestosSession();
+                    } else {
+                        Swal.fire('Error', 'No se pudo aprobar el presupuesto.', 'error');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
+                }
+            });
+        }
+    });
+}
+
+function denegarPresupuestox(idPresupuesto) {
+    Swal.fire({
+        title: '¿Está seguro de denegar este presupuesto?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, denegar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '@Url.Action("DenegarPresupuesto", "Expenses")',
+                type: 'POST',
+                data: { idPresupuesto },
+                success: function (resp) {
+                    if (resp.success) {
+                        Swal.fire('Éxito', 'Presupuesto denegado.', 'success');
+                        cargarPresupuestosSession();
+                    } else {
+                        Swal.fire('Error', 'No se pudo denegar el presupuesto.', 'error');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
+                }
+            });
+        }
+    });
+}
+
+            function cargarGraficoEstado() {
+        const periodo = $("#cmbPeriodos").val();
+        const gerencia = $("#cmbGerencias").val() ? parseInt($("#cmbGerencias").val()) : -1; // Asignar -1 si es null
+        $.ajax({
+            url: '@Url.Action("ObtenerGraficoEstado", "Expenses")',
+            type: 'GET',
+            data: { periodId: periodo, gerencia: gerencia },
+            success: function(resp) {
+                console.log("Respuesta Grafico Estado:", resp); // Para depuración
+
+                if (!resp || !resp.labels || !resp.data || resp.labels.length === 0) {
+                    Swal.fire('Información', 'No hay datos disponibles para el gráfico de estado.', 'info');
+                    return;
+                }
+
+                const ctx = document.getElementById("graficoEstado").getContext("2d");
+
+                // Destruir gráfico anterior si existe
+                if (graficoEstadoInstance) {
+                    graficoEstadoInstance.destroy();
+                }
+
+                graficoEstadoInstance = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: resp.labels,
+                        datasets: [
+                            {
+                                label: "Estados de Presupuesto",
+                                backgroundColor: resp.labels.map((label) => {
+                                    switch(label.toLowerCase()) {
+                                        case 'guardado': return "#f6c23e";
+                                        case 'autorizado': return "#1cc88a";
+                                        case 'coordinador': return "#36b9cc";
+                                        case 'gerente': return "#c0392b";
+                                        case 'ejecutado': return "#858796";
+                                        default: return "#999";
+                                    }
+                                }),
+                                data: resp.data
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision:0
+                                }
+                            }]
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltips: {
+                            callbacks: {
+                                label: function(tooltipItem, data) {
+                                    return `Cantidad: ${tooltipItem.yLabel}`;
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error("Error gráfico estado:", error);
+                Swal.fire('Error', 'No se pudo cargar el gráfico de estado.', 'error');
+            }
+        });
+    }
+
+   function cargarGraficoPresupuesto() {
+        const periodo = $("#cmbPeriodos").val();
+        const gerencia = $("#cmbGerencias").val() ? parseInt($("#cmbGerencias").val()) : -1; // Asignar -1 si es null
+
+        $.ajax({
+            url: '@Url.Action("ObtenerGraficoPresupuesto", "Expenses")',
+            type: 'GET',
+            data: { periodId: periodo, gerencia: gerencia },
+            success: function(resp) {
+                console.log("Respuesta Grafico Presupuesto:", resp); // Para depuración
+
+                if (!resp || !resp.labels || resp.labels.length === 0) {
+                    Swal.fire('Información', 'No hay datos disponibles para el gráfico de presupuesto.', 'info');
+                    return;
+                }
+
+                const ctx = document.getElementById("graficoPresupuesto").getContext("2d");
+
+                // Destruir gráfico anterior si existe
+                if (graficoPresupuestoInstance) {
+                    graficoPresupuestoInstance.destroy();
+                }
+
+                graficoPresupuestoInstance = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: resp.labels,
+                        datasets: [
+                            {
+                                label: "Asignado",
+                                backgroundColor: "#1cc88a",
+                                data: resp.asignado
+                            },
+                            {
+                                label: "Ejecutado",
+                                backgroundColor: "#e74a3b",
+                                data: resp.consumido
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision:0
+                                }
+                            }]
+                        },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                });
+            },
+            error: function() {
+                console.error("Error gráfico presupuesto");
+                Swal.fire('Error', 'No se pudo cargar el gráfico de presupuesto.', 'error');
+            }
+        });
+    }
+          function generarTablaGerencias() {
+    $.ajax({
+      url: '@Url.Action("ObtenerGerenciasSession", "Expenses")',
+      type: 'GET',
+      success: function(gerencias) {
+        const tabla = document.getElementById("tablaGerencias");
+        tabla.innerHTML = "";
+        if (!gerencias) return;
+        gerencias.forEach(ger => {
+          const fila = `
+            <tr>
+              <td>${ger.Nombre}</td>
+              <td><input type="number" class="form-control" min="0" placeholder="0" data-gerencia-id="${ger.Id}" /></td>
+              <td><input type="number" class="form-control" min="0" placeholder="0" data-gerencia-id="${ger.Id}" /></td>
+            </tr>`;
+          tabla.innerHTML += fila;
+        });
+      },
+      error: function() {
+        Swal.fire('Error', 'No se pudieron obtener gerencias.', 'error');
+      }
+    });
+  }
+  // Registrar Presupuesto
+     function registrarPresupuestoSession() {
+    const justificacion = document.getElementById("justificacion").value.trim();
+    if (!justificacion) {
+      Swal.fire('Error', 'Debe ingresar la justificación.', 'warning');
+      return;
+    }
+
+    const filas = document.querySelectorAll("#tablaGerencias tr");
+    const presupuestos = [];
+    filas.forEach(fila => {
+      const gerenciaId = fila.querySelector("input").getAttribute("data-gerencia-id");
+      const montoAumentar = parseFloat(fila.cells[1].querySelector("input").value) || 0;
+      const montoDisminuir = parseFloat(fila.cells[2].querySelector("input").value) || 0;
+
+      if (montoAumentar > 0 || montoDisminuir > 0) {
+        presupuestos.push({
+          GerenciaId: gerenciaId,
+          MontoAumentar: montoAumentar,
+          MontoDisminuir: montoDisminuir
+        });
+      }
+    });
+
+    if (presupuestos.length === 0) {
+      Swal.fire('Error', 'Debe ingresar al menos un monto a aumentar o disminuir.', 'warning');
+      return;
+    }
+
+    Swal.fire({
+      title: 'Guardando presupuestos...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    $.ajax({
+      url: '@Url.Action("RegistrarPresupuestosSession", "Expenses")',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        presupuestos: presupuestos,
+        justificacion: justificacion,
+        periodo: document.getElementById("cmbPeriodos").value
+      }),
+      success: function(res) {
+        Swal.close();
+        if (res.success) {
+          Swal.fire('Éxito', 'Presupuestos registrados.', 'success');
+            $('#modalPresupuesto').modal('hide');
+            $('body').removeClass('modal-open'); // Solución para eliminar la clase modal-open
+            $('.modal-backdrop').remove(); // Solución para eliminar el backdrop sobrante
+
+          cargarPresupuestosSession();
+          cargarGraficoEstado();
+          cargarGraficoPresupuesto();
+        } else {
+          Swal.fire('Error', 'No se pudieron registrar los presupuestos.', 'error');
+        }
+      },
+      error: function() {
+        Swal.close();
+        Swal.fire('Error', 'Problema al guardar.', 'error');
+      }
+    });
+  }
+  // Botón para recargar todo
+        function cargarTodo() {
+            cargarPresupuestosSession();
+            cargarGraficoEstado();
+            cargarGraficoPresupuesto();
+            // Nota: Ahora no cargamos viáticos aquí,
+            //       lo haremos al abrir el modal "Ver Viáticos"
+        }
+        $('#cmbPeriodos').on('change', function () {
+            cargarPresupuestosSession();
+            cargarGraficoEstado();
+            cargarGraficoPresupuesto();
+        });
+
+        // Cargar viáticos solo al abrir el modal
+        $('#modalViaticos').on('show.bs.modal', function () {
+            cargarViaticosSession();
+        });
+
+        // Inicial
+        $(document).ready(function () {
+            cargarGerencias();
+            cargarTodo();
+            $('#modalPresupuesto').on('show.bs.modal', generarTablaGerencias);
+        });
+        </script>
+    }
+</body>
+</html>
+

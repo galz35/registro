@@ -1,0 +1,31 @@
+﻿
+@model Entities.Expenses
+    @{
+        Layout = "~/Views/Shared/_mainLayout.cshtml";
+        ViewBag.Title = "Registro de Viáticos";
+
+
+    }
+
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().PopupControl(settingsPopup =>
+{
+    settingsPopup.Name = "PopupMaster";
+    settingsPopup.ShowOnPageLoad = false;
+    settingsPopup.HeaderText = "Registro de Viáticos";
+    settingsPopup.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settingsPopup.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settingsPopup.CloseOnEscape = true;
+    settingsPopup.Width = 500;
+    //settingsPopup.Modal = true;
+
+
+
+    settingsPopup.SetContent(() =>
+    {
+        //Html.Action("AddExpense", new Entities.Expenses());
+        Html.RenderPartial("MasterDetail", new Entities.Expenses());
+    });
+}).GetHtml()
+}

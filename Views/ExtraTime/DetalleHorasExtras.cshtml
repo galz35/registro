@@ -1,0 +1,58 @@
+﻿<!-- ───────── Views/ExtraTime/DetalleHorasExtras.cshtml ───────── -->
+@{
+    ViewBag.Title = "Detalle de Horas Extras";
+}
+<div class="d-flex gap-2 mb-3">
+    <a href="@Url.Action("ConsultaHorasExtras","ExtraTime")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+</div>
+
+<table id="tblDetalle" class="table table-sm table-bordered w-100">
+    <thead>
+        <tr>
+            <th>No Emp.</th>
+            <th>Nombre</th>
+            <th>Área</th>
+            <th>Fecha</th>
+            <th>Horas</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+</table>
+
+@section Scripts{
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+$(function(){
+  $('#tblDetalle').DataTable({
+      ajax:{ url:'@Url.Action("ObtenerDetalleHoras")', dataSrc:'data' },
+      columns:[
+          {data:'EmployeeNumber'},
+          {data:'EmployeeName'},
+          {data:'AreaName'},
+          {data:'ExecutionDate'},
+          {data:'Hours'},
+          {data:'Status'}
+      ],
+      pageLength:25,
+      order:[[3,'desc']]
+  });
+});
+    </script>
+}

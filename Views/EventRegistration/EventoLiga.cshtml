@@ -1,0 +1,564 @@
+
+@{
+    ViewBag.Title = "EventoLiga";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<style>
+    body {
+        background-color: #f8f9fa; /* Gris claro */
+    }
+
+    .container-fluid {
+        padding-top: 20px;
+    }
+
+    .card-header {
+        background-color: #dc3545; /* Rojo */
+        color: white;
+    }
+
+    .btn-primary, .btn-success, .btn-secondary {
+        width: 150px;
+    }
+
+    .btn-primary {
+        background-color: #dc3545; /* Rojo */
+        border-color: #dc3545;
+    }
+
+        .btn-primary:hover {
+            background-color: #bd2130;
+            border-color: #dc3545;
+        }
+
+    .modal-header {
+        background-color: #dc3545; /* Rojo */
+        color: white;
+    }
+
+    .h1, h1 {
+        color: #dc3545; /* Rojo */
+    }
+
+    .table thead th {
+        background-color: #dc3545; /* Rojo */
+        color: white;
+    }
+
+    .form-inline .form-control {
+        width: auto;
+        flex: 1;
+    }
+    /* Estilos para organizar los elementos en dos columnas */
+    .row-cols-2 > .col {
+        display: flex;
+        flex-direction: column;
+    }
+    /* Ajustes para dispositivos móviles */
+    .totales-contenedor {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+     }
+
+    .totales-input {
+        font-size: 18px;
+        font-weight: bold;
+        width: 100px;
+        margin-left: 10px;
+        text-align: right;
+        border: none;
+        background-color: #f1f1f1;
+        color: #333;
+    }
+
+        .totales-input[readonly] {
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+        }
+    #photoPreview {
+        max-width: 100%; /* Ajustar la foto al ancho del contenedor */
+        height: auto; /* Mantener proporciones */
+        border: 1px solid #ddd; /* Borde de la foto */
+        border-radius: 5px; /* Esquinas redondeadas */
+        padding: 5px; /* Espaciado interno */
+    }
+</style>
+
+
+<!-- Contenedor principal -->
+<div class="container-fluid">
+    <h1 class="mb-4 text-center">Registro de Participantes al Evento</h1>
+
+    <div id="divAccesoDespacho" class="text-center mb-4" style="display: none;">
+        <a href="@Url.Action("DespachoDiaNino", "EventRegistration")" class="btn btn-danger btn-lg shadow-sm" style="min-width: 280px; border-radius: 20px; font-weight: bold; background-color: #da121a; border-color: #da121a;">
+            <i class="fas fa-gift mr-2"></i> Ir a Despacho de Juguetes
+        </a>
+    </div>
+
+    <!-- Sección de selección y información del empleado -->
+    <div class="row">
+        <!-- Seleccionar Empleado -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-2">
+                    <h5 class="m-0 font-weight-bold">Seleccionar Empleado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Información del Empleado -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="employeeInput"><strong>Empleado:</strong></label>
+                                <input list="employeeList" class="form-control" id="employeeInput" placeholder="Escriba para buscar..." autocomplete="off">
+                                <datalist id="employeeList">
+                                    <!-- Opciones cargadas dinámicamente -->
+                                </datalist>
+
+                                <p><strong>Nombre:</strong> <span id="empNombre"></span></p>
+                                <p><strong>Código:</strong> <span id="empCodigo"></span></p>
+                                <p><strong>Gerencia:</strong> <span id="empGerencia"></span></p>
+                                <p><strong>Cargo:</strong> <span id="empDepartamento"></span></p>
+                                <p><strong>Edad:</strong> <span id="empEdad"></span></p>
+                                <p><strong>Fecha ingreso:</strong> <span id="empFechaingreso"></span></p>
+                                <p><strong>Fecha fin:</strong> <span id="empFechafin"></span></p>
+                                @*<p><strong>Sindicato:</strong> <span id="empSinicato"></span></p>*@
+                            </div>
+                        </div>
+
+                        <!-- Foto del Empleado -->
+                        <div class="col-md-4 text-center">
+                            <label for="employeePhoto"><strong>Foto del Empleado:</strong></label>
+                            <img id="photoPreview" src="#" alt="Vista previa de la foto" style="display: none; margin-top: 10px; max-width: 100%; height: auto; border: 1px solid #ccc; padding: 5px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Empleado -->
+        <div class="col-md-7 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-2">
+                    <h5 class="m-0 font-weight-bold">Información familiar</h5>
+                </div>
+                <div id="familySection" class="card shadow mb-4">
+
+                    <div class="card-body">
+                        <table class="table table-bordered" id="familyTable">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Parentesco</th>
+                                    <th>Edad</th>
+                                </tr>
+                            </thead>
+                            <tbody id="familyBody">
+                                <!-- Filas dinámicas -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de familiares -->
+    <!-- Input de total de personas y botón registrar -->
+    <div class="card shadow mb-4">
+        <div class="card-body d-flex align-items-center justify-content-start">
+            <div class="form-group mb-0 mr-3">
+                <label for="totalPersons"><strong>Total de Adulto:</strong></label>
+                <input type="number" id="totalPersons" class="form-control" value="1" min="1" style="width: 100px;">
+            </div>
+            <div class="form-group mb-0 mr-3">
+                <label for="totalPersons2"><strong>Total de Niño:</strong></label>
+                <input type="number" id="totalPersons2" class="form-control" value="0" min="0" style="width: 100px;">
+            </div>
+            <button id="btnRegister" class="btn btn-success btn-lg" style="min-width: 200px;">
+                <i class="fas fa-check"></i> Registrar Asistencia
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <table class="table table-bordered" id="tablaAsistencia">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Gerencia</th>
+                    <th>Departamento</th>
+                    <th>Adultos</th>
+                    <th>Niños</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+   
+<div class="totales-contenedor" style="text-align: right; padding: 20px;">
+    <label for="subtotalAdultos">Subtotal Adultos: </label>
+    <input type="text" id="subtotalAdultos" readonly class="totales-input">
+
+    <label for="subtotalNinos" style="margin-left: 20px;">Subtotal Niños: </label>
+    <input type="text" id="subtotalNinos" readonly class="totales-input">
+
+    <label for="totalGeneral" style="margin-left: 20px;">Total General: </label>
+    <input type="text" id="totalGeneral" readonly class="totales-input">
+</div>
+    </div>
+@section Scripts {
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script>
+            var tablaAsistencia;
+             $(document).ready(function () {
+                 var employeeId = null;
+                 var familiares = [];
+                 var tabla_persona;
+
+                 // Detectar dinámicamente si es el evento de juguetes (Día del Niño) mediante parámetro en la URL o ID del evento
+                 var urlParams = new URLSearchParams(window.location.search);
+                 var eventId = urlParams.get('eventId');
+                 var esDiaNino = eventId === '193' || eventId === '194' || urlParams.get('esDiaNino') === 'true' || urlParams.get('despacho') === 'true';
+                 if (esDiaNino) {
+                     $('#divAccesoDespacho').show();
+                 }
+
+                 // Cargar lista de empleados en el datalist usando AJAX
+                function loadEmployeeList() {
+                    $.LoadingOverlay("show");
+
+                    $.ajax({
+                        url: "@Url.Action("GetAllempleadoevento", "EventRegistration")",
+
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function (response) {
+                            $.LoadingOverlay("hide");
+
+                            $('#employeeList').empty();
+                            response.data.forEach(function (emp) {
+                                var option = document.createElement("option");
+                                option.value = emp.CODIGO; // Valor que se utilizará al seleccionar
+                                option.textContent = emp.NOMBRE + " - " + emp.CODIGO; // Texto visible en la lista
+                                option.setAttribute("data-id", emp.CODIGO); // Guardar el código en data-id
+
+                                $('#employeeList').append(option);
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            $.LoadingOverlay("hide");
+                            // Esto imprimirá el error real en la consola del navegador (F12)
+                            console.log("Estado: " + status);
+                            console.log("Error: " + error);
+                            console.log("Respuesta del servidor: " + xhr.responseText);
+
+                            alert('Error al cargar la lista. Revisa la consola (F12) para más detalles.');
+                        }
+                    });
+                }
+
+                loadEmployeeList();
+
+                // Evento al cambiar el valor del input empleado
+                $('#employeeInput').on('change', function () {
+                    var inputVal = $(this).val();
+                    var selectedOption = $('#employeeList option').filter(function () {
+                        return $(this).val() === inputVal;
+                    }).first();
+                    if (selectedOption.length) {
+                        var codigo = selectedOption.data('id');
+                        $.LoadingOverlay("show");
+                        $.ajax({
+                            url: "@Url.Action("GetEmpleadoPorCodigo", "EventRegistration")",
+                            method: 'GET',
+                            dataType: 'json',
+                            data: { codigo: codigo }, // Enviar el valor como parámetro
+
+                            success: function (response) {
+                                $.LoadingOverlay("hide");
+                                if (response.success && response.data) {
+                                    selectEmployee(response.data); // Llama a selectEmployee si se encuentra el empleado
+                                } else {
+                                    clearEmployeeInfo(); // Limpia la información si no se encuentra el empleado
+                                }
+                            }, error: function () {
+                                $.LoadingOverlay("hide");
+                                alert('Error al consultar el empleado.');
+                            }
+                        });
+                                  $.ajax({
+            url: "@Url.Action("GetEmployeePhoto", "EventRegistration")",
+            method: 'GET',
+            dataType: 'json',
+            data: { carnet: codigo }, // Enviar el carnet
+            success: function (photoResponse) {
+                if (photoResponse.success && photoResponse.imageDataURL) {
+                    $('#photoPreview').attr('src', photoResponse.imageDataURL).show();
+                } else {
+                    $('#photoPreview').attr('src', '#').hide();
+                }
+            },
+            error: function () {
+                alert('Error al obtener la foto del empleado.');
+                $('#photoPreview').attr('src', '#').hide();
+            }
+        });
+                    }
+                });
+
+                // Función para mostrar información del empleado seleccionado
+                function selectEmployee(employee) {
+                    employeeId = employee.CODIGO;
+                    $('#empNombre').text(employee.NOMBRE);
+                    $('#empCodigo').text(employee.CODIGO);
+                    $('#empEdad').text(employee.EDAD);
+                    $('#empFechaingreso').text(employee.FECHAINGRESO);
+                    $('#empFechafin').text(employee.FECHAFIN);
+                    //$('#empSinicato').text(employee.SINDICATO);
+                    $('#empGerencia').text(employee.GERENCIA);
+                    $('#empDepartamento').text(employee.DEPARTAMENTO);
+
+                    loadFamilyMembers(employee.CODIGO);
+                    $('#employeeInfo').show();
+                    $('#familySection').show();
+                }
+
+                // Función para cargar familiares del empleado usando AJAX
+                function loadFamilyMembers(employeeCode) {
+                    $.LoadingOverlay("show");
+                    $.ajax({
+                        url: "@Url.Action("GetFamiliaresPorCodigo2", "EventRegistration")",
+                        method: 'GET',
+                        dataType: 'json', data: { codigo: employeeCode }, // Pasa el employeeCode al controlador
+
+                        success: function (response) {
+                            $.LoadingOverlay("hide");
+                            familiares = response.data; // No es necesario filtrar en el cliente, ya se hace en el servidor
+
+                            renderFamiliares();
+                        },
+                        error: function () {
+                            $.LoadingOverlay("hide");
+                            alert('Error al cargar familiares');
+                        }
+                    });
+                }
+
+                // Función para limpiar la información del empleado
+                function clearEmployeeInfo() {
+                    employeeId = null;
+                    $('#empNombre').text('');
+                    $('#empCodigo').text('');
+                    $('#empEdad').text('');
+                    $('#empFechaingreso').text('');
+                    $('#empFechafin').text('');
+                    //$('#empSinicato').text('');
+                    $('#empGerencia').text('');
+                    $('#empDepartamento').text('');
+                    $('#familyBody').empty();
+                    $('#familyBody').append('<tr><td colspan="3" class="text-center">No hay familiares registrados.</td></tr>');
+                    familiares = [];
+
+                }
+
+                // Función para renderizar la tabla de familiares
+                function renderFamiliares() {
+                    $('#familyBody').empty();
+                    if (familiares.length === 0) {
+                        $('#familyBody').append('<tr><td colspan="3" class="text-center">No hay familiares registrados.</td></tr>');
+                    } else {
+                        familiares.forEach(function (fam) {
+                            var colorFondo = (fam.EDAD <= 12 && (fam.TIPO_RELA === "HIJO ADOPTADO" || fam.TIPO_RELA === "HIJO" || fam.TIPO_RELA === "HIJO/HIJA"))
+                                ? 'style="background-color: #FFFACD;"' : ''; // Color amarillo pastel
+                            var row = `<tr ${colorFondo}>
+                    <td>${fam.NOMBRE_HIJO}</td>
+                    <td>${fam.TIPO_RELA}</td>
+                    <td>${fam.EDAD}</td>
+                </tr>`;
+                            $('#familyBody').append(row);
+                        });
+                    }
+                }
+
+                // Evento para registrar participación                             tablaAsistencia.ajax.reload();
+
+                $('#btnRegister').click(function () {
+                    var totalPersons = $('#totalPersons').val();
+                    var totalPersons2 = $('#totalPersons2').val();
+
+                    if (!employeeId) {
+                        Swal.fire('Error', 'No hay un empleado seleccionado.', 'error');
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Confirmar Registro',
+                        text: `¿Desea registrar al empleado con código ${employeeId} y total de adulto ${totalPersons} y total de niño ${totalPersons2}?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, registrar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            var formData = new FormData();
+                            formData.append('employeeId', employeeId);
+                            formData.append('totalPersons', totalPersons);
+                            formData.append('totalPersons2', totalPersons2);
+                            $.ajax({
+                                type: 'POST',
+                                url: "@Url.Action("RegistrarAsistencia", "EventRegistration")",
+                                contentType: false,
+                                processData: false,
+                                data: formData,
+
+                                success: function (response)        {
+                                    tablaAsistencia.ajax.reload();
+                                    if (response.success) {
+                                        var urlParams = new URLSearchParams(window.location.search);
+                                        var eventId = urlParams.get('eventId');
+                                        var esDiaNino = eventId === '193' || eventId === '194' || urlParams.get('esDiaNino') === 'true' || urlParams.get('despacho') === 'true';
+                                        var carnetRegistrado = employeeId;
+
+                                        if (esDiaNino) {
+                                            Swal.fire({
+                                                title: 'Registrado',
+                                                text: 'Participación registrada con éxito.',
+                                                icon: 'success',
+                                                showCancelButton: true,
+                                                confirmButtonText: '<i class="fas fa-gift mr-1"></i> Ir a Despacho',
+                                                cancelButtonText: 'Aceptar',
+                                                confirmButtonColor: '#da121a'
+                                            }).then((res) => {
+                                                $('#employeeInput').val('');
+                                                clearEmployeeInfo();
+                                                $('#totalPersons').val('1');
+                                                $('#totalPersons2').val('0');
+                                                $('#employeeInfo').hide();
+                                                $('#familySection').hide();
+
+                                                if (res.isConfirmed) {
+                                                    window.open("@Url.Action("DespachoDiaNino", "EventRegistration")?carnet=" + carnetRegistrado, '_blank');
+                                                }
+                                            });
+                                        } else {
+                                            Swal.fire({
+                                                title: 'Registrado',
+                                                text: 'Participación registrada con éxito.',
+                                                icon: 'success',
+                                                confirmButtonText: 'Aceptar'
+                                            }).then(() => {
+                                                $('#employeeInput').val('');
+                                                clearEmployeeInfo();
+                                                $('#totalPersons').val('1');
+                                                $('#totalPersons2').val('0');
+                                                $('#employeeInfo').hide();
+                                                $('#familySection').hide();
+                                            });
+                                        }
+                                    } else {
+                                        Swal.fire('Error', response.message, 'error');
+                                    }
+                                },
+                                error: function () {
+                                    Swal.fire('Error', 'Ocurrió un error en el registro.', 'error');
+                                }
+                            });
+
+                        }
+                    });
+                });
+
+                $('#employeeInfo').hide();
+                $('#familySection').hide();
+
+            tablaAsistencia = $('#tablaAsistencia').DataTable({
+    "ajax": {
+        "url": "@Url.Action("ObtenerAsistenciaConNombre", "EventRegistration")",
+        "type": "GET",
+        "datatype": "json"
+    },
+    "columns": [
+        { "data": "Empleado" },
+        { "data": "Nombre" },
+        {
+            "data": "Fecha",
+            "render": function (data) {
+                return moment(data).format('DD/MM/YYYY');
+            }
+        },
+        { "data": "Gerencia" },
+        { "data": "Dpto" },
+        { "data": "Adulto" },
+        { "data": "Niño" }
+                ], "footerCallback": function (row, data, start, end, display) {
+        var api = this.api();
+
+        // Función para convertir a número
+        var intVal = function (i) {
+            return typeof i === 'string' ?
+                i.replace(/[\$,]/g, '') * 1 :
+                typeof i === 'number' ? i : 0;
+        };
+
+        // Total de adultos
+        var totalAdultos = api
+            .column(5, { page: 'current' })
+            .data()
+            .reduce(function (a, b) {
+                return intVal(a) + intVal(b);
+            }, 0);
+
+        // Total de niños
+        var totalNinos = api
+            .column(6, { page: 'current' })
+            .data()
+            .reduce(function (a, b) {
+                return intVal(a) + intVal(b);
+            }, 0);
+
+        // Actualiza el pie de tabla
+        $(api.column(5).footer()).html(totalAdultos);
+        $(api.column(6).footer()).html(totalNinos);
+
+        // Total general (suma de adultos y niños)
+        $('#subtotalAdultos').val(totalAdultos);
+        $('#subtotalNinos').val(totalNinos);
+
+        // Total general (suma de adultos y niños)
+        var totalGeneral = totalAdultos + totalNinos;
+        $('#totalGeneral').val(totalGeneral);            },
+    "dom": 'Blfrtip',
+    "lengthMenu": [10, 20, 50, 100],
+    "pageLength": 10,
+    "language": {
+        "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+    }
+});
+
+            });
+                // Función global para cargar o recargar la tabla
+
+    </script>
+}

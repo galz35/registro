@@ -1,0 +1,198 @@
+﻿@{
+    ViewBag.Title = "Aprobación de Horas Extras";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+<link href="~/onlinejs/dataTables.bootstrap4.min.css" rel="stylesheet" />
+
+<div class="card shadow mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold" style="color:#800">Bandeja: <span id="lblBandeja">-</span></h6>
+        <div>
+            <button id="btnAutorizar" class="btn btn-primary">Autorizar</button>
+            <button id="btnDenegar" class="btn btn-danger ml-2">Denegar</button>
+            <button id="btnRefrescar" class="btn btn-secondary ml-2">Refrescar</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblApr" class="table table-bordered table-hover display nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="checkAll" /></th>
+                    <th>Carnet</th>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Min</th>
+                    <th>Servicio</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                    <th>Notas</th>
+                    <th class="d-none">Id</th>
+                    <th>Soporte</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal visor PDF -->
+<div id="mdlPdf2" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Soporte PDF</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="pdfFrame2" src="" style="border:0;width:100%;height:80vh;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <!-- Libs existentes -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+    <script>
+    // Token antiforgery
+    $('body').append('@Html.Raw(System.Web.Helpers.AntiForgery.GetHtml().ToHtmlString())');
+    function token(){ return $('input[name="__RequestVerificationToken"]').val(); }
+
+    var bandeja = (new URLSearchParams(window.location.search)).get('bandeja') || 'jefe';
+    var grid;
+
+    function getSelectedIDs(){
+      var ids=[];
+      $('#tblApr tbody input.row-check:checked').each(function(){
+        ids.push($(this).data('id'));
+      });
+      return ids;
+    }
+
+    function renderCheck(row){
+      return "<input type='checkbox' class='row-check' data-id='"+row.Id+"' />";
+    }
+
+    function renderPdf(row){
+      if(!row.TieneSoporte) return '';
+      return "<button class='btn btn-sm btn-secondary act-pdf' data-id='"+row.Id+"'>PDF</button>";
+    }
+
+    function loadGrid(){
+      $.LoadingOverlay("show");
+      grid = $('#tblApr').DataTable({
+        destroy:true,
+        ajax:{ url:'@Url.Action("ApprovalsListJson","Hrexterno")', data:{ bandeja:bandeja }, type:'GET', datatype:'json' },
+        columns:[
+          { data:null, render:renderCheck, orderable:false, searchable:false, width:'20px' },
+          { data:'Carnet' },
+          { data:'Empleado' },
+          { data:'Fecha', render:function(v){ return moment(v).format('DD/MM/YYYY'); } },
+          { data:'HoraInicio' },
+          { data:'HoraFin' },
+          { data:'Minutos' },
+          { data:'Servicio' },
+          { data:'Motivo' },
+          { data:'Estado' },
+          { data:'Notas' },
+          { data:'Id', visible:false },
+          { data:null, render:renderPdf, orderable:false, searchable:false, width:'70px' }
+        ],
+        order:[[3,'desc']],
+        responsive:true,
+        dom:'Blfrtip',
+        buttons:[ { extend:'excelHtml5', text:'Exportar', title:'Bandeja_'+bandeja.toUpperCase() } ],
+        initComplete:function(){ $.LoadingOverlay("hide"); }
+      });
+    }
+
+    // Check-all
+    $('#checkAll').on('change', function(){
+      var v = $(this).prop('checked');
+      $('#tblApr tbody .row-check').prop('checked', v);
+    });
+
+    // Ver PDF
+    $('#tblApr').on('click','.act-pdf', function(){
+      var id = $(this).data('id');
+      var url='@Url.Action("HEGetPdf","Hrexterno")' + '?id=' + id;
+      $('#pdfFrame2').attr('src', url);
+      $('#mdlPdf2').modal('show');
+    });
+
+    // Accion masiva: Autorizar
+    $('#btnAutorizar').on('click', function(){
+      var ids = getSelectedIDs();
+      if(ids.length===0){ Swal.fire('Aviso','Seleccione al menos un registro','info'); return; }
+      Swal.fire({
+        title:'Autorizar seleccionados',
+        input:'text', inputLabel:'Comentario (opcional)',
+        showCancelButton:true, confirmButtonText:'Autorizar'
+      }).then(function(r){
+        if(!r.isConfirmed) return;
+        $.ajax({
+          url:'@Url.Action("HEApproveBulk","Hrexterno")',
+          type:'POST',
+          data:{ __RequestVerificationToken: token(), ids: ids.join(','), bandeja:bandeja, accion:'A', comentario:r.value||'' },
+          beforeSend:function(){ $.LoadingOverlay('show'); },
+          complete:function(){ $.LoadingOverlay('hide'); },
+          success:function(res){
+            if(res.status==='OK'){ grid.ajax.reload(null,false); $('#checkAll').prop('checked',false); Swal.fire('Listo',res.message,'success'); }
+            else{ Swal.fire('Error',res.message||'No procesado','error'); }
+          },
+          error:function(){ Swal.fire('Error','Fallo de red/servidor','error'); }
+        });
+      });
+    });
+
+    // Accion masiva: Denegar
+    $('#btnDenegar').on('click', function(){
+      var ids = getSelectedIDs();
+      if(ids.length===0){ Swal.fire('Aviso','Seleccione al menos un registro','info'); return; }
+      Swal.fire({
+        title:'Denegar seleccionados',
+        input:'text', inputLabel:'Motivo (requerido)',
+        inputValidator:(v)=>{ if(!v) return 'Ingrese motivo'; },
+        showCancelButton:true, confirmButtonText:'Denegar'
+      }).then(function(r){
+        if(!r.isConfirmed) return;
+        $.ajax({
+          url:'@Url.Action("HEApproveBulk","Hrexterno")',
+          type:'POST',
+          data:{ __RequestVerificationToken: token(), ids: ids.join(','), bandeja:bandeja, accion:'D', comentario:r.value },
+          beforeSend:function(){ $.LoadingOverlay('show'); },
+          complete:function(){ $.LoadingOverlay('hide'); },
+          success:function(res){
+            if(res.status==='OK'){ grid.ajax.reload(null,false); $('#checkAll').prop('checked',false); Swal.fire('Listo',res.message,'success'); }
+            else{ Swal.fire('Error',res.message||'No procesado','error'); }
+          },
+          error:function(){ Swal.fire('Error','Fallo de red/servidor','error'); }
+        });
+      });
+    });
+
+    // Refrescar
+    $('#btnRefrescar').on('click', function(){ grid.ajax.reload(); });
+
+    // Init
+    $('#lblBandeja').text(bandeja.toUpperCase());
+    loadGrid();
+    </script>
+}

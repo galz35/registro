@@ -1,0 +1,125 @@
+================================================================================
+📄 DOCUMENTO: ANÁLISIS DE USABILIDAD HUMANA Y ERGONOMÍA (FÁCIL Y RÁPIDO)
+================================================================================
+Archivo: analisis_usabilidad.txt
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\analisis_usabilidad.txt
+Objetivo: Diseñar un sistema con CERO fricción, alta velocidad y libre de errores
+================================================================================
+
+Este documento analiza la interacción humana con el sistema de Asistencia y 
+Despacho de Juguetes. Se enfoca en optimizar el diseño para que el uso diario en 
+el evento presencial sea extremadamente sencillo, rápido y a prueba de errores 
+táctiles en condiciones de estrés y movimiento.
+
+--------------------------------------------------------------------------------
+1. ANÁLISIS DE LOS PERFILES DE USUARIO (HUMANOS) Y SUS NECESIDADES
+--------------------------------------------------------------------------------
+
+En el evento del Día del Niño conviven tres tipos de usuarios del sistema:
+
+A. El Despachador (App Móvil - En Campo):
+   - Entorno: De pie, caminando, con ruido constante, mucha luz solar (reflejo 
+     en pantalla) y largas filas de colaboradores ansiosos con niños impacientes.
+   - Limitaciones: No puede perder tiempo digitando en teclados virtuales. Requiere 
+     operar el dispositivo (celular o tableta) con una sola mano de forma rápida.
+   - Meta de Usabilidad: Despachar a una familia completa en menos de 10 segundos.
+
+B. El Supervisor (App Móvil / Web - Control de Incidencias):
+   - Entorno: Resolviendo dudas en el sitio y gestionando excepciones.
+   - Necesidades: Necesita reversar entregas accidentales de forma inmediata, 
+     cambiar juguetes si hay inconformidad y autorizar entregas manuales.
+   - Meta de Usabilidad: Resolver cualquier conflicto o error en 2 clics.
+
+C. El Administrador de RRHH (Web - Oficina / Control General):
+   - Entorno: Monitoreando el evento desde una computadora o coordinando 
+     la reposición de juguetes en las mesas.
+   - Necesidades: Cargar censos fácilmente, ver qué categorías de juguetes se
+     están agotando en vivo y descargar reportes finales limpios.
+   - Meta de Usabilidad: Visualizar el estado del evento con un solo vistazo.
+
+--------------------------------------------------------------------------------
+2. DISEÑO PARA LA MÁXIMA VELOCIDAD Y SIMPLICIDAD (CERO CLICS EXTRA)
+--------------------------------------------------------------------------------
+
+Para lograr que el sistema sea el "más fácil y rápido de usar", se aplican las 
+siguientes reglas de diseño de interfaz (UX/UI):
+
+--- DISEÑO PARA EL DESPACHADOR EN MÓVIL ---
+
+1. CERO Teclado Virtual (Escaneo Automático):
+   - La aplicación de Flutter abre la cámara directamente con el visor de código 
+     de barras activo.
+   - El despachador solo acerca el carnet del empleado y, al detectar el código, 
+     la app vibra y transiciona automáticamente a la ficha familiar. No requiere 
+     presionar "Buscar", "Aceptar" ni ingresar números.
+
+2. Tamaño de Botones Gigantes (Ergonomía Táctil):
+   - Todos los botones interactivos (como "[ Registrar Asistencia ]" o
+     "[ Despachar ]") tienen una altura mínima de 56px (zona táctil aumentada).
+   - Esto evita errores de dedo y la necesidad de apuntar con precisión en
+     pantallas de dispositivos pequeños.
+
+3. Tarjetas Simplificadas por Código de Color:
+   - En lugar de leer textos pequeños para saber si un regalo está pendiente,
+     el despachador visualiza el estado mediante colores de alto contraste:
+     * Gris Oscuro de alto contraste = Juguete Pendiente por entregar.
+     * Verde Esmeralda = Juguete Entregado (con hora de despacho visible).
+     * Naranja Neutral = Reversado.
+   - Sin colores complejos o degradados que confundan bajo luz solar intensa.
+
+4. Deslizador Lateral de Confirmación ("Slide-to-Confirm"):
+   - Un botón estándar de "Confirmar" es propenso a toques accidentales al 
+     sostener el dispositivo en movimiento.
+   - El deslizador lateral requiere un arrastre consciente de izquierda a derecha. 
+     Es un patrón de diseño humano sumamente intuitivo y seguro que reduce a 
+     cero las reversiones por pulsaciones accidentales.
+
+5. Captura de Foto Evidencia en 1 Tap (Detrás de Escena):
+   - La toma de fotografía abre la cámara dentro de la misma interfaz.
+   - Al capturar la foto, el sistema procesa, comprime a WebP y asocia la imagen 
+     en segundo plano. No se le muestra al usuario opciones complejas de 
+     "Recortar", "Ajustar filtros" ni "Confirmar subida". Si la foto es tomada,
+     se envía automáticamente; si no se desea, hay un botón de "Omitir" claro.
+
+--- DISEÑO PARA EL ADMINISTRADOR EN LA WEB ---
+
+1. Hover en lugar de clics (Visualización de Fotos):
+   - En el historial de auditoría de React, el administrador no necesita abrir
+     un modal o una nueva pestaña para revisar las fotos de evidencia.
+   - Solo desliza el puntero del mouse sobre la palabra "Evidencia" en la tabla 
+     y una pequeña miniatura se despliega instantáneamente a modo de Tooltip. Al 
+     quitar el mouse, desaparece. Esto ahorra cientos de clics en auditorías.
+
+2. Carga de Censo mediante Drag and Drop:
+   - Para cargar el archivo Excel `DATAS ANALIZADAS PADRE_HIJOS.xlsx`, el panel 
+     web cuenta con un recuadro interactivo.
+   - El administrador arrastra el archivo desde su computadora, lo suelta y 
+     el sistema procesa la información mostrando una barra de progreso. 
+     Cero formularios manuales.
+
+--------------------------------------------------------------------------------
+3. TRATAMIENTO DE INCIDENCIAS HUMANAS (FÁCIL Y REVERSIBLE)
+--------------------------------------------------------------------------------
+El diseño asume que los humanos cometen errores. Por lo tanto, el sistema está
+diseñado para perdonar y corregir fallas sin interrumpir la fila del evento:
+
+A. "Me equivoqué de niño al entregar" -> Solución en 1 toque:
+   - Junto a la tarjeta del hijo ya entregada (en color verde), la app móvil 
+     muestra un botón de reversión inmediato: `[ ↺ Reversar ]`.
+   - Al pulsarlo, el sistema pide confirmación del motivo de forma rápida o PIN 
+     de supervisor (configurable) y restablece el stock del juguete de forma 
+     inmediata, cambiando la tarjeta de verde a gris oscuro (pendiente).
+
+B. "El colaborador no trajo su carnet físico" -> Búsqueda Rápida:
+   - Si el gafete está dañado o extraviado, la app móvil cuenta con un botón
+     permanente en el encabezado para alternar a búsqueda por teclado.
+   - Permite escribir el carnet manualmente en un input numérico gigante con 
+     autofoco automático.
+
+C. "Se cayó la red móvil o el Wi-Fi en el jardín del evento" -> Resiliencia:
+   - La app móvil cambia su barra superior a un color naranja con el texto
+     "Modo Offline (Datos Guardados)".
+   - El despachador continúa escaneando y entregando de forma exactamente igual.
+   - Las fotos de evidencia y los registros se guardan en la memoria interna.
+   - Al detectar red de nuevo, el sistema se sincroniza solo sin intervención.
+================================================================================

@@ -1,0 +1,1894 @@
+@{ ViewBag.Title = "Gestion Maestra de Compensacion"; }
+<div id="pageLoader" class="page-loader">
+    <div class="loader-content text-center">
+        <div class="spinner-claro"></div>
+        <div class="loader-text mt-3">Cargando informacion estrategica...</div>
+    </div>
+</div>
+<style>
+    :root {
+        --claro-red: #ef3829;
+    }
+
+    /* Loader Style */
+    .page-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+    }
+
+    .spinner-claro {
+        width: 60px;
+        height: 60px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--claro-red);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loader-text {
+        color: #333;
+        font-weight: 600;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+    }
+
+    .bg-claro {
+        background: var(--claro-red-grad) !important;
+    }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+
+    .table thead th {
+        background-color: #f8f9fa;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #eee;
+    }
+
+    .btn-rounded {
+        border-radius: 50px;
+        padding: 6px 20px;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    .btn-rounded {
+        border-radius: 50px;
+        padding: 6px 20px;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    .check-aplica-dual {
+        width: 1.1rem;
+        height: 1.1rem;
+        cursor: pointer;
+        accent-color: var(--claro-red);
+    }
+
+    /* Estilos para Agrupamiento Contrible */
+    tr.group-gerencia, tr.group-subgerencia, tr.group-area {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    tr.group-gerencia {
+        background-color: #f5f5f5 !important;
+    }
+
+        tr.group-gerencia td {
+            color: #424242;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 13px;
+            border-left: 5px solid #424242 !important;
+            padding: 12px 15px !important;
+        }
+
+    tr.group-subgerencia {
+        background-color: #f8f9fa !important;
+    }
+
+        tr.group-subgerencia td {
+            color: #495057;
+            font-weight: 700;
+            font-size: 12px;
+            padding-left: 30px !important;
+            border-left: 5px solid #adb5bd !important;
+        }
+
+    tr.group-area {
+        background-color: #ffffff !important;
+    }
+
+        tr.group-area td {
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 11px;
+            padding-left: 50px !important;
+            border-left: 3px solid #dee2e6 !important;
+            border-bottom: 1px solid #f1f1f1 !important;
+        }
+
+    .check-grupo {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 10px;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+
+    .group-icon {
+        transition: transform 0.2s;
+        display: inline-block;
+        width: 20px;
+        text-align: center;
+    }
+
+    .collapsed .group-icon {
+        transform: rotate(-90deg);
+    }
+
+    /* Filtros por columna */
+    .filter-row th {
+        padding: 5px !important;
+        background: #fff !important;
+    }
+
+    .btn-circle {
+        width: 30px;
+        height: 30px;
+        padding: 6px 0px;
+        border-radius: 15px;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.42857;
+    }
+
+    /* Estilos Premium para Modal de Validadores */
+    #modalValidadores .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+    }
+
+    #modalValidadores .modal-header {
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+        border-radius: 20px 20px 0 0;
+        color: #333;
+    }
+
+    #modalValidadores .modal-title {
+        color: #d9534f;
+    }
+    /* Rojo suave para el titulo */
+    #modalValidadores .table thead th {
+        background: #f8f9fa;
+        color: #444;
+        text-transform: uppercase;
+        font-size: 11px;
+        border: none;
+        padding: 15px;
+    }
+
+    #modalValidadores .table tbody td {
+        vertical-align: middle;
+        padding: 12px 15px;
+        color: #555;
+        border-top: 1px solid #f9f9f9;
+    }
+
+    #modalValidadores .form-control {
+        background: #f5f6f7;
+        border: 1px solid #eee;
+    }
+
+    #modalValidadores .form-control:focus {
+            background: #fff;
+            box-shadow: 0 5px 15px rgba(217, 83, 79, 0.15);
+            border-color: #d9534f;
+        }
+
+    #modalValidadores .modal-body {
+        padding: 40px !important;
+    }
+
+    /* Layout de 2 paneles del modal de Validadores */
+    #colListaValidadores {
+        border-right: 2px solid #f0f0f0;
+        padding-right: 20px;
+    }
+
+    #colDetalleValidador {
+        padding-left: 20px;
+    }
+
+    .validador-row-item:hover {
+        background: #fff5f5 !important;
+    }
+
+    .validador-row-item.table-active {
+        background: #ffebee !important;
+        border-left: 4px solid #d9534f;
+    }
+
+    #panelDetalleLleno {
+        animation: fadeSlideIn 0.3s ease;
+    }
+
+    @@keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateX(15px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    #tablaPersonalValidador tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .form-group-premium {
+        margin-bottom: 25px;
+    }
+
+    .form-group-premium label {
+        display: block;
+        margin-bottom: 10px;
+        color: #555;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+
+    .column-filter {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: normal;
+    }
+
+        .column-filter:focus {
+            border-color: var(--claro-red);
+            outline: none;
+            box-shadow: 0 0 5px rgba(227, 25, 25, 0.2);
+        }
+
+    .table-hover tbody tr:not([class*="group-"]):hover {
+        background-color: rgba(227, 25, 25, 0.03);
+    }
+
+    .hidden-row {
+        display: none !important;
+    }
+
+    /* Estilos para Modal Historial */
+    #modalHistorial .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+    }
+
+    #modalHistorial .modal-header {
+        background: linear-gradient(135deg, #B71C1C 0%, #DA291C 100%);
+        border-radius: 20px 20px 0 0;
+    }
+
+    #modalHistorial .modal-title {
+        color: #fff;
+    }
+
+    #modalHistorial .modal-header .close {
+        color: #fff;
+        text-shadow: none;
+        opacity: 0.8;
+    }
+
+    .hist-badge-cambio {
+        background: #fff3e0;
+        color: #e65100;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .hist-badge-ok {
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .hist-periodo-header {
+        background: #f5f5f5;
+        font-weight: 700;
+        font-size: 13px;
+        border-left: 4px solid #B71C1C;
+    }
+
+    .hist-info-card {
+        background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+        border-radius: 15px;
+        padding: 15px 20px;
+    }
+
+    .hist-tab {
+        border: none;
+        background: #fff5f5;
+        color: #B71C1C;
+        border-radius: 20px;
+        padding: 6px 18px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        margin-right: 5px;
+    }
+
+        .hist-tab.active {
+            background: #B71C1C;
+            color: #fff;
+        }
+</style>
+
+<div class="continer-fluid py-4 animate__animated animate__fadeIn">
+    <div class="row mb-4 sticky-actions py-2">
+        <div class="col-md-6">
+            <h3 class="font-weight-bold text-dark mb-0">Gestion Maestra</h3>
+            <p class="text-muted small mb-0">Configuracion global del universo de colaboradores.</p>
+        </div>
+        <div class="col-md-6 text-right">
+            <div class="btn-group mr-2">
+                <button type="button" class="btn btn-outline-dark btn-rounded dropdown-toggle" data-toggle="dropdown">
+                    <i class="fas fa-file-invoice mr-1"></i> Ver Reportes Revision
+                </button>
+                <div class="dropdown-menu dropdown-menu-right border-0 shadow" style="min-width: 280px;">
+                    <h6 class="dropdown-header">MODULO COMISIONES</h6>
+                    <a class="dropdown-item" href="@Url.Action("RevisionComisiones", "Compensacion")"><i class="fas fa-table mr-2 text-warning"></i> Ver Tabla Revision</a>
+                    <a class="dropdown-item" href="javascript:void(0)" onclick="descargarExcel(1)"><i class="fas fa-file-excel mr-2 text-success"></i> Descargar Excel Cambios</a>
+
+                    <div class="dropdown-divider"></div>
+
+                    <h6 class="dropdown-header">MODULO CERTIFICACION</h6>
+                    <a class="dropdown-item" href="@Url.Action("RevisionCertificacion", "Compensacion")"><i class="fas fa-table mr-2 text-danger"></i> Ver Tabla Revision</a>
+                    <a class="dropdown-item" href="javascript:void(0)" onclick="descargarExcel(2)"><i class="fas fa-file-excel mr-2 text-success"></i> Descargar Excel Cambios</a>
+                </div>
+            </div>
+            <button class="btn btn-outline-danger btn-rounded mr-2" style="border-color:#B71C1C; color:#B71C1C;" onclick="abrirHistorial()">
+                <i class="fas fa-history mr-1"></i> Historial
+            </button>
+            <button class="btn btn-outline-danger btn-rounded mr-2" onclick="abrirConfigValidadores()">
+                <i class="fas fa-user-shield mr-1"></i> Validadores
+            </button>
+            @* Boton Sincronizar Eliminado a solicitud de usuario *@
+            <button class="btn btn-primary btn-rounded shadow" style="background:#424242; border-color:#424242;" onclick="guardarCambios()">
+                <i class="fas fa-save"></i> Guardar Todo
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-left-claro h-100">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Universo de Personal</h6>
+                    <div class="h5 mb-0 font-weight-bold text-dark" id="txtUniverso">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card shadow-sm border-left-claro h-100 bg-light">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 border-right">
+                            <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Periodo</h6>
+                            <div class="h6 mb-0 font-weight-bold text-dark" id="lblNombrePeriodo">...</div>
+                        </div>
+                        <div class="col-md-3 border-right text-center">
+                            <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Estado</h6>
+                            <div id="badgeEstadoPeriodo" class="h6 mb-0 font-weight-bold text-success">...</div>
+                        </div>
+                        <div class="col-md-4 border-right">
+                            <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Vigencia Web</h6>
+                            <div class="small font-weight-bold text-dark">
+                                <i class="far fa-calendar-alt"></i> <span id="txtVigenciaPeriodo">No configurada</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <button class="btn btn-sm btn-outline-dark font-weight-bold" onclick="abrirConfigPeriodo()">
+                                <i class="fas fa-cog"></i> Periodo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .border-left-claro {
+            border-left: 4px solid var(--claro-red) !important;
+        }
+    </style>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body p-0">
+            <div class="table-responsive p-3">
+                <table id="tablaMaestra" class="table table-hover align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 40px;"><input type="checkbox" id="checkAll"></th>
+                            <th>Colaborador</th>
+                            <th>Gerencia</th>
+                            <th>Subgerencia</th>
+                            <th>Departamento</th>
+                            <th>Validador</th>
+                            <th>Jefe / Cargo</th>
+                            <th>Ubicacion</th>
+                            <th class="text-center">Emp.</th>
+                            <th class="text-center">Acc.</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <th></th>
+                            <th><input type="text" class="column-filter" placeholder="Nombre/Carnet"></th>
+                            <th><input type="text" class="column-filter" placeholder="Filtro Gerencia"></th>
+                            <th><input type="text" class="column-filter" placeholder="Filtro Subger."></th>
+                            <th><input type="text" class="column-filter" placeholder="Filtro Depto."></th>
+                            <th><input type="text" class="column-filter" placeholder="Filtro Validador"></th>
+                            <th><input type="text" class="column-filter" placeholder="Filtro Jefe/Cargo"></th>
+                            <th><input type="text" class="column-filter" placeholder="Ubicacion"></th>
+                            <th class="text-center">
+                                <select class="column-filter" onchange="filterColumn(8, this.value)">
+                                    <option value="">Todos</option>
+                                    <option value="S">Si</option>
+                                    <option value="N">No</option>
+                                </select>
+                            </th>
+                            <th class="text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyMaestra"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Configuracion de Validadores -->
+<!-- Modal Historial Auditable -->
+<div class="modal fade" id="modalHistorial" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header p-4">
+                <div>
+                    <h5 class="modal-title mb-1"><i class="fas fa-history mr-2"></i>Historial Auditable</h5>
+                    <small style="color:rgba(255,255,255,0.7);">Consulta el historial de cambios separado por modulo y tipo de busqueda.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Seccion COMISIONES -->
+                <div class="mb-2" style="border-bottom:2px solid #ff6f00; padding-bottom:5px;">
+                    <span style="font-weight:700; color:#ff6f00; font-size:13px;"><i class="fas fa-coins mr-1"></i> COMISIONES</span>
+                </div>
+                <div class="mb-3 d-flex flex-wrap">
+                    <button class="hist-tab active" onclick="setHistModo(this, 'emp_com')"><i class="fas fa-user mr-1"></i> Empleado</button>
+                    <button class="hist-tab" onclick="setHistModo(this, 'validador_com')"><i class="fas fa-user-shield mr-1"></i> Validador</button>
+                </div>
+                <!-- Seccion CERTIFICACION -->
+                <div class="mb-2" style="border-bottom:2px solid #b71c1c; padding-bottom:5px;">
+                    <span style="font-weight:700; color:#b71c1c; font-size:13px;"><i class="fas fa-certificate mr-1"></i> CERTIFICACION</span>
+                </div>
+                <div class="mb-3 d-flex flex-wrap">
+                    <button class="hist-tab" onclick="setHistModo(this, 'emp_cert')"><i class="fas fa-user mr-1"></i> Empleado</button>
+                    <button class="hist-tab" onclick="setHistModo(this, 'jefe_cert')"><i class="fas fa-user-tie mr-1"></i> Jefe Inmediato</button>
+                </div>
+                <!-- Seccion ORGANIZACION -->
+                <div class="mb-2" style="border-bottom:2px solid #1a237e; padding-bottom:5px;">
+                    <span style="font-weight:700; color:#1a237e; font-size:13px;"><i class="fas fa-sitemap mr-1"></i> ORGANIZACION</span>
+                </div>
+                <div class="mb-3 d-flex flex-wrap">
+                    <button class="hist-tab" onclick="setHistModo(this, 'gerencia')"><i class="fas fa-building mr-1"></i> Gerencia / Subgerencia / Area</button>
+                </div>
+
+                <!-- Modo seleccionado -->
+                <div id="histModoLabel" class="mb-2"><span class="badge badge-dark px-3 py-2"><i class="fas fa-filter mr-1"></i> Modo: Empleado en Comisiones</span></div>
+
+                <!-- Barra de busqueda texto (Por defecto) -->
+                <div id="histFiltroTextoCont" class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-0" style="background:#fff5f5; color:#B71C1C;"><i class="fas fa-search"></i></span>
+                    </div>
+                    <input type="text" id="histFiltro" class="form-control border-0 bg-light" placeholder="Ingrese carnet o correo..." onkeypress="if(event.key==='Enter') buscarHistorial();">
+                    <div class="input-group-append">
+                        <button class="btn btn-dark px-4" onclick="buscarHistorial()"><i class="fas fa-search mr-1"></i> Buscar</button>
+                    </div>
+                </div>
+
+                <!-- Busqueda por Selectores de Gerencia (Oculto por defecto) -->
+                <div id="histFiltroGerenciaCont" class="mb-3 p-4 bg-light" style="display:none; border-radius:15px;">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-muted">1. Seleccionar Gerencia</label>
+                            <select id="histSelGerencia" class="form-control border-0 shadow-sm" onchange="histCargarSubgerencias(this.value)" style="border-radius:10px; height:45px;"></select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="small font-weight-bold text-uppercase text-muted">2. Seleccionar Subgerencia</label>
+                            <select id="histSelSubgerencia" class="form-control border-0 shadow-sm" onchange="histCargarAreas(this.value)" style="border-radius:10px; height:45px;"></select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="small font-weight-bold text-uppercase text-muted">3. Seleccionar Departamento</label>
+                            <select id="histSelArea" class="form-control border-0 shadow-sm" style="border-radius:10px; height:45px;"></select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-dark btn-block shadow-sm" onclick="buscarHistorial()" style="border-radius:10px; height:45px;"><i class="fas fa-search mr-1"></i> Buscar</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card informativa -->
+                <div id="histInfoCard" class="hist-info-card mb-3" style="display:none;"></div>
+                <!-- Resultados -->
+                <div id="histResultados" style="max-height: 450px; overflow-y: auto;">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-search fa-3x mb-3" style="color:#c5cae9;"></i>
+                        <p>Seleccione un modo y busque por carnet, correo o nombre de gerencia.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalValidadores" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document" style="max-width: 95vw; width: 95vw;">
+        <div class="modal-content border-0 shadow" style="border-radius:25px;">
+            <div class="modal-header bg-dark text-white p-4" style="border-radius: 25px 25px 0 0;">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-shield mr-2"></i> Configurar Validadores de Compensacion</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="card bg-light border-0 mb-4 shadow-sm" style="border-radius:20px; overflow:hidden;">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <h5 class="font-weight-bold text-dark mb-0"><i class="fas fa-plus-circle text-danger mr-2"></i> Asignar Nuevo Validador</h5>
+                        <p class="text-muted small">Configure el alcance de validacion por estructura o por empleado especifico.</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group-premium">
+                                    <label class="small text-uppercase">1. Seleccionar Gerencia</label>
+                                    <select id="selGerenciaNueva" class="form-control border-0 shadow-sm" onchange="cargarSubgerencias(this.value)" style="border-radius:12px; height: 50px;"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group-premium">
+                                    <label class="small text-uppercase">2. Seleccionar Subgerencia</label>
+                                    <select id="selSubgerenciaNueva" class="form-control border-0 shadow-sm" onchange="cargarAreas(this.value)" style="border-radius:12px; height: 50px;"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group-premium">
+                                    <label class="small text-uppercase">3. Seleccionar Departamento / Area</label>
+                                    <select id="selAreaNueva" class="form-control border-0 shadow-sm" style="border-radius:12px; height: 50px;"></select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-md-5">
+                                <div class="form-group-premium">
+                                    <label class="small text-uppercase">4. Identificar Validador (Carnet o Correo)</label>
+                                    <div class="input-group">
+                                        <input type="text" id="txtCarnetNuevo" class="form-control border-0 shadow-sm" placeholder="Ej: 400123 o jose.perez@claro.com.ni" style="border-radius:12px 0 0 12px; height: 50px;">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-dark px-4" type="button" onclick="buscarNombreValidador()" style="border-radius:0 12px 12px 0;"><i class="fas fa-search"></i></button>
+                                        </div>
+                                    </div>
+                                    <small id="lblNombreValidador" class="font-weight-bold d-block mt-2 h6"></small>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group-premium">
+                                    <label class="small text-uppercase">5. Colaborador a Validar (Opcional - Punto a Punto)</label>
+                                    <div class="input-group">
+                                        <input type="text" id="txtEmpleadoConfig" class="form-control border-0 shadow-sm" placeholder="Carnet o Correo si es asignacion individual" style="border-radius:12px 0 0 12px; height: 50px;">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-dark px-4" type="button" onclick="buscarNombreColaborador()" style="border-radius:0 12px 12px 0; background:#fff;"><i class="fas fa-search"></i></button>
+                                        </div>
+                                    </div>
+                                    <small id="lblNombreColaborador" class="font-weight-bold d-block mt-2 h6"></small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group-premium">
+                                    <label class="small text-uppercase">&nbsp;</label>
+                                    <button class="btn btn-danger btn-block font-weight-bold shadow-sm" onclick="guardarValidadorNuevo()" style="border-radius:12px; height: 50px; font-size: 1.1rem;">
+                                        <i class="fas fa-check-double mr-2"></i> Asignar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de Carga Masiva (Estilo Drop Zone) -->
+                        <div id="panelCargaMasiva" class="mt-4" style="display:none;">
+                            <div class="p-4 text-center" style="border: 2px dashed #e53935; border-radius: 20px; background: #fff5f5; transition: all 0.3s;">
+                                <div class="mb-3">
+                                    <i class="fas fa-file-import fa-3x text-danger mb-2"></i>
+                                    <h5 class="font-weight-bold text-danger">Zona de Importacion Masiva</h5>
+                                    <p class="text-muted small">Copie la columna de carnets en Excel y **peguelos** aqui abajo.</p>
+                                </div>
+                                <textarea id="txtMasivoColaboradores" class="form-control text-center border-0" rows="5"
+                                          placeholder="Pegue aqui los carnets... (Ej: 400123, 400456, 400789)"
+                                          style="border-radius:15px; background: rgba(255,255,255,0.8); font-family: monospace; font-size: 14px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);"></textarea>
+
+                                <div class="mt-3">
+                                    <button class="btn btn-danger btn-lg px-5 shadow-sm" onclick="procesarCargaMasiva()" style="border-radius:30px; font-weight: bold;">
+                                        <i class="fas fa-magic mr-2"></i> Procesar y Asignar Ahora
+                                    </button>
+                                    <div class="mt-2">
+                                        <button class="btn btn-link btn-sm text-muted" onclick="$('#panelCargaMasiva').slideUp()">
+                                            <i class="fas fa-times mr-1"></i> Cancelar y cerrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <button class="btn btn-outline-danger btn-sm px-4" onclick="$('#panelCargaMasiva').slideToggle()" style="border-radius:20px; border-style: dashed;">
+                                <i class="fas fa-layer-group mr-1"></i> Asignar varios colaboradores? Usar Carga Masiva
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== LAYOUT DE 2 PANELES ========== -->
+                <div class="row" id="panelDualValidadores">
+                    <!-- PANEL IZQUIERDO: Lista de Validadores Configurados -->
+                    <div id="colListaValidadores" class="col-md-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="font-weight-bold text-uppercase small text-muted mb-0"><i class="fas fa-list mr-1"></i> Validadores Configurados</h6>
+                            <div class="input-group input-group-sm" style="width: 220px;">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                                </div>
+                                <input type="text" id="txtBuscarValidador" class="form-control border-left-0" placeholder="Filtrar..." onkeyup="filtrarValidadores()">
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-hover table-sm" id="tablaConfigValidadores">
+                                <thead class="bg-white sticky-top" style="z-index:1;">
+                                    <tr>
+                                        <th>Estructura</th>
+                                        <th>Validador</th>
+                                        <th class="text-center">Tipo</th>
+                                        <th class="text-center">Accion</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyValidadores"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PANEL DERECHO: Detalle del Personal del Validador -->
+                    <div id="colDetalleValidador" class="col-md-7">
+                        <div id="panelDetalleVacio" class="text-center py-5" style="background: #fafbfc; border-radius: 20px; border: 2px dashed #e0e0e0;">
+                            <i class="fas fa-users fa-3x mb-3" style="color:#ccc;"></i>
+                            <h6 class="text-muted font-weight-bold">Seleccione un validador</h6>
+                            <p class="text-muted small">Haga clic en <span class="badge badge-info"><i class="fas fa-eye"></i> Ver</span> para consultar el personal asignado.</p>
+                        </div>
+                        <div id="panelDetalleLleno" style="display:none;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="font-weight-bold text-dark mb-0" id="lblValidadorSeleccionado"></h6>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <span class="badge badge-dark mr-2" id="lblTotalPersonal">0 colaboradores</span>
+                                        <span class="badge badge-light text-muted" id="lblFuenteDatos"></span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <input type="text" id="txtFiltroPersonal" class="form-control form-control-sm mr-2" placeholder="Filtrar personal..." onkeyup="filtrarPersonalLocal()" style="width:180px; border-radius:10px;">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="cerrarPanelDetalle()" title="Cerrar"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <div class="table-responsive" style="max-height: 450px; overflow-y: auto; border-radius: 10px; border: 1px solid #eee;">
+                                <table class="table table-hover table-sm mb-0" id="tablaPersonalValidador">
+                                    <thead class="sticky-top" style="background:#f8fafc; z-index:1;">
+                                        <tr>
+                                            <th style="font-size:11px;">Carnet</th>
+                                            <th style="font-size:11px;">Nombre</th>
+                                            <th style="font-size:11px;">Gerencia</th>
+                                            <th style="font-size:11px;">Departamento</th>
+                                            <th style="font-size:11px;">Cargo</th>
+                                            <th style="font-size:11px;">Ubicacion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyPersonalValidador"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seccion Reemplazo Masivo -->
+                <div class="card bg-warning-light border-0 mt-4" style="border-radius:15px; background: #fff8e1;">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-uppercase small text-muted mb-3"><i class="fas fa-exchange-alt mr-1"></i> Reemplazo Masivo de Validador (Renuncia)</h6>
+                        <div class="row align-items-end">
+                            <div class="col-md-4">
+                                <label class="small font-weight-bold text-uppercase text-muted">Validador Saliente</label>
+                                <div class="input-group">
+                                    <input type="text" id="txtValidadorSaliente" class="form-control border-0 shadow-sm" placeholder="Carnet o Correo" style="border-radius:10px 0 0 10px;">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="buscarSaliente()" title="Buscar" style="border-radius:0 10px 10px 0;"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                                <small id="lblSaliente" class="font-weight-bold d-block mt-1"></small>
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <i class="fas fa-arrow-right fa-lg text-muted"></i>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small font-weight-bold text-uppercase text-muted">Validador Entrante</label>
+                                <div class="input-group">
+                                    <input type="text" id="txtValidadorEntrante" class="form-control border-0 shadow-sm" placeholder="Carnet o Correo" style="border-radius:10px 0 0 10px;">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="buscarEntrante()" title="Buscar" style="border-radius:0 10px 10px 0;"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                                <small id="lblEntrante" class="font-weight-bold d-block mt-1"></small>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-warning btn-block font-weight-bold" onclick="ejecutarReemplazo()" style="border-radius:10px;">
+                                    <i class="fas fa-sync-alt mr-1"></i> Transferir Todo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Configuracion de Periodo Premium -->
+<div class="modal fade" id="modalPeriodo" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow" style="border-radius:25px;">
+            <div class="modal-header bg-dark text-white p-4" style="border-radius: 25px 25px 0 0;">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-calendar-alt mr-2"></i> Configurar Periodo</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-light border-0 bg-light mb-4" style="border-radius:15px;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-check text-danger mr-3" style="font-size:1.5rem"></i>
+                        <div class="flex-grow-1">
+                            <label class="small font-weight-bold text-uppercase text-muted d-block">Seleccionar Periodo a Configurar</label>
+                            <select id="selPeriodoConfig" class="form-control border-0 bg-white font-weight-bold" style="border-radius:10px;" onchange="cargarDetallePeriodoConfig(this.value)"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="txtIdPeriodoConfig">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-4">
+                            <label class="small font-weight-bold text-uppercase text-muted">Fecha de Apertura (Inicio)</label>
+                            <input type="datetime-local" id="txtFechinicio" class="form-control form-control-lg border-0 bg-light" style="border-radius:15px;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-4">
+                            <label class="small font-weight-bold text-uppercase text-muted">Fecha de Cierre (Fin)</label>
+                            <input type="datetime-local" id="txtFechaFin" class="form-control form-control-lg border-0 bg-light" style="border-radius:15px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="small font-weight-bold text-uppercase text-muted">Estado del Periodo</label>
+                    <select id="selEstadoPeriodoConfig" class="form-control form-control-lg border-0 bg-light" style="border-radius:15px;">
+                        <option value="Activo">ACTIVO (Abierto para Jefes)</option>
+                        <option value="Cerrado">CERRADO (Solo lectura para Jefes)</option>
+                    </select>
+                </div>
+
+                <div class="card border-0 bg-light-danger mb-4" style="border-radius:15px; background: #fff5f5; border: 1px dashed #feb2b2 !important;">
+                    <div class="card-body p-3">
+                        <h6 class="font-weight-bold text-danger small text-uppercase mb-3"><i class="fas fa-paper-plane mr-1"></i> Notificacion Masiva de Apertura</h6>
+                        
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted">FECHA LIMITE PARA JEFES (Se vera en el correo)</label>
+                            <input type="date" id="txtFechaLimiteNotif" class="form-control form-control-sm border-0" style="border-radius:8px;">
+                        </div>
+
+                        <div class="custom-control custom-checkbox mb-2">
+                            <input type="checkbox" class="custom-control-input" id="chkNotifComisiones">
+                            <label class="custom-control-label small font-weight-bold" for="chkNotifComisiones">Notificar Apertura de COMISIONES</label>
+                        </div>
+
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="chkNotifCertificacion">
+                            <label class="custom-control-label small font-weight-bold" for="chkNotifCertificacion">Notificar Apertura de CERTIFICACION</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4">
+                <button class="btn btn-dark btn-block font-weight-bold py-3 shadow" style="border-radius:15px; background:#424242;" onclick="guardarPeriodo()">
+                    <i class="fas fa-save mr-2"></i> Guardar Configuracion
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/onlinejs/dataTables.rowGroup.min.js"></script>
+    <link href="~/onlinecss/select2.min.css" rel="stylesheet" />
+    <script src="~/onlinejs/select2.min.js"></script>
+     <style>
+        .select2-continer {
+            width: 100% !important;
+        }
+
+        .select2-continer--default .select2-selection--single {
+            height: 45px;
+            border-radius: 10px;
+            border: none;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+        }
+
+            .select2-continer--default .select2-selection--single .select2-selection__arrow {
+                height: 45px;
+            }
+    </style>
+    <script>
+    var table = null;
+    var universoOriginal = [];
+    var g_PeriodoActivo = null;
+
+    $(document).ready(function() {
+        cargarUniverso();
+
+        $('#checkAll').on('change', function() {
+            var isChecked = $(this).is(':checked');
+            $('.check-fila').prop('checked', isChecked);
+        });
+
+        // Inicializar Select2 para modales
+        $('.modal select').select2({
+            width: '100%',
+            dropdownParent: $('.modal:visible').length ? $('.modal:visible') : null
+        });
+    });
+
+    // Re-inicializar Select2 cuando se abre cualquier modal
+    $('.modal').on('shown.bs.modal', function () {
+        $(this).find('select').select2({
+            dropdownParent: $(this)
+        });
+    });
+
+    function cargarUniverso() {
+        $('#pageLoader').show();
+        $('#tbodyMaestra').html('<tr><td colspan="10" class="text-center p-5"><div class="spinner-border text-danger"></div> Cargando universo...</td></tr>');
+
+        $.get('@Url.Action("ObtenerUniversoMaestro", "Compensacion")', function(res) {
+            if (res.success) {
+                universoOriginal = res.data || [];
+                renderizarTabla(universoOriginal);
+                $('#txtUniverso').text(universoOriginal.length);
+
+                // Usar el periodo que ya viene en la respuesta
+                if(res.periodo) {
+                    g_PeriodoActivo = res.periodo;
+                    $('#lblNombrePeriodo').text(g_PeriodoActivo.NombrePeriodo);
+                    $('#badgeEstadoPeriodo').text(g_PeriodoActivo.Estado.toUpperCase())
+                        .removeClass('text-success text-danger')
+                        .addClass(g_PeriodoActivo.Estado === 'Activo' ? 'text-success' : 'text-danger');
+
+                    var inicio = g_PeriodoActivo.Fechinicio ? moment(g_PeriodoActivo.Fechinicio).format('DD/MM/YYYY HH:mm') : 'No def.';
+                    var fin = g_PeriodoActivo.FechaFin ? moment(g_PeriodoActivo.FechaFin).format('DD/MM/YYYY HH:mm') : 'No def.';
+                    $('#txtVigenciaPeriodo').text(inicio + ' al ' + fin);
+                } else {
+                    g_PeriodoActivo = null;
+                    $('#lblNombrePeriodo').text("SIN PERIODO ACTIVO");
+                    $('#badgeEstadoPeriodo').text("CERRADO").addClass('text-danger');
+                    $('#txtVigenciaPeriodo').text("N/A");
+                }
+            } else {
+                Swal.fire('Error', res.message || "Error al cargar datos", 'error');
+            }
+            $('#pageLoader').fadeOut();
+        }).fail(function() {
+            $('#pageLoader').fadeOut();
+            Swal.fire('Error de Red', 'No se pudo conectar con el servidor.', 'error');
+        });
+    }
+
+    // Usar la version robusta de abrirConfigPeriodo que busca en la lista completa
+    window.abrirConfigPeriodo = function() {
+        $.get('@Url.Action("ObtenerListaPeriodos", "Compensacion")', function(res) {
+            if(res.success) {
+                window._listaPeriodos = res.data;
+                var datinvertida = res.data.slice().reverse();
+                var opt = '';
+                datinvertida.forEach(function(p) {
+                    var sel = (g_PeriodoActivo && p.PeriodoID == g_PeriodoActivo.PeriodoID) ? 'selected' : '';
+                    opt += '<option value="'+p.PeriodoID+'" '+sel+'>'+p.NombrePeriodo+' ('+p.Estado+')</option>';
+                });
+                $('#selPeriodoConfig').html(opt);
+
+                if(g_PeriodoActivo) cargarDetallePeriodoConfig(g_PeriodoActivo.PeriodoID);
+                else if(datinvertida.length > 0) cargarDetallePeriodoConfig(datinvertida[0].PeriodoID);
+
+                $('#modalPeriodo').modal('show');
+            }
+        });
+    };
+
+    window.reabrirPeriodo = function() {
+        Swal.fire({
+            title: 'Reabrir Periodo?',
+            text: 'Permitira que los validadores vuelvan a enviar informacion.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si, reabrir',
+            cancelButtonText: 'Cancelar'
+        }).then(function(r) {
+            if(r.isConfirmed) {
+                $.post('@Url.Action("ReabrirPeriodo", "Compensacion")', { periodoId: g_PeriodoActivo.PeriodoID }, function(res) {
+                    if(res.success) {
+                        $('#modalPeriodo').modal('hide');
+                        Swal.fire('Reabierto', 'Periodo listo para ajustes.', 'success').then(function() { location.reload(); });
+                    }
+                });
+            }
+        });
+    };
+
+    function safeGet(row, key) {
+        if (!row) return "";
+        if (row[key] !== undefined && row[key] !== null) return row[key];
+        var lowerKey = key.toLowerCase();
+        for (var k in row) {
+            if (k.toLowerCase() === lowerKey) return row[k];
+        }
+        return "";
+    }
+
+    function renderizarTabla(data) {
+        if (table) table.destroy();
+
+        table = $('#tablaMaestra').DataTable({
+            data: data,
+            deferRender: true,
+            pageLength: 50,
+            autoWidth: false,
+            order: [[2, 'asc'], [3, 'asc'], [4, 'asc'], [1, 'asc']],
+            drawCallback: function() {
+                // Eliminar la logica de ocultar filas
+                $('#tablaMaestra tbody tr').removeClass('hidden-row');
+            },
+            columns: [
+                {
+                    data: null,
+                    className: 'text-center',
+                    orderable: false,
+                    render: function(d, t, r) {
+                        var id = safeGet(r, 'DetalleID');
+                        return '<input type="checkbox" class="check-fila" data-id="' + id + '">';
+                    }
+                },
+                {
+                    data: null,
+                    render: function(d, t, r) {
+                        var nombre = safeGet(r, 'NombreCompleto');
+                        var carnet = safeGet(r, 'CarnetEmpleado');
+                        return '<strong>' + nombre + '</strong><br><small class="text-muted">' + carnet + '</small>';
+                    }
+                },
+                {
+                    data: null,
+                    visible: true,
+                    render: function(d, t, r) { return '<small>' + safeGet(r, 'OGERENCIA_SIGHO') + '</small>'; }
+                },
+                {
+                    data: null,
+                    visible: true,
+                    render: function(d, t, r) { return '<small>' + safeGet(r, 'OSUBGERENCIA_SIGHO') + '</small>'; }
+                },
+                {
+                    data: null,
+                    visible: true,
+                    render: function(d, t, r) { return '<small>' + safeGet(r, 'Area_SIGHO') + '</small>'; }
+                },
+                {
+                    data: null,
+                    render: function(d, t, r) {
+                        var nom = safeGet(r, 'NombreGerente');
+                        var car = safeGet(r, 'CarnetValidador');
+                        if(!car) return '<small class="text-muted italic">Sin asignar</small>';
+                        return '<strong>' + nom + '</strong><br><small class="text-muted">' + car + '</small>';
+                    }
+                },
+                {
+                    data: null,
+                    render: function(d, t, r) {
+                        var jefe = safeGet(r, 'Jefe_SIGHO');
+                        var cargo = safeGet(r, 'Cargo_SIGHO');
+                        return '<b>J:</b> <small>' + (jefe || '-') + '</small><br><b>C:</b> <small>' + (cargo || '-') + '</small>';
+                    }
+                },
+                {
+                    data: null,
+                    render: function(d, t, r) { return '<small>' + (safeGet(r, 'Ubicacion_SIGHO') || '-') + '</small>'; }
+                },
+                {
+                    data: null,
+                    className: 'text-center',
+                    render: function(d, t, r) {
+                        var val = safeGet(r, 'AplicaEmpleado');
+                        var id = safeGet(r, 'DetalleID');
+                        var checked = val === 'S' ? 'checked' : '';
+                        return '<input type="checkbox" class="check-aplica-dual check-empleado" data-id="' + id + '" ' + checked + '>';
+                    }
+                },
+                {
+                    data: null,
+                    className: 'text-center',
+                    orderable: false,
+                    render: function(d, t, r) {
+                        var carnet = safeGet(r, 'CarnetEmpleado');
+                        return '<button class="btn btn-sm btn-light btn-circle" onclick="verHistorial(\'' + carnet + '\')" title="Ver Historial"><i class="fas fa-history text-muted"></i></button>';
+                    }
+                }
+            ],
+            language: {
+                search: "Buscar:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                paginate: { first: "Primero", last: "Ultimo", next: "Siguiente", previous: "Anterior" }
+            }
+        });
+
+        // Eventos para filtros por columna
+        table.columns().every(function (i) {
+            var that = this;
+            $('input', $('.filter-row th').eq(i)).on('keyup change', function () {
+                if (that.search() !== this.value) {
+                    that.search(this.value).draw();
+                }
+            });
+        });
+
+        // Funcion global para filtrar columnas por select (Emp y Com)
+        window.filterColumn = function(idx, val) {
+            if (val) {
+                $('#tablaMaestra tbody tr').removeClass('collapsed').removeClass('hidden-row');
+            }
+            table.column(idx).search(val ? '^' + val + '$' : '', true, false).draw();
+        };
+
+        // Evento Seleccion Masiva por Grupo
+        $('#tablaMaestra tbody').on('change', '.check-grupo', function(e) {
+            e.stopPropagation();
+            var chk = $(this);
+            var isChecked = chk.is(':checked');
+            var row = chk.closest('tr');
+            var level = parseInt(row.attr('data-level'));
+
+            var nextRows = row.nextAll();
+            for (var i = 0; i < nextRows.length; i++) {
+                var nextRow = $(nextRows[i]);
+                var nextLevel = parseInt(nextRow.attr('data-level'));
+
+                if (nextRow.hasClass('group-gerencia') || nextRow.hasClass('group-subgerencia') || nextRow.hasClass('group-area')) {
+                    if (nextLevel <= level) break;
+                    nextRow.find('.check-grupo').prop('checked', isChecked);
+                } else {
+                    nextRow.find('.check-fila').prop('checked', isChecked);
+                }
+            }
+        });
+
+        $('#tablaMaestra tbody').on('click', '.check-grupo', function(e) {
+            e.stopPropagation();
+        });
+
+        // Evento Click para colapsar/expandir
+        $('#tablaMaestra tbody').off('click', 'tr[class^="group-"]').on('click', 'tr[class^="group-"]', function (e) {
+            if ($(e.target).hasClass('check-grupo')) return;
+
+            var row = $(this);
+            var level = parseInt(row.attr('data-level'));
+            var isCollapsed = row.hasClass('collapsed');
+            row.toggleClass('collapsed');
+            var nextRows = row.nextAll();
+            for (var i = 0; i < nextRows.length; i++) {
+                var nextRow = $(nextRows[i]);
+                var nextLevel = parseInt(nextRow.attr('data-level'));
+                if (nextRow.hasClass('group-gerencia') || nextRow.hasClass('group-subgerencia') || nextRow.hasClass('group-area')) {
+                    if (nextLevel <= level) break;
+                }
+                if (isCollapsed) {
+                    if (isNaN(nextLevel) || nextLevel === level + 1) {
+                         nextRow.removeClass('hidden-row');
+                         if (!isNaN(nextLevel)) nextRow.addClass('collapsed');
+                    }
+                } else {
+                    nextRow.addClass('hidden-row').addClass('collapsed');
+                }
+            }
+        });
+    }
+
+    $(document).on('change', '.check-aplica-dual', function() {
+        var id = $(this).data('id');
+        var isEmployee = $(this).hasClass('check-empleado');
+        var val = $(this).is(':checked') ? 'S' : 'N';
+        var item = universoOriginal.find(function(x) { return x.DetalleID == id; });
+        if (item) {
+            if (isEmployee) item.AplicaEmpleado = val;
+            else item.AplicaComision = val;
+        }
+    });
+
+    window.abrirConfigValidadores = function() {
+        cargarListaValidadores();
+        $('#modalValidadores').modal('show');
+    };
+
+    function cargarListaValidadores() {
+        // Llenar select de gerencias inicial
+        var gerencias = [];
+        for(var i=0; i<universoOriginal.length; i++){
+            var g = safeGet(universoOriginal[i], 'OGERENCIA_SIGHO');
+            if(g && gerencias.indexOf(g) === -1) gerencias.push(g);
+        }
+
+        if(gerencias.length === 0) {
+            $.get('@Url.Action("ObtenerGerenciasSigho", "Compensacion")', function(res) {
+                if(res.success) {
+                    var optHtml = '<option value="">-- SELECCIONE GERENCIA --</option>';
+                    res.data.forEach(function(g) { optHtml += '<option value="'+g+'">'+g+'</option>'; });
+                    $('#selGerenciaNueva').html(optHtml);
+                }
+            });
+        } else {
+            gerencias.sort();
+            var optHtml = '<option value="">-- SELECCIONE GERENCIA --</option>';
+            gerencias.forEach(function(g) { optHtml += '<option value="'+g+'">'+g+'</option>'; });
+            $('#selGerenciaNueva').html(optHtml);
+        }
+
+        $('#selSubgerenciaNueva').html('<option value="">-- (OPCIONAL) --</option>');
+        $('#selAreaNueva').html('<option value="">-- (OPCIONAL) --</option>');
+
+        $('#tbodyValidadores').html('<tr><td colspan="4" class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Cargando configuracion...</td></tr>');
+
+        $.get('@Url.Action("ObtenerConfigValidadores", "Compensacion")', function(res) {
+            var configActual = res.data || [];
+            var html = '';
+
+            if(configActual.length === 0) {
+                html = '<tr><td colspan="4" class="text-center p-4 text-muted">No hay validadores configurados.</td></tr>';
+            } else {
+                // Renderizar sin agrupar, apilando la estructura para ahorrar espacio
+                configActual.forEach(function(c) {
+                    var ger = safeGet(c, 'Gerencia') || '-';
+                    var sub = safeGet(c, 'Subgerencia');
+                    var area = safeGet(c, 'Area');
+                    var carVal = safeGet(c, 'CarnetValidador');
+                    var nomVal = safeGet(c, 'NombreValidador');
+                    var carEmp = safeGet(c, 'CarnetEmpleado');
+
+                    // Armar la ruta de estructura
+                    var estructuraHtml = '<strong class="text-dark">' + ger + '</strong>';
+                    if(sub) estructuraHtml += '<br><small class="text-muted"><i class="fas fa-level-up-alt fa-rotate-90 mr-1"></i>' + sub + '</small>';
+                    if(area) estructuraHtml += '<br><small class="text-muted ml-2"><i class="fas fa-level-up-alt fa-rotate-90 mr-1"></i>' + area + '</small>';
+
+                    html += '<tr class="validador-row-item" style="cursor:pointer;" onclick="verPersonalValidador(\'' + carVal + '\', \'' + (nomVal || '').replace(/'/g, "\\'") + '\')">' +
+                        '<td>' + estructuraHtml + '</td>' +
+                        '<td><strong>' + (nomVal || '-') + '</strong><br><small class="text-muted">' + carVal + '</small></td>' +
+                        '<td class="text-center">' + (carEmp ? '<span class="badge badge-info" title="Asignacion Directa">' + carEmp + '</span>' : '<span class="badge badge-secondary" title="Por Estructura">Masivo</span>') + '</td>' +
+                        '<td class="text-center">' +
+                            '<button class="btn btn-sm btn-info mb-1" onclick="event.stopPropagation(); verPersonalValidador(\'' + carVal + '\', \'' + (nomVal || '').replace(/'/g, "\\'") + '\')" title="Ver Personal"><i class="fas fa-eye"></i></button><br>' +
+                            '<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); quitarValidador(' + safeGet(c, 'ConfigID') + ', \'' + ger + '\', \'' + carVal + '\')" title="Eliminar"><i class="fas fa-trash-alt"></i></button>' +
+                        '</td>' +
+                    '</tr>';
+                });
+            }
+            $('#tbodyValidadores').html(html);
+        });
+
+        // Resetear panel derecho
+        cerrarPanelDetalle();
+    }
+
+    window.filtrarValidadores = function() {
+        var query = $('#txtBuscarValidador').val().toLowerCase();
+        $('#tbodyValidadores tr').each(function() {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.indexOf(query) > -1);
+        });
+    }
+
+    // ========== FUNCIONES DEL PANEL DE DETALLE DE PERSONAL ==========
+
+    window.verPersonalValidador = function(carnet, nombre) {
+        $('#panelDetalleVacio').hide();
+        $('#panelDetalleLleno').show();
+        $('#lblValidadorSeleccionado').html('<i class="fas fa-user-shield text-danger mr-2"></i>' + nombre + ' <small class="text-muted">(' + carnet + ')</small>');
+        $('#tbodyPersonalValidador').html('<tr><td colspan="6" class="text-center p-4"><i class="fas fa-spinner fa-spin text-danger"></i> Consultando personal...</td></tr>');
+        $('#txtFiltroPersonal').val('');
+
+        // Marcar fila activa
+        $('#tbodyValidadores tr').removeClass('table-active');
+        $('#tbodyValidadores tr').each(function() {
+            if($(this).text().indexOf(carnet) > -1) $(this).addClass('table-active');
+        });
+
+        $.get('@Url.Action("ObtenerPersonalValidador", "Compensacion")', { carnetValidador: carnet }, function(res) {
+            if(!res.success) {
+                $('#tbodyPersonalValidador').html('<tr><td colspan="6" class="text-center p-4 text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> ' + res.message + '</td></tr>');
+                return;
+            }
+
+            var data = res.data || [];
+            $('#lblTotalPersonal').text(data.length + ' colaboradores');
+            $('#lblFuenteDatos').html('<i class="fas fa-database mr-1"></i> Fuente: ' + (res.fuente || 'N/A'));
+
+            if(data.length === 0) {
+                $('#tbodyPersonalValidador').html('<tr><td colspan="6" class="text-center p-4 text-muted">Este validador no tiene personal asignado en el periodo activo.</td></tr>');
+                return;
+            }
+
+            var html = '';
+            data.forEach(function(e) {
+                html += '<tr>' +
+                    '<td><strong>' + (e.CarnetEmpleado || '-') + '</strong></td>' +
+                    '<td>' + (e.NombreCompleto || '-') + '</td>' +
+                    '<td><small>' + (e.Gerencia || '-') + '</small></td>' +
+                    '<td><small>' + (e.Departamento || '-') + '</small></td>' +
+                    '<td><small>' + (e.Cargo || '-') + '</small></td>' +
+                    '<td><small>' + (e.Ubicacion || '-') + '</small></td>' +
+                '</tr>';
+            });
+            $('#tbodyPersonalValidador').html(html);
+        }).fail(function() {
+            $('#tbodyPersonalValidador').html('<tr><td colspan="6" class="text-center p-4 text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> Error de conexion</td></tr>');
+        });
+    }
+
+    window.filtrarPersonalLocal = function() {
+        var query = $('#txtFiltroPersonal').val().toLowerCase();
+        $('#tbodyPersonalValidador tr').each(function() {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.indexOf(query) > -1);
+        });
+    }
+
+    window.cerrarPanelDetalle = function() {
+        $('#panelDetalleLleno').hide();
+        $('#panelDetalleVacio').show();
+        $('#tbodyValidadores tr').removeClass('table-active');
+    }
+
+    window.quitarValidadorGrupo = function(carnet, nombre, configIds) {
+        Swal.fire({
+            title: "Eliminar todas las asignaciones?",
+            html: 'Se eliminaran <b>' + configIds.length + '</b> asignaciones del validador <b>' + nombre + '</b> (' + carnet + ').',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Si, eliminar todo',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                var promises = configIds.map(function(id) {
+                    return $.post('@Url.Action("EliminarConfigValidador", "Compensacion")', { configId: id });
+                });
+                Promise.all(promises).then(function() {
+                    cargarListaValidadores();
+                    Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1000, showConfirmButton: false });
+                });
+            }
+        });
+    }
+
+    window.cargarSubgerencias = function(gerencia) {
+        if(!gerencia) return $('#selSubgerenciaNueva').html('<option value="">-- (OPCIONAL) --</option>');
+        $.get('@Url.Action("ObtenerSubgerencias", "Compensacion")?gerencia=' + encodeURIComponent(gerencia), function(res) {
+            var opt = '<option value="">-- TODO (Nivel Gerencia) --</option>';
+            if(res.success) {
+                res.data.forEach(function(s) { opt += '<option value="'+s+'">'+s+'</option>'; });
+            }
+            $('#selSubgerenciaNueva').html(opt);
+            $('#selAreaNueva').html('<option value="">-- (OPCIONAL) --</option>');
+        });
+    }
+
+    window.cargarAreas = function(subgerencia) {
+        var gerencia = $('#selGerenciaNueva').val();
+        if(!subgerencia) return $('#selAreaNueva').html('<option value="">-- (OPCIONAL) --</option>');
+        $.get('@Url.Action("ObtenerAreas", "Compensacion")?gerencia=' + encodeURIComponent(gerencia) + '&subgerencia=' + encodeURIComponent(subgerencia), function(res) {
+            var opt = '<option value="">-- TODO (Nivel Subgerencia) --</option>';
+            if(res.success) {
+                res.data.forEach(function(a) { opt += '<option value="'+a+'">'+a+'</option>'; });
+            }
+            $('#selAreaNueva').html(opt);
+        });
+    }
+
+    window.buscarNombreValidador = function() {
+        var car = $('#txtCarnetNuevo').val().trim();
+        if(!car) return Swal.fire('Atencion', 'Escriba un carnet o correo para buscar.', 'info');
+        $('#lblNombreValidador').html('<i class="fas fa-spinner fa-spin"></i> Buscando...');
+        $.get('@Url.Action("BuscarEmpleadoSighoo", "Compensacion")', { carnet: car }, function(res) {
+            if(res.success) {
+                var d = res.data;
+                var nombre = safeGet(d, 'NombreCompleto') || safeGet(d, 'nombre_completo') || safeGet(d, 'CARNET');
+                $('#lblNombreValidador').html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i>' + nombre + '</span>');
+                
+                // Autoseleccionar Gerencia si esta vacia y el empleado la tiene
+                if(d.OGERENCIA_SIGHO && !$('#selGerenciaNueva').val()) {
+                    $('#selGerenciaNueva').val(d.OGERENCIA_SIGHO).trigger('change');
+                }
+            } else {
+                $('#lblNombreValidador').html('<span class="text-danger"><i class="fas fa-times-circle mr-1"></i>No encontrado</span>');
+            }
+        }).fail(function() {
+            $('#lblNombreValidador').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error de conexion</span>');
+        });
+    }
+
+    window.buscarNombreColaborador = function() {
+        var car = $('#txtEmpleadoConfig').val().trim();
+        if(!car) return Swal.fire('Atencion', 'Escriba un carnet o correo para buscar.', 'info');
+        $('#lblNombreColaborador').html('<i class="fas fa-spinner fa-spin"></i> Buscando...');
+        $.get('@Url.Action("BuscarEmpleadoSighoo", "Compensacion")', { carnet: car }, function(res) {
+            if(res.success) {
+                var d = res.data;
+                var nombre = safeGet(d, 'NombreCompleto') || safeGet(d, 'nombre_completo') || safeGet(d, 'CARNET');
+                $('#lblNombreColaborador').html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i>' + nombre + '</span>');
+
+                // Autoseleccionar Gerencia si esta vacia
+                if(d.OGERENCIA_SIGHO && !$('#selGerenciaNueva').val()) {
+                    $('#selGerenciaNueva').val(d.OGERENCIA_SIGHO).trigger('change');
+                }
+            } else {
+                $('#lblNombreColaborador').html('<span class="text-danger"><i class="fas fa-times-circle mr-1"></i>No encontrado</span>');
+            }
+        }).fail(function() {
+            $('#lblNombreColaborador').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Error de conexion</span>');
+        });
+    }
+
+    window.guardarValidadorNuevo = function() {
+        var gerencia = $('#selGerenciaNueva').val();
+        var subgerencia = $('#selSubgerenciaNueva').val();
+        var area = $('#selAreaNueva').val();
+        var carnet = $('#txtCarnetNuevo').val();
+        var empleado = $('#txtEmpleadoConfig').val();
+
+        // Nueva validacion: Siempre carnet, y (gerencia O empleado)
+        if(!carnet) return Swal.fire('Error', 'Debe ingresar el carnet del Validador.', 'error');
+        if(!gerencia && !empleado) return Swal.fire('Error', 'Debe seleccionar una Gerencia o un Colaborador.', 'error');
+
+        $.post('@Url.Action("GuardarConfigValidador", "Compensacion")', {
+            gerencia: gerencia,
+            subgerencia: subgerencia,
+            area: area,
+            carnetValidador: carnet,
+            carnetEmpleado: empleado
+        }, function(res) {
+            if(res.success) {
+                $('#txtCarnetNuevo').val('');
+                $('#txtEmpleadoConfig').val('');
+                $('#lblNombreValidador').text('');
+                $('#lblNombreColaborador').text('');
+                cargarListaValidadores();
+                Swal.fire({ icon: 'success', title: 'Asignado', timer: 1000, showConfirmButton: false });
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        });
+    }
+
+    window.procesarCargaMasiva = function() {
+        var validador = $('#txtCarnetNuevo').val().trim();
+        var texto = $('#txtMasivoColaboradores').val().trim();
+
+        if(!validador) return Swal.fire('Atencion', 'Debe ingresar el carnet del Validador primero.', 'warning');
+        if(!texto) return Swal.fire('Atencion', 'Pegue la lista de colaboradores en el cuadro de texto.', 'warning');
+
+        Swal.fire({
+            title: 'Procesando...',
+            text: 'Estamos asignando los colaboradores al validador.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.post('@Url.Action("GuardarConfigMasiva", "Compensacion")', {
+            carnetValidador: validador,
+            listaColaboradores: texto
+        }, function(res) {
+            if(res.success) {
+                $('#txtMasivoColaboradores').val('');
+                $('#panelCargaMasiva').slideUp();
+                cargarListaValidadores();
+                Swal.fire('Completado', res.message, 'success');
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        });
+    }
+
+    window.quitarValidador = function(configId, gerencia, carnet) {
+        Swal.fire({
+            title: "Eliminar Asignacion?",
+            text: 'El carnet ' + carnet + ' ya no tendra acceso a validar esta estructura.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Si, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("EliminarConfigValidador", "Compensacion")', { configId: configId }, function(res) {
+                    if(res.success) {
+                        cargarListaValidadores();
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // === REEMPLAZO MASIVO DE VALIDADOR ===
+    window.buscarSaliente = function() {
+        var car = $('#txtValidadorSaliente').val().trim();
+        if(!car) return Swal.fire('Atencion', 'Escriba un carnet o correo.', 'info');
+        $('#lblSaliente').html('<i class="fas fa-spinner fa-spin"></i> Buscando...');
+        $.get('@Url.Action("BuscarEmpleadoSighoo", "Compensacion")', { carnet: car }, function(res) {
+            if(res.success) {
+                var nombre = safeGet(res.data, 'NombreCompleto') || safeGet(res.data, 'nombre_completo') || safeGet(res.data, 'CARNET');
+                $('#lblSaliente').html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i>' + nombre + '</span>');
+            } else {
+                $('#lblSaliente').html('<span class="text-danger"><i class="fas fa-times-circle mr-1"></i>No encontrado</span>');
+            }
+        }).fail(function() {
+            $('#lblSaliente').html('<span class="text-danger">Error de conexion</span>');
+        });
+    }
+
+    window.buscarEntrante = function() {
+        var car = $('#txtValidadorEntrante').val().trim();
+        if(!car) return Swal.fire('Atencion', 'Escriba un carnet o correo.', 'info');
+        $('#lblEntrante').html('<i class="fas fa-spinner fa-spin"></i> Buscando...');
+        $.get('@Url.Action("BuscarEmpleadoSighoo", "Compensacion")', { carnet: car }, function(res) {
+            if(res.success) {
+                var nombre = safeGet(res.data, 'NombreCompleto') || safeGet(res.data, 'nombre_completo') || safeGet(res.data, 'CARNET');
+                $('#lblEntrante').html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i>' + nombre + '</span>');
+            } else {
+                $('#lblEntrante').html('<span class="text-danger"><i class="fas fa-times-circle mr-1"></i>No encontrado</span>');
+            }
+        }).fail(function() {
+            $('#lblEntrante').html('<span class="text-danger">Error de conexion</span>');
+        });
+    }
+
+    window.ejecutarReemplazo = function() {
+        var saliente = $('#txtValidadorSaliente').val().trim();
+        var entrante = $('#txtValidadorEntrante').val().trim();
+        if(!saliente || !entrante) return Swal.fire('Error', 'Debe indicar el validador saliente y el entrante.', 'error');
+
+        Swal.fire({
+            title: 'Transferir Asignaciones?',
+            html: 'Todas las gerencias/areas asignadas al validador <b>saliente</b> seran transferidas al <b>entrante</b>.<br><br>Esta accion no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f0ad4e',
+            confirmButtonText: 'Si, transferir',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if(result.isConfirmed) {
+                $.post('@Url.Action("ReemplazarValidadorGlobal", "Compensacion")', {
+                    carnetAnterior: saliente,
+                    carnetNuevo: entrante
+                }, function(res) {
+                    if(res.success) {
+                        Swal.fire('Exito', res.message, 'success');
+                        $('#txtValidadorSaliente').val('');
+                        $('#txtValidadorEntrante').val('');
+                        $('#lblSaliente').text('');
+                        $('#lblEntrante').text('');
+                        cargarListaValidadores();
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                }).fail(function() {
+                    Swal.fire('Error', 'Fallo de conexion al servidor.', 'error');
+                });
+            }
+        });
+    }
+
+    function sincronizarMaestro() {
+        if (!g_PeriodoActivo) {
+            Swal.fire('Atencion', 'No hay un periodo activo para sincronizar.', 'warning');
+            return;
+        }
+
+        Swal.fire({
+            title: "Sincronizar con SighoO?",
+            text: "Se buscaran nuevos colaboradores y se actualizaran datos oficiales. Esto podria tardar unos segundos.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#424242',
+            confirmButtonText: 'Si, sincronizar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Sincronizando...',
+                    html: 'Obteniendo datos de SighoO1.dbo.EMP2024',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                $.post('@Url.Action("SincronizarMaestro", "Compensacion")', { periodoId: g_PeriodoActivo.PeriodoID }, function(res) {
+                    if (res.success) {
+                        Swal.fire('Exito', res.message, 'success');
+                        cargarUniverso(); // Recargar tabla y counts
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function guardarCambios() {
+        var cambios = universoOriginal.map(function(x) {
+            return {
+                DetalleID: x.DetalleID,
+                AplicaEmpleado: x.AplicaEmpleado,
+                AplicaComision: x.AplicaComision
+            };
+        });
+
+        if (cambios.length === 0) return Swal.fire('Sin datos', 'No hay datos para guardar.', 'info');
+
+        Swal.fire({
+            title: "Guardar Universo Maestro?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si, aplicar',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("GuardarBorrador", "Compensacion")', { filas: cambios }, function(res) {
+                    if (res.success) {
+                        Swal.fire('Exito!', 'Configuracion guardada.', 'success').then(function() { location.reload(); });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    window.abrirConfigPeriodo = function() {
+        $.get('@Url.Action("ObtenerListaPeriodos", "Compensacion")', function(res) {
+            if(res.success) {
+                window._listaPeriodos = res.data; // Guardar localmente para acceso rapido
+                var datinvertida = res.data.slice().reverse(); // Mas recientes primero
+                var opt = '';
+                datinvertida.forEach(function(p) {
+                    var sel = (g_PeriodoActivo && p.PeriodoID == g_PeriodoActivo.PeriodoID) ? 'selected' : '';
+                    opt += '<option value="'+p.PeriodoID+'" '+sel+'>'+p.NombrePeriodo+' ('+p.Estado+')</option>';
+                });
+                $('#selPeriodoConfig').html(opt);
+
+                // Si hay un activo, cargar ese. Si no, cargar el primero de la lista (el mas reciente)
+                if(g_PeriodoActivo) cargarDetallePeriodoConfig(g_PeriodoActivo.PeriodoID);
+                else if(datinvertida.length > 0) cargarDetallePeriodoConfig(datinvertida[0].PeriodoID);
+
+                $('#modalPeriodo').modal('show');
+            }
+        });
+    };
+
+    window.cargarDetallePeriodoConfig = function(id) {
+        if(!id || !window._listaPeriodos) return;
+
+        var p = window._listaPeriodos.find(function(x) { return x.PeriodoID == id; });
+        if(!p) return;
+
+        $('#txtIdPeriodoConfig').val(p.PeriodoID);
+        $('#selEstadoPeriodoConfig').val(p.Estado);
+
+        var fechini = p.Fechinicio ? moment(p.Fechinicio).format('YYYY-MM-DDTHH:mm') : "";
+        var fechaFin = p.FechaFin ? moment(p.FechaFin).format('YYYY-MM-DDTHH:mm') : "";
+
+        $('#txtFechinicio').val(fechini);
+        $('#txtFechaFin').val(fechaFin);
+    };
+
+    window.guardarPeriodo = function() {
+        var id = $('#txtIdPeriodoConfig').val();
+        var inicio = $('#txtFechinicio').val();
+        var fin = $('#txtFechaFin').val();
+        var estado = $('#selEstadoPeriodoConfig').val();
+        
+        var notifCom = $('#chkNotifComisiones').is(':checked');
+        var notifCert = $('#chkNotifCertificacion').is(':checked');
+        var fechaLimit = $('#txtFechaLimiteNotif').val() || "Lo antes posible";
+
+        Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }});
+
+        $.post('@Url.Action("GuardarPeriodo", "Compensacion")', { periodoId: id, fechinicio: inicio, fechaFin: fin, estado: estado }, function(res) {
+            if(res.success) {
+                // Si no hay que notificar nada, terminamos aqui
+                if(!notifCom && !notifCert) {
+                    Swal.fire('Exito', 'Configuracion guardada correctamente.', 'success').then(function() { location.reload(); });
+                    return;
+                }
+
+                // Si hay que notificar, empezamos el proceso masivo
+                procesarNotificacionesMasivas(id, notifCom, notifCert, fechaLimit);
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        });
+    };
+
+    function procesarNotificacionesMasivas(periodoId, com, cert, fecha) {
+        Swal.fire({
+            title: 'Enviando Notificaciones...',
+            html: 'Por favor espere, estamos despachando los correos a los validadores.<br><br><div id="notifProgress" class="small text-muted text-left"></div>',
+            allowOutsideClick: false,
+            didOpen: function() { Swal.showLoading(); }
+        });
+
+        var tareas = [];
+        if(com) tareas.push({ tipo: 1, nombre: 'Comisiones' });
+        if(cert) tareas.push({ tipo: 2, nombre: 'Certificacion' });
+
+        var index = 0;
+        function ejecutarSiguiente() {
+            if(index >= tareas.length) {
+                Swal.fire('Proceso Completado', 'Periodo configurado y notificaciones enviadas exitosamente.', 'success').then(function() { location.reload(); });
+                return;
+            }
+
+            var t = tareas[index];
+            $('#notifProgress').append('<div><i class="fas fa-spinner fa-spin mr-2"></i> Enviando ' + t.nombre + '...</div>');
+
+            $.post('@Url.Action("NotificarValidadores", "Compensacion")', { periodoId: periodoId, tipo: t.tipo, fechaLimite: fecha }, function(res) {
+                if(res.success) {
+                    $('#notifProgress').append('<div class="text-success"><i class="fas fa-check mr-2"></i> ' + t.nombre + ': Enviados ' + res.notificados + ' correos.</div>');
+                } else {
+                    $('#notifProgress').append('<div class="text-danger"><i class="fas fa-times mr-2"></i> ' + t.nombre + ': ' + (res.message || 'Error') + '</div>');
+                }
+                index++;
+                setTimeout(ejecutarSiguiente, 500); // Pequena pausa entre rafagas
+            });
+        }
+
+        ejecutarSiguiente();
+    }
+
+    function abrirHistorial() {
+        $('#modalHistorial').modal('show');
+        setHistModo($('.hist-tab').first()[0], 'emp_com');
+    }
+
+    function setHistModo(btn, modo) {
+        histModoActual = modo;
+        $('.hist-tab').removeClass('active');
+        $(btn).addClass('active');
+        if(modo === 'gerencia') {
+            $('#histFiltroTextoCont').hide();
+            $('#histFiltroGerenciaCont').show();
+            var gs = [];
+            for(var i=0; i<universoOriginal.length; i++) {
+                var g = safeGet(universoOriginal[i], 'OGERENCIA_SIGHO');
+                if(g && gs.indexOf(g) === -1) gs.push(g);
+            }
+            var opt = '<option value="">-- SELECCIONE --</option>';
+            gs.sort().forEach(function(x) { opt += '<option value="'+x+'">'+x+'</option>'; });
+            $('#histSelGerencia').html(opt);
+        } else {
+            $('#histFiltroGerenciaCont').hide();
+            $('#histFiltroTextoCont').show();
+        }
+    }
+
+    window.histCargarSubgerencias = function(g) {
+        if(!g) return $('#histSelSubgerencia').html('<option value="">-- TODO --</option>');
+        $.get('@Url.Action("ObtenerSubgerencias", "Compensacion")?gerencia=' + encodeURIComponent(g), function(res) {
+            var opt = '<option value="">-- TODO --</option>';
+            if(res.success) {
+                res.data.forEach(function(s) { opt += '<option value="'+s+'">'+s+'</option>'; });
+            }
+            $('#histSelSubgerencia').html(opt);
+            $('#histSelArea').html('<option value="">-- TODO --</option>');
+        });
+    };
+
+    window.histCargarAreas = function(s) {
+        var g = $('#histSelGerencia').val();
+        if(!s) return $('#histSelArea').html('<option value="">-- TODO --</option>');
+        $.get('@Url.Action("ObtenerAreas", "Compensacion")?gerencia=' + encodeURIComponent(g) + '&subgerencia=' + encodeURIComponent(s), function(res) {
+            var opt = '<option value="">-- TODO --</option>';
+            if(res.success) {
+                res.data.forEach(function(a) { opt += '<option value="'+a+'">'+a+'</option>'; });
+            }
+            $('#histSelArea').html(opt);
+        });
+    };
+
+    function buscarHistorial() {
+        var filtro = histModoActual === 'gerencia' ? ($('#histSelArea').val() || $('#histSelSubgerencia').val() || $('#histSelGerencia').val()) : $('#histFiltro').val().trim();
+        if (!filtro) return Swal.fire('Atencion', 'Ingrese criterio.', 'warning');
+        $('#histResultados').html('<i class="fas fa-spinner fa-spin"></i>');
+        $.getJSON('@Url.Action("ObtenerHistorial", "Compensacion")', { filtro: filtro, modo: histModoActual }, function(res) {
+            var html = '<div class="table-responsive"><table class="table table-sm table-hover" style="font-size:12px;"><thead><tr style="background:#f5f5f5;"><th>Periodo</th><th>Modulo</th>';
+
+            if (histModoActual.includes('validador') || histModoActual.includes('jefe') || histModoActual === 'gerencia') {
+                html += '<th>Empleado</th>';
+            }
+
+            html += '<th>Cargo SighoO</th><th>Cargo Rep.</th><th>Jefe SighoO</th><th>Jefe Rep.</th><th>Ubic. SighoO</th><th>Ubic. Rep.</th><th>Com.</th><th>Justificacion</th>';
+
+            if (histModoActual.includes('emp') || histModoActual === 'gerencia') {
+                html += '<th>Validador</th>';
+            }
+
+            html += '<th>Estado</th></tr></thead><tbody>';
+
+            res.data.forEach(function(r) {
+                var tieneCambio = r.Cargo_Reportado || r.Jefe_Reportado || r.Ubicacion_Reportada || r.Departamento_Reportado || r.Comisiona === 'N';
+                var rowStyle = tieneCambio ? 'background:#fffde7;' : '';
+
+                html += '<tr style="' + rowStyle + '">';
+                html += '<td><b>' + (r.NombrePeriodo || '-') + '</b></td>';
+                html += '<td>' + (r.Modulo === 'Comisiones' ? '<span class="badge" style="background:#ff6f00;color:#fff;">COM</span>' : '<span class="badge" style="background:#b71c1c;color:#fff;">CERT</span>') + '</td>';
+
+                if (histModoActual.includes('validador') || histModoActual.includes('jefe') || histModoActual === 'gerencia') {
+                    html += '<td>' + (r.NombreCompleto || '') + '<br/><small class="text-muted">' + (r.CarnetEmpleado || '') + '</small></td>';
+                }
+
+                html += '<td>' + (r.Cargo_SIGHO || '-') + '</td>';
+                html += '<td>' + (r.Cargo_Reportado ? '<b class="text-danger">' + r.Cargo_Reportado + '</b>' : '-') + '</td>';
+                html += '<td>' + (r.Jefe_SIGHO || '-') + '</td>';
+                html += '<td>' + (r.Jefe_Reportado ? '<b class="text-danger">' + r.Jefe_Reportado + '</b>' : '-') + '</td>';
+                html += '<td>' + (r.Ubicacion_SIGHO || '-') + '</td>';
+                html += '<td>' + (r.Ubicacion_Reportada ? '<b class="text-danger">' + r.Ubicacion_Reportada + '</b>' : '-') + '</td>';
+                html += '<td>' + (r.Comisiona === 'S' ? '<span class="hist-badge-ok">SI</span>' : '<span class="hist-badge-cambio">NO</span>') + '</td>';
+
+                html += '<td style="max-width:180px;">';
+                if (r.JustMotivo) html += '<small><b>Motivo:</b> ' + r.JustMotivo + '</small><br/>';
+                if (r.JustReposicion) html += '<small><b>Repone:</b> ' + r.JustReposicion + '</small><br/>';
+                if (r.JustTiempo) html += '<small><b>Tiempo:</b> ' + r.JustTiempo + '</small>';
+                if (!r.JustMotivo && !r.JustReposicion && !r.JustTiempo) html += '-';
+                html += '</td>';
+
+                if (histModoActual.includes('emp') || histModoActual === 'gerencia') {
+                    html += '<td><small>' + (r.Validador || '-') + '</small></td>';
+                }
+
+                var estadoColor = r.EstadoPlantilla === 'Aprobado' ? '#2e7d32' : r.EstadoPlantilla === 'Enviado' ? '#e53935' : r.EstadoPlantilla === 'Devuelto' ? '#d84315' : '#757575';
+                html += '<td><span class="badge" style="background:' + estadoColor + ';color:#fff;">' + (r.EstadoPlantilla || '-') + '</span></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            html += '<div class="d-flex justify-content-between align-items-center mt-2">';
+            html += '<span class="text-muted small"><i class="fas fa-info-circle mr-1"></i>' + res.totalRegistros + ' registros encontrados</span>';
+            html += '<button class="btn btn-sm btn-success" onclick="exportarHistorialExcel()"><i class="fas fa-file-excel mr-1"></i> Descargar Excel</button>';
+            html += '</div>';
+
+            $('#histResultados').html(html);
+            window._historialData = res.data;
+        });
+    }
+
+    function exportarHistorialExcel() {
+        if (!window._historialData || window._historialData.length === 0) return;
+        var d = window._historialData;
+        var csv = '\uFEFF'; // BOM para UTF-8
+        // Headers
+        var headers = ['Periodo','Modulo','Carnet','Nombre','Cargo SighoO','Cargo Reportado','Jefe SighoO','Jefe Reportado','Ubicacion SighoO','Ubicacion Reportada','Depto SighoO','Depto Reportado','Comisiona','Motivo Cambio','A Quien Repone','Por Cuanto Tiempo','Observacion','Validador','Estado'];
+        csv += headers.join(',') + '\n';
+        d.forEach(function(r) {
+            var row = [
+                '"' + (r.NombrePeriodo || '') + '"',
+                '"' + (r.Modulo || '') + '"',
+                '"' + (r.CarnetEmpleado || '') + '"',
+                '"' + (r.NombreCompleto || '') + '"',
+                '"' + (r.Cargo_SIGHO || '') + '"',
+                '"' + (r.Cargo_Reportado || '') + '"',
+                '"' + (r.Jefe_SIGHO || '') + '"',
+                '"' + (r.Jefe_Reportado || '') + '"',
+                '"' + (r.Ubicacion_SIGHO || '') + '"',
+                '"' + (r.Ubicacion_Reportada || '') + '"',
+                '"' + (r.Departamento_SIGHO || '') + '"',
+                '"' + (r.Departamento_Reportado || '') + '"',
+                '"' + (r.Comisiona || '') + '"',
+                '"' + (r.JustMotivo || '') + '"',
+                '"' + (r.JustReposicion || '') + '"',
+                '"' + (r.JustTiempo || '') + '"',
+                '"' + (r.Observacion || '') + '"',
+                '"' + (r.Validador || r.CarnetValidador || '') + '"',
+                '"' + (r.EstadoPlantilla || '') + '"'
+            ];
+            csv += row.join(',') + '\n';
+        });
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Historial_' + $('#histFiltro').val().trim() + '_' + new Date().toISOString().slice(0,10) + '.csv';
+        link.click();
+    }
+
+    </script>
+}
+
+
+
+

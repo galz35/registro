@@ -1,0 +1,62 @@
+﻿
+@model Entities.ViewModels.CommissionRosterView
+
+@using (Html.BeginForm())
+{
+    @Html.DevExpress().FormLayout(settings => {
+    settings.Name = "periodForm";
+    settings.SettingsAdaptivity.AdaptivityMode = FormLayoutAdaptivityMode.SingleColumnWindowLimit;
+    settings.SettingsAdaptivity.SwitchToSingleColumnAtWindowInnerWidth = 500;
+    settings.ControlStyle.CssClass = "formLayout";
+
+    settings.Items.AddGroupItem(g => {
+        g.Caption = "";
+        g.ColCount = 2;
+        g.UseDefaultPaddings = false;
+        g.Paddings.PaddingTop = Unit.Pixel(10);
+        g.GroupBoxDecoration = GroupBoxDecoration.None;
+
+        g.Items.Add(m => m.PeriodId, i => {
+            i.Caption = "Periodo";
+            i.Width = Unit.Percentage(20);
+            i.NestedExtension().ComboBox(s => {
+                s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                s.Properties.TextField = "PeriodId";
+                s.Properties.ValueField = "PeriodId";
+                s.Properties.ValueType = typeof(string);
+                s.Properties.DataSource = slnRhonline.Data.Period.GetAllPeriods();
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                //s.Properties.ClientSideEvents.ValueChanged = "OnPeriodValueChanged";
+
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(100);
+
+            });
+        });
+        g.Items.Add(m => m.ManagementId , i =>
+        {
+            i.Caption = "Gerencia";
+            i.Width = Unit.Percentage(30);
+            i.NestedExtension().ComboBox(s =>
+            {
+                s.Properties.DropDownStyle = DropDownStyle.DropDownList;
+                s.Properties.TextField = "ManagementName";
+                s.Properties.ValueField = "ManagementId";
+                s.Properties.ValueType = typeof(int);
+                s.Properties.DataSource = slnRhonline.Data.OrganizationView.GetAllManagement();
+                s.Properties.ValidationSettings.ErrorDisplayMode = ErrorDisplayMode.ImageWithTooltip;
+                s.Properties.ValidationSettings.Display = Display.Dynamic;
+                s.Properties.ClientSideEvents.ValueChanged = "OnManagementValueChanged";
+             
+
+                s.ShowModelErrors = true;
+                s.Width = Unit.Percentage(100);
+
+            });
+        });
+
+
+    });
+}).GetHtml()
+}

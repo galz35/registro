@@ -1,0 +1,245 @@
+﻿@{
+    ViewBag.Title = "Autorización Gerente - ExtraPlan Combustible";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+
+@Html.DevExpress().GetStyleSheets(
+    new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+    new StyleSheet { ExtensionSuite = ExtensionSuite.GridView }
+)
+
+<!-- Luego los scripts de DevExpress -->
+
+
+
+@section scripts {
+    <!-- Cargamos primero las librerías de jQuery y DataTables -->
+    <script src="~/onlinejs/jquery-3.6.0.min.js"></script>
+    <script src="~/onlinejs/jquery.dataTables.min.js"></script>
+    <script src="~/onlinejs/dataTables.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.buttons.min.js"></script>
+    <script src="~/onlinejs/buttons.html5.min.js"></script>
+    <script src="~/onlinejs/buttons.bootstrap4.min.js"></script>
+    <script src="~/onlinejs/dataTables.select.min.js"></script>
+    <script src="~/onlinejs/bootstrap.bundle.min.js"></script>
+    <script src="~/onlinejs/bootstrap.min.js"></script>
+    <script src="~/onlinejs/loadingoverlay.min.js"></script>
+    <script src="~/onlinejs/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+    <script src="~/onlinejs/moment.min.js"></script>
+    <script src="~/onlinejs/jszip.min.js"></script>
+    <script src="~/onlinejs/jquery-ui.js"></script>
+    <script src="~/onlinejs/spin.min.js"></script>
+    <script src="~/Scripts/js/sb-admin-2.min.js"></script>
+    <script type="text/javascript">
+        var tablaExtraPlan;
+        // Función para obtener los IDs seleccionados (como cadena separada por comas)
+        function getSelectedIDs() {
+            var selectedIDs = '';
+            $('.checkItem:checked').each(function () {
+                var id = $(this).data('id');
+                if (selectedIDs !== '') { selectedIDs += ','; }
+                selectedIDs += id;
+            });
+            return selectedIDs;
+        }
+
+        $(document).ready(function () {
+            tablaExtraPlan = $('#dataTable').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("MautorizarExtraPlanListJson", "Consumo")",
+                    "type": "GET",
+                    "dataType": "json",
+                    "error": function (xhr, error, thrown) {
+                        console.error("Error al cargar los datos:", error, thrown);
+                    }
+                },
+                "columns": [
+                    { "data": null }, // Número de fila (se asigna en drawCallback)
+                    {
+                        "data": null,
+                        "orderable": false,
+                        "width": "10px",
+                        "render": function (data, type, row) {
+                            return "<input type='checkbox' class='checkItem' data-id='" + row.IdCombustibleExtraPlan + "'>";
+                        }
+                    },
+                    { "data": "NumeroEmpleado", "title": "No. Empleado" },
+                    { "data": "NombreEmpleado", "title": "Solicitante" },
+                    { "data": "IdUnidad", "title": "Unidad" },
+                    {
+                        "data": "FechaSolicitud",
+                        "title": "Fecha",
+                        "render": function (data) {
+                            return moment(data).format("DD/MM/yyyy");
+                        }
+                    },
+                    { "data": "Estado", "title": "Estado" },
+                    {
+                        "data": null,
+                        "title": "Acciones",
+                        "orderable": false,
+                        "render": function (data, type, row) {
+                            var id = row.IdCombustibleExtraPlan;
+                            // Se envía el ID como cadena (entre comillas)
+                            return `
+<div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+        <i class="fas fa-cogs"></i> Opciones
+    </button>
+    <div class="dropdown-menu">
+        <a class="dropdown-item btn btn-warning" href="javascript:void(0);" onclick="VerDetalleExtraPlan('${id}')">
+            <i class="fas fa-info-circle"></i> Ver Detalle
+        </a>
+    </div>
+</div>`;
+                        }
+                    }
+                ],
+                "order": [[2, "asc"]],
+                "drawCallback": function (settings) {
+                    var api = this.api();
+                    var rows = api.rows({ page: 'current' }).nodes();
+                    var counter = 1;
+                    $.each(rows, function (index, row) {
+                        row.cells[0].innerHTML = counter;
+                        counter++;
+                    });
+                },
+                "responsive": true,
+                "language": {
+                    "url": "@Url.Content("~/Scripts/datatable.es-ES.json")"
+                }
+            });
+
+            // "Check All" para seleccionar/deseleccionar todos los checkboxes
+            $('#checkAll').click(function () {
+                $('.checkItem').prop('checked', this.checked);
+            });
+
+            // Botón Autorizar: llama a la acción AuthorizeManagement (POST)
+            $('#btnAuthorize').click(function () {
+                var selectedIDs = getSelectedIDs();
+                if (selectedIDs) {
+                    $.ajax({
+                        url: '@Url.Action("AuthorizeManagement", "ExtraPlan")',
+                        type: "POST",
+                        data: { ids: selectedIDs },
+                        dataType: "json",
+                        beforeSend: function () { $.LoadingOverlay("show"); },
+                        complete: function () { $.LoadingOverlay("hide"); },
+                        success: function (data) {
+                            if (data.status !== "Error") {
+                                Swal.fire("Éxito!", data.message, "success").then(function () {
+                                    tablaExtraPlan.ajax.reload();
+                                });
+                            } else {
+                                Swal.fire("Error!", data.message, "error");
+                            }
+                        },
+                        error: function () { alert("Ha ocurrido un error"); }
+                    });
+                } else {
+                    Swal.fire("Advertencia", "Seleccione al menos un registro", "warning");
+                }
+            });
+
+            // Botón Denegar: llama a la acción DeniedManagement (POST)
+            $('#btnDenied').click(function () {
+                var selectedIDs = getSelectedIDs();
+                if (selectedIDs) {
+                    $.ajax({
+                        url: '@Url.Action("DeniedManagement", "ExtraPlan")',
+                        type: "POST",
+                        data: { ids: selectedIDs },
+                        dataType: "json",
+                        beforeSend: function () { $.LoadingOverlay("show"); },
+                        complete: function () { $.LoadingOverlay("hide"); },
+                        success: function (data) {
+                            if (data.status !== "Error") {
+                                Swal.fire("Éxito!", data.message, "success").then(function () {
+                                    tablaExtraPlan.ajax.reload();
+                                });
+                            } else {
+                                Swal.fire("Error!", data.message, "error");
+                            }
+                        },
+                        error: function () { alert("Ha ocurrido un error"); }
+                    });
+                } else {
+                    Swal.fire("Advertencia", "Seleccione al menos un registro", "warning");
+                }
+            });
+
+            // Botón Refrescar
+            $('#btnRefresh').click(function () {
+                tablaExtraPlan.ajax.reload();
+            });
+        });
+
+        // Función para mostrar el detalle usando el PopupControl de DevExpress
+        function VerDetalleExtraPlan(id) {
+            console.log("VerDetalleExtraPlan llamado con id:", id);
+            var url = '@Url.Action("AuthorizeConsult", "ExtraPlan", new { idExtraPlan = "0" })'.replace("0", id);
+            popDetalle.SetContentUrl(url);
+            popDetalle.ShowAtElementByID(id);
+        }
+    </script>
+}   
+ 
+@Html.DevExpress().GetScripts(
+       new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+       new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+       new Script { ExtensionSuite = ExtensionSuite.GridView }
+
+    )
+
+
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Autorización Gerente - ExtraPlan Combustible</h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <button class="btn btn-primary" id="btnAuthorize">Autorizar</button>
+                <button class="btn btn-danger ml-2" id="btnDenied">Denegar</button>
+                <button class="btn btn-secondary ml-2" id="btnRefresh">Refrescar</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th><input type="checkbox" id="checkAll" /></th>
+                            <th>No. Empleado</th>
+                            <th>Solicitante</th>
+                            <th>Unidad</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.DevExpress().PopupControl(settings =>
+{
+    settings.Theme = "Mulberry";
+    settings.Name = "popDetalle";
+    settings.ShowHeader = true;
+    settings.HeaderText = "Detalle de Extra Plan";
+    settings.PopupHorizontalAlign = PopupHorizontalAlign.WindowCenter;
+    settings.PopupVerticalAlign = PopupVerticalAlign.WindowCenter;
+    settings.Width = 800;
+    settings.Height = 400;
+    settings.CloseAction = CloseAction.CloseButton;
+    settings.CloseOnEscape = true;
+
+}).GetHtml()

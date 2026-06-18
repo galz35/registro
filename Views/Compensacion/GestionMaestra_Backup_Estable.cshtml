@@ -1,0 +1,292 @@
+﻿@{
+    ViewBag.Title = "Gestion Maestra de Compensacion";
+}
+
+
+<style>
+    :root { --claro-red: #e31919; --claro-red-grad: linear-gradient(135deg, #e31919 0%, #ff5252 100%); --claro-yellow: #fcb913; }
+    .bg-claro { background: var(--claro-red-grad) !important; }
+    .card { border-radius: 15px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+    .table thead th { background-color: #f8f9fa; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; border-bottom: 2px solid #eee; }
+    .btn-rounded { border-radius: 50px; padding: 6px 20px; font-weight: 600; }
+    .status-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    
+    .btn-rounded { border-radius: 50px; padding: 6px 20px; font-weight: 600; }
+    .status-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    .check-aplica-dual { width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: var(--claro-red); }
+</style>
+
+<div class="continer-fluid py-4 animate__animated animate__fadeIn">
+    <div class="row mb-4 sticky-actions py-2">
+        <div class="col-md-6">
+            <h3 class="font-weight-bold text-dark mb-0">Gestion Maestra <span class="text-muted" id="lblMesActual">...</span></h3>
+            <p class="text-muted small">Configuracion global del universo de colaboradores para el ciclo actual.</p>
+        </div>
+        <div class="col-md-6 text-right">
+            <button class="btn btn-outline-secondary btn-rounded mr-2" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Refrescar
+            </button>
+            <button class="btn btn-primary btn-rounded shadow" onclick="guardarCambios()">
+                <i class="fas fa-save"></i> Guardar Cambios Masivos
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-left-claro">
+                <div class="card-body py-3">
+                    <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Avance Global</h6>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col-auto">
+                            <div class="h5 mb-0 mr-3 font-weight-bold text-dark" id="txtPorcentaje">0%</div>
+                        </div>
+                        <div class="col">
+                            <div class="progress progress-sm mr-2">
+                                <div id="barPorcentaje" class="progress-bar bg-claro" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-left-claro">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Jefes Terminados</h6>
+                    <div class="h5 mb-0 font-weight-bold text-dark" id="txtJefes">0 / 0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-left-claro">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Universo de Personal</h6>
+                    <div class="h5 mb-0 font-weight-bold text-dark" id="txtUniverso">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-left-claro">
+                <div class="card-body py-3 text-center bg-light">
+                    <h6 class="text-muted small font-weight-bold text-uppercase mb-1">Estado de Periodo</h6>
+                    <div class="h5 mb-0 font-weight-bold text-success animate__animated animate__pulse animate__infinite">ACTIVO</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .border-left-claro { border-left: 4px solid var(--claro-red) !important; }
+    </style>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body p-0">
+            <div class="table-responsive p-3">
+                <table id="tablaMaestra" class="table table-hover align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 40px;"><input type="checkbox" id="checkAll"></th>
+                            <th>Colaborador</th>
+                            <th>Gerencia</th>
+                            <th>Subgerencia</th>
+                            <th>Area</th>
+                            <th>Jefe / Cargo</th>
+                            <th>Ubicacion</th>
+                            <th class="text-center">Emp.</th>
+                            <th class="text-center">Com.</th>
+                            <th class="text-center">Acc.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyMaestra"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script src="~/onlinejs/dataTables.responsive.min.js"></script>
+<script>
+    let table = null;
+    let universoOriginal = [];
+
+    $(document).ready(function() {
+        cargarUniverso();
+
+        $('#checkAll').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('.check-fila').prop('checked', isChecked);
+        });
+    });
+
+    function cargarUniverso() {
+        $.get('@Url.Action("ObtenerUniversoMaestro", "Compensacion")', function(res) {
+            if (res.success) {
+                universoOriginal = res.data || [];
+                if (res.periodo) $('#lblMesActual').text(res.periodo.NombrePeriodo || "...");
+                renderizarTabla(universoOriginal);
+                
+                if (res.periodo && res.periodo.PeriodoID) {
+                    $.get('@Url.Action("ObtenerKPI", "Compensacion")?periodoId=' + res.periodo.PeriodoID, function(kres) {
+                        if(kres.success && kres.kpi) {
+                            const k = kres.kpi;
+                            const perc = k.TotalJefes > 0 ? Math.round((k.Terminados / k.TotalJefes) * 100) : 0;
+                            $('#txtPorcentaje').text(perc + '%');
+                            $('#barPorcentaje').css('width', perc + '%');
+                            $('#txtJefes').text(k.Terminados + ' / ' + k.TotalJefes);
+                            $('#txtUniverso').text(k.UniversoTotal);
+                        }
+                    });
+                }
+            } else {
+                Swal.fire('Error', res.message || "Error al cargar datos", 'error');
+            }
+        }).fail(function() {
+            Swal.fire('Error de Red', 'No se pudo conectar con el servidor. Por favor, intente de nuevo.', 'error');
+        });
+    }
+
+    function safeGet(row, key) {
+        if (!row) return "";
+        if (row[key] !== undefined && row[key] !== null) return row[key];
+        let lowerKey = key.toLowerCase();
+        for (let k in row) {
+            if (k.toLowerCase() === lowerKey) return row[k];
+        }
+        return "";
+    }
+
+    function renderizarTabla(data) {
+        if (table) table.destroy();
+        
+        table = $('#tablaMaestra').DataTable({
+            data: data,
+            deferRender: true,
+            pageLength: 50,
+            autoWidth: false,
+            order: [[1, 'asc']], 
+            columns: [
+                { 
+                    data: null, 
+                    className: 'text-center',
+                    orderable: false,
+                    render: function(d, t, r) {
+                        let id = safeGet(r, 'DetalleID');
+                        return '<input type="checkbox" class="check-fila" data-id="' + id + '">';
+                    }
+                },
+                { 
+                    data: null,
+                    render: function(d, t, r) {
+                        let nombre = safeGet(r, 'NombreCompleto');
+                        let carnet = safeGet(r, 'CarnetEmpleado');
+                        return '<strong>' + nombre + '</strong><br><small class="text-muted">' + carnet + '</small>';
+                    }
+                },
+                { 
+                    data: null, 
+                    render: function(d, t, r) { return safeGet(r, 'OGERENCIA_SIGHO') || "-"; } 
+                },
+                { 
+                    data: null, 
+                    render: function(d, t, r) { return safeGet(r, 'OSUBGERENCIA_SIGHO') || "-"; } 
+                },
+                { 
+                    data: null, 
+                    render: function(d, t, r) { return safeGet(r, 'Area_SIGHO') || "-"; } 
+                },
+                { 
+                    data: null, 
+                    render: function(d, t, r) { 
+                        let jefe = safeGet(r, 'Jefe_SIGHO');
+                        let cargo = safeGet(r, 'Cargo_SIGHO');
+                        return '<b>J:</b> <small>' + (jefe || '-') + '</small><br><b>C:</b> <small>' + (cargo || '-') + '</small>'; 
+                    } 
+                },
+                { 
+                    data: null,
+                    render: function(d, t, r) { return '<small>' + (safeGet(r, 'Ubicacion_SIGHO') || '-') + '</small>'; }
+                },
+                { 
+                    data: null,
+                    className: 'text-center',
+                    render: function(d, t, r) {
+                        let val = safeGet(r, 'AplicaEmpleado');
+                        let id = safeGet(r, 'DetalleID');
+                        const checked = val === 'S' ? 'checked' : '';
+                        return '<input type="checkbox" class="check-aplica-dual check-empleado" data-id="' + id + '" ' + checked + '>';
+                    }
+                },
+                { 
+                    data: null,
+                    className: 'text-center',
+                    render: function(d, t, r) {
+                        let val = safeGet(r, 'AplicaComision');
+                        let id = safeGet(r, 'DetalleID');
+                        const checked = val === 'S' ? 'checked' : '';
+                        return '<input type="checkbox" class="check-aplica-dual check-comision" data-id="' + id + '" ' + checked + '>';
+                    }
+                },
+                {
+                    data: null,
+                    className: 'text-center',
+                    orderable: false,
+                    render: function(d, t, r) {
+                        let carnet = safeGet(r, 'CarnetEmpleado');
+                        return '<button class="btn btn-sm btn-light btn-circle" onclick="verHistorial(\'' + carnet + '\')" title="Ver Historial"><i class="fas fa-history text-muted"></i></button>';
+                    }
+                }
+            ],
+            language: {
+                search: "Buscar:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                paginate: { first: "Primero", last: "Ultimo", next: "Siguiente", previous: "Anterior" }
+            }
+        });
+    }
+
+    $(document).on('change', '.check-aplica-dual', function() {
+        const id = $(this).data('id');
+        const isEmployee = $(this).hasClass('check-empleado');
+        const val = $(this).is(':checked') ? 'S' : 'N';
+        const item = universoOriginal.find(x => x.DetalleID == id);
+        if (item) {
+            if (isEmployee) item.AplicaEmpleado = val;
+            else item.AplicaComision = val;
+        }
+    });
+
+    function guardarCambios() {
+        const cambios = universoOriginal.map(x => ({ 
+            DetalleID: x.DetalleID, 
+            AplicaEmpleado: x.AplicaEmpleado, 
+            AplicaComision: x.AplicaComision 
+        }));
+        
+        if (cambios.length === 0) return Swal.fire('Sin datos', 'No hay datos para guardar.', 'info');
+
+        Swal.fire({
+            title: 'a?Guardar Universo Maestro?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si?, aplicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('@Url.Action("GuardarBorrador", "Compensacion")', { filas: cambios }, function(res) {
+                    if (res.success) {
+                        Swal.fire('i?xito!', 'Configuracion guardada.', 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+            }
+        });
+    }
+</script>
+}
+
+
+

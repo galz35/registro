@@ -1,0 +1,217 @@
+﻿@model List<Entities.ExtraTime>
+@{
+    ViewBag.Title = "Autorizacion Gerente";
+    Layout = "~/Views/Shared/_mainLayout.cshtml";
+}
+
+@Html.DevExpress().GetStyleSheets(
+         new StyleSheet { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.HtmlEditor },
+
+         new StyleSheet { ExtensionSuite = ExtensionSuite.GridView },
+               new StyleSheet { ExtensionSuite = ExtensionSuite.Editors, Theme = "Mulberry" }
+
+
+     )
+
+ <script src="~/Content/plugin/sweetalert2/sweetalert2.all.js"></script>
+
+
+<script type="text/javascript">
+    var selectedIDs;
+    function onBeginCallback(s, e) {
+        // Pasamos los ids seleccionados al boton de autorizar
+        e.customArgs["selectedIDs"] = selectedIDs;
+        if (selectedIDs != "")
+            gvAuthorizeManagement.PerformCallback;
+    }
+
+    function onSelectionChanged(s, e) {
+        s.GetSelectedFieldValues("Id", GetSelectedFieldValuesCallback);
+    }
+
+    function GetSelectedFieldValuesCallback(values) {
+        // Captura todas las llaves seleccionadas
+        selectedIDs = values.join(',');
+    }
+
+    function onAuthorizeButtonClick(s, e) {
+        $("#selectedIdsAP").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function onDeniedButtonClick(s, e) {
+        $("#selectedIdsDN").val(selectedIDs);
+        selectedIDs = "";
+    }
+
+    function OnInit(s, e) {
+        AdjustSize();
+        ASPxClientUtils.AttachEventToElement(window, "resize", function (evt) {
+            AdjustSize();
+        });
+    }
+    function OnEndCallback(s, e) {
+        AdjustSize();
+    }
+    function AdjustSize() {
+        var height = document.documentElement.clientHeight;
+        gvAuthorizeManagement.SetHeight(height - 150);
+    }
+
+
+
+    function onToolbarItemClick(s, e) {
+
+        if (e.item.name == "Authorize") {
+             $.ajax({
+             url: '@Url.Action("AuthorizeManagement")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+                 success: function (data) {
+                     if (data.status != "Error") {
+                         Swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             confirmButtonText: "Aceptar",
+                         }).then((result) => {
+                             if (result.isConfirmed) {
+                                 LoadPartial();
+                             }
+                         });
+
+
+                 } else {
+                         Swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+
+
+                 error: function (error) {
+
+                     swal.fire("Error!", "Ocurrió un error en la transaccion, por favor corrija.", "error");
+                 }
+        });
+
+        }
+
+
+        if (e.item.name == "Denied") {
+             $.ajax({
+             url: '@Url.Action("DeniedManagement")',
+             type: "POST",
+             data: { ids: selectedIDs },
+            dataType: "json",
+            traditional: true,
+            cache: false,
+
+             success: function (data) {
+                 if (data.status != "Error") {
+                     Swal.fire({
+                             title: "Exito!",
+                             text: data.message,
+                             icon: "success",
+                             confirmButtonText: "Aceptar",
+                         })
+                         .then((result) => {
+                             if (result.isConfirmed) {
+                                 LoadPartial();
+                             }
+                         });
+                 } else {
+                     swal.fire({
+                         title: "Error!",
+                         text: data.message,
+                         icon: "error",
+                         confirmButtonText: "Aceptar",
+                     })
+
+                 }
+
+
+             },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+         if (e.item.name == "Refresh") {
+             $.ajax({
+             url: '@Url.Action("RefreshPartialManager")',
+             type: "GET",
+             data: { },
+            //dataType: "json",
+            traditional: true,
+            cache: false,
+            //contentType: "application/json; charset=utf-8",
+            success: function (data) {
+
+                $('#authorizePartial').html(data);
+            },
+            error: function () {
+                alert("An error has occured!!!");
+            }
+        });
+        }
+    }
+
+    function LoadPartial(s, e) {
+        $.ajax({
+            url: '@Url.Action("AuthorizeManagerPartial","ExtraTime")',
+            //contentType: 'application/json; charset=utf-8',
+            type: 'GET',
+            //dataType: 'json',
+            cache: false,
+            traditional: true,
+            data: {},
+        }).done(function(result) {
+            $('#authorizePartial').html(result);
+        });
+    }
+
+
+</script>
+
+@Html.DevExpress().GetScripts(
+   new Script { ExtensionSuite = ExtensionSuite.NavigationAndLayout },
+   new Script { ExtensionSuite = ExtensionSuite.HtmlEditor },
+   new Script { ExtensionSuite = ExtensionSuite.GridView },
+                  new Script { ExtensionSuite = ExtensionSuite.Editors }
+
+
+)
+
+
+
+
+@using (Html.BeginForm())
+{
+    if (ViewData["EditError"] != null)
+    {
+        <font face="univers" size="3" color="red">
+            @ViewData["EditError"]
+        </font>
+    }
+
+}
+
+<div id="authorizePartial">
+
+    @Html.Partial("AuthorizeManagerPartial", Model);
+</div>
+
+
+

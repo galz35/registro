@@ -1,0 +1,563 @@
+﻿@using slnRhonline.Models
+@{
+    ViewBag.Title = "Inventario · Hub Central";
+    // SIMULACIÓN DE ROL: Cambia a false para ver la vista de empleado normal.
+    // En producción: bool esBodeguero = User.IsInRole("ADMIN") || User.IsInRole("BODEGA");
+    bool esBodeguero = true;
+}
+
+<style>
+    :root {
+        --rojo: #e1251b;
+        --rojo2: #b30000;
+        --primario: #1a252f;
+        --gris: #f4f7f6;
+        --gris2: #e9ecf2;
+        --blanco: #fff;
+        --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    }
+
+    /* ---- Header hero + KPIs ---- */
+    .hero {
+        background: linear-gradient(135deg, var(--primario), #2c3e50);
+        color: #fff;
+        border-radius: 20px;
+        padding: 25px 30px;
+        box-shadow: 0 10px 25px rgba(26, 37, 47, 0.2);
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero::before {
+            content: '\f4d3';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: -20px;
+            top: -30px;
+            font-size: 150px;
+            opacity: 0.05;
+        }
+
+    .kpi {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(5px);
+        border-radius: 12px;
+        padding: 12px 20px;
+        border: 1px solid rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .kpi .n {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .kpi small {
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+    /* ---- Tablas y Layout ---- */
+    .shell {
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: var(--card-shadow);
+        padding: 20px;
+        min-height: 60vh;
+    }
+
+    .sticky-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        padding: 5px;
+        border: none;
+        gap: 5px;
+        background: #fff;
+        margin-bottom: 20px;
+    }
+
+    #menuTabs .nav-link {
+        color: #666 !important;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 10px 20px;
+        border: none;
+        transition: 0.3s;
+    }
+
+        #menuTabs .nav-link.active {
+            background-color: var(--rojo) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 10px rgba(225, 37, 27, 0.2);
+        }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--gris2);
+        margin: 4px;
+        cursor: pointer;
+        background: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #555;
+        transition: 0.2s;
+        user-select: none;
+    }
+
+        .chip.active {
+            background: var(--primario);
+            color: white;
+            border-color: var(--primario);
+        }
+
+    /* Autocomplete */
+    .ac-wrap {
+        position: relative;
+        width: 100%;
+    }
+
+    .ac-list {
+        position: absolute;
+        z-index: 3000;
+        left: 0;
+        right: 0;
+        top: 100%;
+        background: #fff;
+        border: 1px solid var(--gris2);
+        border-radius: 10px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .ac-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f9f9f9;
+    }
+
+        .ac-item:hover {
+            background: #fff5f5;
+            color: var(--rojo);
+            font-weight: bold;
+        }
+
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    .row-low td {
+        background-color: #fff5f5 !important;
+        color: var(--rojo2);
+        font-weight: bold;
+    }
+
+    .fab {
+        position: fixed;
+        right: 30px;
+        bottom: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--rojo);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow: 0 10px 25px rgba(225, 37, 27, 0.4);
+        cursor: pointer;
+        z-index: 1050;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="hero d-flex flex-wrap justify-content-between align-items-center">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="font-weight-bold mb-1">Hub Central de Logística</h3>
+            <p class="mb-0 opacity-75">Gestión integral de EPP, Ropa y Medicamentos.</p>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center module-bodega" style="gap:15px; display:none;">
+            <div class="kpi"><div><div class="n" id="kpiPendAprob">0</div><small>Pend. Jefes</small></div></div>
+            <div class="kpi"><div><div class="n text-warning" id="kpiPendAtender">0</div><small>Bodega</small></div></div>
+            <div class="kpi"><div><div class="n text-danger" id="kpiBajo">0</div><small>Crítico</small></div></div>
+            <div class="ml-2 pl-3 border-left" style="border-color: rgba(255,255,255,0.2) !important;">
+                <label class="mb-1 text-white-50 small font-weight-bold d-block">BODEGA ACTIVA</label>
+                <select id="selAlm" class="form-control form-control-sm font-weight-bold border-0 shadow-sm" style="width:180px;"></select>
+            </div>
+        </div>
+    </div>
+
+    <ul id="menuTabs" class="nav nav-tabs sticky-tabs mb-4">
+        <li class="nav-item"><a class="nav-link active" data-target="#secSolic" href="#"><i class="fas fa-inbox mr-2"></i>Solicitudes Globales</a></li>
+        <li class="nav-item module-bodega" style="display:none;"><a class="nav-link" data-target="#secBodega" href="#"><i class="fas fa-truck-loading mr-2"></i>Monitor Despachos</a></li>
+        <li class="nav-item module-bodega" style="display:none;"><a class="nav-link" data-target="#secInv" href="#"><i class="fas fa-boxes mr-2"></i>Inventario Físico</a></li>
+        <li class="nav-item module-bodega" style="display:none;"><a class="nav-link" data-target="#secReg" href="#"><i class="fas fa-history mr-2"></i>Auditoría y Kardex</a></li>
+    </ul>
+
+    <div class="tab-content shell">
+
+        <div id="secSolic" class="tab-pane fade show active">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div id="chipsEstado">
+                    <span class="chip active" data-estado="Pendiente">Pendientes</span>
+                    <span class="chip" data-estado="Aprobada">Aprobadas</span>
+                    <span class="chip" data-estado="Parcial">Parciales</span>
+                    <span class="chip" data-estado="Atendida">Atendidas</span>
+                    <span class="chip" data-estado="Rechazada">Rechazadas</span>
+                    <span class="chip" data-estado="*">Todas</span>
+                </div>
+                <button id="btnNuevaSol" class="btn btn-danger font-weight-bold shadow-sm"><i class="fas fa-plus mr-1"></i> Crear Solicitud</button>
+            </div>
+            <div class="table-responsive">
+                <table id="tblSolic" class="table table-hover w-100"></table>
+            </div>
+        </div>
+
+        <div id="secBodega" class="tab-pane fade">
+            <div class="mb-3">
+                <button id="btnSalidaDir" class="btn btn-dark font-weight-bold mr-2"><i class="fas fa-dolly mr-1"></i> Salida Directa</button>
+                <button id="btnTransfer" class="btn btn-outline-secondary font-weight-bold"><i class="fas fa-exchange-alt mr-1"></i> Trasladar Stock</button>
+            </div>
+            <div class="table-responsive">
+                <table id="tblBod" class="table table-hover w-100"></table>
+            </div>
+        </div>
+
+        <div id="secInv" class="tab-pane fade">
+            <div class="d-flex justify-content-between mb-3">
+                <div class="d-flex gap-2">
+                    <div class="chip active" data-filtro="tipo:*">Todos</div>
+                    <div class="chip" data-filtro="tipo:ROPA">Ropa</div>
+                    <div class="chip" data-filtro="tipo:EPP">EPP</div>
+                    <div class="chip" data-filtro="tipo:MEDICAMENTO">Medicinas</div>
+                    <div class="chip text-danger border-danger" data-filtro="min:1">Ver Críticos</div>
+                </div>
+                <button id="btnNewArt" class="btn btn-danger font-weight-bold"><i class="fas fa-box-open mr-1"></i> Nuevo SKU</button>
+            </div>
+            <div class="table-responsive">
+                <table id="tblInvVar" class="table table-hover w-100"></table>
+            </div>
+        </div>
+
+        <div id="secReg" class="tab-pane fade">
+            <div class="bg-light p-3 rounded border mb-3">
+                <div class="row align-items-end">
+                    <div class="col-md-2"><label class="small font-weight-bold">Desde</label><input type="date" id="fDesde" class="form-control form-control-sm"></div>
+                    <div class="col-md-2"><label class="small font-weight-bold">Hasta</label><input type="date" id="fHasta" class="form-control form-control-sm"></div>
+                    <div class="col-md-5">
+                        <label class="small font-weight-bold">Filtrar por Empleado</label>
+                        <input id="fEmpTxt" class="form-control form-control-sm" placeholder="Nombre o carnet...">
+                        <input type="hidden" id="fEmp">
+                    </div>
+                    <div class="col-md-3">
+                        <button id="btnRegBuscar" class="btn btn-primary btn-sm btn-block font-weight-bold shadow-sm">Buscar Historial</button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive"><table id="tblReg" class="table table-hover w-100"></table></div>
+        </div>
+    </div>
+</div>
+
+<div class="fab" id="fabNueva" title="Nueva Solicitud (N)"><i class="fas fa-plus"></i></div>
+
+<div class="modal fade" id="mdlNuevaSol" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-file-alt text-danger mr-2"></i>Nueva Solicitud</h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body bg-light">
+                <form id="frmNuevaSol" autocomplete="off">
+                    <div class="row mb-3">
+                        <div class="form-group col-md-5">
+                            <label class="small font-weight-bold">BUSCAR EMPLEADO</label>
+                            <input id="nsEmpTxt" class="form-control border-primary" placeholder="Escriba nombre o carnet..." />
+                            <input type="hidden" id="nsEmpCarnet" />
+                        </div>
+                        <div class="form-group col-md-7">
+                            <label class="small font-weight-bold">MOTIVO / OBSERVACIÓN</label>
+                            <input id="nsMotivo" class="form-control" placeholder="Escriba motivo..." />
+                        </div>
+                    </div>
+                    <div class="bg-white p-3 rounded border mb-3 shadow-sm">
+                        <div class="row align-items-end">
+                            <div class="form-group col-md-5 mb-0"><label class="small font-weight-bold">BUSCAR ARTÍCULO</label><input id="nsArt" class="form-control border-primary" placeholder="Código o descripción..." /><input type="hidden" id="nsIdArt" /></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold">TALLA</label><select id="nsTalla" class="form-control"></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold">SEXO</label><select id="nsSexo" class="form-control"></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold">CANT</label><input id="nsCant" type="number" class="form-control text-center font-weight-bold" value="1" /></div>
+                            <div class="form-group col-md-1 mb-0"><button type="button" id="btnAddNS" class="btn btn-dark btn-block shadow-sm"><i class="fas fa-plus"></i></button></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive bg-white border rounded">
+                        <table class="table table-sm mb-0" id="tblNS">
+                            <thead class="bg-light"><tr><th>Código</th><th>Descripción</th><th>Talla</th><th>Sexo</th><th class="text-center">Cant</th><th></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="text-right mt-4">
+                        <button type="button" class="btn btn-light border mr-2" data-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-danger px-5 shadow font-weight-bold">Guardar Solicitud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlSalida" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-dark text-white border-0"><h5 class="modal-title font-weight-bold"><i class="fas fa-dolly mr-2"></i> Registro de Salida Directa</h5><button class="close text-white" data-dismiss="modal">&times;</button></div>
+            <form id="frmSalida" autocomplete="off">
+                <div class="modal-body bg-light" style="min-height:450px;">
+                    <div class="row bg-white p-3 rounded shadow-sm border mb-3 mx-0">
+                        <div class="form-group col-md-6 mb-0">
+                            <label class="small font-weight-bold">EMPLEADO QUE RECIBE</label>
+                            <input id="sdEmpTxt" class="form-control font-weight-bold text-primary border-primary" placeholder="Buscar..." />
+                            <input type="hidden" id="sdEmp" />
+                        </div>
+                        <div class="form-group col-md-6 mb-0"><label class="small font-weight-bold">COMENTARIO / JUSTIFICACIÓN</label><input id="sdObsGlobal" class="form-control" placeholder="Motivo de la entrega exprés..." /></div>
+                    </div>
+                    <div class="bg-white p-3 rounded shadow-sm border mb-3">
+                        <div class="row align-items-end">
+                            <div class="form-group col-md-5 mb-0"><label class="small font-weight-bold">ARTÍCULO</label><input id="sdArt" class="form-control border-danger" placeholder="Código o nombre…" /><input type="hidden" id="sdIdArt" /></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold">TALLA</label><select id="sdTalla" class="form-control"></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold">SEXO</label><select id="sdSexo" class="form-control"></select></div>
+                            <div class="form-group col-md-2 mb-0"><label class="small font-weight-bold">CANT</label><input id="sdCant" type="number" class="form-control text-center font-weight-bold" value="1" /></div>
+                            <div class="form-group col-md-1 mb-0"><button id="btnAddSD" type="button" class="btn btn-dark btn-block shadow-sm"><i class="fas fa-plus"></i></button></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive bg-white border rounded">
+                        <table class="table table-sm mb-0" id="tblSalDet">
+                            <thead class="bg-light text-muted"><tr><th class="pl-3">Código</th><th>Nombre</th><th>Variante</th><th class="text-center">Cant</th><th></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer"><button class="btn btn-danger btn-lg px-5 font-weight-bold shadow">Procesar Salida Inmediata</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlAtender" tabindex="-1" data-backdrop="static"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content shadow-lg"><div class="modal-header"><h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-box-open text-primary mr-2"></i> Despachar Insumos</h5><button class="close" data-dismiss="modal">&times;</button></div><div class="modal-body p-0 bg-light"><table class="table table-hover mb-0 bg-white" id="tblAtender"><thead class="bg-light small"><tr><th class="pl-3">Artículo</th><th>Variante</th><th class="text-center">Aprobado</th><th class="text-center">Ya Entregado</th><th class="text-center text-danger">Falta</th><th class="text-center bg-dark text-white">Stock</th><th class="text-center" style="width:120px">Cant. Entregar</th></tr></thead><tbody></tbody></table></div><div class="modal-footer d-flex justify-content-between"><button id="btnRechazarTodo" class="btn btn-outline-danger font-weight-bold">Rechazar Pendiente</button><div><button id="btnAuto" class="btn btn-dark font-weight-bold mr-2"><i class="fas fa-magic"></i> Auto-Completar</button><button id="btnDesp" class="btn btn-success font-weight-bold px-5 shadow">Despachar</button></div></div></div></div></div>
+<div class="modal fade" id="mdlTransfer" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content shadow-lg"><div class="modal-header bg-light"><h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-exchange-alt text-primary mr-2"></i> Traslado entre Almacenes</h5><button class="close" data-dismiss="modal">&times;</button></div><form id="frmTransfer"><div class="modal-body p-4"><div class="row mb-3"><div class="form-group col-6"><label class="small font-weight-bold">BODEGA ORIGEN</label><select id="trAlmOri" class="form-control font-weight-bold bg-light"></select></div><div class="form-group col-6"><label class="small font-weight-bold">BODEGA DESTINO</label><select id="trAlmDes" class="form-control font-weight-bold border-primary"></select></div></div><div class="form-group"><label class="small font-weight-bold">ARTÍCULO</label><input id="trArtTxt" class="form-control border-dark" placeholder="Buscar..." /><input type="hidden" id="trIdArt" /></div><div class="row"><div class="form-group col-4"><label class="small font-weight-bold">TALLA</label><select id="trTalla" class="form-control text-center"></select></div><div class="form-group col-4"><label class="small font-weight-bold">SEXO</label><select id="trSexo" class="form-control text-center"></select></div><div class="form-group col-4"><label class="small font-weight-bold">CANTIDAD</label><input id="trCant" type="number" class="form-control text-center font-weight-bold text-primary" value="1" /></div></div></div><div class="modal-footer"><button class="btn btn-dark btn-block btn-lg shadow font-weight-bold">Ejecutar Traslado</button></div></form></div></div></div>
+<div class="modal fade" id="mdlMov" tabindex="-1" data-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content shadow-lg border-0"><div class="modal-header bg-dark text-white pb-3"><h5 class="modal-title font-weight-bold" id="movTitle">Registro de Movimiento</h5><button class="close text-white" data-dismiss="modal">&times;</button></div><form id="frmMov"><div class="modal-body bg-light p-4"><input type="hidden" id="movTipo" /> <input type="hidden" id="movIdArt" /><div class="form-group"><input id="movArtTxt" class="form-control font-weight-bold text-center border-0 bg-white" disabled /></div><div class="row"><div class="form-group col-md-4"><label class="small font-weight-bold">TALLA</label><input id="movTalla" class="form-control text-center" readonly /></div><div class="form-group col-md-4"><label class="small font-weight-bold">SEXO</label><input id="movSexo" class="form-control text-center" readonly /></div><div class="form-group col-md-4"><label class="small font-weight-bold">CANTIDAD</label><input id="movCant" type="number" class="form-control text-center font-weight-bold text-primary" style="font-size:1.2rem" value="1" /></div></div><div class="row" id="grpLoteWrapper" style="display:none;"><div class="form-group col-md-6"><label class="small font-weight-bold">LOTE</label><input id="movLote" class="form-control" /></div><div class="form-group col-md-6"><label class="small font-weight-bold">VENCE</label><input id="movVenc" type="date" class="form-control" /></div></div><div class="form-group mb-0"><label class="small font-weight-bold">MOTIVO / COMENTARIO</label><textarea id="movCom" class="form-control" rows="2"></textarea></div></div><div class="modal-footer border-0 p-4 pt-0 bg-light"><button class="btn btn-dark btn-block btn-lg font-weight-bold shadow-sm" id="btnSavMov">Procesar Transacción</button></div></form></div></div></div>
+<div class="modal fade" id="mdlDetalle" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content shadow"><div class="modal-header"><h5 class="modal-title font-weight-bold">Detalle de Solicitud</h5><button class="close" data-dismiss="modal">&times;</button></div><div class="modal-body p-0"><table class="table table-hover mb-0" id="tblDetalle"><thead class="bg-light small text-muted text-uppercase"><tr><th class="pl-3">Artículo</th><th>Variante</th><th class="text-center">Pedido</th><th class="text-center text-success">Faltante</th></tr></thead><tbody></tbody></table></div></div></div></div>
+
+@section scripts{
+    <script>
+        $.ajaxSetup({ cache:false });
+
+        const esBodeguero = @(esBodeguero.ToString().ToLower());
+        if(esBodeguero) $('.module-bodega').show();
+
+        const URLS = {
+            almacenes: '@Url.Action("Almacenes","Inventario")', articulos: '@Url.Action("Articulos","Inventario")',
+            empleados: '@Url.Action("Empleados","Inventario")', inventario: '@Url.Action("Inventario","Inventario")',
+            variantes: '@Url.Action("ArticuloVariantes","Inventario")', invMov: '@Url.Action("InventarioMovimiento","Inventario")',
+            movHist: '@Url.Action("MovHist","Inventario")', solicitudes: '@Url.Action("Solicitudes","Inventario")',
+            soliCrear: '@Url.Action("SolicitudesCrear","Inventario")', soliApr: '@Url.Action("SolicitudesAprobar","Inventario")',
+            soliRech: '@Url.Action("SolicitudesRechazar","Inventario")', solDetalle: '@Url.Action("SolicitudDetalle","Inventario")',
+            bodPend: '@Url.Action("BodegaPendientes","Inventario")', bodDesp: '@Url.Action("BodegaDespachar","Inventario")',
+            bodSalidaDir: '@Url.Action("BodegaSalidaDirecta","Inventario")', movList: '@Url.Action("MovimientosListado","Inventario")',
+            transferir: '@Url.Action("Transferir","Inventario")'
+        };
+
+        const DT_ES = { sProcessing:"Procesando...", sLengthMenu:"Ver _MENU_", sZeroRecords:"No hay resultados", sEmptyTable:"Sin registros", sInfo:"_START_-_END_ de _TOTAL_", sInfoEmpty:"0-0 de 0", oPaginate:{sFirst:"<<", sLast:">>", sNext:">", sPrevious:"<"}, buttons:{colvis:"Cols", excel:"Excel"} };
+
+        function ok(t){ Swal.fire({toast:true,position:'top-end',icon:'success',title:t,timer:1500,showConfirmButton:false}); }
+        function err(t){ Swal.fire({toast:true,position:'top-end',icon:'error',title:t,timer:2500,showConfirmButton:false}); }
+        function loading(v){ v?$.LoadingOverlay("show"):$.LoadingOverlay("hide"); }
+        const getJson=(u,d)=>$.ajax({url:u,type:'GET',data:d,dataType:'json'});
+        const post=(u,d)=>$.ajax({url:u,type:'POST',data:d,dataType:'json'});
+        function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+        function fmt(d){ return d ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; }
+
+        let ALM=1, ALMS=[], ART=[], EMP=[];
+        let DT_Solic=null, DT_Bod=null, DT_InvVar=null, DT_Reg=null;
+        let filtroEstadoSolic = 'Pendiente', filtroTipo='*', filtroMin=0;
+        let NS_DET=[], SD_DET=[], BOD_LAST_ID=null;
+
+        const TALLAS_ROPA = ['S','M','L','XL','XXL','38','40','42','44','36','37','39','41','43','45','UNI'];
+        const SEXOS_ROPA = ['M','F','N'];
+
+        function buildAc($input, sourceFn, onPick){
+            if ($input.parent().hasClass('ac-wrap')) return;
+            const wrap=$('<div class="ac-wrap"></div>'), list=$('<div class="ac-list"></div>');
+            $input.wrap(wrap).addClass('ac-input').attr('autocomplete','off').after(list);
+            $input.on('input focus', ()=>{
+                const items = sourceFn(norm($input.val())).slice(0,50);
+                if(!items.length){ list.hide(); return; }
+                list.html(items.map(it=>`<div class="ac-item" data-id="${it.id}">${it.txt}</div>`).join('')).show();
+            });
+            $(document).on('click', e=>{ if(!$(e.target).closest(list).length && e.target!==$input[0]) list.hide(); });
+            list.on('click','.ac-item', function(){ onPick({id:$(this).data('id'), txt:$(this).text()}); list.hide(); });
+        }
+
+        function updateVariantes(idArt, $tallaSelect, $sexoSelect){
+            const art = ART.find(x => x.IdArticulo === idArt);
+            const tipo = art ? art.Tipo.toUpperCase() : '';
+            getJson(URLS.variantes, { idArticulo: idArt, idAlmacen: ALM }).done(r => {
+                const vars = r.data || [];
+                let t = [...new Set(vars.map(v => v.Talla).filter(Boolean))];
+                let s = [...new Set(vars.map(v => v.Sexo).filter(Boolean))];
+                if((tipo==='ROPA'||tipo==='EPP') && t.length===0) t = TALLAS_ROPA;
+                if((tipo==='ROPA'||tipo==='EPP') && s.length===0) s = SEXOS_ROPA;
+                if(t.length===0) t = ['UNI']; if(s.length===0) s = ['N'];
+                $tallaSelect.html(t.map(x => `<option value="${x}">${x}</option>`).join(''));
+                $sexoSelect.html(s.map(x => `<option value="${x}">${x}</option>`).join(''));
+            });
+        }
+
+        function bindSolic(){
+            if($.fn.DataTable.isDataTable('#tblSolic')){ DT_Solic.ajax.reload(); return; }
+            DT_Solic=$('#tblSolic').DataTable({
+                ajax:(d,cb)=>{ loading(true); getJson(URLS.solicitudes, {estado: filtroEstadoSolic}).done(r=>cb({data:r.data||[]})).always(()=>loading(false)); },
+                language:DT_ES, columns:[
+                    {title:'Id',data:'IdSolicitud',width:60}, {title:'Fecha',data:'FechaCreacion',render:fmt},
+                    {title:'Gerencia',data:'Gerencia'}, {title:'Empleado',data:'Empleado'},
+                    {title:'Estado',data:'Estado',render:s=>{
+                        const cls = s==='Pendiente'?'warning':s==='Aprobada'?'primary':s==='Parcial'?'info':'success';
+                        return `<span class="badge badge-${cls}">${s}</span>`;
+                    }},
+                    {title:'Motivo',data:'Motivo'},
+                    {title:'Acciones',data:null,orderable:false,render:r=>{
+                        let h = `<button class="btn btn-sm btn-dark act-detalle" data-id="${r.IdSolicitud}"><i class="fas fa-eye"></i></button> `;
+                        if(esBodeguero && r.Estado==='Pendiente') h += `<button class="btn btn-sm btn-success act-aprobar" data-id="${r.IdSolicitud}"><i class="fas fa-check"></i></button>`;
+                        return h;
+                    }}
+                ]
+            });
+        }
+
+        function bindBod(){
+            if($.fn.DataTable.isDataTable('#tblBod')){ DT_Bod.ajax.reload(); return; }
+            DT_Bod=$('#tblBod').DataTable({
+                ajax:{ url:URLS.bodPend, dataSrc:'data' }, language:DT_ES, columns:[
+                    {title:'Id',data:'IdSolicitud',width:60}, {title:'Fecha',data:'FechaCreacion',render:fmt},
+                    {title:'Gerencia',data:'Gerencia'}, {title:'Empleado',data:'Empleado'},
+                    {title:'Acciones',data:null,render:r=>`
+                        <button class="btn btn-sm btn-light border act-det" data-id="${r.IdSolicitud}"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-danger act-open" data-id="${r.IdSolicitud}"><i class="fas fa-box-open mr-1"></i> Atender</button>`}
+                ]
+            });
+        }
+
+        function bindInvVar(){
+            if($.fn.DataTable.isDataTable('#tblInvVar')){ DT_InvVar.ajax.reload(); return; }
+            DT_InvVar=$('#tblInvVar').DataTable({
+                ajax:(d,cb)=>{ loading(true); getJson(URLS.inventario,{idAlmacen:ALM}).done(r=>cb({data:r.data||[]})).always(()=>loading(false)); },
+                language:DT_ES, columns:[
+                    {title:'Código',data:'Codigo', className:'font-weight-bold'}, {title:'Nombre',data:'Nombre'},
+                    {title:'Tipo',data:'Tipo', render:t=>`<span class="badge badge-light border">${t || 'GENERAL'}</span>`},
+                    {title:'Variante',data:null,render:r=>`${r.Talla} / ${r.Sexo}`},
+                    {title:'Stock',data:'StockActual', className:'text-center font-weight-bold text-primary'},
+                    {title:'Acciones',data:null, className:'text-center', render:()=>`
+                        <div class="dropdown"><button class="btn btn-sm btn-light border dropdown-toggle font-weight-bold shadow-sm" type="button" data-toggle="dropdown">Opciones</button>
+                          <div class="dropdown-menu dropdown-menu-right shadow border-0"><a class="dropdown-item act-entr text-success font-weight-bold" href="#"><i class="fas fa-arrow-up mr-2"></i> Entrada</a><a class="dropdown-item act-merm text-danger font-weight-bold" href="#"><i class="fas fa-arrow-down mr-2"></i> Merma</a></div>
+                        </div>`}
+                ],
+                createdRow:(row,d)=>{ if(d.StockActual <= d.StockMinimo) $(row).addClass('row-low'); }
+            });
+        }
+
+        $(function(){
+            $.when(
+                esBodeguero ? getJson(URLS.almacenes).done(r=>{ ALMS=r.data||[]; $('#selAlm,#trAlmOri,#trAlmDes').html(ALMS.map(a=>`<option value="${a.IdAlmacen}">${a.Nombre}</option>`).join('')); if(ALMS.length) ALM = ALMS[0].IdAlmacen; }) : true,
+                getJson(URLS.articulos).done(r=>ART=r.data||[]),
+                getJson(URLS.empleados).done(r=>EMP=r.data||[])
+            ).always(()=>{
+                // Autocompletes Universales
+                buildAc($('#nsEmpTxt'), q=>EMP.filter(e=>norm(e.Id+' '+e.Txt).includes(q)).map(e=>({id:e.Id, txt:`${e.Id} · ${e.Txt}`})), p=>{$('#nsEmpTxt').val(p.txt); $('#nsEmpCarnet').val(p.id);});
+                buildAc($('#sdEmpTxt'), q=>EMP.filter(e=>norm(e.Id+' '+e.Txt).includes(q)).map(e=>({id:e.Id, txt:`${e.Id} · ${e.Txt}`})), p=>{$('#sdEmpTxt').val(p.txt); $('#sdEmp').val(p.id);});
+                buildAc($('#fEmpTxt'), q=>EMP.filter(e=>norm(e.Id+' '+e.Txt).includes(q)).map(e=>({id:e.Id, txt:`${e.Id} · ${e.Txt}`})), p=>{$('#fEmpTxt').val(p.txt); $('#fEmp').val(p.id);});
+
+                buildAc($('#nsArt'), q=>ART.filter(a=>norm(a.Codigo+' '+a.Nombre).includes(q)).map(a=>({id:a.IdArticulo, txt:`${a.Codigo} · ${a.Nombre} (${a.Tipo})`})), p=>{$('#nsArt').val(p.txt); $('#nsIdArt').val(p.id); updateVariantes(p.id, $('#nsTalla'), $('#nsSexo'));});
+                buildAc($('#sdArt'), q=>ART.filter(a=>norm(a.Codigo+' '+a.Nombre).includes(q)).map(a=>({id:a.IdArticulo, txt:`${a.Codigo} · ${a.Nombre}`})), p=>{$('#sdArt').val(p.txt); $('#sdIdArt').val(p.id); updateVariantes(p.id, $('#sdTalla'), $('#sdSexo'));});
+                buildAc($('#trArtTxt'), q=>ART.filter(a=>norm(a.Codigo+' '+a.Nombre).includes(q)).map(a=>({id:a.IdArticulo, txt:`${a.Codigo} · ${a.Nombre}`})), p=>{$('#trArtTxt').val(p.txt); $('#trIdArt').val(p.id); updateVariantes(p.id, $('#trTalla'), $('#trSexo'));});
+
+                const firstTab = localStorage.getItem('lastTab') || 'secSolic';
+                $('a.nav-link[data-target]').on('click', function(e){
+                    e.preventDefault(); const tgt=$(this).data('target');
+                    $('.nav-link').removeClass('active'); $(this).addClass('active');
+                    $('.tab-pane').removeClass('show active'); $(tgt).addClass('show active');
+                    if(tgt==='#secSolic') bindSolic(); if(tgt==='#secBodega') bindBod(); if(tgt==='#secInv') bindInvVar(); if(tgt==='#secReg') bindRegistro();
+                    localStorage.setItem('lastTab', tgt.substring(1));
+                });
+                $(`.nav-link[data-target="#${esBodeguero ? firstTab : 'secSolic'}"]`).trigger('click');
+
+                $('#chipsEstado .chip').on('click', function(){
+                    $('#chipsEstado .chip').removeClass('active'); $(this).addClass('active');
+                    filtroEstadoSolic = $(this).data('estado'); if(DT_Solic) DT_Solic.ajax.reload();
+                });
+
+                $('#selAlm').on('change', function(){ ALM=+this.value; bindInvVar(); kpis(); });
+                $('#btnRegBuscar').on('click', function(){ if(DT_Reg) DT_Reg.ajax.reload(); });
+
+                kpis();
+            });
+
+            // Handlers
+            $(document).on('click', '.act-aprobar', function(){ post(URLS.soliApr, {id: $(this).data('id')}).done(r=> { ok('Aprobada'); DT_Solic.ajax.reload(); kpis(); }); })
+            .on('click', '.act-detalle, .act-det', function(){
+                getJson(URLS.solDetalle, {id: $(this).data('id'), idAlmacen:ALM}).done(r=>{
+                    const rows = (r.data||[]).map(x=>`<tr><td><strong>${x.Codigo}</strong><br>${x.Nombre}</td><td>${x.Talla} / ${x.Sexo}</td><td class="text-center">${x.Cantidad}</td><td class="text-center text-danger font-weight-bold">${x.Cantidad-x.Entregado}</td></tr>`).join('');
+                    $('#tblDetalle tbody').html(rows); $('#mdlDetalle').modal('show');
+                });
+            })
+            .on('click', '.act-open', function(){
+                BOD_LAST_ID = $(this).data('id');
+                getJson(URLS.solDetalle, {id: BOD_LAST_ID, idAlmacen: ALM}).done(r=>{
+                    const rows = (r.data||[]).map(x=>`<tr data-id="${x.IdDetalle}" data-pend="${x.Cantidad-x.Entregado}" data-stock="${x.Stock}"><td><strong>${x.Codigo}</strong></td><td>${x.Talla}/${x.Sexo}</td><td class="text-center">${x.Cantidad}</td><td class="text-center">${x.Entregado}</td><td class="text-center text-danger font-weight-bold">${x.Cantidad-x.Entregado}</td><td class="text-center bg-dark text-white">${x.Stock}</td><td><input type="number" class="form-control text-center inp-entregar" value="0" min="0" max="${x.Cantidad-x.Entregado}"></td></tr>`).join('');
+                    $('#tblAtender tbody').html(rows); $('#mdlAtender').modal('show');
+                });
+            })
+            .on('click', '.act-entr, .act-merm', function(e){
+                e.preventDefault(); const row = DT_InvVar.row($(this).closest('tr')).data();
+                $('#movTipo').val($(this).hasClass('act-entr')?'ENTRADA':'MERMA'); $('#movTitle').text($(this).hasClass('act-entr')?'Entrada':'Merma');
+                $('#movIdArt').val(row.IdArticulo); $('#movArtTxt').val(row.Nombre); $('#movTalla').val(row.Talla); $('#movSexo').val(row.Sexo);
+                $('#grpLoteWrapper').toggle(row.Tipo === 'MEDICAMENTO'); $('#mdlMov').modal('show');
+            })
+            .on('click', '#btnAddNS', function(){
+                const id = +$('#nsIdArt').val(); if(!id) return err('Seleccione artículo');
+                const art = ART.find(x=>x.IdArticulo===id);
+                NS_DET.push({IdArticulo:id, Codigo:art.Codigo, Nombre:art.Nombre, Talla:$('#nsTalla').val(), Sexo:$('#nsSexo').val(), Cantidad:+$('#nsCant').val()});
+                ns_render(); $('#nsArt,#nsIdArt').val('');
+            })
+            .on('submit', '#frmNuevaSol', function(e){
+                e.preventDefault(); if(!$('#nsEmpCarnet').val() || !NS_DET.length) return err('Complete los datos');
+                loading(true); post(URLS.soliCrear, {carnetEmpleado: $('#nsEmpCarnet').val(), motivo: $('#nsMotivo').val(), detallesJson: JSON.stringify(NS_DET)}).done(r=>{ ok('Enviada'); $('#mdlNuevaSol').modal('hide'); DT_Solic.ajax.reload(); kpis(); }).always(()=>loading(false));
+            })
+            .on('click', '#btnAuto', function(){ $('#tblAtender tbody tr').each(function(){ $(this).find('.inp-entregar').val(Math.min(+$(this).data('pend'), +$(this).data('stock'))); }); })
+            .on('click', '#btnDesp', function(){
+                const det = []; $('#tblAtender tbody tr').each(function(){ const n = +$(this).find('.inp-entregar').val(); if(n > 0) det.push({IdDetalle: $(this).data('id'), Entregar: n}); });
+                if(!det.length) return err('Indique cantidades');
+                loading(true); post(URLS.bodDesp, {idAlmacen: ALM, id: BOD_LAST_ID, despachoJson: JSON.stringify(det)}).done(r=>{ ok('Despacho Exitoso'); $('#mdlAtender').modal('hide'); DT_Bod.ajax.reload(); DT_InvVar.ajax.reload(); kpis(); }).always(()=>loading(false));
+            });
+
+            function ns_render(){
+                $('#tblNS tbody').html(NS_DET.map((x,i)=>`<tr><td>${x.Codigo}</td><td>${x.Nombre}</td><td>${x.Talla}</td><td>${x.Sexo}</td><td class="text-center">${x.Cantidad}</td><td><button type="button" class="btn btn-sm text-danger" onclick="NS_DET.splice(${i},1); ns_render();"><i class="fas fa-times"></i></button></td></tr>`).join(''));
+            }
+        });
+    </script>
+}

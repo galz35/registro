@@ -1,0 +1,406 @@
+================================================================================
+📄 DOCUMENTO MAESTRO: DISEÑO DE BASE DE DATOS AVANZADO (SQL SERVER)
+================================================================================
+Archivo: sql.txt
+Ubicación: d:\PROYECTOS_PORTAL\asistencia\documentacion\sql.txt
+Motor de BD: Microsoft SQL Server 2016 o superior
+================================================================================
+
+Este archivo contiene el diseño físico de base de datos de nivel empresarial
+para el sistema de Asistencia y Despacho del Día del Niño. Implementa:
+1. Tablas Temporales Versionadas por el Sistema (System-Versioned Temporal Tables)
+   para el historial completo del inventario.
+2. Índices Filtrados Únicos (Filtered Unique Indexes) contra doble entrega.
+3. Procedimientos Almacenados Transaccionales con Control de Concurrencia
+   pesimista (UPDLOCK, ROWLOCK) y captura de errores (TRY/CATCH).
+4. Vistas Optimizadas para el Dashboard.
+5. Scripts de Mantenimiento de Índices.
+
+--------------------------------------------------------------------------------
+1. CONFIGURACIÓN INICIAL DE LA BASE DE DATOS
+--------------------------------------------------------------------------------
+USE master;
+GO
+
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'DIA_NINO2013')
+BEGIN
+    CREATE DATABASE DIA_NINO2013;
+END;
+GO
+
+USE DIA_NINO2013;
+GO
+
+-- Configurar aislamiento de instantáneas para lecturas no bloqueantes
+ALTER DATABASE DIA_NINO2013 SET ALLOW_SNAPSHOT_ISOLATION ON;
+ALTER DATABASE DIA_NINO2013 SET READ_COMMITTED_SNAPSHOT ON;
+GO
+
+--------------------------------------------------------------------------------
+2. CREACIÓN DE TABLAS MAESTRAS Y TEMPORALES VERSIONADAS
+--------------------------------------------------------------------------------
+
+-- A. Tabla de Colaboradores (Maestro)
+CREATE TABLE dbo.tblColaboradores (
+    Carnet VARCHAR(50) NOT NULL,
+    Nombre VARCHAR(250) NOT NULL,
+    Gerencia VARCHAR(250) NULL,
+    Ubicacion VARCHAR(250) NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Colaboradores_Activo DEFAULT (1),
+    FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_Colaboradores_FechaReg DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_Colaboradores PRIMARY KEY CLUSTERED (Carnet ASC)
+);
+GO
+
+-- B. Tabla de Catálogo de Juguetes (VERSIONADA POR EL SISTEMA)
+-- Permite auditar qué usuario cambió el stock o la foto y consultar el inventario 
+-- en cualquier punto del tiempo (AS OF) de forma nativa por SQL Server.
+CREATE TABLE dbo.tblCatalogoJuguetes (
+    Id INT IDENTITY(1,1) NOT NULL,
+    Categoria VARCHAR(100) NOT NULL,
+    Genero VARCHAR(10) NOT NULL,
+    NombreJuguete VARCHAR(250) NOT NULL,
+    StockInicial INT NOT NULL,
+    StockActual INT NOT NULL,
+    FotoUrl VARCHAR(500) NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_CatalogoJuguetes_Activo DEFAULT (1),
+    
+    -- Campos requeridos para el versionado de sistema
+    SysStartTime DATETIME2(0) GENERATED ALWAYS AS ROW START NOT NULL,
+    SysEndTime DATETIME2(0) GENERATED ALWAYS AS ROW END NOT NULL,
+    PERIOD FOR SYSTEM_TIME (SysStartTime, SysEndTime),
+
+    CONSTRAINT PK_CatalogoJuguetes PRIMARY KEY CLUSTERED (Id ASC),
+    CONSTRAINT CK_CatalogoJuguetes_Genero CHECK (Genero IN ('M', 'F', 'TODOS')),
+    CONSTRAINT CK_CatalogoJuguetes_Stock CHECK (StockActual >= 0)
+)
+WITH (
+    SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.tblCatalogoJuguetes_History)
+);
+GO
+
+-- C. Tabla de Registro de Hijos
+CREATE TABLE dbo.tblHijos (
+    Id INT IDENTITY(1,1) NOT NULL,
+    CarnetColaborador VARCHAR(50) NOT NULL,
+    NombreHijo VARCHAR(250) NOT NULL,
+    EdadHijo DECIMAL(18,2) NOT NULL,
+    GeneroHijo VARCHAR(10) NOT NULL,
+    Categoria VARCHAR(100) NOT NULL,
+    CONSTRAINT PK_Hijos PRIMARY KEY CLUSTERED (Id ASC),
+    CONSTRAINT FK_Hijos_Colaboradores FOREIGN KEY (CarnetColaborador) 
+        REFERENCES dbo.tblColaboradores(Carnet) ON DELETE CASCADE,
+    CONSTRAINT CK_Hijos_Genero CHECK (GeneroHijo IN ('M', 'F'))
+);
+GO
+
+-- D. Tabla de Asistencia de Colaboradores al Evento
+CREATE TABLE dbo.tblAsistenciaEventos (
+    Id INT IDENTITY(1,1) NOT NULL,
+    CarnetColaborador VARCHAR(50) NOT NULL,
+    EventId INT NOT NULL,
+    FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_Asistencia_Fecha DEFAULT (SYSUTCDATETIME()),
+    RegistradoPor VARCHAR(100) NOT NULL,
+    CONSTRAINT PK_Asistencia PRIMARY KEY CLUSTERED (Id ASC),
+    CONSTRAINT FK_Asistencia_Colaboradores FOREIGN KEY (CarnetColaborador) 
+        REFERENCES dbo.tblColaboradores(Carnet) ON DELETE CASCADE
+);
+GO
+
+-- E. Tabla de Auditoría y Registro de Entregas (Despacho)
+CREATE TABLE dbo.tblEntregasJuguetes (
+    Id INT IDENTITY(1,1) NOT NULL,
+    HijoId INT NOT NULL,
+    JugueteId INT NOT NULL,
+    CarnetColaborador VARCHAR(50) NOT NULL,
+    Estado VARCHAR(20) NOT NULL, -- 'DELIVERED', 'REVERTED'
+    RecibidoPor VARCHAR(20) NOT NULL, -- 'COLABORADOR', 'CONYUGE', 'TERCERO'
+    NombreReceptor VARCHAR(250) NULL,
+    FotoEvidenciaUrl VARCHAR(500) NULL,
+    FechaEntrega DATETIME2(0) NOT NULL CONSTRAINT DF_Entregas_Fecha DEFAULT (SYSUTCDATETIME()),
+    UsuarioDespacho VARCHAR(100) NOT NULL,
+    FechaReversion DATETIME2(0) NULL,
+    UsuarioReversion VARCHAR(100) NULL,
+    MotivoReversion VARCHAR(500) NULL,
+    
+    CONSTRAINT PK_Entregas PRIMARY KEY CLUSTERED (Id ASC),
+    CONSTRAINT FK_Entregas_Hijos FOREIGN KEY (HijoId) REFERENCES dbo.tblHijos(Id),
+    CONSTRAINT FK_Entregas_Catalogo FOREIGN KEY (JugueteId) REFERENCES dbo.tblCatalogoJuguetes(Id),
+    CONSTRAINT FK_Entregas_Colaboradores FOREIGN KEY (CarnetColaborador) REFERENCES dbo.tblColaboradores(Carnet),
+    CONSTRAINT CK_Entregas_Estado CHECK (Estado IN ('DELIVERED', 'REVERTED')),
+    CONSTRAINT CK_Entregas_Recibido CHECK (RecibidoPor IN ('COLABORADOR', 'CONYUGE', 'TERCERO'))
+);
+GO
+
+--------------------------------------------------------------------------------
+3. ESTRATEGIA DE INDIZACIÓN AVANZADA
+--------------------------------------------------------------------------------
+
+-- Índice no agrupado en Hijos para búsquedas de carnet rápidas
+CREATE NONCLUSTERED INDEX IX_Hijos_CarnetColaborador 
+ON dbo.tblHijos(CarnetColaborador ASC)
+INCLUDE (NombreHijo, EdadHijo, GeneroHijo, Categoria);
+GO
+
+-- Índice no agrupado en Asistencia
+CREATE NONCLUSTERED INDEX IX_Asistencia_CarnetColaborador 
+ON dbo.tblAsistenciaEventos(CarnetColaborador ASC)
+INCLUDE (FechaRegistro, EventId);
+GO
+
+-- Índice Único Filtrado Crítico: Evita la inserción de múltiples entregas activas
+-- para el mismo hijo a nivel de motor de base de datos.
+CREATE UNIQUE NONCLUSTERED INDEX UX_Entregas_HijoActivo
+ON dbo.tblEntregasJuguetes(HijoId ASC)
+WHERE Estado = 'DELIVERED';
+GO
+
+-- Índice de Catálogo para optimizar búsquedas por categoría y género
+CREATE NONCLUSTERED INDEX IX_CatalogoJuguetes_Busqueda 
+ON dbo.tblCatalogoJuguetes(Categoria ASC, Genero ASC)
+INCLUDE (NombreJuguete, StockActual, FotoUrl)
+WHERE Activo = 1;
+GO
+
+--------------------------------------------------------------------------------
+4. VISTAS OPTIMIZADAS PARA EL DASHBOARD EN TIEMPO REAL
+--------------------------------------------------------------------------------
+
+-- Vista 1: Resumen de Inventario por Rango de Edad y Género
+CREATE OR ALTER VIEW dbo.vw_ResumenInventario
+AS
+SELECT 
+    c.Id AS JugueteId,
+    c.Categoria,
+    c.Genero,
+    c.NombreJuguete,
+    c.StockInicial,
+    c.StockActual,
+    c.StockInicial - c.StockActual AS Entregados,
+    CAST(ROUND((CAST((c.StockInicial - c.StockActual) AS FLOAT) / NULLIF(c.StockInicial, 0)) * 100, 2) AS DECIMAL(5,2)) AS PorcentajeDespacho
+FROM dbo.tblCatalogoJuguetes c
+WHERE c.Activo = 1;
+GO
+
+-- Vista 2: Bitácora de Auditoría Consolidada para el Admin Web
+CREATE OR ALTER VIEW dbo.vw_BitacoraEntregas
+AS
+SELECT 
+    e.Id AS EntregaId,
+    col.Carnet AS ColaboradorCarnet,
+    col.Nombre AS ColaboradorNombre,
+    col.Gerencia AS ColaboradorGerencia,
+    h.NombreHijo AS HijoNombre,
+    h.EdadHijo AS HijoEdad,
+    h.GeneroHijo AS HijoGenero,
+    j.NombreJuguete,
+    e.Estado,
+    e.RecibidoPor,
+    COALESCE(e.NombreReceptor, col.Nombre) AS ReceptorFinal,
+    e.FotoEvidenciaUrl,
+    e.FechaEntrega,
+    e.UsuarioDespacho,
+    e.FechaReversion,
+    e.UsuarioReversion,
+    e.MotivoReversion
+FROM dbo.tblEntregasJuguetes e
+INNER JOIN dbo.tblHijos h ON e.HijoId = h.Id
+INNER JOIN dbo.tblColaboradores col ON e.CarnetColaborador = col.Carnet
+INNER JOIN dbo.tblCatalogoJuguetes j ON e.JugueteId = j.Id;
+GO
+
+--------------------------------------------------------------------------------
+5. PROCEDIMIENTOS ALMACENADOS CON CONTROL CONCURRENTE EXPLICITO
+--------------------------------------------------------------------------------
+
+-- Proc 1: Registrar Entrega con Bloqueo Físico (UPDLOCK, ROWLOCK)
+CREATE OR ALTER PROCEDURE dbo.sp_RegistrarEntrega
+    @HijoId INT,
+    @JugueteId INT,
+    @CarnetColaborador VARCHAR(50),
+    @RecibidoPor VARCHAR(20),
+    @NombreReceptor VARCHAR(250),
+    @FotoEvidenciaUrl VARCHAR(500),
+    @UsuarioDespacho VARCHAR(100),
+    @EntregaId INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON; -- Cancela y hace rollback inmediato si ocurre un error grave
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Bloqueo de fila pesimista e inserción de lectura segura del juguete
+        DECLARE @StockActual INT;
+        DECLARE @Activo BIT;
+
+        SELECT @StockActual = StockActual, @Activo = Activo
+        FROM dbo.tblCatalogoJuguetes WITH (UPDLOCK, ROWLOCK) -- Bloquea la fila del stock
+        WHERE Id = @JugueteId;
+
+        -- Validaciones
+        IF @Activo IS NULL OR @Activo = 0
+        BEGIN
+            THROW 51000, 'El juguete especificado no existe o no está activo en el catálogo.', 1;
+        END;
+
+        IF @StockActual <= 0
+        BEGIN
+            THROW 51001, 'No hay stock disponible para este juguete.', 1;
+        END;
+
+        -- 2. Verificar si el hijo ya recibió juguete activamente
+        IF EXISTS (SELECT 1 FROM dbo.tblEntregasJuguetes WHERE HijoId = @HijoId AND Estado = 'DELIVERED')
+        BEGIN
+            THROW 51002, 'Este hijo ya tiene una entrega registrada y activa.', 1;
+        END;
+
+        -- 3. Insertar la Entrega
+        INSERT INTO dbo.tblEntregasJuguetes (
+            HijoId, JugueteId, CarnetColaborador, Estado, RecibidoPor, 
+            NombreReceptor, FotoEvidenciaUrl, UsuarioDespacho
+        )
+        VALUES (
+            @HijoId, @JugueteId, @CarnetColaborador, 'DELIVERED', @RecibidoPor,
+            CASE WHEN @RecibidoPor = 'TERCERO' THEN @NombreReceptor ELSE NULL END,
+            @FotoEvidenciaUrl, @UsuarioDespacho
+        );
+
+        SET @EntregaId = SCOPE_IDENTITY();
+
+        -- 4. Actualizar el inventario
+        UPDATE dbo.tblCatalogoJuguetes
+        SET StockActual = StockActual - 1
+        WHERE Id = @JugueteId;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        -- Si hay una transacción activa, revertirla
+        IF @@TRANCOUNT > 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        -- Relanzar el error
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH;
+END;
+GO
+
+-- Proc 2: Reversar Entrega y Restaurar Inventario
+CREATE OR ALTER PROCEDURE dbo.sp_ReversarEntrega
+    @EntregaId INT,
+    @UsuarioReversion VARCHAR(100),
+    @MotivoReversion VARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @JugueteId INT;
+        DECLARE @Estado VARCHAR(20);
+
+        -- 1. Bloquear y leer la entrega
+        SELECT @JugueteId = JugueteId, @Estado = Estado
+        FROM dbo.tblEntregasJuguetes WITH (UPDLOCK, ROWLOCK)
+        WHERE Id = @EntregaId;
+
+        IF @Estado IS NULL
+        BEGIN
+            THROW 52000, 'La entrega especificada no existe.', 1;
+        END;
+
+        IF @Estado = 'REVERTED'
+        BEGIN
+            THROW 52001, 'Esta entrega ya se encuentra reversada.', 1;
+        END;
+
+        -- 2. Marcar la entrega como reversada con logs de auditoría
+        UPDATE dbo.tblEntregasJuguetes
+        SET Estado = 'REVERTED',
+            FechaReversion = SYSUTCDATETIME(),
+            UsuarioReversion = @UsuarioReversion,
+            MotivoReversion = @MotivoReversion
+        WHERE Id = @EntregaId;
+
+        -- 3. Restaurar stock (+1)
+        UPDATE dbo.tblCatalogoJuguetes
+        SET StockActual = StockActual + 1
+        WHERE Id = @JugueteId;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH;
+END;
+GO
+
+--------------------------------------------------------------------------------
+6. TAREAS DE MANTENIMIENTO: RECONSTRUCCIÓN DE ÍNDICES
+--------------------------------------------------------------------------------
+-- Script de mantenimiento para el programador del VPS (SQL Server Agent Job).
+-- Reconstruye o reorganiza los índices según el nivel de fragmentación.
+CREATE OR ALTER PROCEDURE dbo.sp_MantenimientoIndices
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @TableName VARCHAR(255);
+    DECLARE @IndexName VARCHAR(255);
+    DECLARE @Fragmentation FLOAT;
+    DECLARE @SQL NVARCHAR(MAX);
+
+    DECLARE IndexCursor CURSOR FOR
+    SELECT 
+        t.name AS TableName,
+        ind.name AS IndexName,
+        indexstats.avg_fragmentation_in_percent
+    FROM sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, NULL) indexstats
+    INNER JOIN sys.indexes ind ON ind.object_id = indexstats.object_id AND ind.index_id = indexstats.index_id
+    INNER JOIN sys.tables t ON t.object_id = indexstats.object_id
+    WHERE indexstats.avg_fragmentation_in_percent > 10.0 AND ind.name IS NOT NULL;
+
+    OPEN IndexCursor;
+    FETCH NEXT FROM IndexCursor INTO @TableName, @IndexName, @Fragmentation;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        IF @Fragmentation >= 30.0
+        BEGIN
+            -- Reconstrucción completa del índice (fragmentación alta)
+            SET @SQL = N'ALTER INDEX ' + QUOTENAME(@IndexName) + N' ON dbo.' + QUOTENAME(@TableName) + N' REBUILD;';
+        END
+        ELSE
+        BEGIN
+            -- Reorganización ligera del índice (fragmentación media)
+            SET @SQL = N'ALTER INDEX ' + QUOTENAME(@IndexName) + N' ON dbo.' + QUOTENAME(@TableName) + N' REORGANIZE;';
+        END;
+
+        EXEC sp_executesql @SQL;
+        FETCH NEXT FROM IndexCursor INTO @TableName, @IndexName, @Fragmentation;
+    END;
+
+    CLOSE IndexCursor;
+    DEALLOCATE IndexCursor;
+END;
+GO
+================================================================================
