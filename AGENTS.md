@@ -1,69 +1,71 @@
-# Reglas IA Del Proyecto Asistencia
+# Asistencia y Despacho de Juguetes - Dia del Nino
+# Contexto del proyecto para agentes IA
 
-Este proyecto usa las reglas de referencia clonadas en:
+## Stack
+- Backend: NestJS (mssql directo, sin ORM)
+- Frontend: React + Vite + Tailwind CSS
+- Movil: Flutter (pendiente)
+- BD: SQL Server
+- Infra: Linux VPS, Nginx, PM2
 
-- `/opt/apps/asistencia/configcode`
+## Reglas base
+- NO usar ORM (TypeORM, Prisma, etc.)
+- Usar mssql directo con queries parametrizadas
+- OUTPUT INSERTED en SQL Server (no RETURNING)
+- Secretos en .env, no hardcodeados
+- Imagenes en disco WebP, no Base64 en BD
+- Stock protegido con UPDLOCK, ROWLOCK
+- Colores: Rojo Claro #DA291C, Blanco, Gris, Negro. PROHIBIDO usar azul
 
-Antes de modificar codigo o documentacion, leer:
+## Estructura del proyecto
+/opt/apps/asistencia/registro/
+  database/       - Scripts SQL versionados
+  nest/           - Backend NestJS
+  react/          - Frontend React
+  flutter/        - App movil (pendiente)
+  documentacion/  - Docs tecnicos
+  Controllers/    - Legado ASP.NET MVC
+  Views/          - Vistas legado
+  *.xlsx          - Censo y catalogo fuentes
 
-- `/opt/apps/asistencia/configcode/rules/GOLDEN_RULES.md`
-- `/opt/apps/asistencia/registro/documentacion/09_diagnostico_integral_reinicio_implementacion.txt`
-- `/opt/apps/asistencia/registro/documentacion/10_plan_maestro_implementacion_perfecta.txt`
-- `/opt/apps/asistencia/registro/documentacion/11_diccionario_excel_y_reglas_migracion.txt`
-- `/opt/apps/asistencia/registro/documentacion/12_reglas_ia_configcode_aplicadas.txt`
+## Endpoints API (prefijo: /api)
+- POST /auth/sso-login
+- POST /auth/dev-login (solo desarrollo)
+- GET  /auth/me
+- GET  /attendance/lookup/:carnet?eventoId=
+- POST /attendance/register
+- GET  /attendance/event/:eventoId/summary
+- GET  /attendance/censo
+- POST /dispatch/deliver
+- GET  /dispatch/validate/:hijoId/:jugueteId?eventoId=
+- POST /dispatch/:entregaId/revert
+- GET  /dispatch/event/:eventoId/summary
+- GET  /catalog
+- POST /catalog
+- PUT  /catalog/:id
+- PATCH /catalog/:id/deactivate
+- POST /catalog/:id/photo
+- POST /imports/censo/validate
+- POST /imports/censo/apply
+- POST /imports/catalogo/validate
+- POST /imports/catalogo/apply
+- GET  /imports/:id/errors
+- GET  /reports/entregas.csv
+- GET  /reports/pendientes.csv
+- GET  /reports/inventario.csv
 
-## Reglas Obligatorias
+## Roles
+- admin: acceso total
+- supervisor: despacho + reversiones
+- despachador: solo asistencia y entrega
+- consulta: solo lectura
 
-1. No usar ORMs ni query builders.
-   - Prohibido: TypeORM, Prisma, Sequelize, Drizzle, Knex, Entity Framework.
-   - Backend Node/NestJS debe usar `mssql` con queries parametrizadas.
+## Flujo SSO
+1. Portal emite JWT con SSO_SECRET, type=SSO_PORTAL, claims: carnet, name, correo
+2. Backend valida firma, expiracion y type
+3. Backend crea usuario si no existe (rol por defecto: despachador)
+4. Backend emite JWT interno de Asistencia
 
-2. SQL Server usa `OUTPUT INSERTED`, no `RETURNING`.
-   - `RETURNING` aplica a PostgreSQL.
-   - En este proyecto, cualquier insert/update que necesite devolver datos debe usar `OUTPUT INSERTED.<campo>`.
-
-3. No concatenar input del usuario en SQL.
-   - Usar siempre `.input()` de `mssql`.
-   - Para nombres dinamicos de columnas/tablas, usar whitelist.
-
-4. No hardcodear secretos.
-   - `DB_PASSWORD`, `JWT_SECRET`, `SSO_SECRET`, credenciales HCM y puertos van en `.env`.
-   - No guardar `.env` real en git.
-
-5. SSO Portal es parte base de la arquitectura.
-   - Validar firma, expiracion y `type`/`token_type = SSO_PORTAL`.
-   - Emitir JWT interno de asistencia despues del intercambio.
-
-6. La importacion Excel debe ser validada antes de aplicar.
-   - No escribir tablas finales si hay errores bloqueantes.
-   - Registrar batches y errores.
-
-7. El despacho debe ser transaccional.
-   - Usar SQL Server transaction.
-   - Bloquear stock con `UPDLOCK, ROWLOCK`.
-   - No permitir stock negativo ni doble entrega activa por hijo/evento.
-
-8. Imagenes en disco, no Base64 en SQL Server.
-   - Convertir imagenes a WebP.
-   - Guardar solo ruta y metadata.
-
-9. Implementacion completa.
-   - No dejar placeholders tipo `TODO: implementar`, `...rest of code`, o stubs que aparenten funcionar.
-
-10. Validar antes de cerrar una tarea.
-    - Backend: build, lint y pruebas relevantes.
-    - React: typecheck/build.
-    - Flutter: analyze/test cuando el SDK este disponible.
-
-## Guias De Referencia Aplicables
-
-- NestJS: `/opt/apps/asistencia/configcode/docs/nestjs/index.md`
-- SQL Server: `/opt/apps/asistencia/configcode/docs/sql-server/index.md`
-- SQL Server avanzado: `/opt/apps/asistencia/configcode/docs/sql-server/advanced.md`
-- Seguridad: `/opt/apps/asistencia/configcode/docs/security/index.md`
-- React: `/opt/apps/asistencia/configcode/docs/react/index.md`
-- Flutter: `/opt/apps/asistencia/configcode/docs/flutter/index.md`
-- Testing: `/opt/apps/asistencia/configcode/docs/testing/index.md`
-- DevOps: `/opt/apps/asistencia/configcode/docs/devops/index.md`
-- UX: `/opt/apps/asistencia/configcode/docs/ux-design/index.md`
-
+## Evento activo
+- Tabla tblEventos, campo Activo = 1
+- Seed: Dia del Nino 2026 (Id = 1)
