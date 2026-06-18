@@ -1,0 +1,363 @@
+================================================================================
+DOCUMENTO 09: DIAGNOSTICO INTEGRAL PARA REINICIAR IMPLEMENTACION
+Proyecto: Asistencia y Despacho de Juguetes Dia del Nino
+Fecha de revision: 2026-06-18
+================================================================================
+
+Objetivo:
+Revisar nuevamente la documentacion, los Excel, el codigo legado y los proyectos
+modernos dentro de `/opt/apps/asistencia/registro` para decidir si el plan actual
+es suficiente o si falta trabajo antes de comenzar implementacion.
+
+--------------------------------------------------------------------------------
+1. CONCLUSION DIRECTA
+--------------------------------------------------------------------------------
+
+El plan actual no esta listo para implementacion perfecta sin ajustes.
+
+La direccion general es correcta:
+- migrar fuera del monolito ASP.NET MVC
+- usar backend moderno
+- usar SQL Server
+- proteger escrituras con JWT
+- controlar stock con transacciones
+- guardar fotos en disco, no en base de datos
+- tener web administrativa y app movil para campo
+
+Pero faltan piezas criticas:
+- contrato SSO definitivo para entrar desde Portal
+- diccionario real de Excel y reglas de limpieza
+- carga normalizada de catalogo con imagenes
+- modelo SQL final con constraints e indices completos
+- decision tecnica sobre TypeORM vs `mssql` directo
+- contrato API detallado por endpoint
+- plan de implementacion por fases verificables
+- plan de pruebas de importacion y concurrencia
+- despliegue ajustado al VPS Linux/Nginx/PM2 real
+
+--------------------------------------------------------------------------------
+2. ESTADO REAL DEL PROYECTO
+--------------------------------------------------------------------------------
+
+Ruta analizada:
+- `/opt/apps/asistencia/registro`
+
+El repo contiene cuatro grupos:
+
+1. Legado ASP.NET MVC:
+   - `Controllers/`
+   - `Views/`
+   - `Models/`
+   - flujo real de evento y despacho en `EventRegistrationController.cs`
+
+2. Proyecto Nest:
+   - `/nest`
+   - esta practicamente en estado inicial generado por CLI
+   - no tiene modulos reales de auth, attendance, catalog, dispatch ni SQL Server
+
+3. Proyecto React:
+   - `/react`
+   - esta en plantilla inicial Vite
+   - no implementa dashboard, login SSO ni consumo de API
+
+4. Proyecto Flutter:
+   - `/flutter`
+   - esta en plantilla inicial Flutter counter
+   - no implementa scanner, cache, despacho ni login
+
+Diagnostico:
+La documentacion describe un sistema objetivo, pero el codigo nuevo todavia no
+representa ese sistema. La implementacion debe comenzar realmente desde cero
+en `nest`, `react` y `flutter`, usando el legado solo como referencia funcional.
+
+--------------------------------------------------------------------------------
+3. HALLAZGOS DEL SISTEMA LEGADO
+--------------------------------------------------------------------------------
+
+Archivo principal:
+- `Controllers/EventRegistrationController.cs`
+
+Vista principal:
+- `Views/EventRegistration/DespachoDiaNino.cshtml`
+
+Flujo legado real:
+
+1. `DespachoDiaNino()`
+   - renderiza la pantalla de despacho.
+
+2. `GetHijosParaDespacho(carnet)`
+   - consulta `dbo.tblDespachoJuguetesDiaNino`
+   - cruza contra `dbo.tblCatalogoJuguetesDiaNino`
+   - asigna juguete por `Categoria` y `Genero`
+   - usa fallback `TODOS` si no hay juguete especifico por genero
+
+3. `RegistrarEntregaJuguete(id, entregado)`
+   - actualiza `Entregado`, `FechaEntrega`, `UsuarioDespacho`
+   - no valida stock
+   - no usa transaccion de inventario
+   - no registra receptor fisico
+   - no guarda motivo de reversion
+
+4. `ObtenerResumenInventario()`
+   - calcula entregados/pendientes desde la tabla de censo
+   - no descuenta `StockActual`
+
+5. `ObtenerCatalogoCompleto()`
+   - devuelve catalogo con `FotoBase64`
+
+6. `GuardarJugueteCatalogo()`
+   - inserta o actualiza juguetes
+   - valida duplicado por categoria/genero
+   - almacena foto en base de datos como Base64
+
+7. `EliminarJugueteCatalogo()`
+   - hace delete fisico
+
+Riesgos confirmados:
+- el stock no esta protegido
+- hay imagenes Base64 en SQL Server
+- no hay auditoria completa de receptor
+- el controlador mezcla demasiadas responsabilidades
+- el flujo no esta preparado para alta concurrencia
+
+--------------------------------------------------------------------------------
+4. HALLAZGOS DE LOS EXCEL
+--------------------------------------------------------------------------------
+
+Excel 1:
+- `DATAS ANALIZADAS PADRE_HIJOS.xlsx`
+
+Hojas relevantes:
+- `DATA HIJOS`
+- `DATA PADRES`
+- `CASOS FALLECIDOS`
+
+`DATA HIJOS`:
+- rango: `A1:P893`
+- filas de datos: 892
+- carnets unicos: 705
+- generos:
+  - F: 438
+  - M: 454
+- categorias:
+  - ENTRE 0-1: 35
+  - ENTRE 01.1-2: 63
+  - ENTRE 02.1-3: 62
+  - ENTRE 03.1-4: 67
+  - ENTRE 04.1-5: 84
+  - ENTRE 05.1-6: 82
+  - ENTRE 06.1-7: 83
+  - ENTRE 07.1-8: 91
+  - ENTRE 08.1-9: 82
+  - ENTRE 09.1-10: 81
+  - ENTRE 10.1-11: 93
+  - ENTRE 11.1-11.99: 69
+
+Duplicados detectados por carnet + hijo + fecha nacimiento:
+
+1. Carnet `500560`, hijo `MATEO ALEJANDRO ESCORCIA GAMEZ`, fecha `45979`
+   - fila 3: genero F
+   - fila 9: genero M
+   - requiere correccion manual porque cambia el genero
+
+2. Carnet `1004594`, hijo `SHAIRA JAZMIN PEREZ CHAVARRIA`, fecha `45952`
+   - filas 5 y 8
+   - parece duplicado por origen/ubicacion con prefijo `NI`
+
+3. Carnet `500573`, hijo `AXEL CALEB CESAR RUIZ`, fecha `45141`
+   - filas 123 y 129
+   - parece duplicado por origen/ubicacion con prefijo `NI`
+
+`DATA PADRES`:
+- rango: `A1:I706`
+- filas de datos: 705
+- coincide con los carnets unicos del censo de hijos
+
+`CASOS FALLECIDOS`:
+- contiene casos excluidos o especiales
+- no debe mezclarse automaticamente con `DATA HIJOS`
+- requiere decision de negocio si algun caso debe pasar como excepcion
+
+Excel 2:
+- `SELLECCION DE JUGUETES 2026.xlsx`
+
+Hojas relevantes:
+- `SELECCION (2)`
+- `IMPRIMIR`
+- `PRESUPUESTO`
+- `toys`
+- `kensa`
+
+Hallazgos:
+- No es una tabla limpia; es un libro maquetado.
+- Tiene 49 archivos de imagen embebidos.
+- `SELECCION (2)` parece ser la mejor fuente para cargar compras aprobadas.
+- Total aprobado observado: 967 unidades.
+- El censo tiene 892 hijos antes de limpieza.
+- Hay cobertura global suficiente, pero no todas las categorias quedan balanceadas.
+
+Filas aprobadas detectadas en `SELECCION (2)`:
+- 0-1 UNISEX: 30
+- 1-2 NINAS: 32
+- 1-2 NINOS: 45
+- 2-3 UNISEX: 75
+- 3-4 NINOS: 45
+- 3-4 NINAS: 30
+- 4-5 NINAS: 50
+- 4-5 NINOS: 40
+- 5-6 NINOS: 50
+- 5-6 NINAS: 34
+- 6-7 NINAS: 40
+- 6-7 NINOS: 50
+- 7-8 NINAS: 46
+- 7-8 NINOS: 50
+- 8-9 UNISEX: 85
+- 9-10 NINAS: 46
+- 9-10 NINOS: 45
+- 10-11 NINAS: 56
+- 10-11 NINOS: 41
+- 11-12 NINOS: 45
+- 11-12 NINAS: 32
+
+Brecha importante:
+- categoria 0-1 tiene 35 ninos censados y solo 30 unidades aprobadas en
+  `SELECCION (2)`.
+- incluso quitando duplicados conocidos, debe validarse si se compran unidades
+  adicionales o si se permite fallback de otra categoria.
+
+--------------------------------------------------------------------------------
+5. EVALUACION DE DOCUMENTACION EXISTENTE
+--------------------------------------------------------------------------------
+
+Documentos bien orientados:
+- `requerimientos_proyecto.txt`
+- `01_analisis_sistema_legado.txt`
+- `02_arquitectura_y_flujos.txt`
+- `03_base_de_datos_sql_server.txt`
+- `04_api_nestjs_y_concurrencia.txt`
+- `08_analisis_solicitud_sqlserver_y_sso_portal.txt`
+
+Documentos que requieren ajuste antes de implementar:
+
+1. `03_base_de_datos_sql_server.txt`
+   - buen punto de partida
+   - falta tabla de eventos
+   - falta tabla de usuarios/roles/sesiones SSO
+   - falta tabla de import batches
+   - falta auditoria de cambios
+   - falta estrategia para duplicados del Excel
+
+2. `04_api_nestjs_y_concurrencia.txt`
+   - propone TypeORM
+   - para el despacho critico conviene usar `mssql` directo con transacciones
+     explicitas y `UPDLOCK, ROWLOCK`
+   - falta contrato de endpoints real
+
+3. `05_frontend_react_y_mobile_flutter.txt`
+   - tiene buena vision visual
+   - pero prioriza detalles de UI antes de cerrar API, datos, SSO y despliegue
+   - menciona colores/efectos que podrian distraer del flujo operativo
+
+4. `06_plan_despliegue_vps_y_pruebas.txt`
+   - mezcla Windows/IIS con Linux/Nginx
+   - en este VPS debe priorizarse Linux, Nginx y PM2
+   - incluye secretos de ejemplo sensibles que deben moverse a `.env`
+
+5. `nest/plan_nest.txt`
+   - buen inventario de modulos
+   - necesita reordenarse por entregables verificables
+   - debe incorporar SSO Portal desde el inicio
+
+--------------------------------------------------------------------------------
+6. DECISION TECNICA RECOMENDADA
+--------------------------------------------------------------------------------
+
+Backend:
+- NestJS, pero con acceso SQL Server mediante `mssql` directo.
+- Evitar TypeORM en la primera version critica.
+- Usar procedimientos o queries parametrizados.
+- Para despacho/reversion usar transacciones explicitas.
+
+Frontend web:
+- React + Vite.
+- Dashboard administrativo primero.
+- No construir marketing ni pantalla decorativa.
+- Enfocarse en busqueda, inventario, importacion, reportes y auditoria.
+
+Movil:
+- Flutter.
+- Primera version online estable.
+- Offline cache queda para segunda fase si el evento lo exige.
+- El scanner y el flujo de entrega deben ser mas importantes que animaciones.
+
+SSO:
+- Reutilizar el patron documentado en `solicitud`.
+- Token del Portal firmado con `SSO_SECRET`.
+- Backend emite JWT interno de `asistencia`.
+- Validar `type` o `token_type = SSO_PORTAL` para evitar aceptar JWT genericos.
+
+Imagenes:
+- Extraer imagenes del Excel de juguetes a archivos.
+- Convertir a WebP.
+- Guardar ruta en SQL Server.
+- No guardar Base64 en SQL Server.
+
+--------------------------------------------------------------------------------
+7. RIESGOS QUE DEBEN CERRARSE ANTES DE CODIFICAR FUERTE
+--------------------------------------------------------------------------------
+
+1. Decidir fuente oficial del catalogo:
+   - recomendado: `SELECCION (2)`
+   - confirmar si `IMPRIMIR` reemplaza alguna descripcion o cantidad
+
+2. Resolver duplicados del censo:
+   - especialmente carnet `500560`, porque cambia genero del hijo
+
+3. Resolver deficit 0-1:
+   - 35 censados contra 30 aprobados
+
+4. Definir evento activo:
+   - tabla `tblEventos`
+   - o variable `EVENTO_ACTIVO_ID`
+   - no hardcodear 193/194
+
+5. Definir roles:
+   - admin
+   - supervisor
+   - despachador
+   - consulta/auditoria
+
+6. Definir si asistencia y despacho son pasos separados:
+   - recomendado: si
+   - asistencia registra llegada
+   - despacho registra entrega por hijo
+
+7. Definir foto evidencia:
+   - requerimiento dice 1 foto por colaborador para todo el censo
+   - base de datos propuesta la ubica por entrega
+   - se debe decidir si la foto vive en `tblEntregas` o en una tabla
+     `tblEvidenciasEntrega` asociada a colaborador/evento
+
+--------------------------------------------------------------------------------
+8. VEREDICTO SOBRE "COMENZAR DE NUEVO"
+--------------------------------------------------------------------------------
+
+Si. Conviene comenzar de nuevo la implementacion moderna, pero no desde cero
+conceptual.
+
+Se debe conservar:
+- analisis del legado
+- reglas de negocio
+- Excel originales
+- idea de SQL Server + React + Nest + Flutter
+- integracion SSO tipo Portal
+
+Se debe rehacer:
+- plan de implementacion
+- modelo SQL final
+- contratos API
+- migracion Excel
+- estructura real del backend
+- frontend y movil desde plantilla
+
+================================================================================

@@ -1,0 +1,608 @@
+================================================================================
+DOCUMENTO 13: PLAN DE TRABAJO EJECUTABLE CON REGLAS CONFIGCODE
+Proyecto: Asistencia y Despacho de Juguetes Dia del Nino
+Fecha: 2026-06-18
+================================================================================
+
+Objetivo:
+Definir el plan de trabajo completo para iniciar la implementacion moderna de
+asistencia desde el estado actual del repositorio, respetando las reglas IA de
+`configcode` y los documentos tecnicos 09, 10, 11 y 12.
+
+Reglas base:
+- No usar ORM.
+- Usar SQL Server con `mssql` directo.
+- Usar queries parametrizadas.
+- Usar `OUTPUT INSERTED` en SQL Server, no `RETURNING`.
+- No hardcodear secretos.
+- Implementar SSO Portal desde el inicio.
+- Validar Excel antes de aplicar.
+- Proteger stock con transacciones y locks.
+- Imagenes en disco WebP, no Base64 en SQL Server.
+
+--------------------------------------------------------------------------------
+1. ESTADO INICIAL CONFIRMADO
+--------------------------------------------------------------------------------
+
+Proyecto:
+- `/opt/apps/asistencia/registro`
+
+Reglas IA:
+- `/opt/apps/asistencia/configcode`
+
+Estado real:
+- legado ASP.NET MVC existe y contiene el flujo funcional antiguo.
+- `nest` esta en plantilla inicial.
+- `react` esta en plantilla inicial Vite.
+- `flutter` esta en plantilla inicial Flutter counter.
+- Excel de censo y catalogo existen en la raiz del proyecto.
+
+Archivos clave:
+- `DATAS ANALIZADAS PADRE_HIJOS.xlsx`
+- `SELLECCION DE JUGUETES 2026.xlsx`
+- `Controllers/EventRegistrationController.cs`
+- `Views/EventRegistration/DespachoDiaNino.cshtml`
+
+Conclusion:
+La implementacion moderna debe iniciar practicamente desde cero, usando el
+legado y los Excel como fuente de reglas y datos.
+
+--------------------------------------------------------------------------------
+2. PLAN GENERAL POR FASES
+--------------------------------------------------------------------------------
+
+Fase 0: Decisiones iniciales y preparacion
+Fase 1: Base de datos SQL Server
+Fase 2: Backend NestJS base
+Fase 3: Importacion Excel
+Fase 4: API operativa de asistencia, despacho y catalogo
+Fase 5: Web React administrativa
+Fase 6: Flutter operativo online
+Fase 7: Pruebas, seguridad y despliegue
+Fase 8: Offline, mejoras y cierre de evento
+
+--------------------------------------------------------------------------------
+3. FASE 0: DECISIONES INICIALES Y PREPARACION
+--------------------------------------------------------------------------------
+
+Objetivo:
+Cerrar decisiones que bloquean la implementacion.
+
+Tareas:
+
+1. Definir nombre de base de datos.
+   - Recomendado: `Asistencia`
+   - Alternativa: `Asistencia_DiaNino`
+
+2. Confirmar servidor SQL Server.
+   - Copiar patron de conexion de `solicitud`.
+   - Usar misma instancia si negocio lo confirma.
+   - Crear `.env` propio para asistencia.
+
+3. Confirmar prefijos de despliegue.
+   - Web: `/asistencia/`
+   - API: `/api-asistencia/`
+   - Uploads: `/asistencia-uploads/`
+
+4. Confirmar evento activo.
+   - No hardcodear 193/194.
+   - Crear tabla `tblEventos`.
+   - Marcar un evento activo por anio.
+
+5. Resolver decisiones de Excel.
+   - Duplicado `500560` con genero conflictivo.
+   - Deficit categoria `ENTRE 0-1`: 35 censados vs 30 unidades aprobadas.
+   - Confirmar si `SELECCION (2)` es fuente oficial de catalogo.
+
+Entregables:
+- `.env.example` para backend.
+- decision de nombre de DB.
+- decision de fuente oficial Excel.
+- lista de duplicados resueltos o marcados como excepcion.
+
+Criterio de salida:
+- se puede crear DB y empezar DDL sin dudas de negocio.
+
+--------------------------------------------------------------------------------
+4. FASE 1: BASE DE DATOS SQL SERVER
+--------------------------------------------------------------------------------
+
+Objetivo:
+Crear la estructura limpia que reemplace el modelo legacy.
+
+Tareas:
+
+1. Crear base de datos.
+   - `CREATE DATABASE Asistencia`
+   - verificar collation compatible con datos en espanol.
+
+2. Crear scripts versionados.
+   - `/database/001_create_database.sql`
+   - `/database/002_create_tables.sql`
+   - `/database/003_create_indexes.sql`
+   - `/database/004_create_procedures.sql`
+   - `/database/005_seed_initial.sql`
+
+3. Crear tablas.
+   - `tblEventos`
+   - `tblColaboradores`
+   - `tblHijos`
+   - `tblCatalogoJuguetes`
+   - `tblAsistenciaEventos`
+   - `tblEntregasJuguetes`
+   - `tblUsuariosAsistencia`
+   - `tblImportBatches`
+   - `tblImportErrores`
+   - `tblAuditLog`
+
+4. Crear constraints.
+   - `StockActual >= 0`
+   - genero hijo `M/F`
+   - genero juguete `M/F/TODOS`
+   - estado entrega `DELIVERED/REVERTED`
+   - receptor `COLABORADOR/CONYUGE/TERCERO`
+
+5. Crear indice unico filtrado.
+   - una entrega activa por hijo/evento.
+
+6. Crear stored procedures criticos.
+   - `sp_Asistencia_LookupCarnet`
+   - `sp_Asistencia_Registrar`
+   - `sp_Despacho_Entregar`
+   - `sp_Despacho_Reversar`
+   - `sp_Dashboard_ResumenEvento`
+
+Reglas tecnicas:
+- no usar ORM.
+- usar `OUTPUT INSERTED`.
+- para despacho/reversion usar transaccion y `UPDLOCK, ROWLOCK`.
+
+Entregables:
+- scripts SQL.
+- documento de modelo SQL final.
+- prueba manual de creacion de tablas.
+
+Criterio de salida:
+- DB creada.
+- scripts corren sin error.
+- constraints impiden stock negativo y doble entrega activa.
+
+--------------------------------------------------------------------------------
+5. FASE 2: BACKEND NESTJS BASE
+--------------------------------------------------------------------------------
+
+Objetivo:
+Convertir `/nest` de plantilla a API real.
+
+Tareas:
+
+1. Instalar dependencias.
+   - `@nestjs/config`
+   - `@nestjs/jwt`
+   - `passport-jwt`
+   - `mssql`
+   - `class-validator`
+   - `class-transformer`
+   - `multer`
+   - `sharp`
+   - `xlsx`
+   - logger estructurado
+
+2. Crear estructura.
+   - `src/config`
+   - `src/database`
+   - `src/auth`
+   - `src/imports`
+   - `src/attendance`
+   - `src/catalog`
+   - `src/dispatch`
+   - `src/reports`
+   - `src/common`
+
+3. Configurar `main.ts`.
+   - global prefix `/api`
+   - ValidationPipe whitelist
+   - Helmet
+   - CORS restringible por env
+   - exception filter
+
+4. Crear `DatabaseModule`.
+   - pool unico `mssql`
+   - health check de conexion
+   - cierre ordenado del pool
+
+5. Crear `AuthModule`.
+   - `POST /auth/sso-login`
+   - `GET /auth/me`
+   - roles guard
+   - `dev-login` solo si `NODE_ENV != production`
+
+6. Crear endpoint `GET /health`.
+   - proceso vivo
+   - conexion SQL Server
+   - version de app
+
+Entregables:
+- API levanta.
+- conecta SQL Server.
+- SSO valida token.
+- JWT interno funciona.
+
+Criterio de salida:
+- `npm run build` correcto.
+- health check responde.
+- auth SSO probado con token valido e invalido.
+
+--------------------------------------------------------------------------------
+6. FASE 3: IMPORTACION EXCEL
+--------------------------------------------------------------------------------
+
+Objetivo:
+Crear carga repetible, auditable y segura de censo y catalogo.
+
+Tareas censo:
+
+1. Leer `DATAS ANALIZADAS PADRE_HIJOS.xlsx`.
+2. Validar hoja `DATA HIJOS`.
+3. Validar encabezados esperados.
+4. Convertir fechas seriales Excel.
+5. Normalizar carnets, nombres, genero y categoria.
+6. Detectar duplicados.
+7. Guardar errores en estructura de respuesta.
+8. Aplicar solo si no hay errores bloqueantes.
+
+Tareas catalogo:
+
+1. Leer `SELLECCION DE JUGUETES 2026.xlsx`.
+2. Usar hoja `SELECCION (2)` como fuente propuesta.
+3. Tomar solo filas `APROBADO`.
+4. Convertir edades a categorias del censo.
+5. Convertir `NIÑOS/NIÑAS/UNISEX` a `M/F/TODOS`.
+6. Validar cantidades.
+7. Extraer imagenes si se logra mapeo confiable.
+8. Convertir imagenes a WebP.
+9. Guardar rutas en catalogo.
+
+Endpoints:
+- `POST /imports/censo/validate`
+- `POST /imports/censo/apply`
+- `POST /imports/catalogo/validate`
+- `POST /imports/catalogo/apply`
+- `GET /imports/:id/errors`
+
+Entregables:
+- validador de censo.
+- validador de catalogo.
+- apply transaccional con batch.
+- reporte de duplicados y deficit.
+
+Criterio de salida:
+- censo reporta 892 filas y 3 duplicados conocidos.
+- catalogo reporta 967 unidades aprobadas.
+- API bloquea aplicacion si hay errores criticos.
+
+--------------------------------------------------------------------------------
+7. FASE 4: API OPERATIVA
+--------------------------------------------------------------------------------
+
+Objetivo:
+Construir endpoints que usaran React y Flutter.
+
+Endpoints asistencia:
+- `GET /attendance/lookup/:carnet`
+- `POST /attendance/register`
+- `GET /attendance/event/:eventoId/summary`
+
+Endpoints despacho:
+- `GET /dispatch/lookup/:carnet`
+- `POST /dispatch/deliver`
+- `POST /dispatch/:entregaId/revert`
+- `GET /dispatch/event/:eventoId/summary`
+
+Endpoints catalogo:
+- `GET /catalog`
+- `POST /catalog`
+- `PUT /catalog/:id`
+- `DELETE /catalog/:id`
+- `POST /catalog/:id/photo`
+
+Endpoints reportes:
+- `GET /reports/entregas.csv`
+- `GET /reports/pendientes.csv`
+- `GET /reports/inventario.csv`
+
+Reglas:
+- todos protegidos por JWT salvo health y sso-login.
+- roles por endpoint.
+- errores de negocio claros.
+- no stock negativo.
+- no doble entrega activa.
+
+Entregables:
+- contrato API documentado.
+- pruebas e2e basicas.
+- Postman/Bruno o curls de smoke.
+
+Criterio de salida:
+- flujo completo por API funciona sin frontend.
+
+--------------------------------------------------------------------------------
+8. FASE 5: WEB REACT ADMINISTRATIVA
+--------------------------------------------------------------------------------
+
+Objetivo:
+Crear panel operativo para RRHH/admin/supervisores.
+
+Pantallas:
+
+1. SSO handler.
+   - `/asistencia/auth/sso?token=...`
+   - intercambia token con backend.
+
+2. Dashboard.
+   - KPIs: censados, asistidos, entregados, pendientes.
+   - stock critico.
+   - avance por categoria.
+
+3. Importacion.
+   - subir Excel censo.
+   - validar.
+   - mostrar errores.
+   - aplicar.
+   - repetir para catalogo.
+
+4. Busqueda.
+   - carnet
+   - colaborador
+   - hijo
+   - estado
+
+5. Detalle colaborador.
+   - datos del colaborador.
+   - hijos.
+   - estado de asistencia.
+   - estado de entrega.
+
+6. Catalogo.
+   - editar juguete.
+   - stock.
+   - foto.
+   - activo/inactivo.
+
+7. Auditoria/reportes.
+   - entregas.
+   - reversiones.
+   - pendientes.
+   - export CSV.
+
+Reglas UI:
+- operacional, claro, sin landing page.
+- botones criticos con confirmacion.
+- estados vacio/cargando/error.
+- responsive.
+
+Entregables:
+- React build.
+- web navega con SSO.
+- dashboard consume API real.
+
+Criterio de salida:
+- admin puede cargar datos, ver dashboard y operar catalogo.
+
+--------------------------------------------------------------------------------
+9. FASE 6: FLUTTER ONLINE
+--------------------------------------------------------------------------------
+
+Objetivo:
+Crear app movil funcional para campo, primero online.
+
+Autenticacion Flutter:
+
+Flutter debe usar el mismo patron validado en Portal Planer:
+
+1. El usuario escribe su usuario/correo y contraseña del Portal.
+2. Flutter llama al Portal:
+   `POST <PORTAL_API>/auth/login-empleado`
+   con:
+   ```json
+   {
+     "usuario": "correo_o_carnet",
+     "clave": "password_portal",
+     "tipo_login": "empleado",
+     "returnUrl": "/asistencia"
+   }
+   ```
+3. El Portal responde un `ticket`/JWT SSO temporal.
+4. Flutter llama a NestJS Asistencia:
+   `POST /api-asistencia/auth/sso-login`
+   con:
+   ```json
+   { "token": "<ticket_portal>" }
+   ```
+5. NestJS valida firma, expiracion y tipo de token.
+6. NestJS crea/sincroniza usuario de asistencia y devuelve JWT interno.
+7. Flutter guarda solo el JWT interno en `flutter_secure_storage`.
+
+Reglas:
+- Flutter no debe guardar la contraseña.
+- Asistencia no debe validar directamente la contraseña del Portal.
+- Asistencia solo confia en el ticket SSO emitido por Portal.
+- Si el usuario no tiene rol `despachador`, `supervisor` o `admin`, la app movil bloquea acceso operativo.
+- Puede existir `mobile-login` directo solo como contingencia controlada, nunca como camino principal.
+
+Pantallas:
+
+1. Inicio / sesion.
+   - login con usuario/clave del Portal.
+   - canje de ticket contra `/auth/sso-login`.
+   - restauracion de sesion desde secure storage.
+
+2. Scanner.
+   - escaneo carnet.
+   - entrada manual alternativa.
+
+3. Ficha colaborador.
+   - nombre.
+   - ubicacion.
+   - asistencia.
+   - hijos.
+
+4. Asistencia.
+   - registrar asistencia si no existe.
+
+5. Entrega.
+   - seleccionar hijo.
+   - confirmar juguete.
+   - receptor.
+   - foto opcional.
+   - entregar.
+
+6. Reversion.
+   - motivo obligatorio.
+   - confirmar.
+
+Reglas:
+- online V1.
+- offline queda fase 8.
+- manejo claro de errores de red.
+- botones grandes para campo.
+- no perder estado durante una entrega.
+
+Entregables:
+- app compila.
+- login Portal -> ticket -> token Asistencia funciona.
+- escanea carnet.
+- completa asistencia y despacho contra API.
+
+Criterio de salida:
+- flujo de campo funciona en dispositivo o build de prueba.
+
+--------------------------------------------------------------------------------
+10. FASE 7: PRUEBAS, SEGURIDAD Y DESPLIEGUE
+--------------------------------------------------------------------------------
+
+Pruebas backend:
+- SSO valido.
+- SSO expirado.
+- SSO firma invalida.
+- lookup carnet no existente.
+- entrega exitosa.
+- doble entrega rechazada.
+- stock cero rechazado.
+- reversion recupera stock.
+- importacion valida.
+- importacion con duplicados.
+
+Pruebas concurrencia:
+- 20 peticiones simultaneas contra un juguete con stock 5.
+- exactamente 5 exitos.
+- resto 409.
+- stock final 0.
+
+Seguridad:
+- revisar CORS.
+- revisar Helmet.
+- revisar uploads.
+- revisar secrets.
+- revisar roles.
+
+Despliegue:
+- PM2 ecosystem.
+- Nginx para `/asistencia/` y `/api-asistencia/`.
+- carpeta uploads.
+- logs.
+- health check.
+- rollback.
+
+Entregables:
+- scripts deploy.
+- configuracion PM2.
+- snippet Nginx.
+- checklist de salida.
+
+Criterio de salida:
+- produccion/staging responde por dominio.
+- logs y health check correctos.
+
+--------------------------------------------------------------------------------
+11. FASE 8: OFFLINE Y MEJORAS
+--------------------------------------------------------------------------------
+
+Objetivo:
+Agregar resiliencia luego de tener V1 estable.
+
+Tareas:
+- cache local Flutter.
+- cola de entregas pendientes.
+- sincronizacion.
+- resolucion de conflictos.
+- indicadores offline.
+- notificaciones.
+- reportes PDF.
+- metricas avanzadas.
+
+Regla:
+No iniciar offline hasta que la API online y el modelo de concurrencia esten
+probados.
+
+--------------------------------------------------------------------------------
+12. ORDEN INMEDIATO DE EJECUCION
+--------------------------------------------------------------------------------
+
+1. Crear base `Asistencia` copiando la configuracion SQL de `solicitud`.
+2. Crear `.env` y `.env.example` en `/nest`.
+3. Crear scripts SQL de Fase 1.
+4. Levantar NestJS con DatabaseModule y health check.
+5. Implementar SSO.
+6. Implementar import validator de censo.
+7. Implementar import validator de catalogo.
+8. Implementar apply de importacion.
+9. Implementar dispatch transaccional.
+10. Construir React administrativo.
+11. Construir Flutter online.
+
+--------------------------------------------------------------------------------
+13. RIESGOS ABIERTOS
+--------------------------------------------------------------------------------
+
+1. Duplicado con conflicto de genero:
+   - carnet `500560`
+   - debe resolverlo negocio.
+
+2. Deficit categoria 0-1:
+   - censo 35
+   - catalogo aprobado 30
+   - requiere decision de compra/fallback.
+
+3. Imagenes del Excel:
+   - hay 49 embebidas.
+   - el mapeo automatico puede no ser confiable.
+
+4. Credenciales HCM:
+   - deben ir a `.env`.
+   - no repetir credenciales quemadas del legado.
+
+5. Offline:
+   - aumenta mucho la complejidad.
+   - dejarlo fuera de V1 operativa.
+
+--------------------------------------------------------------------------------
+14. DEFINICION DE "LISTO PARA EVENTO"
+--------------------------------------------------------------------------------
+
+El sistema se considera listo cuando:
+
+- SSO Portal funciona.
+- censo y catalogo se importan con validacion.
+- dashboard muestra datos reales.
+- scanner movil encuentra colaborador por carnet.
+- asistencia se registra.
+- entrega descuenta stock.
+- doble entrega se bloquea.
+- reversion devuelve stock.
+- reportes CSV funcionan.
+- Nginx y PM2 estan configurados.
+- hay respaldo SQL antes del evento.
+- prueba concurrente pasa.
+
+================================================================================

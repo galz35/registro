@@ -1,0 +1,394 @@
+================================================================================
+📄 DOCUMENTO 08: ANÁLISIS TÉCNICO DE `solicitud`
+SQL SERVER + FLUJO SSO PORTAL + IMPACTO PARA `asistencia`
+================================================================================
+
+Repositorio analizado:
+- `/opt/apps/solicitud`
+
+Objetivo del análisis:
+- Entender cómo `solicitud` se conecta a Microsoft SQL Server.
+- Entender cómo recibe y valida el SSO emitido por el portal.
+- Documentar el flujo para reutilizarlo como referencia en `asistencia`.
+
+Fuentes revisadas en el código:
+- `backend/src/config/database.ts`
+- `backend/src/controllers/auth.controller.ts`
+- `backend/src/controllers/candidato.controller.ts`
+- `backend/src/routes/api.routes.ts`
+- `backend/src/middleware/auth.middleware.ts`
+- `backend/src/app.ts`
+- `frontend/src/App.tsx`
+- `frontend/src/features/auth/SSOHandlerPage.tsx`
+- `frontend/src/services/api.service.ts`
+- `nginx_snippet_example.conf`
+
+--------------------------------------------------------------------------------
+1. RESUMEN EJECUTIVO
+--------------------------------------------------------------------------------
+
+`solicitud` usa un backend Express/TypeScript con acceso directo a SQL Server
+mediante el paquete `mssql`. No depende de ORM. La conexión se hace con un
+`ConnectionPool` reutilizable y, si el servidor SQL falla, el backend activa un
+modo de respaldo en memoria (`memoryDb`) para mantener pruebas locales.
+
+El flujo SSO no usa OpenID Connect ni SAML en esta implementación. Lo que existe
+es un intercambio de JWT compartido:
+
+1. El portal emite un JWT con un secreto compartido.
+2. `solicitud` recibe ese token en `POST /api/auth/sso-portal`.
+3. El backend valida la firma con `SSO_SECRET`.
+4. Si el token es válido, busca o crea el candidato en SQL Server.
+5. Devuelve un JWT propio de `solicitud` para sesión interna.
+
+Ese diseño hace que el SSO sea un puente de JWT firmado, no una federación
+completa de identidad.
+
+--------------------------------------------------------------------------------
+2. CÓMO ACCEDE A SQL SERVER
+--------------------------------------------------------------------------------
+
+2.1. Librería y configuración
+
+El acceso a base de datos se centraliza en `backend/src/config/database.ts`.
+La configuración observada usa:
+
+- `mssql` como driver.
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_SERVER`
+- `DB_NAME`
+- `DB_ENCRYPT`
+- `DB_TRUST_SERVER_CERTIFICATE`
+
+Valores por defecto observados en el código:
+
+- usuario: `sa`
+- password: `TuPasswordFuerte!2026`
+- server: `localhost`
+- base: `Sol_Empleo`
+
+El pool se crea una sola vez y se reutiliza:
+
+- `getConnectionPool()` abre la conexión.
+- `isUsingFallback()` indica si el sistema cayó al modo memoria.
+
+2.2. Modo de respaldo
+
+Si SQL Server no responde, el backend activa `memoryDb`, que simula:
+
+- candidatos
+- saludDeportes
+- puestos
+- emergencia
+- familiares
+- académicos
+- experiencia
+- referencias
+- idiomas
+
+Esto permite levantar el backend en local, pero no sustituye la base real.
+En varias rutas críticas el backend responde `503` cuando detecta fallback.
+
+2.3. Estilo de acceso a datos
+
+El sistema usa SQL directo y stored procedures, no repositorios ORM:
+
+- `sp_ObtenerCandidatoCompleto`
+- `sp_GuardarCandidato`
+- `sp_GuardarFamiliar`
+- `sp_EliminarFamiliar`
+- `sp_GuardarAcademico`
+- `sp_EliminarAcademico`
+- y otros procedimientos similares
+
+La regla práctica es clara:
+
+- lectura compleja o perfil completo: stored procedure
+- escritura puntual: `UPDATE`, `INSERT` o `DELETE` directos
+
+--------------------------------------------------------------------------------
+3. FLUJO DE LOGIN Y AUTENTICACIÓN LOCAL
+--------------------------------------------------------------------------------
+
+3.1. Login por cédula
+
+Endpoint:
+- `POST /api/auth/login`
+
+Comportamiento:
+
+- Normaliza la cédula con `trim().toUpperCase()`.
+- Busca primero si existe como usuario en `tbl_usuarios_candidatos`.
+- Si no aparece, busca en `tbl_candidatos`.
+- Devuelve un JWT firmado con `JWT_SECRET`.
+
+Importante:
+- Este login no pide contraseña.
+- Funciona como validación de existencia y asignación de rol.
+
+3.2. Login por email y contraseña
+
+Endpoint:
+- `POST /api/auth/login-email`
+
+Comportamiento:
+
+- Busca en `tbl_usuarios_candidatos` unido a `tbl_candidatos`.
+- Verifica `password_hash` con `bcrypt`.
+- Si todo coincide, firma un JWT interno de `solicitud`.
+
+3.3. Protección de rutas
+
+El middleware `protect`:
+
+- lee `Authorization: Bearer <token>`
+- valida el JWT con `JWT_SECRET`
+- expone `req.user`
+
+El middleware `restrictTo(...roles)` limita rutas por rol.
+
+--------------------------------------------------------------------------------
+4. FLUJO SSO PORTAL
+--------------------------------------------------------------------------------
+
+4.1. Contraseña compartida de SSO
+
+El backend define:
+
+- `SSO_SECRET = process.env.SSO_SECRET || 'ClaroSSO_Shared_Secret_2026_!#'`
+
+Ese secreto debe coincidir con el portal emisor.
+
+4.2. Endpoint receptor
+
+Endpoint:
+- `POST /api/auth/sso-portal`
+
+Entrada esperada:
+
+```json
+{ "ssoToken": "<jwt-del-portal>" }
+```
+
+4.3. Validación del token
+
+El backend hace:
+
+- `jwt.verify(ssoToken, SSO_SECRET)`
+- rechaza tokens inválidos o expirados con `400`
+
+Claims observados que puede leer:
+
+- `carnet`
+- `username`
+- `sub`
+- `correo`
+- `name`
+- `apps`
+
+4.4. Resolución del usuario
+
+Reglas observadas:
+
+1. Busca candidato por cédula/carnet.
+2. Si no existe, intenta buscar por email.
+3. Si sigue sin existir, crea un candidato nuevo con datos mínimos.
+4. Asegura fila en `tbl_usuarios_candidatos`.
+5. Si hace falta, actualiza el email vacío.
+
+4.5. JWT propio de `solicitud`
+
+Tras validar el SSO, `solicitud` emite su propio JWT con:
+
+- `cedula`
+- `candidato_id`
+- `email`
+- `rol`
+- `method: 'sso_portal'`
+
+Ese token dura `2h` según el código.
+
+4.6. Respuesta al frontend
+
+Devuelve:
+
+- `token`
+- `candidato`
+- `apps` si venían en el payload
+
+El frontend lo guarda en `localStorage` como:
+
+- `token`
+- `candidato`
+
+--------------------------------------------------------------------------------
+5. FLUJO FRONTEND DEL SSO
+--------------------------------------------------------------------------------
+
+5.1. Ruta del handler
+
+En React existe la ruta:
+
+- `/solicitud/auth/sso`
+
+Componente:
+- `frontend/src/features/auth/SSOHandlerPage.tsx`
+
+5.2. Cómo entra el token
+
+El componente lee:
+
+- `?token=<jwt>`
+
+Si no hay token:
+
+- muestra estado de error
+- redirige a `/login`
+
+5.3. Llamada al backend
+
+El handler hace `fetch` a:
+
+- `/api-solicitud/api/auth/sso-portal`
+
+5.4. Resultado del login
+
+Si el backend responde `success`:
+
+- guarda `token`
+- guarda `candidato`
+- redirige a `/dashboard`
+
+Si falla:
+
+- vuelve a `/login`
+
+5.5. Observación de proxy
+
+El archivo `nginx_snippet_example.conf` muestra:
+
+- `/solicitud/` sirviendo la SPA
+- `/api-solicitud/` proxy hacia `127.0.0.1:3036`
+
+El backend, por su lado, tiene `PORT = process.env.PORT || 3001`.
+Eso significa que la capa de despliegue debe alinear el puerto real con el
+proxy; el código no lo resuelve por sí solo.
+
+--------------------------------------------------------------------------------
+6. API Y RUTAS RELACIONADAS
+--------------------------------------------------------------------------------
+
+Rutas públicas de autenticación:
+
+- `POST /auth/login`
+- `POST /auth/login-email`
+- `POST /auth/registro`
+- `POST /auth/crear-cuenta`
+- `POST /auth/login-email-cedula`
+- `POST /auth/sso-portal`
+- `GET  /auth/validar-token/:token`
+- `POST /auth/registro-publico`
+- `POST /auth/solicitar-reset`
+- `POST /auth/reset-password`
+
+Rutas protegidas relevantes:
+
+- `GET /candidatos/me`
+- `GET /candidatos/:cedula`
+- `POST /candidatos`
+- `POST /candidatos/:cedula/familiares`
+- `POST /candidatos/:cedula/academicos`
+- `POST /candidatos/:cedula/experiencia`
+- `POST /candidatos/:cedula/referencias`
+- `POST /candidatos/:cedula/idiomas`
+- `PUT  /candidatos/:cedula/cedula`
+- `POST /candidatos/finalizar`
+
+--------------------------------------------------------------------------------
+7. COMPORTAMIENTO DE DATOS EN SQL SERVER
+--------------------------------------------------------------------------------
+
+7.1. Perfil completo del candidato
+
+La lectura principal usa `sp_ObtenerCandidatoCompleto` y devuelve varios
+recordsets:
+
+- candidato base
+- salud y deportes
+- puesto
+- emergencia
+- familiares
+- académicos
+- experiencia
+- referencias
+- idiomas
+
+7.2. Guardado del formulario
+
+`guardarCandidato()` escribe o actualiza los datos base del candidato y luego
+guarda las subentidades en tablas asociadas.
+
+7.3. Finalización de solicitud
+
+`finalizarSolicitud()`:
+
+- lee el candidato completo
+- obtiene email desde `tbl_usuarios_candidatos`
+- envía notificación
+- marca `tbl_candidatos.finalizado = 1`
+
+--------------------------------------------------------------------------------
+8. LECTURA TÉCNICA PARA REUTILIZAR EN `asistencia`
+--------------------------------------------------------------------------------
+
+Lo que sí conviene copiar como patrón:
+
+- pool único de `mssql`
+- variables `.env` explícitas para conexión y secretos
+- fallback controlado solo para desarrollo
+- JWT propio por aplicación después del SSO compartido
+- validación de `Bearer token` en middleware
+- roles simples con `restrictTo`
+
+Lo que no conviene copiar sin revisar:
+
+- login por cédula sin contraseña
+- secretos con valor por defecto hardcodeado
+- fallback en memoria para rutas de negocio si el sistema va a producción
+- acoplar la sesión a `localStorage` sin estrategia de renovación
+
+--------------------------------------------------------------------------------
+9. DIFERENCIAS IMPORTANTES ENTRE `solicitud` Y UN SSO CORPORATIVO COMPLETO
+--------------------------------------------------------------------------------
+
+Este sistema no está implementando un proveedor de identidad formal. En la
+práctica hace:
+
+- JWT firmado por un secreto compartido
+- validación de claims básicos
+- provisión automática de usuario si no existe
+
+Eso es suficiente para integraciones internas controladas, pero no equivale a:
+
+- OIDC completo
+- SAML
+- intercambio federado con metadata, issuer y audience estrictos
+
+--------------------------------------------------------------------------------
+10. CONCLUSIÓN OPERATIVA
+--------------------------------------------------------------------------------
+
+`solicitud` resuelve dos cosas de forma muy concreta:
+
+1. Persistencia en SQL Server con acceso directo y procedimientos almacenados.
+2. SSO de portal mediante JWT compartido, con alta simplicidad operativa y
+   provisión automática del candidato.
+
+Para `asistencia`, el valor real de este análisis es el patrón de integración:
+
+- unificar la forma de leer credenciales y secretos desde `.env`
+- decidir si se adopta JWT compartido o un SSO más formal
+- documentar el contrato exacto del token antes de replicarlo
+
+================================================================================

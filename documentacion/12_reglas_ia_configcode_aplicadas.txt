@@ -1,0 +1,389 @@
+================================================================================
+DOCUMENTO 12: REGLAS IA CONFIGCODE APLICADAS A ASISTENCIA
+Proyecto: Asistencia y Despacho de Juguetes Dia del Nino
+Fuente: https://github.com/galz35/configcode.git
+Ruta clonada: /opt/apps/asistencia/configcode
+Fecha: 2026-06-18
+================================================================================
+
+Objetivo:
+Integrar las reglas de IA y desarrollo de `configcode` al proyecto de asistencia,
+adaptandolas a SQL Server, NestJS, React, Flutter, Nginx y PM2.
+
+--------------------------------------------------------------------------------
+1. ARCHIVOS FUENTE REVISADOS
+--------------------------------------------------------------------------------
+
+Repositorio clonado:
+- `/opt/apps/asistencia/configcode`
+
+Archivos principales:
+- `rules/GOLDEN_RULES.md`
+- `.clinerules`
+- `README.md`
+- `docs/nestjs/index.md`
+- `docs/sql-server/index.md`
+- `docs/sql-server/advanced.md`
+- `docs/security/index.md`
+- `docs/react/index.md`
+- `docs/flutter/index.md`
+- `docs/testing/index.md`
+- `docs/devops/index.md`
+- `docs/ux-design/index.md`
+
+Tambien existen:
+- `agents/*.md`
+- `commands/*.md`
+- `templates/*`
+- `tools/*.ts`
+- `memory-bank/*`
+
+--------------------------------------------------------------------------------
+2. REGLAS MAESTRAS ADOPTADAS
+--------------------------------------------------------------------------------
+
+2.1. Memory Bank
+
+Regla de `configcode`:
+- mantener contexto persistente del proyecto.
+
+Aplicacion en asistencia:
+- la documentacion tecnica vive en `/opt/apps/asistencia/registro/documentacion`.
+- los documentos 09, 10, 11 y 12 son el contexto obligatorio antes de programar.
+- cuando se termine una fase, debe actualizarse un documento de avance o
+  changelog tecnico.
+
+2.2. Prohibido usar ORM
+
+Regla de `configcode`:
+- no usar TypeORM, Prisma, Sequelize, Drizzle, Knex, Entity Framework ni query builders.
+
+Aplicacion en asistencia:
+- el backend NestJS debe usar `mssql` directo.
+- las consultas deben ser SQL parametrizado.
+- los flujos complejos pueden vivir en stored procedures.
+- despacho y reversion deben usar transacciones explicitas.
+
+Impacto:
+- cualquier documento anterior que mencione TypeORM queda superado por esta regla.
+- `10_plan_maestro_implementacion_perfecta.txt` ya define `mssql` directo como base.
+
+2.3. SQL parametrizado
+
+Regla:
+- nunca concatenar input del usuario en SQL.
+
+Aplicacion:
+- `carnet`, `hijoId`, `jugueteId`, filtros, fechas, rol y usuario deben entrar
+  con `.input()` de `mssql`.
+- si se permite ordenar por columnas en reportes, usar whitelist.
+
+Ejemplo correcto:
+
+```typescript
+const request = pool.request();
+request.input('carnet', sql.VarChar(50), carnet.trim());
+const result = await request.query(`
+  SELECT Carnet, Nombre
+  FROM dbo.tblColaboradores
+  WHERE Carnet = @carnet
+`);
+```
+
+2.4. Adaptacion SQL Server: `OUTPUT INSERTED`
+
+`configcode` menciona `RETURNING` como regla general, pero en SQL Server la
+forma correcta es `OUTPUT INSERTED`.
+
+Ejemplo:
+
+```sql
+INSERT INTO dbo.tblAsistenciaEventos (EventoId, CarnetColaborador, RegistradoPor)
+OUTPUT INSERTED.Id, INSERTED.FechaRegistro
+VALUES (@EventoId, @CarnetColaborador, @RegistradoPor);
+```
+
+Esta regla queda fijada para asistencia:
+- no usar `RETURNING` en SQL Server.
+- usar `OUTPUT INSERTED` o stored procedures con `SELECT` final.
+
+2.5. Secretos fuera del codigo
+
+Regla:
+- no hardcodear passwords, API keys, JWT secrets, SSO secrets ni cadenas de conexion.
+
+Variables esperadas:
+- `PORT`
+- `DB_SERVER`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_DATABASE`
+- `DB_ENCRYPT`
+- `DB_TRUST_SERVER_CERTIFICATE`
+- `JWT_SECRET`
+- `SSO_SECRET`
+- `HCM_API_URL`
+- `HCM_USERNAME`
+- `HCM_PASSWORD`
+- `UPLOAD_PATH`
+- `PUBLIC_UPLOAD_URL`
+
+2.6. Errores y logs
+
+Regla:
+- no dejar catch vacios.
+- no usar `console.log` suelto en produccion.
+
+Aplicacion:
+- NestJS debe usar logger estructurado.
+- errores de negocio deben devolver codigos claros:
+  - `400` validacion
+  - `401` sin sesion
+  - `403` sin permiso
+  - `404` no encontrado
+  - `409` conflicto de stock o entrega duplicada
+  - `500` error inesperado
+
+--------------------------------------------------------------------------------
+3. REGLAS ESPECIFICAS PARA NESTJS
+--------------------------------------------------------------------------------
+
+Backend recomendado:
+- NestJS modular
+- ConfigModule global
+- DatabaseModule propio con pool `mssql`
+- AuthModule con SSO Portal
+- AttendanceModule
+- CatalogModule
+- DispatchModule
+- ImportsModule
+- ReportsModule
+
+Orden de request:
+- middleware
+- guards
+- pipes
+- controller
+- service
+- database
+- filters
+
+Reglas:
+- DTOs con `class-validator`.
+- `ValidationPipe` global con whitelist.
+- guards por JWT y roles.
+- filtros globales para mapear errores SQL.
+- no repositorios ORM.
+- no entidades TypeORM.
+
+--------------------------------------------------------------------------------
+4. REGLAS ESPECIFICAS PARA SQL SERVER
+--------------------------------------------------------------------------------
+
+4.1. Transacciones
+
+Despacho y reversion deben tener:
+- `BEGIN TRANSACTION`
+- `XACT_ABORT ON` si se hace en stored procedure
+- rollback garantizado en error
+- lock de fila en catalogo
+
+Patron recomendado:
+
+```sql
+SELECT StockActual
+FROM dbo.tblCatalogoJuguetes WITH (UPDLOCK, ROWLOCK)
+WHERE Id = @JugueteId AND Activo = 1;
+```
+
+4.2. Indices
+
+Minimos:
+- carnet colaborador
+- evento + carnet
+- evento + hijo + estado
+- categoria + genero + activo
+
+4.3. Consultas sargables
+
+Evitar:
+
+```sql
+WHERE YEAR(FechaEntrega) = 2026
+```
+
+Usar:
+
+```sql
+WHERE FechaEntrega >= @Desde AND FechaEntrega < @Hasta
+```
+
+4.4. Auditoria
+
+Toda operacion critica debe guardar:
+- usuario
+- fecha
+- origen
+- motivo cuando aplique
+
+--------------------------------------------------------------------------------
+5. REGLAS ESPECIFICAS PARA SEGURIDAD
+--------------------------------------------------------------------------------
+
+SSO:
+- validar firma
+- validar expiracion
+- validar tipo de token
+- exigir carnet
+- emitir JWT interno corto
+
+Autorizacion:
+- rol `admin`
+- rol `supervisor`
+- rol `despachador`
+- rol `consulta`
+
+Uploads:
+- aceptar solo imagenes permitidas.
+- limitar tamano.
+- convertir a WebP.
+- generar nombre de archivo seguro.
+- nunca confiar en `originalname` como ruta final.
+
+CORS:
+- en produccion no usar `origin: *`.
+- permitir solo dominios definidos.
+
+Headers:
+- usar Helmet.
+- configurar CSP razonable cuando React este servido.
+
+--------------------------------------------------------------------------------
+6. REGLAS ESPECIFICAS PARA REACT
+--------------------------------------------------------------------------------
+
+Frontend web:
+- React + TypeScript + Vite.
+- componentes funcionales.
+- named exports.
+- tipos explicitos para DTOs de API.
+- estados de carga, error y vacio obligatorios.
+- no construir dashboard antes de cerrar API base.
+
+Pantallas V1:
+- SSO handler
+- dashboard
+- importacion de censo/catalogo
+- busqueda por carnet
+- detalle colaborador/hijos
+- inventario
+- auditoria/reportes
+
+UX:
+- interfaz operativa, densa y clara.
+- botones grandes para acciones criticas.
+- confirmacion para entrega/reversion.
+- evitar decoracion innecesaria durante operacion de campo.
+
+--------------------------------------------------------------------------------
+7. REGLAS ESPECIFICAS PARA FLUTTER
+--------------------------------------------------------------------------------
+
+Movil V1:
+- flujo online primero.
+- scanner carnet.
+- lookup colaborador.
+- registrar asistencia.
+- entregar/reversar.
+- foto evidencia opcional.
+
+Reglas:
+- widgets pequenos y reutilizables.
+- dispose correcto de controllers.
+- manejo explicito de errores de red.
+- targets tactiles de al menos 44 px.
+- guardar token en storage seguro, no texto plano.
+
+Offline:
+- fase 2.
+- no implementar cache offline antes de cerrar transacciones y API online.
+
+--------------------------------------------------------------------------------
+8. REGLAS DE TESTING
+--------------------------------------------------------------------------------
+
+Backend:
+- pruebas unitarias de validadores de Excel.
+- pruebas de SSO con token valido, expirado, firma invalida y sin carnet.
+- pruebas de dispatch:
+  - entrega exitosa
+  - doble entrega rechazada
+  - stock cero rechazado
+  - reversion recupera stock
+
+Integracion:
+- pruebas contra SQL Server de staging o base temporal.
+- carga de Excel real en modo validate.
+- prueba concurrente de stock.
+
+Frontend:
+- typecheck.
+- pruebas de render basicas.
+- pruebas de flujo SSO handler.
+
+Flutter:
+- `flutter analyze`.
+- widget tests del flujo principal cuando exista implementacion.
+
+--------------------------------------------------------------------------------
+9. REGLAS DEVOPS
+--------------------------------------------------------------------------------
+
+Infraestructura prioritaria:
+- Linux VPS
+- Nginx
+- PM2
+- SQL Server existente
+
+No exponer Node directamente a internet.
+
+Prefijos recomendados:
+- web: `/asistencia/`
+- api: `/api-asistencia/`
+- uploads: `/asistencia-uploads/`
+
+PM2:
+- usar `ecosystem.config.js`.
+- logs separados.
+- `max_memory_restart`.
+- `pm2 save` despues de validar.
+
+Health check:
+- `/health`
+- debe validar proceso vivo y conexion SQL Server.
+
+--------------------------------------------------------------------------------
+10. COMO USAR CONFIGCODE EN ESTE PROYECTO
+--------------------------------------------------------------------------------
+
+Orden recomendado antes de trabajar:
+
+1. Leer `AGENTS.md`.
+2. Leer documentos 09, 10, 11 y 12.
+3. Leer la guia de stack necesaria en `/opt/apps/asistencia/configcode/docs`.
+4. Implementar la tarea.
+5. Ejecutar validaciones.
+6. Documentar avances o cambios de decisiones.
+
+Agentes conceptuales de `configcode` que aplican:
+- `architect`: decisiones de arquitectura.
+- `backend-dev`: NestJS + SQL Server.
+- `sql-expert`: DDL, SPs, indices y locks.
+- `frontend-dev`: React.
+- `flutter-dev`: app movil.
+- `security-auditor`: SSO, JWT, uploads.
+- `tester`: pruebas.
+- `devops-engineer`: Nginx, PM2, deploy.
+
+================================================================================

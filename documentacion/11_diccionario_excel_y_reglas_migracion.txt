@@ -1,0 +1,354 @@
+================================================================================
+DOCUMENTO 11: DICCIONARIO DE EXCEL Y REGLAS DE MIGRACION
+Proyecto: Asistencia y Despacho de Juguetes Dia del Nino
+Fecha de analisis: 2026-06-18
+================================================================================
+
+Este documento define como convertir los Excel reales del proyecto en datos
+seguros para SQL Server.
+
+Archivos fuente:
+- `DATAS ANALIZADAS PADRE_HIJOS.xlsx`
+- `SELLECCION DE JUGUETES 2026.xlsx`
+
+--------------------------------------------------------------------------------
+1. EXCEL DE CENSO
+--------------------------------------------------------------------------------
+
+Archivo:
+- `DATAS ANALIZADAS PADRE_HIJOS.xlsx`
+
+Hojas:
+
+1. `DATA HIJOS`
+   - fuente principal del censo de hijos
+   - rango observado: `A1:P893`
+   - contiene 892 filas de datos
+
+2. `DATA PADRES`
+   - fuente de datos maestros de colaboradores
+   - rango observado: `A1:I706`
+   - contiene 705 filas de datos
+
+3. `CASOS FALLECIDOS`
+   - casos especiales
+   - no se carga automaticamente en el censo final
+
+4. `TD HIJOS` y `TD PADRES`
+   - tablas dinamicas/resumen
+   - no son fuente primaria de carga
+
+--------------------------------------------------------------------------------
+2. MAPEOS DE `DATA HIJOS`
+--------------------------------------------------------------------------------
+
+Columnas fuente y destino:
+
+- `CARNET COLABORADOR`
+  - destino: `tblColaboradores.Carnet`, `tblHijos.CarnetColaborador`
+  - tipo: varchar(50)
+  - limpieza: trim, conservar como texto
+
+- `NOMBRE COMPLETO COLABORADOR`
+  - destino: `tblColaboradores.Nombre`
+  - tipo: varchar(250)
+  - limpieza: trim, colapsar espacios dobles
+
+- `TIPO DE CONTACTO`
+  - destino: no obligatorio en V1
+  - valor observado: `Hijo/Hija`
+
+- `NOMBRE HIJO`
+  - destino: `tblHijos.NombreHijo`
+  - tipo: varchar(250)
+  - limpieza: trim, colapsar espacios dobles
+
+- `FECHA NACIMIENTO HIJO`
+  - destino: `tblHijos.FechaNacimiento`
+  - tipo: date
+  - limpieza: convertir serial Excel o fecha textual
+
+- `FECHA DE CORTE`
+  - destino: metadata del batch o campo opcional
+  - tipo: date
+  - observado: serial `46174`
+
+- `EDAD HIJO`
+  - destino: `tblHijos.EdadHijo`
+  - tipo: decimal(5,2)
+  - limpieza: redondear a 2 decimales
+
+- `GENERO HIJO`
+  - destino: `tblHijos.GeneroHijo`
+  - tipo: varchar(10)
+  - valores permitidos: `M`, `F`
+
+- `CATEGORIA`
+  - destino: `tblHijos.Categoria`
+  - tipo: varchar(100)
+  - debe coincidir con regla de catalogo
+
+- `BDACT.PUESTO`
+  - destino: `tblColaboradores.Puesto`
+
+- `BDACT.UBICACION`
+  - destino: `tblColaboradores.Ubicacion`
+  - limpieza: remover prefijo `NI ` si negocio confirma equivalencia
+
+- `BDACT.GERENCIA`
+  - destino: `tblColaboradores.Gerencia`
+  - limpieza: remover prefijo `NI ` si negocio confirma equivalencia
+
+- `BDACT.NOMBRE EDIFICIO`
+  - destino: `tblColaboradores.Edificio`
+
+- `BDACT.FECHA CONTRATACION`
+  - destino: `tblColaboradores.FechaContratacion`
+  - tipo: date nullable
+  - limpieza: convertir serial Excel o fecha textual
+
+- `BDACT.GENERO`
+  - destino: `tblColaboradores.Genero`
+
+- `BDACT.DEPARTAMENTO GEOGRAFICO`
+  - destino: `tblColaboradores.DepartamentoGeografico`
+
+--------------------------------------------------------------------------------
+3. REGLAS DE LIMPIEZA DEL CENSO
+--------------------------------------------------------------------------------
+
+Reglas obligatorias:
+
+1. Carnet:
+   - obligatorio
+   - trim
+   - guardar como texto
+
+2. Nombre colaborador:
+   - obligatorio
+   - trim
+
+3. Nombre hijo:
+   - obligatorio
+   - trim
+
+4. Fecha nacimiento:
+   - obligatoria
+   - serial Excel se convierte tomando base Excel
+   - si viene como texto `dd/mm/yyyy`, parsear con cultura es-NI
+
+5. Genero hijo:
+   - obligatorio
+   - solo `M` o `F`
+
+6. Categoria:
+   - obligatoria
+   - debe estar en catalogo de categorias validas
+
+7. Duplicados:
+   - clave recomendada:
+     `CarnetColaborador + NombreHijoNormalizado + FechaNacimiento`
+   - si todos los datos coinciden, conservar una fila
+   - si cambia genero, categoria o fecha, mandar a revision manual
+
+Duplicados conocidos:
+
+1. `500560` / `MATEO ALEJANDRO ESCORCIA GAMEZ` / `45979`
+   - conflicto de genero: F vs M
+   - NO resolver automaticamente
+
+2. `1004594` / `SHAIRA JAZMIN PEREZ CHAVARRIA` / `45952`
+   - duplicado sin conflicto mayor
+   - revisar prefijo `NI` en ubicacion/gerencia
+
+3. `500573` / `AXEL CALEB CESAR RUIZ` / `45141`
+   - duplicado sin conflicto mayor
+   - revisar prefijo `NI` en ubicacion/gerencia
+
+--------------------------------------------------------------------------------
+4. CATEGORIAS DEL CENSO
+--------------------------------------------------------------------------------
+
+Categorias observadas y cantidades:
+
+| Categoria         | Hijos |
+|------------------|------:|
+| ENTRE 0-1        | 35    |
+| ENTRE 01.1-2     | 63    |
+| ENTRE 02.1-3     | 62    |
+| ENTRE 03.1-4     | 67    |
+| ENTRE 04.1-5     | 84    |
+| ENTRE 05.1-6     | 82    |
+| ENTRE 06.1-7     | 83    |
+| ENTRE 07.1-8     | 91    |
+| ENTRE 08.1-9     | 82    |
+| ENTRE 09.1-10    | 81    |
+| ENTRE 10.1-11    | 93    |
+| ENTRE 11.1-11.99 | 69    |
+
+--------------------------------------------------------------------------------
+5. EXCEL DE JUGUETES
+--------------------------------------------------------------------------------
+
+Archivo:
+- `SELLECCION DE JUGUETES 2026.xlsx`
+
+Hojas:
+
+1. `SELECCION (2)`
+   - fuente recomendada para catalogo aprobado
+   - contiene total aprobado de 967 unidades
+
+2. `IMPRIMIR`
+   - parece salida resumida para impresion
+   - contiene diferencias en algunos nombres/cantidades
+   - no usar como fuente automatica sin compararla con `SELECCION (2)`
+
+3. `PRESUPUESTO`
+   - contiene propuestas, aprobadas y no consideradas
+   - util para auditoria financiera
+
+4. `toys` y `kensa`
+   - hojas por proveedor
+   - utiles para proveedor, no para carga final directa
+
+Imagenes:
+- el archivo contiene 49 imagenes embebidas
+- deben extraerse y mapearse a juguetes
+- si no se puede mapear imagen de forma confiable, cargar catalogo sin foto y
+  permitir carga manual posterior
+
+--------------------------------------------------------------------------------
+6. MAPEOS DE CATALOGO APROBADO
+--------------------------------------------------------------------------------
+
+Fuente primaria propuesta:
+- hoja `SELECCION (2)`
+- filas con `AUTORIZADO - FF = APROBADO`
+
+Mapeo:
+
+- Edad
+  - destino: `tblCatalogoJuguetes.Categoria`
+  - requiere conversion:
+    - `KENSA  0 - 1` -> `ENTRE 0-1`
+    - `TOYS 1 - 2` -> `ENTRE 01.1-2`
+    - `TOYS 2 - 3` -> `ENTRE 02.1-3`
+    - `KENSA 3 - 4` -> `ENTRE 03.1-4`
+    - `TOYS 4 - 5` -> `ENTRE 04.1-5`
+    - `TOYS 5 - 6` -> `ENTRE 05.1-6`
+    - `TOYS 6 - 7` -> `ENTRE 06.1-7`
+    - `TOYS 7 - 8` -> `ENTRE 07.1-8`
+    - `TOYS 8 - 9` -> `ENTRE 08.1-9`
+    - `TOYS 9 - 10` -> `ENTRE 09.1-10`
+    - `TOYS 10 - 11` -> `ENTRE 10.1-11`
+    - `TOYS 11 - 12` -> `ENTRE 11.1-11.99`
+
+- Codigo
+  - destino: `tblCatalogoJuguetes.Genero`
+  - conversion:
+    - `NIÑOS` -> `M`
+    - `NIÑAS` -> `F`
+    - `UNISEX` -> `TODOS`
+
+- Descripcion juguete
+  - destino: `tblCatalogoJuguetes.NombreJuguete`
+
+- Valor unitario
+  - destino: `tblCatalogoJuguetes.CostoUnitario`
+
+- Total a comprar
+  - destino: `StockInicial` y `StockActual`
+
+- Proveedor
+  - inferir desde prefijo `TOYS` o `KENSA`
+
+--------------------------------------------------------------------------------
+7. RESUMEN CATALOGO APROBADO VS CENSO
+--------------------------------------------------------------------------------
+
+| Categoria         | Censo | Catalogo aprobado | Observacion |
+|------------------|------:|------------------:|-------------|
+| ENTRE 0-1        | 35    | 30                | deficit     |
+| ENTRE 01.1-2     | 63    | 77                | cubierto    |
+| ENTRE 02.1-3     | 62    | 75                | cubierto    |
+| ENTRE 03.1-4     | 67    | 75                | cubierto    |
+| ENTRE 04.1-5     | 84    | 90                | cubierto    |
+| ENTRE 05.1-6     | 82    | 84                | cubierto    |
+| ENTRE 06.1-7     | 83    | 90                | cubierto    |
+| ENTRE 07.1-8     | 91    | 96                | cubierto    |
+| ENTRE 08.1-9     | 82    | 85                | cubierto    |
+| ENTRE 09.1-10    | 81    | 91                | cubierto    |
+| ENTRE 10.1-11    | 93    | 97                | cubierto    |
+| ENTRE 11.1-11.99 | 69    | 77                | cubierto    |
+
+Total censo:
+- 892
+
+Total catalogo aprobado:
+- 967
+
+Pendiente de negocio:
+- resolver deficit en 0-1
+- confirmar si el excedente global puede cubrir ese deficit o si se requiere
+  compra especifica para bebes
+
+--------------------------------------------------------------------------------
+8. VALIDACIONES AUTOMATICAS ANTES DE APLICAR
+--------------------------------------------------------------------------------
+
+Validacion de censo:
+- archivo correcto
+- hoja `DATA HIJOS` existe
+- encabezados esperados existen
+- no hay carnet vacio
+- no hay hijo vacio
+- no hay genero fuera de M/F
+- no hay categoria desconocida
+- detectar duplicados y conflictos
+
+Validacion de catalogo:
+- hoja `SELECCION (2)` existe
+- filas aprobadas mayores a cero
+- cantidades numericas
+- generos convertibles a M/F/TODOS
+- categorias convertibles a categorias del censo
+- stock total por categoria cubre censo por categoria o reporta deficit
+
+Validacion cruzada:
+- todos los hijos tienen categoria con catalogo
+- todos los catalogos tienen categoria conocida
+- todos los juguetes aprobados tienen stock inicial > 0
+
+--------------------------------------------------------------------------------
+9. SALIDA DE VALIDACION ESPERADA
+--------------------------------------------------------------------------------
+
+La API de validacion debe devolver algo asi:
+
+```json
+{
+  "status": "validated",
+  "archivo": "DATAS ANALIZADAS PADRE_HIJOS.xlsx",
+  "resumen": {
+    "hijos": 892,
+    "colaboradores": 705,
+    "duplicados": 3,
+    "erroresBloqueantes": 1,
+    "advertencias": 2
+  },
+  "errores": [
+    {
+      "fila": 3,
+      "campo": "GENERO HIJO",
+      "mensaje": "Duplicado con conflicto de genero contra fila 9"
+    }
+  ]
+}
+```
+
+Regla:
+- si hay errores bloqueantes, no se aplica a tablas finales
+- si solo hay advertencias, un admin puede aplicar confirmando el batch
+
+================================================================================

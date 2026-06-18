@@ -1,0 +1,432 @@
+================================================================================
+DOCUMENTO 10: PLAN MAESTRO DE IMPLEMENTACION PERFECTA
+Proyecto: Asistencia y Despacho de Juguetes Dia del Nino
+Fecha de plan: 2026-06-18
+================================================================================
+
+Este documento reemplaza el orden de implementacion disperso en los planes
+anteriores. La meta es construir primero un sistema correcto, medible y
+desplegable; luego mejorar experiencia visual y offline.
+
+--------------------------------------------------------------------------------
+1. PRINCIPIOS DE IMPLEMENTACION
+--------------------------------------------------------------------------------
+
+1. Una sola fuente de verdad:
+   - SQL Server guarda censo, catalogo, asistencia, entregas, stock y auditoria.
+
+2. No Base64 en base de datos:
+   - imagenes en disco como WebP
+   - SQL Server guarda rutas y metadata
+
+3. Stock protegido por base de datos:
+   - despacho y reversion en transaccion
+   - bloqueo con `UPDLOCK, ROWLOCK`
+   - constraint para impedir stock negativo
+
+4. SSO primero:
+   - no construir pantallas administrativas sin identidad y roles
+
+5. Importacion repetible:
+   - cada carga Excel debe crear un batch
+   - debe poder validar antes de escribir
+   - debe reportar errores y duplicados
+
+6. Version 1 online:
+   - Flutter offline se deja para fase 2
+   - primero cerrar flujo online robusto
+
+--------------------------------------------------------------------------------
+2. ARQUITECTURA FINAL RECOMENDADA
+--------------------------------------------------------------------------------
+
+Backend:
+- NestJS
+- `@nestjs/config`
+- `mssql`
+- `@nestjs/jwt`
+- `passport-jwt`
+- `multer`
+- `sharp`
+- `xlsx`
+- `class-validator`
+
+No usar TypeORM en V1 para el nucleo de despacho. La razon:
+- el flujo critico necesita SQL Server locks explicitos
+- `mssql.Transaction` da control directo
+- reduce magia y facilita auditar el SQL
+
+Frontend web:
+- React + Vite
+- TanStack Query o fetch/axios ordenado
+- React Router
+- componentes propios simples
+- lucide-react para iconos
+
+Movil:
+- Flutter
+- mobile_scanner
+- http/dio
+- flutter_image_compress
+- secure storage para token
+- offline en fase posterior
+
+Infraestructura:
+- Nginx
+- PM2
+- SQL Server existente
+- carpeta de uploads en `/opt/apps/asistencia/uploads`
+- build web en `/var/www/asistencia`
+
+--------------------------------------------------------------------------------
+3. MODELO SQL SERVER FINAL MINIMO
+--------------------------------------------------------------------------------
+
+Tablas base:
+
+1. `tblEventos`
+   - Id
+   - Nombre
+   - Anio
+   - FechaInicio
+   - FechaFin
+   - Activo
+
+2. `tblColaboradores`
+   - Carnet PK
+   - Nombre
+   - Puesto
+   - Ubicacion
+   - Gerencia
+   - Edificio
+   - FechaContratacion
+   - Genero
+   - DepartamentoGeografico
+   - Activo
+
+3. `tblHijos`
+   - Id PK
+   - CarnetColaborador FK
+   - NombreHijo
+   - FechaNacimiento
+   - EdadHijo
+   - GeneroHijo
+   - Categoria
+   - FuenteImportacionId
+   - Activo
+
+4. `tblCatalogoJuguetes`
+   - Id PK
+   - Categoria
+   - Genero
+   - NombreJuguete
+   - Proveedor
+   - CostoUnitario
+   - StockInicial
+   - StockActual
+   - FotoUrl
+   - Activo
+
+5. `tblAsistenciaEventos`
+   - Id PK
+   - EventoId FK
+   - CarnetColaborador FK
+   - FechaRegistro
+   - RegistradoPor
+   - Origen
+
+6. `tblEntregasJuguetes`
+   - Id PK
+   - EventoId FK
+   - HijoId FK
+   - JugueteId FK
+   - CarnetColaborador FK
+   - Estado: DELIVERED / REVERTED
+   - RecibidoPor: COLABORADOR / CONYUGE / TERCERO
+   - NombreReceptor
+   - FotoEvidenciaUrl
+   - FechaEntrega
+   - UsuarioDespacho
+   - FechaReversion
+   - UsuarioReversion
+   - MotivoReversion
+
+7. `tblUsuariosAsistencia`
+   - Id PK
+   - Carnet
+   - Correo
+   - Nombre
+   - Rol
+   - Activo
+   - UltimoLogin
+
+8. `tblImportBatches`
+   - Id PK
+   - Tipo: CENSO / CATALOGO
+   - ArchivoNombre
+   - HashArchivo
+   - UsuarioImporta
+   - FechaImportacion
+   - Estado: VALIDADO / APLICADO / FALLIDO
+   - ResumenJson
+
+9. `tblImportErrores`
+   - Id PK
+   - BatchId FK
+   - Hoja
+   - Fila
+   - Campo
+   - Valor
+   - Mensaje
+
+Indices obligatorios:
+- `IX_Hijos_CarnetColaborador`
+- `IX_Asistencia_Evento_Carnet`
+- `IX_Entregas_Evento_Hijo_Estado`
+- `IX_Catalogo_Categoria_Genero_Activo`
+
+Constraints obligatorios:
+- `StockActual >= 0`
+- genero hijo en `M`, `F`
+- genero juguete en `M`, `F`, `TODOS`
+- receptor en `COLABORADOR`, `CONYUGE`, `TERCERO`
+- estado entrega en `DELIVERED`, `REVERTED`
+
+Indice unico recomendado:
+- una entrega activa por hijo/evento:
+  `UNIQUE(EventoId, HijoId) WHERE Estado = 'DELIVERED'`
+
+--------------------------------------------------------------------------------
+4. CONTRATO SSO PORTAL
+--------------------------------------------------------------------------------
+
+Ruta frontend:
+- `/asistencia/auth/sso?token=<jwt_sso>`
+
+Ruta backend:
+- `POST /api-asistencia/auth/sso-login`
+
+Payload:
+
+```json
+{ "token": "<jwt_sso_portal>" }
+```
+
+Claims minimos esperados:
+
+```json
+{
+  "type": "SSO_PORTAL",
+  "carnet": "500708",
+  "correo": "usuario@claro.com.ni",
+  "name": "NOMBRE USUARIO",
+  "pais": "NI",
+  "apps": ["asistencia"],
+  "exp": 1779473087
+}
+```
+
+Validaciones:
+- firma con `SSO_SECRET`
+- expiracion
+- `type == SSO_PORTAL`
+- claim `carnet` obligatorio
+- usuario activo o provision automatica con rol por defecto
+
+Respuesta del backend:
+
+```json
+{
+  "status": "success",
+  "token": "<jwt_asistencia>",
+  "user": {
+    "carnet": "500708",
+    "nombre": "NOMBRE USUARIO",
+    "correo": "usuario@claro.com.ni",
+    "rol": "despachador"
+  }
+}
+```
+
+--------------------------------------------------------------------------------
+5. API BACKEND V1
+--------------------------------------------------------------------------------
+
+Auth:
+- `POST /auth/sso-login`
+- `POST /auth/dev-login` solo desarrollo, deshabilitado en produccion
+- `GET /auth/me`
+
+Importacion:
+- `POST /imports/censo/validate`
+- `POST /imports/censo/apply`
+- `POST /imports/catalogo/validate`
+- `POST /imports/catalogo/apply`
+- `GET /imports/:id/errors`
+
+Asistencia:
+- `GET /attendance/lookup/:carnet`
+- `POST /attendance/register`
+- `GET /attendance/event/:eventoId/summary`
+
+Despacho:
+- `GET /dispatch/lookup/:carnet`
+- `POST /dispatch/deliver`
+- `POST /dispatch/:entregaId/revert`
+- `GET /dispatch/event/:eventoId/summary`
+
+Catalogo:
+- `GET /catalog`
+- `POST /catalog`
+- `PUT /catalog/:id`
+- `DELETE /catalog/:id` soft-delete
+- `POST /catalog/:id/photo`
+
+Reportes:
+- `GET /reports/entregas.csv`
+- `GET /reports/pendientes.csv`
+- `GET /reports/inventario.csv`
+- PDF puede ser fase 2 si CSV/Excel resuelve operacion
+
+--------------------------------------------------------------------------------
+6. FLUJO CRITICO DE DESPACHO
+--------------------------------------------------------------------------------
+
+Entrada:
+
+```json
+{
+  "eventoId": 1,
+  "hijoId": 123,
+  "jugueteId": 45,
+  "recibidoPor": "COLABORADOR",
+  "nombreReceptor": null
+}
+```
+
+Proceso en transaccion:
+
+1. Validar JWT y rol.
+2. Abrir transaccion SQL.
+3. Bloquear juguete:
+   `SELECT ... FROM tblCatalogoJuguetes WITH (UPDLOCK, ROWLOCK) WHERE Id=@id`
+4. Validar `StockActual > 0`.
+5. Validar que no exista entrega activa del hijo en el evento.
+6. Insertar entrega `DELIVERED`.
+7. Decrementar stock.
+8. Commit.
+
+Errores esperados:
+- 404 hijo o juguete inexistente
+- 409 stock agotado
+- 409 hijo ya entregado
+- 400 receptor tercero sin nombre
+
+--------------------------------------------------------------------------------
+7. IMPORTACION DE EXCEL
+--------------------------------------------------------------------------------
+
+Fase de validacion:
+- leer Excel
+- detectar hojas obligatorias
+- normalizar encabezados
+- convertir fechas seriales de Excel
+- detectar duplicados
+- generar resumen por categoria/genero
+- no escribir en tablas finales
+
+Fase de aplicacion:
+- crear batch
+- insertar/actualizar colaboradores
+- insertar hijos limpios
+- insertar catalogo
+- extraer imagenes a `/uploads/catalogo`
+- convertir imagenes a WebP
+- asociar foto al juguete si hay mapeo confiable
+
+Regla:
+Nunca aplicar un Excel sin validar y mostrar resumen.
+
+--------------------------------------------------------------------------------
+8. ORDEN DE IMPLEMENTACION
+--------------------------------------------------------------------------------
+
+Fase 0: Preparacion
+- limpiar decisiones pendientes de Excel
+- confirmar puerto, dominio y prefijos Nginx
+- definir evento activo inicial
+
+Fase 1: Backend base
+- configurar NestJS
+- instalar dependencias
+- ConfigModule
+- DatabaseService con pool `mssql`
+- AuthModule con SSO
+- roles y guards
+- health check
+
+Fase 2: SQL y migracion
+- crear scripts SQL
+- crear tablas base
+- crear import validator de censo
+- crear import validator de catalogo
+- crear apply con batch
+
+Fase 3: API operativa
+- lookup carnet
+- register asistencia
+- deliver
+- revert
+- summary
+- catalog CRUD
+
+Fase 4: Web React
+- login SSO handler
+- dashboard
+- importacion Excel
+- busqueda por carnet/nombre/hijo
+- inventario
+- reportes
+
+Fase 5: Flutter online
+- login/recepcion token
+- scanner carnet
+- lookup
+- registrar asistencia
+- entregar/reversar
+- foto evidencia opcional
+
+Fase 6: Pruebas y hardening
+- pruebas unitarias de importacion
+- pruebas de transaccion de stock
+- prueba concurrente
+- prueba de SSO
+- prueba de Nginx/PM2
+- respaldo y rollback
+
+Fase 7: Offline y mejoras
+- cache local
+- cola de sincronizacion
+- resolucion de conflictos
+- push o notificaciones
+
+--------------------------------------------------------------------------------
+9. CRITERIOS DE ACEPTACION
+--------------------------------------------------------------------------------
+
+El sistema esta listo para evento cuando:
+
+- SSO entra desde Portal y asigna rol correcto.
+- Importacion de censo valida 892 filas y muestra 3 duplicados conocidos.
+- Importacion de catalogo valida 967 unidades aprobadas.
+- Se puede registrar asistencia por carnet.
+- Se puede entregar un juguete con decremento de stock.
+- No se puede entregar dos veces al mismo hijo.
+- No se puede bajar stock a negativo bajo concurrencia.
+- Se puede reversar con motivo y recuperar stock.
+- Web muestra entregados, pendientes, asistidos y stock critico.
+- Flutter escanea carnet y completa despacho online.
+- Logs PM2 muestran errores utiles.
+- Nginx sirve web y proxy API sin romper rutas SPA.
+
+================================================================================

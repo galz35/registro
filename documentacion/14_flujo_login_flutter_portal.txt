@@ -1,0 +1,261 @@
+================================================================================
+DOCUMENTO 14: FLUJO DE LOGIN FLUTTER USANDO USUARIO Y CONTRASENA DEL PORTAL
+Proyecto: Asistencia y Despacho de Juguetes Dia del Nino
+Referencia comparada: Portal Planer Flutter
+Fecha: 2026-06-18
+================================================================================
+
+Objetivo:
+Resolver la duda de autenticacion movil: React entra por Portal SSO usando
+redireccion web, pero Flutter tambien puede usar el usuario y contrasena del
+Portal igual que Portal Planer.
+
+--------------------------------------------------------------------------------
+1. CONCLUSION
+--------------------------------------------------------------------------------
+
+Si, se puede hacer en Flutter de Asistencia.
+
+El patron correcto no es que Asistencia reciba y valide directamente la
+contrasena del Portal. El patron correcto es:
+
+1. Flutter envia usuario/contrasena al Portal.
+2. Portal valida las credenciales.
+3. Portal devuelve un ticket SSO temporal.
+4. Flutter entrega ese ticket a Asistencia.
+5. Asistencia valida el ticket y emite su propio JWT interno.
+
+Asi el usuario usa una sola contrasena, pero cada modulo conserva su propia
+sesion y sus propios permisos.
+
+--------------------------------------------------------------------------------
+2. COMO LO HACE PORTAL PLANER
+--------------------------------------------------------------------------------
+
+En Portal Planer Flutter, el repositorio de auth hace este flujo:
+
+1. Llama al Portal:
+
+```text
+POST auth/login-empleado
+```
+
+Payload:
+
+```json
+{
+  "usuario": "correo",
+  "clave": "password",
+  "tipo_login": "empleado",
+  "returnUrl": "/dashboard"
+}
+```
+
+2. Lee `ticket` desde la respuesta del Portal.
+
+3. Si hay ticket, llama al backend del modulo:
+
+```text
+POST auth/sso-login
+```
+
+Payload:
+
+```json
+{ "token": "<ticket_portal>" }
+```
+
+4. El backend del modulo responde:
+
+```json
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "user": {}
+}
+```
+
+5. Flutter guarda tokens en `flutter_secure_storage`.
+
+--------------------------------------------------------------------------------
+3. FLUJO PROPUESTO PARA ASISTENCIA
+--------------------------------------------------------------------------------
+
+Flutter Asistencia:
+
+```text
+Usuario escribe credenciales del Portal
+        |
+        v
+POST <PORTAL_API>/auth/login-empleado
+        |
+        v
+Portal devuelve ticket SSO
+        |
+        v
+POST /api-asistencia/auth/sso-login
+        |
+        v
+NestJS valida ticket y emite JWT Asistencia
+        |
+        v
+Flutter guarda JWT Asistencia en secure storage
+        |
+        v
+Flutter consume /attendance, /dispatch, /catalog
+```
+
+--------------------------------------------------------------------------------
+4. ENDPOINTS NECESARIOS
+--------------------------------------------------------------------------------
+
+4.1. Portal existente
+
+Endpoint esperado:
+
+```text
+POST <PORTAL_API>/auth/login-empleado
+```
+
+Payload:
+
+```json
+{
+  "usuario": "500708 o correo@claro.com.ni",
+  "clave": "password_portal",
+  "tipo_login": "empleado",
+  "returnUrl": "/asistencia"
+}
+```
+
+Respuesta esperada:
+
+```json
+{
+  "ticket": "<jwt_sso_portal>",
+  "usuario": {}
+}
+```
+
+4.2. Asistencia NestJS
+
+Endpoint:
+
+```text
+POST /api-asistencia/auth/sso-login
+```
+
+Payload:
+
+```json
+{
+  "token": "<jwt_sso_portal>"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "<jwt_asistencia>",
+    "refresh_token": "<refresh_asistencia>",
+    "user": {
+      "carnet": "500708",
+      "nombre": "NOMBRE USUARIO",
+      "correo": "correo@claro.com.ni",
+      "rol": "despachador"
+    }
+  }
+}
+```
+
+--------------------------------------------------------------------------------
+5. VALIDACIONES EN NESTJS ASISTENCIA
+--------------------------------------------------------------------------------
+
+`/auth/sso-login` debe validar:
+
+- firma del ticket con `SSO_SECRET`
+- expiracion
+- `type` o `token_type = SSO_PORTAL`
+- carnet obligatorio
+- usuario activo
+- rol permitido para modulo asistencia
+
+Roles moviles permitidos:
+
+- `despachador`
+- `supervisor`
+- `admin`
+
+Si el usuario existe en Portal pero no tiene permiso en Asistencia:
+
+```json
+{
+  "success": false,
+  "message": "Usuario sin permiso para operar Asistencia"
+}
+```
+
+--------------------------------------------------------------------------------
+6. SEGURIDAD EN FLUTTER
+--------------------------------------------------------------------------------
+
+Reglas:
+
+- no guardar contrasena
+- guardar solo tokens en `flutter_secure_storage`
+- borrar tokens en logout
+- expirar sesion por tiempo o al cambiar de operador
+- no imprimir tokens en logs
+- no dejar fallback con password hardcodeado
+
+Para celulares compartidos en evento:
+
+- boton de logout visible
+- pantalla bloqueada si token expira
+- mostrar nombre/carnet del operador activo en pantalla
+- registrar `UsuarioDespacho` con el carnet del operador autenticado
+
+--------------------------------------------------------------------------------
+7. DIFERENCIA ENTRE REACT Y FLUTTER
+--------------------------------------------------------------------------------
+
+React:
+
+```text
+Portal redirige a /asistencia/auth/sso?token=...
+React canjea token con NestJS
+```
+
+Flutter:
+
+```text
+Flutter llama login del Portal con usuario/contrasena
+Portal devuelve ticket
+Flutter canjea ticket con NestJS
+```
+
+Ambos terminan igual:
+
+```text
+NestJS Asistencia emite JWT interno de Asistencia
+```
+
+--------------------------------------------------------------------------------
+8. DECISION RECOMENDADA
+--------------------------------------------------------------------------------
+
+Para Asistencia V1:
+
+- implementar login Flutter con usuario/contrasena del Portal.
+- usar ticket SSO del Portal.
+- canjear contra `/api-asistencia/auth/sso-login`.
+- guardar token en secure storage.
+- no implementar login propio con contrasena de Asistencia.
+
+Esto mantiene una sola identidad corporativa y evita duplicar passwords.
+
+================================================================================
