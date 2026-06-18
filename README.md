@@ -303,39 +303,109 @@ Authorization: Bearer <token>
 
 ## 🚀 Cómo consumir desde Flutter
 
-### 1. Login
+### Flujo de Autenticación
+
+El flujo de login para Flutter es IDÉNTICO al que usa portal-planer. No se autentica directamente contra Asistencia, sino que usa el Portal como proveedor de identidad:
+
+```
+Flutter App
+    │
+    ├─ 1. Usuario escribe usuario + contraseña del Portal
+    │
+    ├─ 2. POST https://rhclaroni.com/api/auth/login-empleado
+    │     { "usuario": "500708", "clave": "password_del_portal",
+    │       "tipo_login": "empleado", "returnUrl": "/asistencia" }
+    │     ↑━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━→ Portal API
+    │
+    ├─ 3. ←── Portal responde:
+    │     { "ticket": "eyJ...jwt_firmado_por_portal", "usuario": {...} }
+    │
+    ├─ 4. POST https://rhclaroni.com/api-asistencia/auth/sso-login
+    │     { "token": "eyJ...jwt_firmado_por_portal" }
+    │     ↑━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━→ NestJS Asistencia
+    │
+    ├─ 5. NestJS valida:
+    │     • Firma del JWT con SSO_SECRET
+    │     • Expiración
+    │     • type === "SSO_PORTAL"
+    │     • carnet existe
+    │     → Busca o crea usuario en tblUsuariosAsistencia
+    │     → Asigna rol (despachador por defecto)
+    │
+    ├─ 6. ←── NestJS responde:
+    │     { "access_token": "eyJ...jwt_asistencia",
+    │       "user": { "carnet":"500708", "nombre":"...", "rol":"despachador" } }
+    │
+    └─ 7. Flutter guarda SOLO el access_token en flutter_secure_storage
+          • NUNCA guardar la contraseña del Portal
+          • El access_token expira (configurable: 8h)
+          • Para renovar, repetir el flujo desde el paso 2
+```
+
+**Reglas de seguridad:**
+- ❌ Flutter NO debe validar ni conocer la contraseña del Portal
+- ❌ No guardar contraseña en el dispositivo
+- ✅ Solo guardar `access_token` en `flutter_secure_storage`
+- ✅ Usar `Authorization: Bearer <access_token>` en todas las llamadas
+- ✅ Borrar tokens al hacer logout
+- ✅ Mostrar nombre/carnet del operador activo en pantalla
+- ✅ Botón de logout visible
+
+### Endpoints que Flutter debe consumir
+
+Todas las rutas usan el prefijo `https://rhclaroni.com/api-asistencia/` con `Authorization: Bearer <token>`.
+
+#### 1. Login (contra Portal, no contra Asistencia)
 ```dart
-// 1. Obtener ticket del Portal
+// PASO 1: Login contra Portal (NO contra Asistencia)
 final portalRes = await http.post(
   Uri.parse('https://rhclaroni.com/api/auth/login-empleado'),
-  body: { 'usuario': 'carnet', 'clave': 'password', 'tipo_login': 'empleado', 'returnUrl': '/asistencia' },
+  body: {
+    'usuario': '500708',          // carnet o correo
+    'clave': 'password_portal',    // contraseña del Portal
+    'tipo_login': 'empleado',
+    'returnUrl': '/asistencia',
+  },
 );
-final ticket = portalRes['ticket'];
+// Response: { "ticket": "jwt...", "usuario": {...} }
 
-// 2. Canjear ticket por JWT de Asistencia
-final asistenciaRes = await http.post(
+// PASO 2: Canjear ticket por JWT de Asistencia
+final asisRes = await http.post(
   Uri.parse('https://rhclaroni.com/api-asistencia/auth/sso-login'),
   headers: { 'Content-Type': 'application/json' },
   body: jsonEncode({ 'token': ticket }),
 );
-final token = asistenciaRes['access_token'];
+// Response: { "access_token": "jwt...", "user": { "carnet":"500708", "rol":"despachador" } }
 
-// Guardar token en flutter_secure_storage
+// PASO 3: Guardar SOLO access_token
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+final storage = FlutterSecureStorage();
+await storage.write(key: 'token', value: data['access_token']);
 ```
 
-### 2. Escanear carnet
+#### 2. Escanear carnet (Endpoint principal - devuelve TODO)
 ```dart
 final res = await http.get(
   Uri.parse('https://rhclaroni.com/api-asistencia/attendance/lookup/$carnet?eventoId=1'),
   headers: { 'Authorization': 'Bearer $token' },
 );
 final data = jsonDecode(res.body);
-// data.colaborador -> info del empleado
-// data.hijos -> lista de hijos con juguete sugerido
-// data.fotoHcm -> foto del empleado en base64
+// data.colaborador          → { carnet, nombre, gerencia, ubicacion }
+// data.fotoHcm              → "data:image/jpeg;base64,..." o null
+// data.asistio              → true/false
+// data.hijos                → [
+//   {
+//     id, nombreHijo, edadHijo, generoHijo, categoria,
+//     estadoEntrega, entregaId, fechaEntrega, recibidoPor,
+//     fotoEvidenciaUrl,
+//     jugueteSugerido: { id, nombreJuguete, stockActual, fotoUrl }
+//   }
+// ]
+// data.familiaresHcm        → [{ nombre, tipoRela, edad }]
+// data.inactivo             → true/false (si está inactivo en Portal)
 ```
 
-### 3. Registrar asistencia
+#### 3. Registrar asistencia
 ```dart
 final res = await http.post(
   Uri.parse('https://rhclaroni.com/api-asistencia/attendance/register'),
@@ -344,7 +414,7 @@ final res = await http.post(
 );
 ```
 
-### 4. Entregar juguete con foto
+#### 4. Entregar juguete con foto (MULTIPART)
 ```dart
 var request = http.MultipartRequest(
   'POST',
@@ -355,20 +425,42 @@ request.fields['eventoId'] = '1';
 request.fields['hijoId'] = '324';
 request.fields['jugueteId'] = '5';
 request.fields['carnetColaborador'] = '500708';
-request.fields['recibidoPor'] = 'COLABORADOR';
+request.fields['recibidoPor'] = 'COLABORADOR'; // COLABORADOR | CONYUGE | TERCERO
+if (nombreReceptor != null) request.fields['nombreReceptor'] = nombreReceptor;
 if (fotoFile != null) {
   request.files.add(await http.MultipartFile.fromPath('foto', fotoFile.path));
 }
 final res = await request.send();
+final body = await res.stream.bytesToString();
+// Response: { "entregaId": 6, "stockRestante": 53 }
 ```
 
-### 5. Reversar entrega
+#### 5. Reversar entrega
 ```dart
 final res = await http.post(
   Uri.parse('https://rhclaroni.com/api-asistencia/dispatch/$entregaId/revert'),
   headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer $token' },
-  body: jsonEncode({ 'motivo': 'Error al entregar' }),
+  body: jsonEncode({ 'motivo': 'Error al entregar - se seleccionó el hijo incorrecto' }),
 );
+// Response: { "success": true }
+```
+
+#### 6. Validar entrega (antes de abrir modal)
+```dart
+final res = await http.get(
+  Uri.parse('https://rhclaroni.com/api-asistencia/dispatch/validate/$hijoId/$jugueteId?eventoId=1'),
+  headers: { 'Authorization': 'Bearer $token' },
+);
+// Response: { "stockDisponible": true, "stockActual": 54, "esValido": true }
+```
+
+#### 7. Catálogo de juguetes
+```dart
+final res = await http.get(
+  Uri.parse('https://rhclaroni.com/api-asistencia/catalog'),
+  headers: { 'Authorization': 'Bearer $token' },
+);
+// Response: [{ id, categoria, genero, nombreJuguete, stockActual, fotoUrl }]
 ```
 
 ## 📁 Estructura del Proyecto
