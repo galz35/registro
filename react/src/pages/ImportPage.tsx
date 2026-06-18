@@ -2,18 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { importCenso, importCatalogo } from '../services/asistencia.api';
 import { Upload, ChevronLeft, FileSpreadsheet } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 export default function ImportPage() {
   const navigate = useNavigate();
   const [tipo, setTipo] = useState<'censo' | 'catalogo'>('censo');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [notif, setNotif] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  const show = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotif({ msg, type });
-    setTimeout(() => setNotif(null), 3000);
-  };
+  
+  const show = (msg: string, type: 'success' | 'error' = 'success') => toast(msg, type);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,7 +116,6 @@ export default function ImportPage() {
         </section>
       </main>
 
-      {notif && <div className={`toast toast--${notif.type}`}>{notif.msg}</div>}
     </div>
   );
 }

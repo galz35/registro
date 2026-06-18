@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePolling } from '../hooks/usePolling';
@@ -15,8 +16,7 @@ export default function AttendancePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [ficha, setFicha] = useState<ColaboradorFicha | null>(null);
-  const [notif, setNotif] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [registering, setRegistering] = useState(false);
+    const [registering, setRegistering] = useState(false);
   const [reverting, setReverting] = useState<number | null>(null);
   const [adultos, setAdultos] = useState(1);
   const [ninos, setNinos] = useState(0);
@@ -31,10 +31,7 @@ export default function AttendancePage() {
   const kpiFetcher = useCallback(() => getSummary(EVENTO_ACTIVO_ID), []);
   const { data: kpis } = usePolling<DashboardKPI>(kpiFetcher, 10000);
 
-  const show = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotif({ msg, type });
-    setTimeout(() => setNotif(null), 3000);
-  };
+  const show = (msg: string, type: 'success' | 'error' = 'success') => toast(msg, type);
 
   const loadAsistidos = async (page: number) => {
     try {
@@ -422,16 +419,6 @@ export default function AttendancePage() {
           </div>
         </section>
       </main>
-
-      {notif && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 9999, padding: '12px 20px',
-          borderRadius: 10, fontSize: 13, fontWeight: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          ...(notif.type === 'success' ? { background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' } : { background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' })
-        }}>
-          {notif.msg}
-        </div>
-      )}
     </div>
   );
 }

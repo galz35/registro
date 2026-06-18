@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
 import { getCatalogo, createJuguete, updateJuguete } from '../services/asistencia.api';
 import type { Juguete } from '../types';
@@ -18,18 +19,14 @@ export default function CatalogPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState({ categoria: '', genero: '', nombreJuguete: '', stockInicial: 0 });
   const [foto, setFoto] = useState<File | null>(null);
-  const [notif, setNotif] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [filterText, setFilterText] = useState('');
+    const [filterText, setFilterText] = useState('');
   const [pagina, setPagina] = useState(1);
   const porPag = 15;
   const [movtoJuguete, setMovtoJuguete] = useState<Juguete | null>(null);
   const [movtos, setMovtos] = useState<any[]>([]);
   const [loadingMovtos, setLoadingMovtos] = useState(false);
 
-  const show = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotif({ msg, type });
-    setTimeout(() => setNotif(null), 3000);
-  };
+  const show = (msg: string, type: 'success' | 'error' = 'success') => toast(msg, type);
 
   const load = () => getCatalogo().then(setJuguetes).catch(() => {});
 
@@ -321,16 +318,6 @@ export default function CatalogPage() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {notif && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 9999, padding: '12px 20px',
-          borderRadius: 10, fontSize: 13, fontWeight: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          ...(notif.type === 'success' ? { background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' } : { background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' })
-        }}>
-          {notif.msg}
         </div>
       )}
     </div>

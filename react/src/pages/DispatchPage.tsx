@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
 import { getCenso, getColaboradorFull, registrarAsistencia, registrarEntrega, reversarEntrega } from "./../services/asistencia.api";
 import type { ColaboradorFicha, Hijo, CensoItem, Juguete } from '../types';
@@ -11,8 +12,7 @@ export default function DispatchPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [ficha, setFicha] = useState<ColaboradorFicha | null>(null);
-  const [notif, setNotif] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [showDeliver, setShowDeliver] = useState<{ hijo: Hijo; fotoEvidencia?: File | null } | null>(null);
+    const [showDeliver, setShowDeliver] = useState<{ hijo: Hijo; fotoEvidencia?: File | null } | null>(null);
   const [showRevert, setShowRevert] = useState<{ hijo: Hijo; entregaId: number } | null>(null);
   const [colaboradorFoto, setColaboradorFoto] = useState<File | null>(null);
   const [recibidoPor, setRecibidoPor] = useState('COLABORADOR');
@@ -90,10 +90,7 @@ export default function DispatchPage() {
     setAsistidos(allData.filter((c: CensoItem) => c.Asistio > 0));
   };
 
-  const show = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotif({ msg, type });
-    setTimeout(() => setNotif(null), 3000);
-  };
+  const show = (msg: string, type: 'success' | 'error' = 'success') => toast(msg, type);
 
   const handleRegistrarAsistencia = async (carnet: string) => {
     try {
@@ -631,16 +628,6 @@ export default function DispatchPage() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           onClick={() => setFotoPreview(null)}>
           <img src={fotoPreview} alt="Evidencia" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8, objectFit: 'contain' }} />
-        </div>
-      )}
-
-      {notif && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 9999, padding: '12px 20px',
-          borderRadius: 10, fontSize: 13, fontWeight: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          ...(notif.type === 'success' ? { background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' } : { background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' })
-        }}>
-          {notif.msg}
         </div>
       )}
     </div>

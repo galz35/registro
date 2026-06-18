@@ -4,6 +4,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { getSummary, getCenso, getColaboradorFull, registrarAsistencia, registrarEntrega, reversarEntrega } from '../services/asistencia.api';
 import type { CensoItem, ColaboradorFicha, DashboardKPI, Hijo } from '../types';
 import { LayoutDashboard, Search, Gift, Camera, X, RotateCcw } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 const EVENTO_ACTIVO_ID = 1;
 
@@ -30,12 +31,7 @@ export default function CommandCenter() {
   const [drawerData, setDrawerData] = useState<ColaboradorFicha | null>(null);
   const [showDeliverModal, setShowDeliverModal] = useState<Hijo | null>(null);
   const [showRevertDialog, setShowRevertDialog] = useState<{ hijo: Hijo; entregaId: number } | null>(null);
-  const [notif, setNotif] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  const showNotif = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotif({ msg, type });
-    setTimeout(() => setNotif(null), 3000);
-  };
+  const showNotif = (msg: string, type: 'success' | 'error' = 'success') => toast(msg, type);
 
   const openDrawer = async (carnet: string) => {
     setDrawerCarnet(carnet);
@@ -235,7 +231,6 @@ export default function CommandCenter() {
         />
       )}
 
-      {notif && <div className={`toast toast--${notif.type}`}>{notif.msg}</div>}
     </div>
   );
 }
