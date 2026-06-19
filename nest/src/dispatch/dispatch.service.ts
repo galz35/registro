@@ -138,6 +138,56 @@ export class DispatchService {
     }
   }
 
+  async updateFoto(
+    hijoId: number,
+    eventoId: number,
+    fotoFile: Express.Multer.File,
+  ) {
+    const pool = this.db.getPool();
+
+    let fotoEvidenciaUrl: string | null = null;
+
+    if (fotoFile) {
+      const uploadPath = this.config.get<string>('UPLOAD_PATH', './uploads');
+      const fotosDir = path.join(uploadPath, 'fotos_evidencia');
+      if (!fs.existsSync(fotosDir)) {
+        fs.mkdirSync(fotosDir, { recursive: true });
+      }
+      const fileName = `entrega_${uuidv4()}.webp`;
+      const filePath = path.join(fotosDir, fileName);
+      try {
+        await sharp(fotoFile.buffer)
+          .resize({ width: 1024, withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(filePath);
+        fotoEvidenciaUrl = `/asistencia-uploads/fotos_evidencia/${fileName}`;
+      } catch {
+        throw new BadRequestException('Error al procesar la imagen.');
+      }
+    }
+
+    if (!fotoEvidenciaUrl) {
+      throw new BadRequestException('Debe proporcionar una foto.');
+    }
+
+    const request = pool.request();
+    request.input('HijoId', sql.Int, hijoId);
+    request.input('EventoId', sql.Int, eventoId);
+    request.input('FotoEvidenciaUrl', sql.VarChar(500), fotoEvidenciaUrl);
+
+    const result = await request.query(`
+      UPDATE dbo.tblEntregasJuguetes
+      SET FotoEvidenciaUrl = @FotoEvidenciaUrl
+      WHERE HijoId = @HijoId AND EventoId = @EventoId AND Estado = 'DELIVERED'
+    `);
+
+    if (result.rowsAffected[0] === 0) {
+      throw new NotFoundException('No se encontró una entrega activa para este hijo.');
+    }
+
+    return { fotoEvidenciaUrl };
+  }
+
   async getAuditoria(eventoId: number, busqueda?: string, pagina = 1, porPagina = 50) {
     const pool = this.db.getPool();
     const request = pool.request();

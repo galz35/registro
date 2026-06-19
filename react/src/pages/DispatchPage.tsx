@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
-import { getCenso, getColaboradorFull, registrarAsistencia, registrarEntrega, reversarEntrega } from "./../services/asistencia.api";
+import { getCenso, getColaboradorFull, registrarAsistencia, registrarEntrega, reversarEntrega, updateFotoEvidencia } from "./../services/asistencia.api";
 import type { ColaboradorFicha, Hijo, CensoItem, Juguete } from '../types';
 import { getCatalogo } from '../services/asistencia.api';
+import Swal from 'sweetalert2';
 import { Gift, ChevronLeft, Camera, Check, RotateCcw, X, Loader2, Users, ChevronRight, Package, Heart, AlertTriangle } from 'lucide-react';
 
 const EVENTO_ACTIVO_ID = 1;
@@ -363,6 +364,18 @@ export default function DispatchPage() {
                         placeholder="Nombre de quien recibe" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: 12, marginBottom: 8, boxSizing: 'border-box' }} />
                     )}
                     <button onClick={async () => {
+                      if (!colaboradorFoto) {
+                        const result = await Swal.fire({
+                          title: '¿Sin foto de evidencia?',
+                          text: 'No se ha tomado foto de evidencia. ¿Desea continuar sin ella?',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText: 'Sí, entregar sin foto',
+                          cancelButtonText: 'Cancelar',
+                          confirmButtonColor: '#da121a',
+                        });
+                        if (!result.isConfirmed) return;
+                      }
                       const pendientes = ficha.hijos.filter(h => h.estadoEntrega !== 'DELIVERED');
                       const foto = colaboradorFoto || undefined;
                       for (const hijo of pendientes) {
@@ -445,6 +458,26 @@ export default function DispatchPage() {
                                   📷
                                 </button>
                               )}
+                              <button onClick={async () => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = 'image/*';
+                                input.onchange = async () => {
+                                  const file = input.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    await updateFotoEvidencia(hijo.id, EVENTO_ACTIVO_ID, file);
+                                    show('✅ Foto de evidencia actualizada');
+                                    const data = await getColaboradorFull(ficha!.colaborador.carnet, EVENTO_ACTIVO_ID);
+                                    setFicha(data);
+                                    refreshAsistidos();
+                                  } catch { show('Error al actualizar foto', 'error'); }
+                                };
+                                input.click();
+                              }}
+                                style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: 6, padding: '4px 8px', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>
+                                <Camera className="w-3 h-3" style={{ verticalAlign: 'middle', marginRight: 2 }} /> Foto
+                              </button>
                               <button onClick={() => setShowRevert({ hijo, entregaId: hijo.entregaId! })}
                                 style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>
                                 <RotateCcw className="w-3 h-3" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Reversar
@@ -609,14 +642,28 @@ export default function DispatchPage() {
                 )}
               </div>
 
-              <button onClick={() => handleEntrega(
-                showDeliver.hijo.id,
-                jugueteIdDeliver || showDeliver.hijo.jugueteSugerido?.id || 0,
-                recibidoPor,
-                recibidoPor === 'TERCERO' ? nombreReceptor : null,
-                ficha.colaborador.carnet,
-                colaboradorFoto || undefined
-              )}
+              <button onClick={async () => {
+                if (!colaboradorFoto) {
+                  const result = await Swal.fire({
+                    title: '¿Sin foto de evidencia?',
+                    text: 'No se ha tomado foto de evidencia. ¿Desea continuar sin ella?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, entregar sin foto',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#da121a',
+                  });
+                  if (!result.isConfirmed) return;
+                }
+                handleEntrega(
+                  showDeliver.hijo.id,
+                  jugueteIdDeliver || showDeliver.hijo.jugueteSugerido?.id || 0,
+                  recibidoPor,
+                  recibidoPor === 'TERCERO' ? nombreReceptor : null,
+                  ficha.colaborador.carnet,
+                  colaboradorFoto || undefined
+                );
+              }}
                 style={{ background: '#da121a', color: 'white', border: 'none', borderRadius: 8, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                 <Gift className="w-4 h-4" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Confirmar Entrega
               </button>

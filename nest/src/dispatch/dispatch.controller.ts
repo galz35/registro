@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Body, Param, Query, UseGuards, Req,
+  Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Req,
   ParseIntPipe, UseInterceptors, UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -44,6 +44,17 @@ export class DispatchController {
     @Req() req: any,
   ) {
     return this.dispatch.revert(entregaId, req.user.carnet, dto.motivo);
+  }
+
+  @Patch(':hijoId/foto')
+  @Roles('despachador', 'supervisor', 'admin')
+  @UseInterceptors(FileInterceptor('foto'))
+  async updateFoto(
+    @Param('hijoId', ParseIntPipe) hijoId: number,
+    @Query('eventoId', ParseIntPipe) eventoId: number,
+    @UploadedFile() foto: Express.Multer.File,
+  ) {
+    return this.dispatch.updateFoto(hijoId, eventoId, foto);
   }
 
   @Get('event/:eventoId/summary')

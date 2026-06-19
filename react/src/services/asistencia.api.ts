@@ -54,6 +54,15 @@ export async function reversarEntrega(entregaId: number, motivo: string): Promis
   return data;
 }
 
+export async function updateFotoEvidencia(hijoId: number, eventoId: number, foto: File): Promise<any> {
+  const fd = new FormData();
+  fd.append('foto', foto);
+  const { data } = await api.patch(`/dispatch/${hijoId}/foto?eventoId=${eventoId}`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
 export async function getCatalogo(): Promise<Juguete[]> {
   const { data } = await api.get('/catalog');
   return data;
