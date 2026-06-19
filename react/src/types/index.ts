@@ -57,6 +57,7 @@ export interface ColaboradorFicha {
   hijos: Hijo[];
   familiaresHcm?: { nombre: string; tipoRela: string; edad: number }[];
   inactivo?: boolean;
+  terminationDate?: string | null;
 }
 
 export interface DashboardKPI {

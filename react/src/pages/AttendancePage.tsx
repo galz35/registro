@@ -280,6 +280,7 @@ export default function AttendancePage() {
                     {ficha.inactivo && (
                       <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 700, margin: '8px 0 0', padding: '10px 14px', background: '#fee2e2', borderRadius: 8, border: '2px solid #dc2626' }}>
                         ⛔ Este colaborador está <strong>dado de baja</strong> en el Portal. No puede registrarse ni recibir despacho.
+                        {ficha.terminationDate && <><br /><span style={{ fontSize: 12, fontWeight: 600 }}>Último día trabajado: {new Date(ficha.terminationDate).toLocaleDateString()}</span></>}
                       </p>
                     )}
                     {!ficha.inactivo && ficha.colaborador.departamentoGeografico && ficha.colaborador.departamentoGeografico.toUpperCase() !== 'MANAGUA' && (

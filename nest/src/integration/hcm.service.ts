@@ -47,6 +47,38 @@ export class HcmService {
     } catch { return null; }
   }
 
+  async obtenerEstadoEmpleado(carnet: string): Promise<{ activo: boolean; terminationDate: string | null } | null> {
+    const url = this.config.get<string>('HCM_API_URL');
+    const username = this.config.get<string>('HCM_USERNAME');
+    const password = this.config.get<string>('HCM_PASSWORD');
+
+    if (!url || !username || !password) return null;
+
+    const carnetPad = this.padCarnet(carnet);
+
+    try {
+      const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+      const response = await firstValueFrom(
+        this.http.get(url, {
+          headers: { Authorization: authHeader, Accept: 'application/json' },
+          params: { onlyData: true, expand: 'workRelationships', q: `PersonNumber='${carnetPad}'` },
+          timeout: 5000,
+        }),
+      );
+      const data = response.data;
+      if (!data.items || data.items.length === 0) return null;
+
+      const wr = data.items[0].workRelationships;
+      if (!wr || wr.length === 0) return { activo: true, terminationDate: null };
+
+      const primary = wr.find((w: any) => w.PrimaryFlag === true) || wr[0];
+      const terminationDate = primary.TerminationDate || null;
+      const activo = !terminationDate;
+
+      return { activo, terminationDate };
+    } catch { return null; }
+  }
+
   async obtenerFamiliares(carnet: string): Promise<any[]> {
     const username = this.config.get<string>('HCM_USERNAME');
     const password = this.config.get<string>('HCM_PASSWORD');

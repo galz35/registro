@@ -88,7 +88,9 @@ export class AttendanceService {
         .input('carnet', sql.VarChar(50), carnet)
         .query('UPDATE tblColaboradores SET Activo = 0 WHERE Carnet = @carnet AND Activo = 1');
 
-      // Devolver datos con inactivo=true para mostrar mensaje en frontend
+      // Intentar obtener terminationDate desde HCM
+      const hcmStatus = await this.hcm.obtenerEstadoEmpleado(carnet);
+
       return {
         colaborador: {
           carnet,
@@ -101,6 +103,7 @@ export class AttendanceService {
           inactivo: true,
         },
         inactivo: true,
+        terminationDate: hcmStatus?.terminationDate || null,
         asistio: false,
         fechaAsistencia: null,
         adultos: 0,
@@ -113,7 +116,7 @@ export class AttendanceService {
       };
     }
 
-    // Si no se encuentra localmente, buscar en el Portal e insertar
+    // Si no se encuentra localmente, buscar en el Portal o HCM e insertar
     if (!rawColab) {
       if (portalUser) {
         // Insertarlo temporalmente en tblColaboradores
@@ -128,7 +131,6 @@ export class AttendanceService {
             INSERT INTO tblColaboradores (Carnet, Nombre, Puesto, Gerencia, Ubicacion)
             VALUES (@carnet, @nombre, @puesto, @gerencia, @ubicacion)
         `);
-        // Re-ejecutar el SP para obtener respuesta completa
         const result2 = await pool.request()
           .input('carnet', sql.VarChar(50), carnet)
           .input('eventoId', sql.Int, eventoId)
@@ -137,6 +139,37 @@ export class AttendanceService {
           rawColab = result2.recordsets[0][0];
           result.recordsets = result2.recordsets;
         }
+      } else {
+        // Fallback: buscar en HCM si no está en Portal
+        const hcmStatus = await this.hcm.obtenerEstadoEmpleado(carnet);
+        if (hcmStatus && !hcmStatus.activo) {
+          return {
+            colaborador: { carnet, nombre: carnet, puesto: null, gerencia: null, ubicacion: null, edificio: null, departamentoGeografico: null, inactivo: true },
+            inactivo: true,
+            terminationDate: hcmStatus.terminationDate,
+            asistio: false, fechaAsistencia: null, adultos: 0, ninos: 0, asistioPor: null, nombreAsistente: null, fotoHcm: null, hijos: [], familiaresHcm: [],
+          };
+        }
+      }
+    }
+
+    // Si existe localmente pero Portal no lo tiene, verificar en HCM
+    if (rawColab && portalUser === null) {
+      const hcmStatus = await this.hcm.obtenerEstadoEmpleado(carnet);
+      if (hcmStatus && !hcmStatus.activo) {
+        await pool.request()
+          .input('carnet', sql.VarChar(50), carnet)
+          .query('UPDATE tblColaboradores SET Activo = 0 WHERE Carnet = @carnet AND Activo = 1');
+        return {
+          colaborador: {
+            carnet: rawColab.Carnet, nombre: rawColab.Nombre, puesto: rawColab.Puesto || null,
+            gerencia: rawColab.Gerencia || null, ubicacion: rawColab.Ubicacion || null,
+            edificio: rawColab.Edificio || null, departamentoGeografico: rawColab.DepartamentoGeografico || null, inactivo: true,
+          },
+          inactivo: true,
+          terminationDate: hcmStatus.terminationDate,
+          asistio: false, fechaAsistencia: null, adultos: 0, ninos: 0, asistioPor: null, nombreAsistente: null, fotoHcm: null, hijos: [], familiaresHcm: [],
+        };
       }
     }
 
