@@ -315,10 +315,12 @@ export default function DispatchPage() {
                   </div>
                 </div>
 
-                {/* Foto evidencia - 1 por colaborador */}
+                {/* Foto evidencia - 1 por colaborador (REQUERIDO) */}
                 {ficha.asistio && (
-                  <div style={{ marginBottom: 16, padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: '0 0 8px' }}>📸 Foto de Evidencia (1 por colaborador)</p>
+                  <div style={{ marginBottom: 16, padding: 12, background: '#f8fafc', borderRadius: 8, border: colaboradorFoto ? '2px solid #10b981' : '2px solid #ef4444' }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: '0 0 8px' }}>
+                      📸 Foto de Evidencia <span style={{ color: '#ef4444', fontSize: 10 }}>(Requerido)</span>
+                    </p>
                     {fotoUrlExistente ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <img src={fotoUrlExistente} alt="Evidencia" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e5e7eb', cursor: 'pointer' }}
@@ -389,16 +391,14 @@ export default function DispatchPage() {
                     )}
                     <button onClick={async () => {
                       if (!colaboradorFoto) {
-                        const result = await Swal.fire({
-                          title: '¿Sin foto de evidencia?',
-                          text: 'No se ha tomado foto de evidencia. ¿Desea continuar sin ella?',
-                          icon: 'warning',
-                          showCancelButton: true,
-                          confirmButtonText: 'Sí, entregar sin foto',
-                          cancelButtonText: 'Cancelar',
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Foto requerida',
+                          text: 'Debe tomar o subir una foto de evidencia antes de entregar.',
+                          confirmButtonText: 'Entendido',
                           confirmButtonColor: '#da121a',
                         });
-                        if (!result.isConfirmed) return;
+                        return;
                       }
                       const pendientes = ficha.hijos.filter(h => h.estadoEntrega !== 'DELIVERED');
                       const foto = colaboradorFoto || undefined;
@@ -676,16 +676,14 @@ export default function DispatchPage() {
 
               <button onClick={async () => {
                 if (!colaboradorFoto) {
-                  const result = await Swal.fire({
-                    title: '¿Sin foto de evidencia?',
-                    text: 'No se ha tomado foto de evidencia. ¿Desea continuar sin ella?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, entregar sin foto',
-                    cancelButtonText: 'Cancelar',
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Foto requerida',
+                    text: 'Debe tomar o subir una foto de evidencia antes de entregar.',
+                    confirmButtonText: 'Entendido',
                     confirmButtonColor: '#da121a',
                   });
-                  if (!result.isConfirmed) return;
+                  return;
                 }
                 handleEntrega(
                   showDeliver.hijo.id,
@@ -693,7 +691,7 @@ export default function DispatchPage() {
                   recibidoPor,
                   recibidoPor === 'TERCERO' ? nombreReceptor : null,
                   ficha.colaborador.carnet,
-                  colaboradorFoto || undefined
+                  colaboradorFoto
                 );
               }}
                 style={{ background: '#da121a', color: 'white', border: 'none', borderRadius: 8, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
