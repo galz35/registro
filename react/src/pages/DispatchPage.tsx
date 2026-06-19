@@ -22,10 +22,8 @@ export default function DispatchPage() {
   const [selectedJuguetes, setSelectedJuguetes] = useState<Record<number, number>>({});
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [jugueteIdDeliver, setJugueteIdDeliver] = useState(0);
+  const [deliverFoto, setDeliverFoto] = useState<File | null>(null);
   const [showCam, setShowCam] = useState(false);
-  const [showEvidenciaCarnet, setShowEvidenciaCarnet] = useState<string | null>(null);
-  const [evidenciaData, setEvidenciaData] = useState<{ nombre: string; hijos: { id: number; nombre: string; fotoUrl: string | null }[] } | null>(null);
-  const [loadingEvidencia, setLoadingEvidencia] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -51,7 +49,8 @@ export default function DispatchPage() {
     canvas.toBlob((blob) => {
       if (blob) {
         const file = new File([blob], 'camara.jpg', { type: 'image/jpeg' });
-        setColaboradorFoto(file);
+        if (showDeliver) setDeliverFoto(file);
+        else setColaboradorFoto(file);
       }
     }, 'image/jpeg', 0.8);
     stopCam();
@@ -158,21 +157,28 @@ export default function DispatchPage() {
   const fotoUrlExistente = ficha?.hijos.find(h => h.fotoEvidenciaUrl)?.fotoEvidenciaUrl;
 
   const abrirEvidencia = async (carnet: string) => {
-    setShowEvidenciaCarnet(carnet);
-    setLoadingEvidencia(true);
-    setEvidenciaData(null);
     try {
       const data = await getColaboradorFull(carnet, EVENTO_ACTIVO_ID);
-      setEvidenciaData({
-        nombre: data.colaborador.nombre,
-        hijos: data.hijos.map((h: any) => ({
-          id: h.id,
-          nombre: h.nombreHijo,
-          fotoUrl: h.fotoEvidenciaUrl || null,
-        })),
+      const hijosConFoto = data.hijos.filter((h: any) => h.fotoEvidenciaUrl);
+      if (hijosConFoto.length > 0) {
+        setFotoPreview(hijosConFoto[0].fotoEvidenciaUrl);
+      } else {
+        Swal.fire({
+          icon: 'info',
+          title: 'Sin foto de evidencia',
+          text: 'Este colaborador no tiene fotos de evidencia registradas.',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#da121a',
+        });
+      }
+    } catch {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo cargar la información.',
+        confirmButtonText: 'Cerrar',
       });
-    } catch { setEvidenciaData(null); }
-    finally { setLoadingEvidencia(false); }
+    }
   };
 
   return (
@@ -510,7 +516,7 @@ export default function DispatchPage() {
                               </button>
                             </>
                            ) : (
-                              <button onClick={() => { setShowDeliver({ hijo, fotoEvidencia: colaboradorFoto || null }); setRecibidoPor('COLABORADOR'); setNombreReceptor(''); setJugueteIdDeliver(selectedJuguetes[hijo.id] || hijo.jugueteSugerido?.id || 0); }}
+                              <button onClick={() => { setShowDeliver({ hijo, fotoEvidencia: colaboradorFoto || null }); setRecibidoPor('COLABORADOR'); setNombreReceptor(''); setJugueteIdDeliver(selectedJuguetes[hijo.id] || hijo.jugueteSugerido?.id || 0); setDeliverFoto(null); }}
                                 style={{ background: '#da121a', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                                 <Gift className="w-3 h-3" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Entregar
                               </button>
@@ -674,8 +680,29 @@ export default function DispatchPage() {
                 )}
               </div>
 
+              {/* Foto de evidencia dentro del modal */}
+              <div style={{ padding: 14, border: deliverFoto ? '2px solid #10b981' : '2px solid #ef4444', borderRadius: 10, background: '#f8fafc' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#374151', margin: '0 0 6px' }}>
+                  📸 Foto de Evidencia <span style={{ color: '#ef4444' }}>(Requerido)</span>
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '6px 10px', borderRadius: 6, border: '1px dashed #d1d5db', fontSize: 12 }}>
+                    <Camera className="w-4 h-4" style={{ color: '#9ca3af' }} />
+                    <span style={{ color: '#6b7280' }}>{deliverFoto ? deliverFoto.name : 'Subir foto'}</span>
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setDeliverFoto(e.target.files?.[0] || null)} />
+                  </label>
+                  <button onClick={() => { setShowCam(true); setTimeout(startCam, 100); }}
+                    style={{ padding: '6px 10px', borderRadius: 6, border: '1px dashed #d1d5db', background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                    📷 Cámara
+                  </button>
+                </div>
+                {deliverFoto && (
+                  <img src={URL.createObjectURL(deliverFoto)} alt="Preview" style={{ width: '100%', maxHeight: 100, borderRadius: 6, objectFit: 'cover', marginTop: 6 }} />
+                )}
+              </div>
+
               <button onClick={async () => {
-                if (!colaboradorFoto) {
+                if (!colaboradorFoto && !deliverFoto) {
                   Swal.fire({
                     icon: 'error',
                     title: 'Foto requerida',
@@ -685,13 +712,14 @@ export default function DispatchPage() {
                   });
                   return;
                 }
+                const fotoFinal = (deliverFoto || colaboradorFoto) || undefined;
                 handleEntrega(
                   showDeliver.hijo.id,
                   jugueteIdDeliver || showDeliver.hijo.jugueteSugerido?.id || 0,
                   recibidoPor,
                   recibidoPor === 'TERCERO' ? nombreReceptor : null,
                   ficha.colaborador.carnet,
-                  colaboradorFoto
+                  fotoFinal
                 );
               }}
                 style={{ background: '#da121a', color: 'white', border: 'none', borderRadius: 8, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
@@ -714,63 +742,6 @@ export default function DispatchPage() {
               ¿Reversar entrega de <strong style={{ color: '#1f2937' }}>{showRevert.hijo.nombreHijo}</strong>?
             </p>
             <RevertForm onConfirm={(motivo) => handleRevert(showRevert.entregaId, motivo)} onClose={() => setShowRevert(null)} />
-          </div>
-        </div>
-      )}
-
-      {/* Evidencia photos modal */}
-      {showEvidenciaCarnet && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}
-          onClick={() => setShowEvidenciaCarnet(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: 16, padding: 24, width: '90%', maxWidth: 500, margin: 20, maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: 0 }}>📸 Fotos de Evidencia</h3>
-              <button onClick={() => setShowEvidenciaCarnet(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#6b7280' }}>✕</button>
-            </div>
-            {loadingEvidencia ? (
-              <p style={{ textAlign: 'center', color: '#6b7280' }}>Cargando...</p>
-            ) : evidenciaData ? (
-              <>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 12 }}>{evidenciaData.nombre}</p>
-                {evidenciaData.hijos.length === 0 ? (
-                  <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin hijos registrados</p>
-                ) : (
-                  evidenciaData.hijos.map(hijo => (
-                    <div key={hijo.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontWeight: 600, fontSize: 13, margin: 0 }}>{hijo.nombre}</p>
-                      </div>
-                      {hijo.fotoUrl ? (
-                        <img src={hijo.fotoUrl} alt="Evidencia" style={{ width: 48, height: 48, borderRadius: 6, objectFit: 'cover', border: '1px solid #e5e7eb', cursor: 'pointer' }}
-                          onClick={() => setFotoPreview(hijo.fotoUrl!)} />
-                      ) : (
-                        <div style={{ width: 48, height: 48, borderRadius: 6, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#9ca3af' }}>📷</div>
-                      )}
-                      <button onClick={async () => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.onchange = async () => {
-                          const file = input.files?.[0];
-                          if (!file) return;
-                          try {
-                            await updateFotoEvidencia(hijo.id, EVENTO_ACTIVO_ID, file);
-                            show('✅ Foto actualizada');
-                            await recargarCatalogo();
-                            await abrirEvidencia(showEvidenciaCarnet);
-                          } catch { show('Error al actualizar foto', 'error'); }
-                        };
-                        input.click();
-                      }} style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: 6, padding: '6px 10px', fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        <Camera className="w-3 h-3" style={{ verticalAlign: 'middle', marginRight: 2 }} /> Foto
-                      </button>
-                    </div>
-                  ))
-                )}
-              </>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#ef4444' }}>Error al cargar datos</p>
-            )}
           </div>
         </div>
       )}
