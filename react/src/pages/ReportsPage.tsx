@@ -83,6 +83,14 @@ function AsistenciaReport() {
         ))}
       </div>
 
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#374151' }}>Detalle de Asistencia</span>
+        <button onClick={() => window.open('/api/reports/asistencia.xlsx?eventoId=1', '_blank')}
+          style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 600, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Download className="w-4 h-4" /> Excel
+        </button>
+      </div>
+
       {/* Table */}
       <div style={{ background: 'white', borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
@@ -262,6 +270,14 @@ function InventarioReport() {
             <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 28, color: s.color }}>{s.value}</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#374151' }}>Inventario por Juguete</span>
+        <button onClick={() => window.open('/api/reports/inventario.xlsx', '_blank')}
+          style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 600, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Download className="w-4 h-4" /> Excel
+        </button>
       </div>
 
       {/* Table */}
