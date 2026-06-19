@@ -22,6 +22,8 @@ export default function AttendancePage() {
   const [ninos, setNinos] = useState(0);
   const [filterTexto, setFilterTexto] = useState('');
   const [infoCarnet, setInfoCarnet] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<any[] | null>(null);
+  const [searchingName, setSearchingName] = useState(false);
   const [asistidos, setAsistidos] = useState<CensoItem[]>([]);
   const [allAsistidos, setAllAsistidos] = useState<CensoItem[]>([]);
   const [totalAsistidos, setTotalAsistidos] = useState(0);
@@ -55,14 +57,38 @@ export default function AttendancePage() {
   useEffect(() => { loadAsistidos(pagina); }, [pagina]);
 
   const buscar = async () => {
-    const carnet = searchTerm.trim();
-    if (!carnet) return;
-    setLoading(true);
+    const q = searchTerm.trim();
+    if (!q) return;
+    setSearchResults(null);
     setFicha(null);
+    // Si solo contiene digitos -> buscar por carnet exacto
+    if (/^\d+$/.test(q) && q.length >= 4) {
+      setLoading(true);
+      try {
+        const data = await getColaboradorFull(q, EVENTO_ACTIVO_ID);
+        setFicha(data);
+      } catch { show('Colaborador no encontrado', 'error'); }
+      finally { setLoading(false); }
+    } else {
+      // Buscar por nombre
+      setSearchingName(true);
+      try {
+        const { data } = await api.get('/attendance/search', { params: { q } });
+        setSearchResults(data || []);
+        if (!data || data.length === 0) show('No se encontraron resultados', 'error');
+      } catch { show('Error al buscar', 'error'); }
+      finally { setSearchingName(false); }
+    }
+  };
+
+  const seleccionarResultado = async (carnet: string) => {
+    setSearchResults(null);
+    setSearchTerm(carnet);
+    setLoading(true);
     try {
       const data = await getColaboradorFull(carnet, EVENTO_ACTIVO_ID);
       setFicha(data);
-    } catch { show('Colaborador no encontrado', 'error'); }
+    } catch { show('Error al cargar colaborador', 'error'); }
     finally { setLoading(false); }
   };
 
@@ -153,13 +179,40 @@ export default function AttendancePage() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                 <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && buscar()}
-                  placeholder="Ingrese carnet de colaborador"
+                  placeholder="Buscar por carnet o nombre..."
                   style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, outline: 'none' }} />
                 <button onClick={buscar} disabled={loading}
                   style={{ background: 'linear-gradient(135deg, #da121a 0%, #1e1e1e 100%)', border: 'none', color: 'white', borderRadius: 8, padding: '10px 20px', fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Buscar
                 </button>
               </div>
+
+              {/* Search results (names) */}
+              {searchingName && (
+                <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>
+                  <Loader2 className="w-5 h-5" style={{ margin: '0 auto 8px', animation: 'spin 0.8s linear infinite' }} />
+                  <p style={{ fontSize: 12 }}>Buscando...</p>
+                </div>
+              )}
+              {searchResults && searchResults.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Seleccione un colaborador:</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {searchResults.map((r: any) => (
+                      <button key={r.carnet} onClick={() => seleccionarResultado(r.carnet)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', fontSize: 13 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#da121a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                          {r.nombre.charAt(0)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600 }}>{r.nombre}</div>
+                          <div style={{ fontSize: 11, color: '#6b7280' }}>{r.carnet} · {r.gerencia || ''}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {ficha && (
                 <div style={{ display: 'flex', gap: 16 }}>

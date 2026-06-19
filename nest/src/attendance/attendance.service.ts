@@ -10,6 +10,38 @@ export class AttendanceService {
     private hcm: HcmService,
   ) {}
 
+  async searchCollaborators(query: string): Promise<any[]> {
+    const pool = this.db.getPool();
+    const request = pool.request();
+    request.input('q', sql.VarChar(100), `%${query}%`);
+    // Search in local table
+    const local = await request.query(`
+      SELECT Carnet, Nombre, Gerencia, Ubicacion FROM dbo.tblColaboradores
+      WHERE Activo = 1 AND (Carnet LIKE @q OR Nombre LIKE @q)
+    `);
+    // Search in Portal if few results
+    let portal: any[] = [];
+    if (local.recordset.length < 10) {
+      try {
+        const portalReq = pool.request();
+        portalReq.input('q', sql.VarChar(100), `%${query}%`);
+        const pResult = await portalReq.query(`
+          SELECT carnet AS Carnet, nombreCompleto AS Nombre, orgGerencia AS Gerencia, ubicacion AS Ubicacion
+          FROM bdplaner.dbo.p_Usuarios
+          WHERE activo = 1 AND (carnet LIKE @q OR nombreCompleto LIKE @q)
+        `);
+        portal = pResult.recordset || [];
+      } catch {}
+    }
+    // Merge, avoid duplicates (local has priority)
+    const seen = new Set(local.recordset.map((r: any) => r.Carnet));
+    const all = [...local.recordset, ...portal.filter((p: any) => !seen.has(p.Carnet))];
+    return all.slice(0, 15).map((r: any) => ({
+      carnet: r.Carnet, nombre: r.Nombre,
+      gerencia: r.Gerencia || null, ubicacion: r.Ubicacion || null,
+    }));
+  }
+
   async buscarEnPortal(carnet: string): Promise<any | null> {
     try {
       const request = this.db.getPool().request();

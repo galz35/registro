@@ -10,6 +10,12 @@ import { RolesGuard } from '../common/roles.guard';
 export class AttendanceController {
   constructor(private attendance: AttendanceService) {}
 
+  @Get('search')
+  @Roles('despachador', 'supervisor', 'admin')
+  async search(@Query('q') q: string) {
+    return this.attendance.searchCollaborators(q || '');
+  }
+
   @Get('lookup/:carnet')
   @Roles('despachador', 'supervisor', 'admin')
   async lookup(@Param('carnet') carnet: string, @Query('eventoId', ParseIntPipe) eventoId: number) {
