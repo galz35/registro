@@ -186,10 +186,17 @@ export default function AttendancePage() {
             </div>
             <div style={{ padding: 16 }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && buscar()}
-                  placeholder="Buscar por carnet o nombre..."
-                  style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, outline: 'none' }} />
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && buscar()}
+                    placeholder="Buscar por carnet o nombre..."
+                    style={{ width: '100%', padding: '10px 36px 10px 14px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                  {searchTerm && (
+                    <button onClick={() => setSearchTerm('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: '#e5e7eb', border: 'none', borderRadius: '50%', width: 22, height: 22, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', lineHeight: 1 }}>
+                      ✕
+                    </button>
+                  )}
+                </div>
                 <button onClick={buscar} disabled={loading}
                   style={{ background: 'linear-gradient(135deg, #da121a 0%, #1e1e1e 100%)', border: 'none', color: 'white', borderRadius: 8, padding: '10px 20px', fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Buscar
@@ -399,10 +406,17 @@ export default function AttendancePage() {
               <Users className="w-4 h-4" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Asistieron ({totalAsistidos})
             </span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input type="text" value={filterTexto} onChange={(e) => { setFilterTexto(e.target.value); setPagina(1); }}
-                placeholder="Filtrar por nombre o carnet..."
-                style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)', fontSize: 12, outline: 'none', background: 'rgba(255,255,255,0.15)', color: 'white', width: 200 }}
-              />
+              <div style={{ position: 'relative', width: 200 }}>
+                <input type="text" value={filterTexto} onChange={(e) => { setFilterTexto(e.target.value); setPagina(1); }}
+                  placeholder="Filtrar por nombre o carnet..."
+                  style={{ padding: '5px 28px 5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)', fontSize: 12, outline: 'none', background: 'rgba(255,255,255,0.15)', color: 'white', width: '100%', boxSizing: 'border-box' }}
+                />
+                {filterTexto && (
+                  <button onClick={() => setFilterTexto('')} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: '50%', width: 18, height: 18, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', lineHeight: 1 }}>
+                    ✕
+                  </button>
+                )}
+              </div>
               <button onClick={handleExportExcel}
                 style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', borderRadius: 6, padding: '5px 12px', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>
                 📥 Excel

@@ -755,14 +755,16 @@ export default function DispatchPage() {
 
       {/* Foto preview modal */}
       {fotoPreview && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setFotoPreview(null)}>
-          <button onClick={() => setFotoPreview(null)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', borderRadius: '50%', width: 40, height: 40, fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-            ✕
-          </button>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', padding: 16, zIndex: 1 }}>
+            <button onClick={() => setFotoPreview(null)}
+              style={{ background: '#ef4444', border: 'none', color: 'white', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+              <X className="w-4 h-4" /> Cerrar
+            </button>
+          </div>
           <img src={fotoPreview} alt="Evidencia" style={{ maxWidth: '90%', maxHeight: '85%', borderRadius: 8, objectFit: 'contain', cursor: 'pointer' }}
             onClick={(e) => e.stopPropagation()} />
-          <p style={{ position: 'absolute', bottom: 20, color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Click fuera de la imagen para cerrar</p>
         </div>
       )}
     </div>
