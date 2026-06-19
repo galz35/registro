@@ -616,6 +616,9 @@ Al registrar asistencia, se guarda quién asistió realmente:
 ### Otras mejoras
 - Botones ✕ para limpiar inputs de búsqueda (attendance, filtros)
 - Limpieza automática de búsqueda al registrar asistencia
+- **Auto-llenar Niños** al cargar colaborador en registro (se llena con `hijos.length`)
+- **Reset de formulario** al registrar asistencia (adultos→1, niños→0, quién asiste→Colaborador)
+- **Validación Tercero**: mostrar error si no se ingresa nombre al seleccionar Tercero en despacho
 - Preview de foto con botón ✕ y "click fuera para cerrar"
 - Paginación: Pendientes 3 items, Completos 5 items
 - Filtros de tabla con fondo blanco y búsqueda por carnet+nombre+gerencia
