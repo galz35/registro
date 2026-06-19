@@ -23,6 +23,9 @@ export default function DispatchPage() {
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [jugueteIdDeliver, setJugueteIdDeliver] = useState(0);
   const [showCam, setShowCam] = useState(false);
+  const [showEvidenciaCarnet, setShowEvidenciaCarnet] = useState<string | null>(null);
+  const [evidenciaData, setEvidenciaData] = useState<{ nombre: string; hijos: { id: number; nombre: string; fotoUrl: string | null }[] } | null>(null);
+  const [loadingEvidencia, setLoadingEvidencia] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -153,6 +156,24 @@ export default function DispatchPage() {
   };
 
   const fotoUrlExistente = ficha?.hijos.find(h => h.fotoEvidenciaUrl)?.fotoEvidenciaUrl;
+
+  const abrirEvidencia = async (carnet: string) => {
+    setShowEvidenciaCarnet(carnet);
+    setLoadingEvidencia(true);
+    setEvidenciaData(null);
+    try {
+      const data = await getColaboradorFull(carnet, EVENTO_ACTIVO_ID);
+      setEvidenciaData({
+        nombre: data.colaborador.nombre,
+        hijos: data.hijos.map((h: any) => ({
+          id: h.id,
+          nombre: h.nombreHijo,
+          fotoUrl: h.fotoEvidenciaUrl || null,
+        })),
+      });
+    } catch { setEvidenciaData(null); }
+    finally { setLoadingEvidencia(false); }
+  };
 
   return (
     <div className="app-shell" style={{ background: '#f8f9fa', minHeight: '100vh' }}>
@@ -540,6 +561,7 @@ export default function DispatchPage() {
                         <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Colaborador</th>
                         <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Hijos</th>
                         <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Entreg.</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Foto</th>
                         <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Detalle</th>
                       </tr></thead>
                       <tbody>
@@ -550,11 +572,16 @@ export default function DispatchPage() {
                             <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.TotalHijos}</td>
                             <td style={{ padding: '10px 16px', textAlign: 'center' }}><span style={{ fontWeight: 700, color: '#10b981' }}>{row.Entregados}/{row.TotalHijos}</span></td>
                             <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                              <button onClick={() => abrirEvidencia(row.Carnet)} style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 14 }} title="Ver fotos de evidencia">
+                                📷
+                              </button>
+                            </td>
+                            <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                               <button onClick={() => abrirColaborador(row.Carnet)} style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', color: '#6b7280' }}>👁️</button>
                             </td>
                           </tr>
                         ))}
-                        {completos.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 30, color: '#9ca3af' }}>No hay despachos completados aún</td></tr>}
+                        {completos.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: '#9ca3af' }}>No hay despachos completados aún</td></tr>}
                       </tbody>
                     </table>
                   );
@@ -689,6 +716,63 @@ export default function DispatchPage() {
               ¿Reversar entrega de <strong style={{ color: '#1f2937' }}>{showRevert.hijo.nombreHijo}</strong>?
             </p>
             <RevertForm onConfirm={(motivo) => handleRevert(showRevert.entregaId, motivo)} onClose={() => setShowRevert(null)} />
+          </div>
+        </div>
+      )}
+
+      {/* Evidencia photos modal */}
+      {showEvidenciaCarnet && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}
+          onClick={() => setShowEvidenciaCarnet(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: 16, padding: 24, width: '90%', maxWidth: 500, margin: 20, maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: 0 }}>📸 Fotos de Evidencia</h3>
+              <button onClick={() => setShowEvidenciaCarnet(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            </div>
+            {loadingEvidencia ? (
+              <p style={{ textAlign: 'center', color: '#6b7280' }}>Cargando...</p>
+            ) : evidenciaData ? (
+              <>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 12 }}>{evidenciaData.nombre}</p>
+                {evidenciaData.hijos.length === 0 ? (
+                  <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin hijos registrados</p>
+                ) : (
+                  evidenciaData.hijos.map(hijo => (
+                    <div key={hijo.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontWeight: 600, fontSize: 13, margin: 0 }}>{hijo.nombre}</p>
+                      </div>
+                      {hijo.fotoUrl ? (
+                        <img src={hijo.fotoUrl} alt="Evidencia" style={{ width: 48, height: 48, borderRadius: 6, objectFit: 'cover', border: '1px solid #e5e7eb', cursor: 'pointer' }}
+                          onClick={() => setFotoPreview(hijo.fotoUrl!)} />
+                      ) : (
+                        <div style={{ width: 48, height: 48, borderRadius: 6, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#9ca3af' }}>📷</div>
+                      )}
+                      <button onClick={async () => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async () => {
+                          const file = input.files?.[0];
+                          if (!file) return;
+                          try {
+                            await updateFotoEvidencia(hijo.id, EVENTO_ACTIVO_ID, file);
+                            show('✅ Foto actualizada');
+                            await recargarCatalogo();
+                            await abrirEvidencia(showEvidenciaCarnet);
+                          } catch { show('Error al actualizar foto', 'error'); }
+                        };
+                        input.click();
+                      }} style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: 6, padding: '6px 10px', fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <Camera className="w-3 h-3" style={{ verticalAlign: 'middle', marginRight: 2 }} /> Foto
+                      </button>
+                    </div>
+                  ))
+                )}
+              </>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#ef4444' }}>Error al cargar datos</p>
+            )}
           </div>
         </div>
       )}
