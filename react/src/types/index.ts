@@ -5,6 +5,7 @@ export interface Colaborador {
   ubicacion: string | null;
   puesto?: string | null;
   edificio?: string | null;
+  departamentoGeografico?: string | null;
 }
 
 export interface Hijo {

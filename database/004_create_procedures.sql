@@ -25,7 +25,8 @@ BEGIN
         c.Puesto,
         c.Gerencia,
         c.Ubicacion,
-        c.Edificio
+        c.Edificio,
+        c.DepartamentoGeografico
     FROM dbo.tblColaboradores c
     WHERE c.Carnet = @Carnet AND c.Activo = 1;
 

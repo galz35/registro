@@ -117,6 +117,7 @@ export class AttendanceService {
       gerencia: rawColab.Gerencia || null,
       ubicacion: rawColab.Ubicacion || null,
       edificio: rawColab.Edificio || null,
+      departamentoGeografico: rawColab.DepartamentoGeografico || null,
       inactivo: false,
     };
 

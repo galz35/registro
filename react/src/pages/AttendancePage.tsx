@@ -256,6 +256,11 @@ export default function AttendancePage() {
                     <h3 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: '0 0 2px', fontSize: 16 }}>{ficha.colaborador.nombre}</h3>
                     <p style={{ color: '#da121a', fontSize: 12, fontWeight: 700, margin: '4px 0' }}>Carnet: {ficha.colaborador.carnet}</p>
                     <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>{ficha.colaborador.gerencia || '-'} · {ficha.colaborador.ubicacion || '-'}</p>
+                    {ficha.colaborador.departamentoGeografico && ficha.colaborador.departamentoGeografico.toUpperCase() !== 'MANAGUA' && (
+                      <p style={{ color: '#dc2626', fontSize: 12, fontWeight: 700, margin: '6px 0 0', padding: '6px 10px', background: '#fee2e2', borderRadius: 6, display: 'inline-block' }}>
+                        ⚠ Este colaborador no es de MANAGUA ({ficha.colaborador.departamentoGeografico}). No aplica para despacho de juguetes.
+                      </p>
+                    )}
 
                     {ficha.asistio ? (
                       <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
