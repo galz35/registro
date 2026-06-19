@@ -230,9 +230,15 @@ export default function DispatchPage() {
 
         {/* LEFT: Lista de colaboradores que asistieron */}
         <section style={{ background: 'white', borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', height: 'fit-content' }}>
-            <div style={{ background: '#da121a', color: 'white', padding: '10px 16px', borderRadius: '12px 12px 0 0', fontWeight: 700, fontSize: 14 }}>
+            <div style={{ background: '#da121a', color: 'white', padding: '10px 16px', borderRadius: '12px 12px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>
               <Users className="w-4 h-4" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Pendientes ({asistidos.filter(a => a.Entregados < a.TotalHijos).length})
-            </div>
+            </span>
+            <button onClick={async () => { await Promise.all([recargarCatalogo(), refreshAsistidos()]); setFicha(null); setColaboradorFoto(null); }}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', borderRadius: 6, padding: '4px 10px', fontWeight: 600, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <RotateCcw className="w-3 h-3" /> Refrescar
+            </button>
+          </div>
             <div style={{ padding: 12 }}>
               <input type="text" value={filterPendientes} onChange={e => { setFilterPendientes(e.target.value); setPagPendientes(1); }}
                 placeholder="🔍 Buscar por nombre..."
