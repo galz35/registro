@@ -296,7 +296,8 @@ export default function DispatchPage() {
                     <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: '0 0 8px' }}>📸 Foto de Evidencia (1 por colaborador)</p>
                     {fotoUrlExistente ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <img src={fotoUrlExistente} alt="Evidencia" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e5e7eb' }} />
+                        <img src={fotoUrlExistente} alt="Evidencia" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e5e7eb', cursor: 'pointer' }}
+                          onClick={() => setFotoPreview(fotoUrlExistente)} />
                         <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>✅ Foto ya registrada</span>
                       </div>
                     ) : (
