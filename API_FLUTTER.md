@@ -109,6 +109,8 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
     "fechaAsistencia": "2026-06-18T10:32:00",
     "adultos": 1,                        // adultos registrados en asistencia
     "ninos": 0,                          // niños registrados en asistencia
+    "asistioPor": "COLABORADOR",         // null | "COLABORADOR" | "CONYUGE" | "TERCERO"
+    "nombreAsistente": null              // null | string (nombre si asistioPor=TERCERO)
     "fotoHcm": "data:image/jpeg;base64,...",  // foto desde Oracle HCM (o null)
     "hijos": [
       {
@@ -150,7 +152,9 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
     "eventoId": 1,
     "carnet": "500708",
     "adultos": 1,          // opcional, default 1
-    "ninos": 0             // opcional, default 0
+    "ninos": 0,            // opcional, default 0
+    "asistioPor": "COLABORADOR",    // opcional: COLABORADOR | CONYUGE | TERCERO
+    "nombreAsistente": null         // opcional, obligatorio si asistioPor=TERCERO
   }
 
   Respuesta: 201
