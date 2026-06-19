@@ -100,8 +100,9 @@ export default function AttendancePage() {
     try {
       await registrarAsistencia(EVENTO_ACTIVO_ID, ficha.colaborador.carnet, adultos, ninos, asistioPor, nombreAsistente);
       show(`✅ Asistencia registrada: ${ficha.colaborador.nombre}`);
-      const data = await getColaboradorFull(ficha.colaborador.carnet, EVENTO_ACTIVO_ID);
-      setFicha(data);
+      setSearchTerm('');
+      setSearchResults(null);
+      setFicha(null);
       await loadAsistidos(pagina);
     } catch (err: any) {
       show(err?.response?.data?.message || 'Error al registrar', 'error');
