@@ -22,7 +22,10 @@ pm2 save
 echo "[4/4] Compilando frontend..."
 cd /opt/apps/asistencia/registro/react
 npm run build
-cp -r dist/* /var/www/asistencia/dist/ 2>/dev/null || mkdir -p /var/www/asistencia/dist && cp -r dist/* /var/www/asistencia/dist/
+# Limpiar assets antiguos (solo mantener los nuevos)
+rm -f /var/www/asistencia/assets/index-*.js /var/www/asistencia/assets/index-*.css 2>/dev/null
+cp -r dist/* /var/www/asistencia/
+echo "Frontend desplegado en /var/www/asistencia/"
 
 echo "=== Deploy completado ==="
 echo "API: http://localhost:3000"

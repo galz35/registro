@@ -81,3 +81,10 @@
 ## Evento activo
 - Tabla tblEventos, campo Activo = 1
 - Seed: Dia del Nino 2026 (Id = 1)
+
+## Despliegue
+- Web root: /var/www/asistencia/ (NO /var/www/asistencia/dist/)
+- Despues de compilar React: cp -r dist/* /var/www/asistencia/
+- Limpiar assets viejos: rm -f /var/www/asistencia/assets/index-*.{js,css}
+- Backend: pm2 restart api-asistencia
+- Script: bash deploy/deploy.sh
