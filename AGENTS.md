@@ -34,12 +34,14 @@
 - GET  /auth/me
 - GET  /attendance/lookup/:carnet?eventoId=
 - POST /attendance/register
+- POST /attendance/revert
 - GET  /attendance/event/:eventoId/summary
 - GET  /attendance/censo
-- POST /dispatch/deliver
+- GET  /attendance/search?q=   (busqueda por nombre)
+- POST /dispatch/deliver       (multipart con foto OBLIGATORIA)
 - GET  /dispatch/validate/:hijoId/:jugueteId?eventoId=
 - POST /dispatch/:entregaId/revert
-- PATCH /dispatch/:hijoId/foto?eventoId=   (actualizar foto evidencia de entrega existente)
+- PATCH /dispatch/:hijoId/foto?eventoId=   (actualizar foto evidencia)
 - GET  /dispatch/event/:eventoId/summary
 - GET  /catalog
 - POST /catalog
@@ -51,10 +53,22 @@
 - POST /imports/censo/apply
 - POST /imports/catalogo/validate
 - POST /imports/catalogo/apply
+- GET  /imports/template/:tipo  (descargar plantilla .xlsx: censo o catalogo)
 - GET  /imports/:id/errors
 - GET  /reports/entregas.csv
 - GET  /reports/pendientes.csv
 - GET  /reports/inventario.csv
+- GET  /health (sin auth)
+
+## Frontend routes (React SPA bajo /asistencia/)
+- /                    → Dashboard (CommandCenter)
+- /attendance          → Registro de asistencia
+- /dispatch            → Despacho de juguetes
+- /catalog             → Catálogo de juguetes
+- /import              → Importar Excel (censo y catalogo)
+- /history             → Historial de movimientos
+- /reports             → Reportes (asistencia, despacho, inventario)
+- /admin               → Administración de usuarios/roles
 
 ## Roles
 - admin: acceso total

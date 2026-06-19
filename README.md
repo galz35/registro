@@ -171,6 +171,16 @@ Authorization: Bearer <token>
 }
 ```
 
+#### Búsqueda por nombre
+```http
+GET /api-asistencia/attendance/search?q=LIRA
+Authorization: Bearer <token>
+Response: [
+  { "carnet":"500708", "nombre":"GUSTAVO ADOLFO LIRA SALAZAR", "gerencia":"GERENCIA DE RECURSOS HUMANOS", "ubicacion":"COORD. DE SOPORTE A LA OPERACION" },
+  { "carnet":"1005989", "nombre":"GABRIELA CASTELLON LIRA", ... }
+]
+```
+
 #### KPIs del evento
 ```http
 GET /api-asistencia/attendance/event/1/summary
@@ -224,8 +234,20 @@ jugueteId: 5
 carnetColaborador: 500708
 recibidoPor: COLABORADOR | CONYUGE | TERCERO
 nombreReceptor: (solo si tercero)
-foto: (archivo imagen opcional)
+foto: (archivo imagen OBLIGATORIO, se convierte a WebP)
 ```
+
+**NOTA**: La foto de evidencia es **obligatoria** para entregar. El modal de entrega incluye subir foto y cámara.
+
+#### Actualizar foto de evidencia (NUEVO)
+```http
+PATCH /api-asistencia/dispatch/{hijoId}/foto?eventoId=1
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+
+foto: (archivo imagen OBLIGATORIO)
+```
+Actualiza la foto de evidencia de una entrega ya completada (DELIVERED). No modifica stock ni estado.
 
 #### Reversar entrega
 ```http
@@ -542,13 +564,56 @@ Config: `/etc/nginx/snippets/asistencia_routes.conf`
 - Dispatch validate, deliver, audit
 - Reports CSV
 
+## 🆕 Últimas funcionalidades agregadas
+
+### Búsqueda por nombre en asistencia
+```
+GET /api-asistencia/attendance/search?q=nombre
+Authorization: Bearer <token>
+```
+Busca colaboradores en BD local + Portal (bdplaner.dbo.p_Usuarios).
+
+### Quién asiste (asistioPor)
+Al registrar asistencia, se guarda quién asistió realmente:
+- `COLABORADOR` / `CONYUGE` / `TERCERO` + nombre
+- Se muestra en tabla Asistieron y en detalle de colaborador
+
+### Foto de evidencia OBLIGATORIA
+- La foto es requerida antes de entregar (no permite omitirla)
+- Modal de entrega individual incluye subir foto + cámara
+- Actualización de foto en entregas ya completadas: `PATCH /dispatch/:hijoId/foto?eventoId=`
+- En tabla Despachados Completos, botón 📷 abre foto completa directamente
+
+### Refrescar datos en despacho
+- Botón Refrescar en header global y en sección Pendientes
+- Recarga catálogo + lista de asistidos + limpia ficha seleccionada
+
+### Catálogo de juguetes mejorado
+- 👁️ Ver movimientos por juguete (cargado desde vw_BitacoraEntregas)
+- Resumen inventario con entregados/reversados reales: `GET /catalog/summary`
+- vw_ResumenInventario corregido: cuenta registros reales (no StockInicial-StockActual)
+
+### Importación Excel con preview
+- Botón "Plantilla" descarga .xlsx con formato correcto
+- Flujo de 2 pasos: validar (preview con errores/duplicados) → procesar
+- Endpoint: `GET /imports/template/:tipo` (censo | catalogo)
+
+### Reportes (nuevo módulo)
+- `/asistencia/reports` — 3 pestañas:
+  - **Asistencia**: KPIs (asistieron, adultos, niños, hijos) + tabla detallada
+  - **Despacho**: búsqueda, paginación, export CSV, estados con colores
+  - **Inventario**: KPIs de stock, tabla con % despacho, modal detalle por juguete
+    (muestra a quién se entregó cada unidad)
+
 ## 📊 Dashboards
 - `/asistencia/` — Dashboard con KPIs y censo paginado
-- `/asistencia/attendance` — Registro de asistencia + Contactos HCM
-- `/asistencia/dispatch` — Despacho con batch deliver y cámara
-- `/asistencia/catalog` — Catálogo con edición, fotos, historial
-- `/asistencia/history` — Historial de movimientos
-- `/asistencia/import` — Importación Excel (censo y catálogo)
+- `/asistencia/attendance` — Registro de asistencia + Contactos HCM + búsqueda por nombre
+- `/asistencia/dispatch` — Despacho con foto obligatoria, cámara, batch, refrescar
+- `/asistencia/catalog` — Catálogo con edición, fotos, historial de movimientos, resumen inventario
+- `/asistencia/history` — Historial de movimientos (bug corregido)
+- `/asistencia/reports` — Reportes consolidados (asistencia, despacho, inventario)
+- `/asistencia/import` — Importación Excel con preview y plantilla descargable
+- `/asistencia/admin` — Administración de usuarios y roles
 
 ## 🔐 Variables de Entorno (.env)
 ```
