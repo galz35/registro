@@ -61,7 +61,8 @@ export default function DispatchPage() {
   const [pagPendientes, setPagPendientes] = useState(1);
   const [filterCompletos, setFilterCompletos] = useState('');
   const [pagCompletos, setPagCompletos] = useState(1);
-  const porPag = 15;
+  const porPagPendientes = 3;
+  const porPagCompletos = 5;
 
   // Load catalog for alternative juguetes
   useEffect(() => { getCatalogo().then(setJuguetesDisponibles).catch(() => {}); }, []);
@@ -255,8 +256,8 @@ export default function DispatchPage() {
                 </div>
               ) : (() => {
                 const filtrados = asistidos.filter(a => a.Entregados < a.TotalHijos && (!filterPendientes || a.Nombre.toUpperCase().includes(filterPendientes.toUpperCase())));
-                const paginados = filtrados.slice((pagPendientes - 1) * porPag, pagPendientes * porPag);
-                const totalPag = Math.max(1, Math.ceil(filtrados.length / porPag));
+                const paginados = filtrados.slice((pagPendientes - 1) * porPagPendientes, pagPendientes * porPagPendientes);
+                const totalPag = Math.max(1, Math.ceil(filtrados.length / porPagPendientes));
                 return (
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 380, overflowY: 'auto' }}>
@@ -559,20 +560,20 @@ export default function DispatchPage() {
                 <span style={{ fontWeight: 700, fontSize: 14 }}>✅ Despachados Completos</span>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <input type="text" value={filterCompletos} onChange={e => { setFilterCompletos(e.target.value); setPagCompletos(1); }}
-                    placeholder="Filtrar..."
-                    style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)', fontSize: 12, outline: 'none', background: 'rgba(255,255,255,0.15)', color: 'white', width: 150 }} />
+                    placeholder="Filtrar por carnet o nombre..."
+                    style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 12, outline: 'none', background: 'white', color: '#374151', width: 180 }} />
                   <button onClick={() => {
                     const data = asistidos.filter(a => a.Entregados === a.TotalHijos && a.TotalHijos > 0);
                     if (data.length === 0) return;
                     const csv = ['Carnet,Nombre,Hijos,Entregados', ...data.map(r => `"${r.Carnet}","${r.Nombre}",${r.TotalHijos},${r.Entregados}/${r.TotalHijos}`)].join('\n');
                     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='despachados.csv'; a.click();
-                  }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', borderRadius: 6, padding: '5px 10px', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>📥 Excel</button>
+                  }} style={{ background: '#10b981', border: 'none', color: 'white', borderRadius: 6, padding: '5px 12px', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>📥 Excel</button>
                 </div>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 {(() => {
-                  const completos = asistidos.filter(a => a.Entregados === a.TotalHijos && a.TotalHijos > 0 && (!filterCompletos || a.Nombre.toUpperCase().includes(filterCompletos.toUpperCase())));
-                  const pag = completos.slice((pagCompletos - 1) * porPag, pagCompletos * porPag);
+                  const completos = asistidos.filter(a => a.Entregados === a.TotalHijos && a.TotalHijos > 0 && (!filterCompletos || (a.Carnet+' '+a.Nombre).toUpperCase().includes(filterCompletos.toUpperCase())));
+                  const pag = completos.slice((pagCompletos - 1) * porPagCompletos, pagCompletos * porPagCompletos);
                   return (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead><tr style={{ background: '#f8fafc' }}>
@@ -607,7 +608,7 @@ export default function DispatchPage() {
                 })()}
               </div>
               {(() => {
-                const totalC = Math.max(1, Math.ceil(asistidos.filter(a => a.Entregados === a.TotalHijos && a.TotalHijos > 0 && (!filterCompletos || a.Nombre.toUpperCase().includes(filterCompletos.toUpperCase()))).length / porPag));
+                const totalC = Math.max(1, Math.ceil(asistidos.filter(a => a.Entregados === a.TotalHijos && a.TotalHijos > 0 && (!filterCompletos || a.Nombre.toUpperCase().includes(filterCompletos.toUpperCase()))).length / porPagCompletos));
                 return (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280' }}>
                     <span>Pág {pagCompletos} de {totalC}</span>
