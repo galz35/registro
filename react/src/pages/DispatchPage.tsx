@@ -755,9 +755,14 @@ export default function DispatchPage() {
 
       {/* Foto preview modal */}
       {fotoPreview && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setFotoPreview(null)}>
-          <img src={fotoPreview} alt="Evidencia" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8, objectFit: 'contain' }} />
+          <button onClick={() => setFotoPreview(null)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', borderRadius: '50%', width: 40, height: 40, fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+            ✕
+          </button>
+          <img src={fotoPreview} alt="Evidencia" style={{ maxWidth: '90%', maxHeight: '85%', borderRadius: 8, objectFit: 'contain', cursor: 'pointer' }}
+            onClick={(e) => e.stopPropagation()} />
+          <p style={{ position: 'absolute', bottom: 20, color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Click fuera de la imagen para cerrar</p>
         </div>
       )}
     </div>
