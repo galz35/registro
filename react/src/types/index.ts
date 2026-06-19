@@ -50,6 +50,8 @@ export interface ColaboradorFicha {
   fechaAsistencia: string | null;
   adultos?: number;
   ninos?: number;
+  asistioPor?: string | null;
+  nombreAsistente?: string | null;
   fotoHcm?: string | null;
   hijos: Hijo[];
   familiaresHcm?: { nombre: string; tipoRela: string; edad: number }[];

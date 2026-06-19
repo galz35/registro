@@ -150,13 +150,15 @@ export class AttendanceService {
       fechaAsistencia: asistencia?.FechaRegistro || null,
       adultos: asistencia?.Adultos ?? 1,
       ninos: asistencia?.Ninos ?? 0,
+      asistioPor: asistencia?.AsistioPor || null,
+      nombreAsistente: asistencia?.NombreAsistente || null,
       fotoHcm,
       hijos,
       familiaresHcm,
     };
   }
 
-  async register(dto: { eventoId: number; carnet: string; adultos?: number; ninos?: number }, registradoPor: string) {
+  async register(dto: { eventoId: number; carnet: string; adultos?: number; ninos?: number; asistioPor?: string; nombreAsistente?: string }, registradoPor: string) {
     const pool = this.db.getPool();
     const request = pool.request();
     request.input('EventoId', sql.Int, dto.eventoId);
@@ -164,6 +166,8 @@ export class AttendanceService {
     request.input('RegistradoPor', sql.VarChar(100), registradoPor);
     request.input('Adultos', sql.Int, dto.adultos ?? 1);
     request.input('Ninos', sql.Int, dto.ninos ?? 0);
+    request.input('AsistioPor', sql.VarChar(20), dto.asistioPor || null);
+    request.input('NombreAsistente', sql.VarChar(250), dto.nombreAsistente || null);
 
     try {
       const result = await request.execute('sp_Asistencia_Registrar');

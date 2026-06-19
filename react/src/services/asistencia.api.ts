@@ -14,8 +14,8 @@ export async function getColaboradorFull(carnet: string, eventoId: number): Prom
   return data;
 }
 
-export async function registrarAsistencia(eventoId: number, carnet: string, adultos = 1, ninos = 0): Promise<any> {
-  const { data } = await api.post('/attendance/register', { eventoId, carnet, adultos, ninos });
+export async function registrarAsistencia(eventoId: number, carnet: string, adultos = 1, ninos = 0, asistioPor?: string, nombreAsistente?: string): Promise<any> {
+  const { data } = await api.post('/attendance/register', { eventoId, carnet, adultos, ninos, asistioPor, nombreAsistente });
   return data;
 }
 

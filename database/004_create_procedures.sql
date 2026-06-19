@@ -83,7 +83,9 @@ CREATE OR ALTER PROCEDURE dbo.sp_Asistencia_Registrar
     @CarnetColaborador VARCHAR(50),
     @RegistradoPor VARCHAR(100),
     @Adultos INT = 1,
-    @Ninos INT = 0
+    @Ninos INT = 0,
+    @AsistioPor VARCHAR(20) = NULL,
+    @NombreAsistente VARCHAR(250) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -103,9 +105,9 @@ BEGIN
         END;
 
         -- Insertar asistencia y devolver el registro creado
-        INSERT INTO dbo.tblAsistenciaEventos (EventoId, CarnetColaborador, RegistradoPor, Adultos, Ninos)
-        OUTPUT INSERTED.Id, INSERTED.EventoId, INSERTED.CarnetColaborador, INSERTED.FechaRegistro, INSERTED.RegistradoPor, INSERTED.Adultos, INSERTED.Ninos
-        VALUES (@EventoId, @CarnetColaborador, @RegistradoPor, @Adultos, @Ninos);
+        INSERT INTO dbo.tblAsistenciaEventos (EventoId, CarnetColaborador, RegistradoPor, Adultos, Ninos, AsistioPor, NombreAsistente)
+        OUTPUT INSERTED.Id, INSERTED.EventoId, INSERTED.CarnetColaborador, INSERTED.FechaRegistro, INSERTED.RegistradoPor, INSERTED.Adultos, INSERTED.Ninos, INSERTED.AsistioPor, INSERTED.NombreAsistente
+        VALUES (@EventoId, @CarnetColaborador, @RegistradoPor, @Adultos, @Ninos, @AsistioPor, @NombreAsistente);
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();

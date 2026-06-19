@@ -20,6 +20,8 @@ export default function AttendancePage() {
   const [reverting, setReverting] = useState<number | null>(null);
   const [adultos, setAdultos] = useState(1);
   const [ninos, setNinos] = useState(0);
+  const [asistioPor, setAsistioPor] = useState('COLABORADOR');
+  const [nombreAsistente, setNombreAsistente] = useState('');
   const [filterTexto, setFilterTexto] = useState('');
   const [infoCarnet, setInfoCarnet] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
@@ -96,7 +98,7 @@ export default function AttendancePage() {
     if (!ficha || ficha.asistio) return;
     setRegistering(true);
     try {
-      await registrarAsistencia(EVENTO_ACTIVO_ID, ficha.colaborador.carnet, adultos, ninos);
+      await registrarAsistencia(EVENTO_ACTIVO_ID, ficha.colaborador.carnet, adultos, ninos, asistioPor, nombreAsistente);
       show(`✅ Asistencia registrada: ${ficha.colaborador.nombre}`);
       const data = await getColaboradorFull(ficha.colaborador.carnet, EVENTO_ACTIVO_ID);
       setFicha(data);
@@ -235,6 +237,11 @@ export default function AttendancePage() {
                       <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#d1fae5', color: '#065f46', borderRadius: 6, fontWeight: 700, fontSize: 12 }}>
                           <Check className="w-4 h-4" /> Asistió {ficha.fechaAsistencia ? new Date(ficha.fechaAsistencia).toLocaleTimeString() : ''}
+                          {ficha.asistioPor && ficha.asistioPor !== 'COLABORADOR' && (
+                            <span style={{ fontSize: 10, opacity: 0.8 }}>
+                              ({ficha.asistioPor === 'CONYUGE' ? 'Cónyuge' : ficha.nombreAsistente || 'Tercero'})
+                            </span>
+                          )}
                         </span>
                         <button onClick={() => handleRevertir(ficha.colaborador.carnet)} disabled={reverting !== null}
                           style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
@@ -254,6 +261,23 @@ export default function AttendancePage() {
                             <input type="number" min="0" value={ninos} onChange={(e) => setNinos(Math.max(0, parseInt(e.target.value) || 0))}
                               style={{ width: 70, padding: '6px 10px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: 14, textAlign: 'center', fontWeight: 700 }} />
                           </div>
+                        </div>
+                        <div style={{ marginBottom: 10 }}>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', marginBottom: 4, display: 'block' }}>¿Quién asiste?</label>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {['COLABORADOR', 'CONYUGE', 'TERCERO'].map(r => (
+                              <button key={r} onClick={() => { setAsistioPor(r); setNombreAsistente(''); }}
+                                style={{ padding: '5px 10px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: 11, cursor: 'pointer',
+                                  ...(asistioPor === r ? { background: '#da121a', color: 'white' } : { background: '#f3f4f6', color: '#6b7280' }) }}>
+                                {r === 'COLABORADOR' ? 'Colaborador' : r === 'CONYUGE' ? 'Cónyuge' : 'Tercero'}
+                              </button>
+                            ))}
+                          </div>
+                          {asistioPor === 'TERCERO' && (
+                            <input type="text" value={nombreAsistente} onChange={e => setNombreAsistente(e.target.value)}
+                              placeholder="Nombre de quien asiste"
+                              style={{ marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: 12, boxSizing: 'border-box' }} />
+                          )}
                         </div>
                         <button onClick={handleRegistrar} disabled={registering}
                           style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
