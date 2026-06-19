@@ -78,9 +78,20 @@ export class AttendanceService {
 
     let rawColab = result.recordsets[0]?.[0] || null;
 
-    // Si no se encuentra localmente, buscar en el Portal
+    // Verificar estado en Portal incluso si existe localmente
+    const portalUser = await this.buscarEnPortal(carnet);
+    const inactivoPortal = portalUser?.inactivo === true;
+
+    if (inactivoPortal) {
+      // Si el Portal dice que está inactivo, actualizar local y rechazar
+      await pool.request()
+        .input('carnet', sql.VarChar(50), carnet)
+        .query('UPDATE tblColaboradores SET Activo = 0 WHERE Carnet = @carnet AND Activo = 1');
+      throw new NotFoundException('Colaborador no encontrado o inactivo.');
+    }
+
+    // Si no se encuentra localmente, buscar en el Portal e insertar
     if (!rawColab) {
-      const portalUser = await this.buscarEnPortal(carnet);
       if (portalUser) {
         // Insertarlo temporalmente en tblColaboradores
         const insertReq = pool.request();
