@@ -420,9 +420,14 @@ export default function DispatchPage() {
                                     ))}
                                   </select>
                                 ) : (
-                                  <span style={{ fontSize: 11, fontWeight: 600, color: sel?.stockActual ? '#10b981' : '#ef4444' }}>
-                                    🎁 {sel?.nombreJuguete} (Stock: {sel?.stockActual})
-                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                                    {sel?.fotoUrl && (
+                                      <img src={sel.fotoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #e5e7eb' }} />
+                                    )}
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: sel?.stockActual ? '#10b981' : '#ef4444' }}>
+                                      {sel?.nombreJuguete} (Stock: {sel?.stockActual})
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             );
@@ -573,6 +578,12 @@ export default function DispatchPage() {
                       </span>
                     </p>
                   )}
+                  {(() => {
+                    const selJuguete = juguetesDisponibles.find(j => j.id === jugueteIdDeliver) || showDeliver.hijo.jugueteSugerido;
+                    return selJuguete?.fotoUrl ? (
+                      <img src={selJuguete.fotoUrl} alt="" style={{ width: '100%', maxHeight: 120, borderRadius: 8, objectFit: 'contain', border: '1px solid #e5e7eb', marginTop: 8, background: '#f8fafc' }} />
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
