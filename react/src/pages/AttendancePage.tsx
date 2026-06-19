@@ -407,13 +407,13 @@ export default function AttendancePage() {
               <Users className="w-4 h-4" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Asistieron ({totalAsistidos})
             </span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: 200 }}>
+              <div style={{ position: 'relative', width: 220 }}>
                 <input type="text" value={filterTexto} onChange={(e) => { setFilterTexto(e.target.value); setPagina(1); }}
-                  placeholder="Filtrar por nombre o carnet..."
-                  style={{ padding: '5px 28px 5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)', fontSize: 12, outline: 'none', background: 'rgba(255,255,255,0.15)', color: 'white', width: '100%', boxSizing: 'border-box' }}
+                  placeholder="Filtrar por carnet, nombre o gerencia..."
+                  style={{ padding: '5px 28px 5px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 12, outline: 'none', background: 'white', color: '#374151', width: '100%', boxSizing: 'border-box' }}
                 />
                 {filterTexto && (
-                  <button onClick={() => setFilterTexto('')} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: '50%', width: 18, height: 18, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', lineHeight: 1 }}>
+                  <button onClick={() => setFilterTexto('')} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#e5e7eb', border: 'none', borderRadius: '50%', width: 18, height: 18, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', lineHeight: 1 }}>
                     ✕
                   </button>
                 )}
@@ -444,7 +444,7 @@ export default function AttendancePage() {
               <tbody>
                 {(() => {
                   const filtrados = filterTexto
-                    ? asistidos.filter(r => (r.Carnet+' '+r.Nombre).toUpperCase().includes(filterTexto.toUpperCase()))
+                    ? asistidos.filter(r => (r.Carnet+' '+r.Nombre+' '+(r.Gerencia||'')).toUpperCase().includes(filterTexto.toUpperCase()))
                     : asistidos;
                   const paginados = filtrados.slice((pagina - 1) * porPagina, pagina * porPagina);
                   let sumAdultos = 0, sumNinos = 0;
@@ -510,7 +510,7 @@ export default function AttendancePage() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', borderTop: '1px solid #e5e7eb' }}>
             <span style={{ fontSize: 12, color: '#6b7280' }}>
-              {(() => { const f = filterTexto ? asistidos.filter(r => (r.Carnet+' '+r.Nombre).toUpperCase().includes(filterTexto.toUpperCase())).length : totalAsistidos; return `Pág ${pagina} de ${Math.ceil(Math.max(1,f)/porPagina)} (${f} registros)`; })()}
+              {(() => { const f = filterTexto ? asistidos.filter(r => (r.Carnet+' '+r.Nombre+' '+(r.Gerencia||'')).toUpperCase().includes(filterTexto.toUpperCase())).length : totalAsistidos; return `Pág ${pagina} de ${Math.ceil(Math.max(1,f)/porPagina)} (${f} registros)`; })()}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}
