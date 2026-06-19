@@ -218,7 +218,21 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
   Respuesta: 201
   { "entregaId": 6, "stockRestante": 53 }
 
-2.7 REVERSAR ENTREGA
+2.7 ACTUALIZAR FOTO DE EVIDENCIA (para entregas ya completadas)
+   ---
+   PATCH /dispatch/{hijoId}/foto?eventoId=1
+   Content-Type: multipart/form-data
+   Authorization: Bearer <token>
+
+   Campos del formulario:
+     foto: (archivo de imagen OBLIGATORIO)
+
+   Respuesta: 200
+   { "fotoEvidenciaUrl": "/asistencia-uploads/fotos_evidencia/....webp" }
+
+   NOTA: Solo actualiza la foto. No modifica stock ni estado de entrega.
+
+2.8 REVERSAR ENTREGA
   ---
   POST /dispatch/{entregaId}/revert
   Content-Type: application/json
@@ -232,27 +246,53 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
   NOTA: Al reversar, el stock del juguete se incrementa en +1
         y el hijo vuelve a estado pendiente (se puede re-entregar).
 
-2.8 CATALOGO DE JUGUETES
-  ---
-  GET /catalog
-  Authorization: Bearer <token>
+2.9 CATALOGO DE JUGUETES
+   ---
+   GET /catalog
+   Authorization: Bearer <token>
 
-  Respuesta: [
-    {
-      "id": 1,
-      "categoria": "ENTRE 0-1",
-      "genero": "TODOS",         // M | F | TODOS
-      "nombreJuguete": "GAME BLANKET 8801-31 - MANTA PARA BEBE",
-      "stockInicial": 30,
-      "stockActual": 30,
-      "fotoUrl": "/asistencia-uploads/fotos_juguetes/....webp"
-    }
-  ]
+   Respuesta: [
+     {
+       "id": 1,
+       "categoria": "ENTRE 0-1",
+       "genero": "TODOS",         // M | F | TODOS
+       "nombreJuguete": "GAME BLANKET 8801-31 - MANTA PARA BEBE",
+       "stockInicial": 30,
+       "stockActual": 30,
+       "fotoUrl": "/asistencia-uploads/fotos_juguetes/....webp"
+     }
+   ]
 
-  Se usa en Flutter para mostrar juguetes alternativos cuando
-  el sugerido tiene stock = 0. Filtrar por categoria + genero.
+   Se usa en Flutter para mostrar juguetes alternativos cuando
+   el sugerido tiene stock = 0. Filtrar por categoria + genero.
 
-2.9 RESUMEN DEL EVENTO (KPIs)
+2.10 RESUMEN DE INVENTARIO (KARDEX)
+   ---
+   GET /catalog/summary
+   Authorization: Bearer <token>
+
+   Respuesta:
+   [
+     {
+       "jugueteId": 1,
+       "categoria": "ENTRE 0-1",
+       "genero": "TODOS",
+       "nombreJuguete": "GAME BLANKET 8801-31 - MANTA PARA BEBE",
+       "stockInicial": 50,
+       "stockActual": 30,
+       "entregados": 20,           // conteo REAL contra tblEntregasJuguetes
+       "reversados": 0,
+       "diferenciaStock": 20,      // StockInicial - StockActual - Reversados
+       "porcentajeDespacho": 40.00
+     }
+   ]
+
+   NOTA: Entregados se calcula contra registros reales de entregas
+         (Estado='DELIVERED'), no contra StockInicial - StockActual.
+         Esto garantiza 100% exactitud incluso si se ajusta StockActual
+         manualmente.
+
+2.11 RESUMEN DEL EVENTO (KPIs)
   ---
   GET /attendance/event/1/summary
   Authorization: Bearer <token>
@@ -268,7 +308,7 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
     "avanceCategoria": [...]
   }
 
-2.10 CENSO PAGINADO
+2.12 CENSO PAGINADO
   ---
   GET /attendance/censo?eventoId=1&pagina=1&porPagina=10&busqueda=GUSTAVO&estado=pendientes
   Authorization: Bearer <token>
@@ -293,7 +333,7 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
     "totalPaginas": 71
   }
 
-2.11 HISTORIAL DE MOVIMIENTOS
+2.13 HISTORIAL DE MOVIMIENTOS
   ---
   GET /dispatch/event/1/summary?pagina=1&porPagina=25
   Authorization: Bearer <token>
@@ -316,7 +356,7 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
     "total": 5
   }
 
-2.12 HEALTH CHECK
+2.14 HEALTH CHECK
   ---
   GET /health
   (Sin autenticacion)
@@ -388,3 +428,6 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
   - Los valores con # en .env deben ir entre comillas dobles
     Ej: SSO_SECRET="ClaroSSO_Shared_Secret_2026_!#"
   - SweetAlert2 usado para toasts en React. En Flutter usar SnackBar o similar
+  - El inventario (stock) siempre debe consultarse via API antes de mostrar
+    opciones al usuario. NUNCA cachear stock localmente.
+  - Despues de cada delivery/revert, refrescar catalogo con GET /catalog

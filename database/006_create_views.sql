@@ -8,6 +8,9 @@ GO
 
 -- ============================================================================
 -- vw_ResumenInventario - Inventario por juguete con porcentaje de despacho
+-- NOTA: Entregados se calcula contra registros reales de tblEntregasJuguetes
+--       (no contra StockInicial - StockActual) para evitar inexactitudes
+--       si se modifica StockInicial o StockActual manualmente.
 -- ============================================================================
 CREATE OR ALTER VIEW dbo.vw_ResumenInventario
 AS
@@ -18,9 +21,17 @@ SELECT
     c.NombreJuguete,
     c.StockInicial,
     c.StockActual,
-    c.StockInicial - c.StockActual AS Entregados,
-    CAST(ROUND((CAST((c.StockInicial - c.StockActual) AS FLOAT) / NULLIF(c.StockInicial, 0)) * 100, 2) AS DECIMAL(5,2)) AS PorcentajeDespacho
+    ISNULL(e.Entregados, 0) AS Entregados,
+    c.StockInicial - c.StockActual - ISNULL(e.Reversados, 0) AS DiferenciaStock,
+    CAST(ROUND((CAST(ISNULL(e.Entregados, 0) AS FLOAT) / NULLIF(c.StockInicial, 0)) * 100, 2) AS DECIMAL(5,2)) AS PorcentajeDespacho
 FROM dbo.tblCatalogoJuguetes c
+OUTER APPLY (
+    SELECT
+        COUNT(CASE WHEN x.Estado = 'DELIVERED' THEN 1 END) AS Entregados,
+        COUNT(CASE WHEN x.Estado = 'REVERTED' THEN 1 END) AS Reversados
+    FROM dbo.tblEntregasJuguetes x
+    WHERE x.JugueteId = c.Id
+) e
 WHERE c.Activo = 1;
 GO
 

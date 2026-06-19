@@ -472,6 +472,7 @@ export default function DispatchPage() {
                                   try {
                                     await updateFotoEvidencia(hijo.id, EVENTO_ACTIVO_ID, file);
                                     show('✅ Foto de evidencia actualizada');
+                                    await recargarCatalogo();
                                     const data = await getColaboradorFull(ficha!.colaborador.carnet, EVENTO_ACTIVO_ID);
                                     setFicha(data);
                                     refreshAsistidos();

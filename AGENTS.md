@@ -39,12 +39,14 @@
 - POST /dispatch/deliver
 - GET  /dispatch/validate/:hijoId/:jugueteId?eventoId=
 - POST /dispatch/:entregaId/revert
+- PATCH /dispatch/:hijoId/foto?eventoId=   (actualizar foto evidencia de entrega existente)
 - GET  /dispatch/event/:eventoId/summary
 - GET  /catalog
 - POST /catalog
 - PUT  /catalog/:id
 - PATCH /catalog/:id/deactivate
 - POST /catalog/:id/photo
+- GET  /catalog/summary (resumen inventario con entregados/reversados reales)
 - POST /imports/censo/validate
 - POST /imports/censo/apply
 - POST /imports/catalogo/validate
@@ -59,6 +61,16 @@
 - supervisor: despacho + reversiones
 - despachador: solo asistencia y entrega
 - consulta: solo lectura
+
+## Reglas de inventario (100% exacto)
+- StockActual solo se modifica via SP (UPDLOCK + ROWLOCK):
+  - sp_Despacho_Entregar: decrementa
+  - sp_Despacho_Reversar: incrementa
+- vw_ResumenInventario cuenta Entregados contra registros reales de
+  tblEntregasJuguetes (no contra StockInicial - StockActual)
+- Catalogo siempre se recarga desde API tras cada delivery/revert
+  (recargarCatalogo() en frontend)
+- Nunca confiar en estado local para calculos de inventario
 
 ## Flujo SSO
 1. Portal emite JWT con SSO_SECRET, type=SSO_PORTAL, claims: carnet, name, correo

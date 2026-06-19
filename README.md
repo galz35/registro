@@ -53,7 +53,7 @@ Migración del monolito ASP.NET MVC a stack moderno React + NestJS + SQL Server.
 
 | Vista | Descripción |
 |-------|-------------|
-| `vw_ResumenInventario` | Inventario por juguete con % de despacho |
+| `vw_ResumenInventario` | Inventario por juguete con % de despacho (Entregados contra registros reales) |
 | `vw_BitacoraEntregas` | Auditoría consolidada de entregas |
 
 ## 🔐 Autenticación

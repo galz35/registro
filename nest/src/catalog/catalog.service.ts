@@ -48,6 +48,8 @@ export class CatalogService {
       stockInicial: r.StockInicial,
       stockActual: r.StockActual,
       entregados: r.Entregados,
+      reversados: r.Reversados,
+      diferenciaStock: r.DiferenciaStock,
       porcentajeDespacho: r.PorcentajeDespacho,
     }));
   }
