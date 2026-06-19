@@ -192,7 +192,14 @@ export default function DispatchPage() {
           <h2 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 22, margin: 0 }}>
             <Gift className="w-5 h-5" style={{ verticalAlign: 'middle', marginRight: 8 }} /> Despacho de Juguetes
           </h2>
-          <div />
+          <button onClick={async () => {
+            setFicha(null);
+            setColaboradorFoto(null);
+            await Promise.all([recargarCatalogo(), refreshAsistidos()]);
+            show('🔄 Datos actualizados');
+          }} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '20px', padding: '6px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            <RotateCcw className="w-4 h-4" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Refrescar
+          </button>
         </div>
         <p style={{ fontSize: 13, opacity: 0.75, textAlign: 'center', margin: '0 24px 8px' }}>Control de Entregas e Inventario</p>
         {/* Mini stats - basados en asistidos */}
