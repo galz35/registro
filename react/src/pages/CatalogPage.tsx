@@ -154,9 +154,9 @@ export default function CatalogPage() {
                               setLoadingMovtos(true);
                               setMovtos([]);
                               try {
-                                const { data } = await api.get('/dispatch/event/1/summary', { params: { pagina: 1, porPagina: 200 } });
-                                const d = data.data || data;
-                                const filtrados = (d.data || []).filter((m: any) => m.nombreJuguete === j.nombreJuguete);
+                                const res = await api.get('/dispatch/event/1/summary', { params: { pagina: 1, porPagina: 200 } });
+                                const items = res.data.data || [];
+                                const filtrados = items.filter((m: any) => m.nombreJuguete === j.nombreJuguete);
                                 setMovtos(filtrados);
                               } catch {}
                               setLoadingMovtos(false);
