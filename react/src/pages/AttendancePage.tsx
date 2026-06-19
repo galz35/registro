@@ -58,6 +58,11 @@ export default function AttendancePage() {
 
   useEffect(() => { loadAsistidos(pagina); }, [pagina]);
 
+  // Auto-llenar niños con cantidad de hijos al cargar colaborador
+  useEffect(() => {
+    if (ficha) setNinos(ficha.hijos.length);
+  }, [ficha]);
+
   const buscar = async () => {
     const q = searchTerm.trim();
     if (!q) return;
@@ -103,6 +108,10 @@ export default function AttendancePage() {
       setSearchTerm('');
       setSearchResults(null);
       setFicha(null);
+      setAdultos(1);
+      setNinos(0);
+      setAsistioPor('COLABORADOR');
+      setNombreAsistente('');
       await loadAsistidos(pagina);
     } catch (err: any) {
       show(err?.response?.data?.message || 'Error al registrar', 'error');
