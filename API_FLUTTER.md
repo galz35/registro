@@ -102,6 +102,7 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
       "puesto": "ANALISTA DE SOPORTE RH",
       "gerencia": "GERENCIA DE RECURSOS HUMANOS",
       "ubicacion": "COORD. DE SOPORTE A LA OPERACION",
+      "departamentoGeografico": "MANAGUA",     // null | "MANAGUA" | "MATAGALPA" | etc
       "inactivo": false
     },
     "inactivo": false,
@@ -217,6 +218,12 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
 
   Respuesta: 201
   { "entregaId": 6, "stockRestante": 53 }
+
+   NOTA: El despacho solo aplica para colaboradores con
+         `departamentoGeografico = "MANAGUA"`. Si el colaborador
+         es de otro departamento, la API responde 400 con:
+         "Este colaborador no pertenece a MANAGUA. El despacho solo
+          aplica para personal de Managua."
 
 2.7 ACTUALIZAR FOTO DE EVIDENCIA (para entregas ya completadas)
    ---

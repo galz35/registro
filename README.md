@@ -619,6 +619,8 @@ Al registrar asistencia, se guarda quién asistió realmente:
 - **Auto-llenar Niños** al cargar colaborador en registro (se llena con `hijos.length`)
 - **Reset de formulario** al registrar asistencia (adultos→1, niños→0, quién asiste→Colaborador)
 - **Validación Tercero**: mostrar error si no se ingresa nombre al seleccionar Tercero en despacho
+- **Advertencia no-Managua** en registro: si el colaborador no es de MANAGUA, muestra mensaje rojo
+  indicando que no aplica para despacho de juguetes (se puede registrar, pero no recibir juguete)
 - Preview de foto con botón ✕ y "click fuera para cerrar"
 - Paginación: Pendientes 3 items, Completos 5 items
 - Filtros de tabla con fondo blanco y búsqueda por carnet+nombre+gerencia
