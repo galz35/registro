@@ -559,9 +559,9 @@ Config: `/etc/nginx/snippets/asistencia_routes.conf`
 22/22 pruebas de API pasaron exitosamente:
 - Health check
 - Auth (SSO + dev-login)
-- Attendance lookup, register, summary, censo
-- Catalog list, summary
-- Dispatch validate, deliver, audit
+- Attendance lookup, register, summary, censo, search, revert
+- Catalog list, summary, create
+- Dispatch validate, deliver, audit, revert, updateFoto
 - Reports CSV
 
 ## 🆕 Últimas funcionalidades agregadas
@@ -599,11 +599,29 @@ Al registrar asistencia, se guarda quién asistió realmente:
 - Endpoint: `GET /imports/template/:tipo` (censo | catalogo)
 
 ### Reportes (nuevo módulo)
-- `/asistencia/reports` — 3 pestañas:
-  - **Asistencia**: KPIs (asistieron, adultos, niños, hijos) + tabla detallada
-  - **Despacho**: búsqueda, paginación, export CSV, estados con colores
-  - **Inventario**: KPIs de stock, tabla con % despacho, modal detalle por juguete
-    (muestra a quién se entregó cada unidad)
+- `/asistencia/reports` — 3 secciones apiladas en 1 página (sin tabs):
+  - **Asistencia**: KPIs (asistieron, adultos, niños, hijos) + tabla detallada + botón Excel
+  - **Despacho**: búsqueda, paginación, botón Excel
+  - **Inventario**: KPIs de stock, tabla con % despacho, 👁️ detalle por juguete, botón Excel
+- Descarga Excel: `GET /reports/asistencia.xlsx`, `GET /reports/despacho.xlsx`, `GET /reports/inventario.xlsx`
+  (inventario.xlsx incluye 2 hojas: resumen + detalle de cada entrega)
+
+### Restricción por departamento (MANAGUA)
+- El campo `DepartamentoGeografico` se migró desde el Excel (última columna) a los 705 colaboradores
+- 428 de MANAGUA, 277 de otros departamentos
+- El despacho solo permite entregar a colaboradores con `DepartamentoGeografico = 'MANAGUA'`
+- Validado en `dispatch.service.ts` antes de ejecutar el SP
+- Import ahora hace UPDATE si el colaborador ya existe (antes solo INSERT)
+
+### Otras mejoras
+- Botones ✕ para limpiar inputs de búsqueda (attendance, filtros)
+- Limpieza automática de búsqueda al registrar asistencia
+- Preview de foto con botón ✕ y "click fuera para cerrar"
+- Paginación: Pendientes 3 items, Completos 5 items
+- Filtros de tabla con fondo blanco y búsqueda por carnet+nombre+gerencia
+- Fix: historial de movimientos en catálogo (bug `data.data`)
+- Fix: deploy a `/var/www/asistencia/` (no `dist/`) + limpieza de assets viejos
+- Deploy script corregido
 
 ## 📊 Dashboards
 - `/asistencia/` — Dashboard con KPIs y censo paginado

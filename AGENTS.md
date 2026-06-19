@@ -60,6 +60,9 @@
 - GET  /reports/entregas.csv
 - GET  /reports/pendientes.csv
 - GET  /reports/inventario.csv
+- GET  /reports/asistencia.xlsx?eventoId=
+- GET  /reports/despacho.xlsx?eventoId=
+- GET  /reports/inventario.xlsx (2 hojas: resumen + detalle entregas)
 - GET  /health (sin auth)
 
 ## Frontend routes (React SPA bajo /asistencia/)
