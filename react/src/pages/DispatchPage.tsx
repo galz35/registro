@@ -422,7 +422,8 @@ export default function DispatchPage() {
                                 ) : (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
                                     {sel?.fotoUrl && (
-                                      <img src={sel.fotoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #e5e7eb' }} />
+                                      <img src={sel.fotoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #e5e7eb', cursor: 'pointer' }}
+                                        onClick={() => setFotoPreview(sel.fotoUrl)} />
                                     )}
                                     <span style={{ fontSize: 11, fontWeight: 600, color: sel?.stockActual ? '#10b981' : '#ef4444' }}>
                                       {sel?.nombreJuguete} (Stock: {sel?.stockActual})

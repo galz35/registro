@@ -80,7 +80,7 @@ export class DispatchService {
           .webp({ quality: 80 })
           .toFile(filePath);
 
-        fotoEvidenciaUrl = `/uploads/fotos_evidencia/${fileName}`;
+        fotoEvidenciaUrl = `/asistencia-uploads/fotos_evidencia/${fileName}`;
       } catch {
         throw new BadRequestException('Error al procesar la imagen.');
       }

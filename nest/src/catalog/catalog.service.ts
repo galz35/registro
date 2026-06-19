@@ -204,6 +204,6 @@ export class CatalogService {
       .webp({ quality: 80 })
       .toFile(filePath);
 
-    return `/uploads/${subfolder}/${fileName}`;
+    return `/asistencia-uploads/${subfolder}/${fileName}`;
   }
 }
