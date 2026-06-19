@@ -73,7 +73,12 @@ export default function AttendancePage() {
       setLoading(true);
       try {
         const data = await getColaboradorFull(q, EVENTO_ACTIVO_ID);
-        setFicha(data);
+        if (data.inactivo) {
+          setFicha(data);
+          show('⚠ Este colaborador está dado de baja en el Portal. No puede registrarse.', 'error');
+        } else {
+          setFicha(data);
+        }
       } catch { show('Colaborador no encontrado', 'error'); }
       finally { setLoading(false); }
     } else {
@@ -94,13 +99,18 @@ export default function AttendancePage() {
     setLoading(true);
     try {
       const data = await getColaboradorFull(carnet, EVENTO_ACTIVO_ID);
-      setFicha(data);
+      if (data.inactivo) {
+        setFicha(data);
+        show('⚠ Este colaborador está dado de baja en el Portal. No puede registrarse.', 'error');
+      } else {
+        setFicha(data);
+      }
     } catch { show('Error al cargar colaborador', 'error'); }
     finally { setLoading(false); }
   };
 
   const handleRegistrar = async () => {
-    if (!ficha || ficha.asistio) return;
+    if (!ficha || ficha.asistio || ficha.inactivo) return;
     setRegistering(true);
     try {
       await registrarAsistencia(EVENTO_ACTIVO_ID, ficha.colaborador.carnet, adultos, ninos, asistioPor, nombreAsistente);
@@ -256,7 +266,12 @@ export default function AttendancePage() {
                     <h3 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: '0 0 2px', fontSize: 16 }}>{ficha.colaborador.nombre}</h3>
                     <p style={{ color: '#da121a', fontSize: 12, fontWeight: 700, margin: '4px 0' }}>Carnet: {ficha.colaborador.carnet}</p>
                     <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>{ficha.colaborador.gerencia || '-'} · {ficha.colaborador.ubicacion || '-'}</p>
-                    {ficha.colaborador.departamentoGeografico && ficha.colaborador.departamentoGeografico.toUpperCase() !== 'MANAGUA' && (
+                    {ficha.inactivo && (
+                      <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 700, margin: '8px 0 0', padding: '10px 14px', background: '#fee2e2', borderRadius: 8, border: '2px solid #dc2626' }}>
+                        ⛔ Este colaborador está <strong>dado de baja</strong> en el Portal. No puede registrarse ni recibir despacho.
+                      </p>
+                    )}
+                    {!ficha.inactivo && ficha.colaborador.departamentoGeografico && ficha.colaborador.departamentoGeografico.toUpperCase() !== 'MANAGUA' && (
                       <p style={{ color: '#dc2626', fontSize: 12, fontWeight: 700, margin: '6px 0 0', padding: '6px 10px', background: '#fee2e2', borderRadius: 6, display: 'inline-block' }}>
                         ⚠ Este colaborador no es de MANAGUA ({ficha.colaborador.departamentoGeografico}). No aplica para despacho de juguetes.
                       </p>

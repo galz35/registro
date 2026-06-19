@@ -83,11 +83,34 @@ export class AttendanceService {
     const inactivoPortal = portalUser?.inactivo === true;
 
     if (inactivoPortal) {
-      // Si el Portal dice que está inactivo, actualizar local y rechazar
+      // Si el Portal dice que está inactivo, actualizar local
       await pool.request()
         .input('carnet', sql.VarChar(50), carnet)
         .query('UPDATE tblColaboradores SET Activo = 0 WHERE Carnet = @carnet AND Activo = 1');
-      throw new NotFoundException('Colaborador no encontrado o inactivo.');
+
+      // Devolver datos con inactivo=true para mostrar mensaje en frontend
+      return {
+        colaborador: {
+          carnet,
+          nombre: portalUser?.Nombre || rawColab?.Nombre || carnet,
+          puesto: portalUser?.Puesto || rawColab?.Puesto || null,
+          gerencia: portalUser?.Gerencia || rawColab?.Gerencia || null,
+          ubicacion: portalUser?.Ubicacion || rawColab?.Ubicacion || null,
+          edificio: null,
+          departamentoGeografico: rawColab?.DepartamentoGeografico || null,
+          inactivo: true,
+        },
+        inactivo: true,
+        asistio: false,
+        fechaAsistencia: null,
+        adultos: 0,
+        ninos: 0,
+        asistioPor: null,
+        nombreAsistente: null,
+        fotoHcm: null,
+        hijos: [],
+        familiaresHcm: [],
+      };
     }
 
     // Si no se encuentra localmente, buscar en el Portal e insertar
