@@ -108,9 +108,16 @@ export default function AttendancePage() {
     } finally { setRegistering(false); }
   };
 
+  const asistioLabel = (r: any) => {
+    if (!r.AsistioPor) return '-';
+    if (r.AsistioPor === 'COLABORADOR') return 'Colaborador';
+    if (r.AsistioPor === 'CONYUGE') return 'Cónyuge';
+    return r.NombreAsistente || 'Tercero';
+  };
+
   const handleExportExcel = () => {
-    const headers = ['Carnet','Nombre','Gerencia','Adultos','Niños','Hijos','Entregados'];
-    const rows = asistidos.map(r => [r.Carnet, r.Nombre, r.Gerencia||'', r.TotalAdultos||0, r.TotalNinos||0, r.TotalHijos, `${r.Entregados}/${r.TotalHijos}`]);
+    const headers = ['Carnet','Nombre','Gerencia','Adultos','Niños','Asiste','Hijos','Entregados'];
+    const rows = asistidos.map(r => [r.Carnet, r.Nombre, r.Gerencia||'', r.TotalAdultos||0, r.TotalNinos||0, asistioLabel(r), r.TotalHijos, `${r.Entregados}/${r.TotalHijos}`]);
     const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
     const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'asistencia.csv'; link.click();
@@ -411,6 +418,7 @@ export default function AttendancePage() {
                   <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Gerencia</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Adultos</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Niños</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Asiste</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Hijos</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Entreg.</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Fecha</th>
@@ -435,6 +443,7 @@ export default function AttendancePage() {
                         <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 12 }}>{row.Gerencia || '-'}</td>
                         <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.TotalAdultos || 0}</td>
                         <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.TotalNinos || 0}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11 }}>{asistioLabel(row)}</td>
                         <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.TotalHijos}</td>
                         <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                           <span style={{ fontWeight: 700, color: row.Entregados === row.TotalHijos ? '#10b981' : '#6b7280' }}>

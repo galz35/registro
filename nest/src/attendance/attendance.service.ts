@@ -261,6 +261,8 @@ export class AttendanceService {
         ISNULL(SUM(a.Adultos), 0) AS TotalAdultos,
         ISNULL(SUM(a.Ninos), 0) AS TotalNinos,
         MAX(a.RegistradoPor) AS RegistradoPor,
+        MAX(a.AsistioPor) AS AsistioPor,
+        MAX(a.NombreAsistente) AS NombreAsistente,
         MAX(a.FechaRegistro) AS FechaAsistencia
       FROM dbo.tblColaboradores c
       LEFT JOIN dbo.tblHijos h ON h.CarnetColaborador = c.Carnet AND h.Activo = 1
