@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
 import { usePolling } from '../hooks/usePolling';
 import { getSummary, getCenso, getColaboradorFull, registrarAsistencia } from '../services/asistencia.api';
@@ -75,7 +76,6 @@ export default function AttendancePage() {
         const data = await getColaboradorFull(q, EVENTO_ACTIVO_ID);
         if (data.inactivo) {
           setFicha(data);
-          show('⚠ Este colaborador está dado de baja en el Portal. No puede registrarse.', 'error');
         } else {
           setFicha(data);
         }
@@ -101,7 +101,6 @@ export default function AttendancePage() {
       const data = await getColaboradorFull(carnet, EVENTO_ACTIVO_ID);
       if (data.inactivo) {
         setFicha(data);
-        show('⚠ Este colaborador está dado de baja en el Portal. No puede registrarse.', 'error');
       } else {
         setFicha(data);
       }
@@ -110,7 +109,19 @@ export default function AttendancePage() {
   };
 
   const handleRegistrar = async () => {
-    if (!ficha || ficha.asistio || ficha.inactivo) return;
+    if (!ficha || ficha.asistio) return;
+    if (ficha.inactivo) {
+      const confirm = await Swal.fire({
+        title: '¿Registrar colaborador dado de baja?',
+        text: `${ficha.colaborador.nombre} está dado de baja en el Portal. ¿Confirma que desea registrar su asistencia?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, registrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#da121a',
+      });
+      if (!confirm.isConfirmed) return;
+    }
     setRegistering(true);
     try {
       await registrarAsistencia(EVENTO_ACTIVO_ID, ficha.colaborador.carnet, adultos, ninos, asistioPor, nombreAsistente);
