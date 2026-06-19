@@ -396,4 +396,46 @@ export class ImportsService {
     if (value instanceof Date) return value;
     return null;
   }
+
+  async generateTemplate(tipo: string): Promise<Buffer> {
+    const wb = XLSX.utils.book_new();
+
+    if (tipo === 'censo') {
+      const headers = [
+        'CARNET COLABORADOR', 'NOMBRE COMPLETO COLABORADOR',
+        'BDACT.PUESTO', 'BDACT.GERENCIA', 'BDACT.UBICACION',
+        'BDACT.NOMBRE EDIFICIO', 'BDACT.DEPARTAMENTO GEOGRAFICO',
+        'BDACT.FECHA CONTRATACION', 'BDACT.GENERO',
+        'NOMBRE HIJO', 'FECHA NACIMIENTO HIJO', 'EDAD HIJO',
+        'GENERO HIJO', 'CATEGORIA',
+      ];
+      const example = [
+        '500708', 'GUSTAVO ADOLFO LIRA SALAZAR',
+        'ANALISTA DE SOPORTE RH', 'GERENCIA DE RECURSOS HUMANOS',
+        'COORD. DE SOPORTE A LA OPERACION', 'EDIFICIO PRINCIPAL',
+        'MANAGUA', '2015-03-15', 'M',
+        'ESTEBAN ADOLFO LIRA FONSECA', '2020-01-15', '3.3',
+        'M', 'ENTRE 03.1-4',
+      ];
+      const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+      ws['!cols'] = headers.map(() => ({ wch: 28 }));
+      XLSX.utils.book_append_sheet(wb, ws, 'DATA HIJOS');
+    } else if (tipo === 'catalogo') {
+      const headers = [
+        'FILA', 'EDAD', 'CODIGO',
+        'DESCRIPCION DEL JUGUETE', 'CANTIDAD',
+      ];
+      const example = [
+        '1', 'TOYS 1 - 2', 'NIÑAS',
+        'CEBRA BOLQUE DE ACTIVIDADES', '32',
+      ];
+      const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+      ws['!cols'] = headers.map(() => ({ wch: 30 }));
+      XLSX.utils.book_append_sheet(wb, ws, 'IMPRIMIR');
+    } else {
+      throw new BadRequestException('Tipo de plantilla invalido. Use "censo" o "catalogo".');
+    }
+
+    return Buffer.from(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }));
+  }
 }

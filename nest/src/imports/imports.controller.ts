@@ -1,7 +1,8 @@
 import {
   Controller, Post, Get, Param, UseGuards, UseInterceptors,
-  UploadedFile, ParseIntPipe, Req,
+  UploadedFile, ParseIntPipe, Req, Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { ImportsService } from './imports.service';
@@ -12,6 +13,17 @@ import { RolesGuard } from '../common/roles.guard';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class ImportsController {
   constructor(private imports: ImportsService) {}
+
+  @Get('template/:tipo')
+  @Roles('admin')
+  async downloadTemplate(@Param('tipo') tipo: string, @Res() res: Response) {
+    const buffer = await this.imports.generateTemplate(tipo);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="plantilla_${tipo}.xlsx"`,
+    });
+    res.send(buffer);
+  }
 
   @Post('censo/validate')
   @Roles('admin')

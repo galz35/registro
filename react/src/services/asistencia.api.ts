@@ -100,3 +100,28 @@ export async function importCatalogo(file: File): Promise<any> {
   const { data } = await api.post('/imports/catalogo/apply', formData);
   return data;
 }
+
+export async function validateCenso(file: File): Promise<any> {
+  const formData = new FormData();
+  formData.append('archivo', file);
+  const { data } = await api.post('/imports/censo/validate', formData);
+  return data;
+}
+
+export async function validateCatalogo(file: File): Promise<any> {
+  const formData = new FormData();
+  formData.append('archivo', file);
+  const { data } = await api.post('/imports/catalogo/validate', formData);
+  return data;
+}
+
+export function downloadTemplate(tipo: 'censo' | 'catalogo') {
+  api.get(`/imports/template/${tipo}`, { responseType: 'blob' }).then(res => {
+    const url = URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `plantilla_${tipo}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }).catch(() => {});
+}
