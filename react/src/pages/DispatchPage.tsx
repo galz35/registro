@@ -91,6 +91,7 @@ export default function DispatchPage() {
     setAsistidos(allData.filter((c: CensoItem) => c.Asistio > 0));
   };
 
+  const recargarCatalogo = () => getCatalogo().then(setJuguetesDisponibles).catch(() => {});
   const show = (msg: string, type: 'success' | 'error' = 'success') => toast(msg, type);
 
   const handleRegistrarAsistencia = async (carnet: string) => {
@@ -119,6 +120,7 @@ export default function DispatchPage() {
       await registrarEntrega(fd);
       show(`🎁 Juguete entregado`);
       setShowDeliver(null);
+      await recargarCatalogo();
       const data = await getColaboradorFull(carnetColab, EVENTO_ACTIVO_ID);
       setFicha(data);
       refreshAsistidos();
@@ -130,6 +132,7 @@ export default function DispatchPage() {
       await reversarEntrega(entregaId, motivo);
       show('↺ Entrega reversada');
       setShowRevert(null);
+      await recargarCatalogo();
       if (ficha) {
         const data = await getColaboradorFull(ficha.colaborador.carnet, EVENTO_ACTIVO_ID);
         setFicha(data);
@@ -390,6 +393,7 @@ export default function DispatchPage() {
                         if (foto) fd.append('foto', foto);
                         await registrarEntrega(fd);
                       }
+                      await recargarCatalogo();
                       const data = await getColaboradorFull(ficha.colaborador.carnet, EVENTO_ACTIVO_ID);
                       setFicha(data);
                       refreshAsistidos();

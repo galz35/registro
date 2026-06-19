@@ -245,7 +245,7 @@ export class AttendanceService {
       SELECT COUNT(DISTINCT c.Carnet) AS total
       FROM dbo.tblColaboradores c
       LEFT JOIN dbo.tblHijos h ON h.CarnetColaborador = c.Carnet
-      LEFT JOIN dbo.tblEntregasJuguetes e ON e.CarnetColaborador = c.Carnet AND e.EventoId = @eventoId
+      LEFT JOIN dbo.tblEntregasJuguetes e ON e.CarnetColaborador = c.Carnet AND e.EventoId = @eventoId AND e.Estado = 'DELIVERED'
       ${where}
     `;
 
@@ -266,7 +266,7 @@ export class AttendanceService {
         MAX(a.FechaRegistro) AS FechaAsistencia
       FROM dbo.tblColaboradores c
       LEFT JOIN dbo.tblHijos h ON h.CarnetColaborador = c.Carnet AND h.Activo = 1
-      LEFT JOIN dbo.tblEntregasJuguetes e ON e.HijoId = h.Id AND e.EventoId = @eventoId
+      LEFT JOIN dbo.tblEntregasJuguetes e ON e.HijoId = h.Id AND e.EventoId = @eventoId AND e.Estado = 'DELIVERED'
       LEFT JOIN dbo.tblAsistenciaEventos a ON a.CarnetColaborador = c.Carnet AND a.EventoId = @eventoId
       ${where}
       GROUP BY c.Carnet, c.Nombre, c.Gerencia, c.Ubicacion
