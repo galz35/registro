@@ -86,6 +86,17 @@ export class DispatchService {
       }
     }
 
+    // Validar que el colaborador sea de Managua
+    const valReq = pool.request();
+    valReq.input('carnet', sql.VarChar(50), dto.carnetColaborador);
+    const valResult = await valReq.query(`
+      SELECT DepartamentoGeografico FROM dbo.tblColaboradores WHERE Carnet = @carnet AND Activo = 1
+    `);
+    const depto = valResult.recordset[0]?.DepartamentoGeografico || '';
+    if (depto.toUpperCase() !== 'MANAGUA') {
+      throw new BadRequestException('Este colaborador no pertenece a MANAGUA. El despacho solo aplica para personal de Managua.');
+    }
+
     const request = pool.request();
     request.input('EventoId', sql.Int, dto.eventoId);
     request.input('HijoId', sql.Int, dto.hijoId);

@@ -179,6 +179,15 @@ export class ImportsService {
           VALUES (@carnet, @nombre, @puesto, @gerencia, @ubicacion, @edificio, @fechaContratacion, @genero, @deptoGeo)
         `);
         insertados.colaboradores++;
+      } else if (deptoGeo) {
+        // Actualizar datos del colaborador existente (DepartamentoGeografico, etc.)
+        const updateColab = pool.request();
+        updateColab.input('carnet', sql.VarChar(50), carnet);
+        updateColab.input('deptoGeo', sql.VarChar(250), deptoGeo);
+        await updateColab.query(`
+          UPDATE dbo.tblColaboradores SET DepartamentoGeografico = @deptoGeo
+          WHERE Carnet = @carnet AND (DepartamentoGeografico IS NULL OR DepartamentoGeografico = '')
+        `);
       }
 
       const insertHijo = pool.request();

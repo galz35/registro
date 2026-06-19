@@ -16,6 +16,8 @@
 - Imagenes en disco WebP, no Base64 en BD
 - Stock protegido con UPDLOCK, ROWLOCK
 - Colores: Rojo Claro #DA291C, Blanco, Gris, Negro. PROHIBIDO usar azul
+- Despacho solo para colaboradores con DepartamentoGeografico = 'MANAGUA'
+  (validado en dispatch.service.ts antes de ejecutar el SP)
 
 ## Estructura del proyecto
 /opt/apps/asistencia/registro/
