@@ -420,6 +420,16 @@ export default function DispatchPage() {
                         });
                         return;
                       }
+                      if (recibidoPor === 'TERCERO' && !nombreReceptor.trim()) {
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Nombre requerido',
+                          text: 'Debe ingresar el nombre de la persona que recibe los juguetes.',
+                          confirmButtonText: 'Entendido',
+                          confirmButtonColor: '#da121a',
+                        });
+                        return;
+                      }
                       const pendientes = ficha.hijos.filter(h => h.estadoEntrega !== 'DELIVERED');
                       const foto = colaboradorFoto || undefined;
                       for (const hijo of pendientes) {
@@ -721,6 +731,16 @@ export default function DispatchPage() {
                     icon: 'error',
                     title: 'Foto requerida',
                     text: 'Debe tomar o subir una foto de evidencia antes de entregar.',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#da121a',
+                  });
+                  return;
+                }
+                if (recibidoPor === 'TERCERO' && !nombreReceptor.trim()) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Nombre requerido',
+                    text: 'Debe ingresar el nombre de la persona que recibe el juguete.',
                     confirmButtonText: 'Entendido',
                     confirmButtonColor: '#da121a',
                   });
