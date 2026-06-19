@@ -99,7 +99,7 @@ export class DispatchService {
 
     try {
       await request.execute('sp_Despacho_Entregar');
-      const entregaId = request.output.EntregaId;
+      const entregaId = (request.output as any).EntregaId;
 
       const stockReq = pool.request();
       stockReq.input('id', sql.Int, dto.jugueteId);

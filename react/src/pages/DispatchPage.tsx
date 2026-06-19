@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCenso, getColaboradorFull, registrarAsistencia, registrarEntrega, reversarEntrega } from "./../services/asistencia.api";
 import type { ColaboradorFicha, Hijo, CensoItem, Juguete } from '../types';
 import { getCatalogo } from '../services/asistencia.api';
-import { Gift, ChevronLeft, Camera, Check, RotateCcw, X, Loader2, Users, ChevronRight } from 'lucide-react';
+import { Gift, ChevronLeft, Camera, Check, RotateCcw, X, Loader2, Users, ChevronRight, Package, Heart, AlertTriangle } from 'lucide-react';
 
 const EVENTO_ACTIVO_ID = 1;
 
@@ -170,14 +170,19 @@ export default function DispatchPage() {
             const totalHijos = asistidos.reduce((s, r) => s + r.TotalHijos, 0);
             const entregados = asistidos.reduce((s, r) => s + r.Entregados, 0);
             return [
-              { label: 'Hijos a Despachar', value: totalHijos, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)' },
-              { label: 'Entregados', value: entregados, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
-              { label: 'Por Despachar', value: totalHijos - entregados, gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
+              { label: 'Hijos a Despachar', value: totalHijos, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)', icon: Package },
+              { label: 'Entregados', value: entregados, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', icon: Heart },
+              { label: 'Por Despachar', value: totalHijos - entregados, gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', icon: AlertTriangle },
             ];
           })().map((s) => (
-            <div key={s.label} style={{ textAlign: 'center', padding: '8px 12px', borderRadius: 8, background: s.gradient, color: 'white' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', opacity: 0.85 }}>{s.label}</div>
-              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 20 }}>{s.value}</div>
+            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 8, background: s.gradient, color: 'white' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)' }}>
+                <s.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', opacity: 0.85 }}>{s.label}</div>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 20 }}>{s.value}</div>
+              </div>
             </div>
           ))}
         </div>

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePolling } from '../hooks/usePolling';
 import { getSummary, getCenso, getColaboradorFull, registrarAsistencia } from '../services/asistencia.api';
 import type { ColaboradorFicha, DashboardKPI, CensoItem } from '../types';
-import { Search, Check, Users, Gift, ChevronLeft, Loader2, RotateCcw } from 'lucide-react';
+import { Search, Check, Users, Gift, ChevronLeft, Loader2, RotateCcw, Package, UserCheck, Heart } from 'lucide-react';
 import api from '../services/api';
 
 const EVENTO_ACTIVO_ID = 1;
@@ -105,9 +105,9 @@ export default function AttendancePage() {
   const totalHijosAsist = allAsistidos.reduce((s, r) => s + r.TotalHijos, 0);
 
   const stats = [
-    { label: 'Total Niños Censados', value: kpis?.TotalNinos || 0, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)' },
-    { label: 'Adultos Registrados', value: totalAdultos, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' },
-    { label: 'Niños Registrados', value: totalHijosAsist, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
+    { label: 'Total Niños Censados', value: kpis?.TotalNinos || 0, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)', icon: Package, bg: 'rgba(255,255,255,0.1)' },
+    { label: 'Adultos Registrados', value: totalAdultos, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', icon: UserCheck, bg: 'rgba(255,255,255,0.1)' },
+    { label: 'Niños Registrados', value: totalHijosAsist, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', icon: Heart, bg: 'rgba(255,255,255,0.1)' },
   ];
 
   return (
@@ -131,9 +131,14 @@ export default function AttendancePage() {
         {/* KPIs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
           {stats.map((s) => (
-            <div key={s.label} style={{ background: s.gradient, color: 'white', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 28, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, lineHeight: 1.2 }}>{s.label}</div>
+            <div key={s.label} style={{ background: s.gradient, color: 'white', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)' }}>
+                <s.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 22, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{s.label}</div>
+              </div>
             </div>
           ))}
         </div>

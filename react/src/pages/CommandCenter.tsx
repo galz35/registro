@@ -3,7 +3,7 @@ import { usePolling } from '../hooks/usePolling';
 import { useDebounce } from '../hooks/useDebounce';
 import { getSummary, getCenso, getColaboradorFull, registrarAsistencia, registrarEntrega, reversarEntrega } from '../services/asistencia.api';
 import type { CensoItem, ColaboradorFicha, DashboardKPI, Hijo } from '../types';
-import { LayoutDashboard, Search, Gift, Camera, X, RotateCcw } from 'lucide-react';
+import { LayoutDashboard, Gift, Camera, X, RotateCcw } from 'lucide-react';
 import { toast } from '../utils/toast';
 
 const EVENTO_ACTIVO_ID = 1;
@@ -17,15 +17,30 @@ export default function CommandCenter() {
   const kpiFetcher = useCallback(() => getSummary(EVENTO_ACTIVO_ID), []);
   const { data: kpis } = usePolling<DashboardKPI>(kpiFetcher, 30000);
 
+  const [allAsistidos, setAllAsistidos] = useState<CensoItem[]>([]);
   const [censoData, setCensoData] = useState<{ data: CensoItem[]; total: number; totalPaginas: number } | null>(null);
   const loadCensoData = useCallback(async () => {
     try {
-      const data = await getCenso(EVENTO_ACTIVO_ID, debouncedSearch || undefined, filtroEstado, pagina, 50);
+      const data = await getCenso(EVENTO_ACTIVO_ID, debouncedSearch || undefined, filtroEstado, pagina, 5);
       setCensoData(data);
     } catch {}
   }, [debouncedSearch, filtroEstado, pagina]);
 
   useEffect(() => { loadCensoData(); }, [loadCensoData]);
+
+  // Load all asistidos for KPIs
+  useEffect(() => {
+    (async () => {
+      const first = await getCenso(EVENTO_ACTIVO_ID, undefined, undefined, 1, 200).catch(() => null);
+      if (!first) return;
+      let allData = first.data || [];
+      for (let p = 2; p <= (first.totalPaginas || 1); p++) {
+        const res = await getCenso(EVENTO_ACTIVO_ID, undefined, undefined, p, 200).catch(() => null);
+        if (res) allData = allData.concat(res.data || []);
+      }
+      setAllAsistidos(allData.filter((c: CensoItem) => c.Asistio > 0));
+    })();
+  }, []);
 
   const [drawerCarnet, setDrawerCarnet] = useState<string | null>(null);
   const [drawerData, setDrawerData] = useState<ColaboradorFicha | null>(null);
@@ -86,10 +101,16 @@ export default function CommandCenter() {
     }
   };
 
+  const totalAdultos = allAsistidos.reduce((s, r) => s + (r.TotalAdultos || 0), 0);
+  const totalHijosAsist = allAsistidos.reduce((s, r) => s + r.TotalHijos, 0);
+  const entregados = allAsistidos.reduce((s, r) => s + r.Entregados, 0);
+
   const stats = [
-    { label: 'Total Niños', value: kpis?.TotalNinos || 0, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)' },
-    { label: 'Entregados', value: kpis?.Entregados || 0, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
-    { label: 'Pendientes', value: kpis?.Pendientes || 0, gradient: 'linear-gradient(135deg, #9ca3af 0%, #4b5563 100%)' },
+    { label: 'Total Niños Censados', value: kpis?.TotalNinos || 0, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)' },
+    { label: 'Adultos Registrados', value: totalAdultos, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' },
+    { label: 'Hijos x Despachar', value: totalHijosAsist, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
+    { label: 'Entregados', value: entregados, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
+    { label: 'Por Despachar', value: totalHijosAsist - entregados, gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
   ];
 
   return (
@@ -100,13 +121,7 @@ export default function CommandCenter() {
           <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 22, margin: 0 }}>
             <LayoutDashboard className="w-5 h-5" style={{ verticalAlign: 'middle', marginRight: 10 }} /> Dashboard
           </h1>
-          <div style={{ position: 'relative', width: 320 }}>
-            <Search className="w-4 h-4" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)' }} />
-            <input type="text" value={globalSearch} onChange={(e) => { setGlobalSearch(e.target.value); setPagina(1); }}
-              onKeyDown={(e) => e.key === 'Enter' && setPagina(1)}
-              placeholder="Buscar carnet, colaborador o hijo..."
-              style={{ width: '100%', padding: '8px 12px 8px 34px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', fontSize: 13, outline: 'none', background: 'rgba(255,255,255,0.12)', color: 'white' }} />
-          </div>
+          <div />
         </div>
         <p style={{ fontSize: 12, opacity: 0.75, textAlign: 'center', margin: 0, padding: '0 24px 10px' }}>
           Panel de control - Día del Niño 2026
@@ -115,28 +130,34 @@ export default function CommandCenter() {
 
       <main style={{ padding: 24, maxWidth: 1280, margin: '0 auto' }}>
             {/* Compact KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 20 }}>
               {stats.map((s) => (
-                <div key={s.label} className="stat-card dashboard-stat" style={{ background: s.gradient }}>
-                  <div className="stat-card__value">{s.value}</div>
-                  <div className="stat-card__label">{s.label}</div>
+                <div key={s.label} style={{ background: s.gradient, color: 'white', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 24, lineHeight: 1.2 }}>{s.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Table with filters + search + pagination */}
-            <section className="card" style={{ background: 'white', borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+            <section style={{ background: 'white', borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {[{ id: undefined, label: 'Todos' }, { id: 'pendientes', label: 'Pendientes' }, { id: 'completos', label: 'Completos' }].map((f) => (
                     <button key={f.label} onClick={() => { setFiltroEstado(f.id); setPagina(1); }}
                       style={{
-                        padding: '5px 12px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.3px',
+                        padding: '5px 12px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase',
                         ...((filtroEstado === f.id || (!filtroEstado && !f.id)) ? { background: '#da121a', color: 'white' } : { background: '#f1f5f9', color: '#6b7280' })
                       }}>
                       {f.label}
                     </button>
                   ))}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input type="text" value={globalSearch} onChange={(e) => { setGlobalSearch(e.target.value); setPagina(1); }}
+                    onKeyDown={(e) => e.key === 'Enter' && setPagina(1)}
+                    placeholder="🔍 Buscar carnet o nombre..."
+                    style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: 12, outline: 'none', width: 220 }} />
                 </div>
               </div>
               <div style={{ overflowX: 'auto' }}>

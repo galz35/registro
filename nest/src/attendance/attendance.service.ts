@@ -199,7 +199,8 @@ export class AttendanceService {
     if (estado === 'pendientes') {
       having = 'HAVING COUNT(CASE WHEN e.Estado = \'DELIVERED\' THEN 1 END) = 0';
     } else if (estado === 'completos') {
-      having = 'HAVING COUNT(CASE WHEN e.Estado = \'DELIVERED\' THEN 1 END) > 0';
+      where += ' AND EXISTS (SELECT 1 FROM dbo.tblAsistenciaEventos ae WHERE ae.CarnetColaborador = c.Carnet AND ae.EventoId = @eventoId)';
+      having = 'HAVING COUNT(DISTINCT h.Id) > 0 AND COUNT(CASE WHEN e.Estado = \'DELIVERED\' THEN 1 END) = COUNT(DISTINCT h.Id)';
     }
 
     const offset = (pagina - 1) * porPagina;
