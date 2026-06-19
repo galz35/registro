@@ -33,10 +33,10 @@ export default function HistoryPage() {
     try {
       const params: any = { eventoId: 1, pagina: p, porPagina };
       if (q) params.busqueda = q;
-      const { data: res } = await api.get('/dispatch/event/1/summary', { params });
-      const d = res.data || res;
-      setData(d.data || []);
-      setTotal(d.total || 0);
+      const res = await api.get('/dispatch/event/1/summary', { params });
+      const items = res.data.data || [];
+      setData(items);
+      setTotal(res.data.total || 0);
     } catch { setData([]); }
   };
 
