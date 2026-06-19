@@ -621,6 +621,8 @@ Al registrar asistencia, se guarda quién asistió realmente:
 - **Validación Tercero**: mostrar error si no se ingresa nombre al seleccionar Tercero en despacho
 - **Advertencia no-Managua** en registro: si el colaborador no es de MANAGUA, muestra mensaje rojo
   indicando que no aplica para despacho de juguetes (se puede registrar, pero no recibir juguete)
+- **Validación contra Portal**: al buscar colaborador, consulta `bdplaner.dbo.p_Usuarios` para verificar
+  que esté activo. Si está de baja en Portal, lo desactiva localmente y rechaza el registro
 - Preview de foto con botón ✕ y "click fuera para cerrar"
 - Paginación: Pendientes 3 items, Completos 5 items
 - Filtros de tabla con fondo blanco y búsqueda por carnet+nombre+gerencia
