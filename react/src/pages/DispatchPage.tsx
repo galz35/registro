@@ -469,7 +469,7 @@ export default function DispatchPage() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <h5 style={{ fontWeight: 700, margin: 0, fontSize: 14 }}>
+                          <h5 style={{ fontWeight: 700, margin: 0, fontSize: 14, color: hijo.generoHijo === 'F' ? '#d946ef' : '#2563eb' }}>
                             {hijo.generoHijo === 'F' ? '👧' : '👦'} {hijo.nombreHijo}
                           </h5>
                           <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0' }}>
