@@ -255,7 +255,7 @@ export default function DispatchPage() {
                   No hay colaboradores que hayan asistido al evento.
                 </div>
               ) : (() => {
-                const filtrados = asistidos.filter(a => a.Entregados < a.TotalHijos && (!filterPendientes || a.Nombre.toUpperCase().includes(filterPendientes.toUpperCase())));
+                const filtrados = asistidos.filter(a => a.Entregados < a.TotalHijos && (!filterPendientes || (a.Carnet+' '+a.Nombre).toUpperCase().includes(filterPendientes.toUpperCase())));
                 const paginados = filtrados.slice((pagPendientes - 1) * porPagPendientes, pagPendientes * porPagPendientes);
                 const totalPag = Math.max(1, Math.ceil(filtrados.length / porPagPendientes));
                 return (
