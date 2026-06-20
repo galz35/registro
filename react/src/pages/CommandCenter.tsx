@@ -108,7 +108,7 @@ export default function CommandCenter() {
   const stats = [
     { label: 'Total Niños Censados', value: kpis?.TotalNinos || 0, gradient: 'linear-gradient(135deg, #374151 0%, #111827 100%)' },
     { label: 'Adultos Registrados', value: totalAdultos, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' },
-    { label: 'Hijos x Despachar', value: totalHijosAsist, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
+    { label: 'Hijos Registrados', value: totalHijosAsist, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
     { label: 'Entregados', value: entregados, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
     { label: 'Por Despachar', value: totalHijosAsist - entregados, gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
   ];
