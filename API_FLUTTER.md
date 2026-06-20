@@ -95,6 +95,19 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
   ENDPOINT PRINCIPAL para Flutter (scanner + ficha).
 
   Responde con TODOS los datos del colaborador en 1 sola llamada:
+
+  IMPORTANTE: El backend valida el estado del colaborador contra:
+  1. Portal (bdplaner.dbo.p_Usuarios) - verifica si está activo
+  2. Oracle HCM Cloud - fallback si no está en Portal, consulta workRelationships.TerminationDate
+
+  Si el colaborador está INACTIVO (de baja), la respuesta incluye:
+  - `inactivo: true`
+  - `terminationDate: "2023-12-14"` (fecha de último día trabajado, desde HCM)
+  - Datos básicos del colaborador (carnet, nombre)
+  - `asistio: false`, `hijos: []`
+  - Se permite registrar asistencia con confirmación, pero NO despacho
+
+  Respuesta para colaborador ACTIVO:
   {
     "colaborador": {
       "carnet": "500708",
@@ -106,12 +119,13 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
       "inactivo": false
     },
     "inactivo": false,
-    "asistio": true,                    // ya registró asistencia?
+    "terminationDate": null,                  // null si activo, "2023-12-14" si inactivo
+    "asistio": true,                          // ya registró asistencia?
     "fechaAsistencia": "2026-06-18T10:32:00",
-    "adultos": 1,                        // adultos registrados en asistencia
-    "ninos": 0,                          // niños registrados en asistencia
-    "asistioPor": "COLABORADOR",         // null | "COLABORADOR" | "CONYUGE" | "TERCERO"
-    "nombreAsistente": null              // null | string (nombre si asistioPor=TERCERO)
+    "adultos": 1,                             // adultos registrados en asistencia
+    "ninos": 0,                               // niños registrados en asistencia
+    "asistioPor": "COLABORADOR",              // null | "COLABORADOR" | "CONYUGE" | "TERCERO"
+    "nombreAsistente": null,                  // null | string (nombre si asistioPor=TERCERO)
     "fotoHcm": "data:image/jpeg;base64,...",  // foto desde Oracle HCM (o null)
     "hijos": [
       {
@@ -142,6 +156,11 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
       }
     ]
   }
+
+  Comportamiento en Flutter cuando inactivo=true:
+  - Mostrar mensaje claro: "Colaborador dado de baja. Último día: {terminationDate}"
+  - PERMITIR registrar asistencia (con confirmación del usuario)
+  - NO permitir despacho (bloquear botón "Entregar")
 
 2.3 REGISTRAR ASISTENCIA
   ---
@@ -198,32 +217,34 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
     "esValido": true
   }
 
-2.6 ENTREGAR JUGUETE (MULTIPART)
-  ---
-  POST /dispatch/deliver
-  Content-Type: multipart/form-data
-  Authorization: Bearer <token>
+ 2.6 ENTREGAR JUGUETE (MULTIPART)
+   ---
+   POST /dispatch/deliver
+   Content-Type: multipart/form-data
+   Authorization: Bearer <token>
 
-  Campos del formulario:
-    eventoId: 1
-    hijoId: 324
-    jugueteId: 5
-    carnetColaborador: 500708
-    recibidoPor: COLABORADOR | CONYUGE | TERCERO
-    nombreReceptor: (obligatorio si recibidoPor=TERCERO)
-    foto: (archivo de imagen OPCIONAL, se convierte a WebP)
+   Campos del formulario:
+     eventoId: 1
+     hijoId: 324
+     jugueteId: 5
+     carnetColaborador: 500708
+     recibidoPor: COLABORADOR | CONYUGE | TERCERO
+     nombreReceptor: (obligatorio si recibidoPor=TERCERO)
+     foto: (archivo de imagen OBLIGATORIO, se convierte a WebP)
 
-  La foto de evidencia es 1 por colaborador (no por hijo).
-  El backend la comprime a WebP 80%, max 1024px.
+   La foto de evidencia es OBLIGATORIA. El backend rechaza la entrega si no se envía foto.
+   El backend comprime a WebP 80%, max 1024px.
 
-  Respuesta: 201
-  { "entregaId": 6, "stockRestante": 53 }
+   Respuesta: 201
+   { "entregaId": 6, "stockRestante": 53 }
 
-   NOTA: El despacho solo aplica para colaboradores con
-         `departamentoGeografico = "MANAGUA"`. Si el colaborador
-         es de otro departamento, la API responde 400 con:
-         "Este colaborador no pertenece a MANAGUA. El despacho solo
-          aplica para personal de Managua."
+   NOTAS IMPORTANTES para Flutter:
+   1. La foto de evidencia es REQUERIDA (no opcional). Si no se envía,
+      la API responde 400.
+   2. El despacho solo aplica para colaboradores con
+      `departamentoGeografico = "MANAGUA"`. Si es de otro departamento:
+      400 "Este colaborador no pertenece a MANAGUA..."
+   3. Si el colaborador está inactivo (inactivo=true), NO permitir despacho.
 
 2.7 ACTUALIZAR FOTO DE EVIDENCIA (para entregas ya completadas)
    ---
@@ -370,7 +391,45 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
 
   Respuesta: { "status": "ok", "database": "connected" }
 
-========================================================================
+=2.15 PLANTILLA DE IMPORTACION (descargar)
+   ---
+   GET /imports/template/{tipo}
+   Authorization: Bearer <token>
+   (Sin autenticacion para descarga)
+
+   tipo: "censo" | "catalogo"
+   Descarga un archivo .xlsx con los encabezados correctos y un ejemplo.
+
+2.16 REPORTES EXCEL
+   ---
+   GET /reports/asistencia.xlsx?eventoId=1
+   GET /reports/despacho.xlsx?eventoId=1
+   GET /reports/inventario.xlsx
+   Authorization: Bearer <token>
+
+   Descargan archivos .xlsx con formato profesional:
+   - asistencia: carnets, nombres, gerencias, adultos, niños, hijos, quién asistió
+   - despacho: colaborador, hijo, juguete, estado, receptor, fecha, despachó
+   - inventario: 2 hojas (resumen por juguete + detalle de cada entrega)
+
+2.17 RESUMEN DE INVENTARIO (API)
+   ---
+   GET /catalog/summary
+   Authorization: Bearer <token>
+
+   Respuesta: [
+     {
+       "jugueteId": 1,
+       "nombreJuguete": "GAME BLANKET...",
+       "stockInicial": 30,
+       "stockActual": 30,
+       "entregados": 0,          // conteo REAL contra tblEntregasJuguetes
+       "reversados": 0,
+       "porcentajeDespacho": 0
+     }
+   ]
+
+=======================================================================
 3. RUTAS PARA ARCHIVOS ESTATICOS
 ========================================================================
 
@@ -417,13 +476,26 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
   4. Muestra: foto (fotoHcm), nombre, hijos, juguetes sugeridos
 
   PANTALLA 3: FICHA COLABORADOR
-  1. Si no ha asistido: boton "Registrar Asistencia"
-     POST /attendance/register { eventoId:1, carnet:"500708", adultos:1, ninos:0 }
-  2. Muestra hijos con su juguete sugerido y stock
-  3. Boton "Entregar" por hijo:
-     POST /dispatch/deliver (multipart con foto opcional)
-  4. Boton "Reversar" si ya entregado:
-     POST /dispatch/{id}/revert { motivo:"..." }
+   1. Verificar `inactivo` en la respuesta:
+      - Si `inactivo: true`:
+        - Mostrar mensaje: "Colaborador dado de baja. Último día: {terminationDate}"
+        - PERMITIR registrar asistencia con confirmación del usuario
+        - BLOQUEAR botón "Entregar" (no aplica despacho)
+      - Si `inactivo: false`: flujo normal
+   2. Si no ha asistido: boton "Registrar Asistencia"
+      POST /attendance/register { eventoId:1, carnet:"500708", adultos:1, ninos:0,
+           asistioPor:"COLABORADOR", nombreAsistente:null }
+   3. Muestra hijos con su juguete sugerido y stock
+   4. Verificar `departamentoGeografico` antes de permitir entrega:
+      - Si !== "MANAGUA": mostrar mensaje "No aplica para despacho" y bloquear
+      - Si es "MANAGUA": permitir entrega
+   5. Boton "Entregar" por hijo:
+      POST /dispatch/deliver (multipart con foto OBLIGATORIA)
+      - Si recibidoPor="TERCERO", nombreReceptor es REQUERIDO
+   6. Boton "Reversar" si ya entregado:
+      POST /dispatch/{id}/revert { motivo:"..." }
+   7. Actualizar foto de evidencia en entregas completadas:
+      PATCH /dispatch/{hijoId}/foto?eventoId=1 (multipart con foto)
 
 ========================================================================
 6. NOTAS IMPORTANTES
@@ -435,6 +507,13 @@ FRONTEND: React (https://rhclaroni.com/asistencia/)
   - Los valores con # en .env deben ir entre comillas dobles
     Ej: SSO_SECRET="ClaroSSO_Shared_Secret_2026_!#"
   - SweetAlert2 usado para toasts en React. En Flutter usar SnackBar o similar
+  - La foto de evidencia es OBLIGATORIA para entregar. No permitir continuar sin foto.
+  - Si recibidoPor="TERCERO", nombreReceptor es REQUERIDO (no debe estar vacío).
   - El inventario (stock) siempre debe consultarse via API antes de mostrar
     opciones al usuario. NUNCA cachear stock localmente.
   - Despues de cada delivery/revert, refrescar catalogo con GET /catalog
+  - El campo `departamentoGeografico` en la respuesta de lookup indica si el
+    colaborador aplica para despacho (solo MANAGUA).
+  - El campo `inactivo` + `terminationDate` indican si el colaborador está
+    dado de baja. Se puede registrar asistencia (con confirmación) pero
+    NO se debe permitir despacho.
