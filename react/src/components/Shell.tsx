@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, UserCheck, Gift, Package, FileText, Upload, LogOut, Gift as GiftIcon, Menu, Shield, X } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Gift, Package, FileText, Upload, BarChart3, LogOut, Gift as GiftIcon, Menu, Shield, X } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
   { label: 'Registro Asistencia', icon: UserCheck, to: '/attendance' },
   { label: 'Despacho', icon: Gift, to: '/dispatch' },
   { label: 'Catálogo', icon: Package, to: '/catalog' },
+  { label: 'Reportes', icon: BarChart3, to: '/reports' },
   { label: 'Historial', icon: FileText, to: '/history' },
   { label: 'Importar', icon: Upload, to: '/import' },
   { label: 'Usuarios', icon: Shield, to: '/admin' },
