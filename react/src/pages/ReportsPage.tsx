@@ -87,7 +87,7 @@ function AsistenciaReport() {
     <div>
       <div style={{ background: '#da121a', color: 'white', padding: '12px 16px', borderRadius: '12px 12px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>📋 Reporte de Asistencia</span>
-        <button onClick={() => descargarExcel('/api/reports/asistencia.xlsx?eventoId=1', 'reporte_asistencia.xlsx')}
+        <button onClick={() => descargarExcel('/reports/asistencia.xlsx?eventoId=1', 'reporte_asistencia.xlsx')}
           style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', borderRadius: 6, padding: '5px 12px', fontWeight: 600, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
           <Download className="w-3 h-3" /> Excel
         </button>
